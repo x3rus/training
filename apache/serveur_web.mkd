@@ -1,0 +1,37 @@
+# Introduction
+
+Apache est apparu en avril 1995. Au début, il s'agissait d'une collection de correctifs et d'additions au serveur NCSA HTTPd 1.3, qui était dans le domaine public et le serveur HTTP alors le plus répandu. De cette origine, de nombreuses personnes affirment que le nom Apache vient de a patchy server, soit « un serveur rafistolé ». Par la suite, Apache a été complètement réécrit, de sorte que, dans la version 2, il ne reste pas de trace de NCSA HTTPd.
+
+Au début, Apache était la seule alternative sérieuse et libre au serveur HTTP de Netscape (iPlanet, maintenant Sun ONE). Depuis avril 1996, selon l'étude permanente de Netcraft2, Apache est devenu le serveur HTTP le plus répandu sur Internet.
+
+Part de marché d'Apache :
+
+* En mai 1999, il faisait tourner 57 % des serveurs Web, début 2004, il était à environ 69 % de parts de marché, et il ne détient plus que 50,61 % du marché à la fin du mois de janvier 2008 ;
+* En février 2008, Apache représente 50,93 % des parts de marché ;
+* En novembre 2008, 72,45 % de parts de marché pour Apache ;
+* En novembre 2011, 65,00 % de parts de marché pour Apache ;
+* En mai 2014, 38,00 % de parts de marché pour Apache et 33,00 % pour Microsoft IIS.
+* En janvier 2015 sur l'analyse de 876,812,666 sites, correspondant à 5,061,365 ordinateurs frontaux, les parts de marché sont de 39.74 % pour Apache, et 27,52 % pour IIS. Sur les part de marché des serveurs actifs (en excluant les sites parkings) par contre, 50.72 % pour Apache, 14.82 % pour Nginx et IIS passe en 3e position avec seulement 10.55 %, perdant 1.17 % de parts par rapport au mois précédent.
+
+La popularité de GNU/Linux doit beaucoup au serveur web apache et la monté en puissance de l'Internet. Il est indéniable que les organisation furent à la recherche d'une solution "gratuite" et performance afin de fournir les service Internet. 
+Parfois il faut pas grand chose pour que la popularité d'une application ou d'un système voit le jours ...
+
+Nous allons voir la structure du logiciel, Apache fonction avec un système de module permettant d'ajouter des fonctionnalités. La configuration d'Apache ce structure selon une hiérarchie de paramètre définie sous des __context__ nous permettant de définir des valeurs de manière granulaire.
+
+Bon fini l'intro on veut jouer un peu :D.
+
+# Installation 
+
+S'il y a bien une application testé et valider dans une distribution c'est bien le logiciel Apache ! À ma connaissance toutes les distributions offre le logiciel. Bien entendu l'installation peut être différente selon votre distribution voici comment procéder pour __Ubuntu__ et __Redhat__.
+
+        # Pour Ubuntu 
+        $ sudo apt-get install  apache2
+
+        # Pour RedHat
+        $ sudo yum install httpd
+
+
+TODO: Ajouter l'information sur les fichiers de configurations et PATH du document root
+TODO: Mettre une page web de démonstration juste en ajouter dans le document root preconfigurer
+TODO: expliquer le système de hierarchie des definitions des permissions 
+TODO: demontration du symlink vers /etc/passwd
