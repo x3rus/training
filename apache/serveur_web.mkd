@@ -31,7 +31,303 @@ S'il y a bien une application testé et valider dans une distribution c'est bien
         $ sudo yum install httpd
 
 
-TODO: Ajouter l'information sur les fichiers de configurations et PATH du document root
-TODO: Mettre une page web de démonstration juste en ajouter dans le document root preconfigurer
-TODO: expliquer le système de hierarchie des definitions des permissions 
-TODO: demontration du symlink vers /etc/passwd
+Si nous regardons la structure des fichiers nous constaterons qu'il diffère voyons pour Ubuntu :
+
+        $  ls -l  /etc/apache2/
+        total 80
+        -rw-r--r-- 1 root root  7115 Jan  7  2014 apache2.conf
+        drwxr-xr-x 2 root root  4096 Nov 25 08:20 conf-available
+        drwxr-xr-x 2 root root  4096 Nov 25 08:20 conf-enabled
+        -rw-r--r-- 1 root root  1782 Jan  3  2014 envvars
+        -rw-r--r-- 1 root root 31063 Jan  3  2014 magic
+        drwxr-xr-x 2 root root 12288 Nov 25 08:20 mods-available
+        1drwxr-xr-x 2 root root  4096 Nov 25 08:20 mods-enabled
+        -rw-r--r-- 1 root root   320 Jan  7  2014 ports.conf
+        drwxr-xr-x 2 root root  4096 Nov 25 08:20 sites-available
+        drwxr-xr-x 2 root root  4096 Nov 25 08:20 sites-enabled
+
+Et maintenant pour Redhat :
+
+        $ ls -l /etc/httpd/
+        total 8
+        drwxr-xr-x 2 root root 4096 Nov 20 09:29 conf
+        drwxr-xr-x 2 root root 4096 Nov 20 09:29 conf.d
+        lrwxrwxrwx 1 root root   19 Nov 20 09:29 logs -> ../../var/log/httpd
+        lrwxrwxrwx 1 root root   27 Nov 20 09:29 modules -> ../../usr/lib/httpd/modules
+        lrwxrwxrwx 1 root root   19 Nov 20 09:29 run -> ../../var/run/httpd
+
+## Démarrage et test après installation
+
+Démarrage du service Apache :
+
+    # Pour Ubuntu
+    $ sudo service apache2 start
+    * Starting web server apache2
+      
+    # Pour RedHat
+    $ sudo service httpd start
+
+
+Vous pouvez dès a présent valider l'installation en allant a l'URL http://IP_du_serveur ou http://127.0.0.1 si l'installation est réalisé directement sur votre poste. Voici le résultat pour Ubuntu :
+TODO: Ajouter une copie d'écran de la page par défaut d'Apache.
+
+Nous allons maintenant mettre une petite page web pour démontré que nous somme bien en mesure de modifier le contenu. Vous pouvez utiliser votre éditeur préféré pour créer le fichier **/var/www/html/demo.html**
+
+    $ cat /var/www/html/demo.html
+    Bonjour Ceci fonctionne bien
+
+Pour valider que tout fonctionne bien vous pouvez aller à l'URL http://IP_du_serveur/demo.html ou http://127.0.0.1/demo.html. Déjà à ce stade il est possible d'avoir son site web de disponible en installant l'ensemble de vos fichiers dans ce répertoire.
+
+Nous allons maintenant allé un peu plus loin avec l'analyse de la configuration et mieux comprendre comment tous ceci fonctionne.
+
+# Configuration de Base
+
+L'ensemble de la rédaction du fichier de configuration est équivalant pour les 2 systèmes l'important est de savoir qu'elle est le premier fichier qui est lu lors du démarrage de d'Apache. Nous verrons à la lecture du fichier de configuration que le premier fichier fait des appel __Include__ pour charger ("loader") les autres fichiers de configuration.
+
+## Fichier Principale 
+
+Le fichier principale est :
+* Redhat : **/etc/httpd/conf/httpd.conf**
+* Ubuntu : **/etc/apache2/apache2.conf**
+
+**NOTE / Info** Afin de ne pas surcharger la formation en dupliquant les démonstrations de Ubuntu et Redhat nous nous concentrerons uniquement sur Ubuntu. Cependant l'ensemble est équivalent entre les 2 systèmes, car c'est le même logiciel, éventuellement si vous n'arrivez pas a faire la transposition, contacter moi je vous mettrai sur la piste .
+
+La configuration de Redhat est plus linéaire que celle d'Ubuntu, mais bon nous ne pouvons pas changer de système de référence à chaque fois juste parce que l'un est plus simple que l'autre ;-).
+
+
+Visualisation du fichier Principale , Pour ne pas surcharger la documentation je ne vais pas mettre le fichier au complet ici cependant il est disponible en cliquant sur le lien : /etc/apache2/apache2.conf (TODO: changer le fichier en lien )
+
+À la lecture du fichier nous constatons qu'il y a beaucoup de commentaire définie, comme beaucoup de fichier de configuration sous GNU/Linux le caractère # (dièse) est utilisé. Si nous supprimons l'ensemble des commentaires ainsi que les lignes vide ceci donne :
+
+        $ cat /etc/apache2/apache2.conf | grep -v "^#" | grep -v "^$"
+        Mutex file:${APACHE_LOCK_DIR} default
+        PidFile ${APACHE_PID_FILE}
+        Timeout 300
+        KeepAlive On
+        MaxKeepAliveRequests 100
+        KeepAliveTimeout 5
+        User ${APACHE_RUN_USER}
+        Group ${APACHE_RUN_GROUP}
+        HostnameLookups Off
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        LogLevel warn
+        IncludeOptional mods-enabled/*.load
+        IncludeOptional mods-enabled/*.conf
+        Include ports.conf
+        <Directory />
+                Options FollowSymLinks
+                AllowOverride None
+                Require all denied
+        </Directory>
+        <Directory /usr/share>
+                AllowOverride None
+                Require all granted
+        </Directory>
+        <Directory /var/www/>
+                Options Indexes FollowSymLinks
+                AllowOverride None
+                Require all granted
+        </Directory>
+        AccessFileName .htaccess
+        <FilesMatch "^\.ht">
+                Require all denied
+        </FilesMatch>
+        LogFormat "%v:%p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" vhost_combined
+        LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined
+        LogFormat "%h %l %u %t \"%r\" %>s %O" common
+        LogFormat "%{Referer}i -> %U" referer
+        LogFormat "%{User-agent}i" agent
+        IncludeOptional conf-enabled/*.conf
+        IncludeOptional sites-enabled/*.conf
+
+39 Lignes à décortiquer, vu l'ampleur du travail que fait apache ce n'est pas grand chose :D, soyons positif. Nous allons aussi voir que pris ligne par ligne la configuration est bien simple ... Surtout quand ça fait 15 ans qu'on la consulte :P.
+
+Nous allons aussi nous appuyer sur une documentation solide disponible sur le site d'Apache : 
+* Ubuntu 14.04 (apache version 2.4 ) : https://httpd.apache.org/docs/2.4/ 
+* Redhat 6 (apache version 2.2)  : https://httpd.apache.org/docs/2.2/.
+
+Nous voyons dans le fichier des variables désigné sous la forme __${Nom_variable}__ l'ensemble des valeurs sont disponible dans le fichier **/etc/apache2/envvars** dont voici le contenu
+
+    export APACHE_RUN_USER=www-data
+    export APACHE_RUN_GROUP=www-data
+    export APACHE_PID_FILE=/var/run/apache2/apache2$SUFFIX.pid
+    export APACHE_RUN_DIR=/var/run/apache2$SUFFIX
+    export APACHE_LOCK_DIR=/var/lock/apache2$SUFFIX
+    export APACHE_LOG_DIR=/var/log/apache2$SUFFIX
+
+TODO: voir pour peut-être faire un tableau  pour les valeurs de configuration
+
+L'ensemble des valeurs ne seront pas couverte pas que ce n'est pas intéressent, nous pourrons prendre le temps dans le future pour creusé plus en détail. L'objectif pour le moment est d'être en mesure de comprendre et configurer simplement Apache. L'optimisation et l'amélioration de configuration pourrons être traiter ultérieurement.
+
+* Configuration global
+    * [Timeout](https://httpd.apache.org/docs/2.4/fr/mod/core.html#timeout) 300 : Temps en seconde pendant lequel le serveur va attendre, que ce soit pour l'envoie, la réception d'instruction au client
+    * [KeepAlive](https://httpd.apache.org/docs/2.4/fr/mod/core.html#keepalive) On : Active la possibilité d'utiliser les connexions persistante telle que définie dans le protocole HTTP 1.1
+    * User __${APACHE_RUN_USER}__ : Définie sous quelle utilisateur le service apache va être exécuté, ceci permet d'éviter que le service soit exécuté comme administrateur du système. L'avantage est que si le service apache est compromis, l'attaquant n'obtient que les droits alloué à l'utilisateur __APACHE_RUN_USER__ . Sous Ubuntu l'utilisateur est **www-data**
+    * Group __${APACHE_RUN_GROUP}__ : Tout comme pour l'utilisateur ici nous définissons le groupe qui exécute l'application sous Ubuntu la valeur est : **www-data**
+    * [HostnameLookups](https://httpd.apache.org/docs/2.4/fr/mod/core.html#hostnamelookups) Off  : Lorsque la connexion est établie par un client il est possible de faire le reverse DNS sur l'adresse IP afin d'avoir le nom du client au lieu de l'ip. Généralement cette configuration est à OFF afin de ne pas surcharger le serveur de requête DNS inutile car ceci ralentie le temps de réponse du serveur apache.
+    * [ErrorLog](https://httpd.apache.org/docs/2.4/fr/mod/core.html#errorlog) ${APACHE_LOG_DIR}/error.log : **Important** définition du fichier de log contenant les erreurs :). Il est fort probable que nous serons amené à le consulter :).
+    * [LogLevel](https://httpd.apache.org/docs/2.4/fr/mod/core.html#loglevel) warn : Ceci permet de définir le niveau de sévérité des alertes bien , il est très rare que je change cette valeurs .
+
+* Inclusion
+    * [IncludeOptional](https://httpd.apache.org/docs/2.4/fr/mod/core.html#includeoptional) mods-enabled/*.load : Avec l'instruction __IncludeOptional__ il est possible de charger d'autre fichier de configuration afin de segmenté les fichiers pour qu'il soit plus facile a lire ou pour permet l'édition de fichier a certaine personne sans offrir le fichier principal. Dans le cas présent le système charge les modules disponible installé sur le système. (Nous reviendrons plus tard sur les modules)
+    * [IncludeOptional](https://httpd.apache.org/docs/2.4/fr/mod/core.html#includeoptional) mods-enabled/*.conf : Même chose que l'instruction précédente mais au lieu de chargé les fichiers des modules, nous chargeons  les configurations des modules. (Nous reviendrons plus tard sur les modules)
+    * Include ports.conf : Inclusion du fichier de définition contenant le port d'écoute, nous retrouverons dans ce fichier l'instruction [Listen](https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html#listen) cette instruction indique sur quelle port écouter pour recevoir les requêtes clients.
+    * [IncludeOptional](https://httpd.apache.org/docs/2.4/fr/mod/core.html#includeoptional) conf-enabled/*.conf : Permet de faire l'inclusion des configurations qui doivent être active.
+    * [IncludeOptional](https://httpd.apache.org/docs/2.4/fr/mod/core.html#includeoptional) sites-enabled/*.conf : Permet de charger la configuration des sites qui doivent être disponible sur le serveur.
+
+* [Directory](https://httpd.apache.org/docs/2.4/fr/mod/core.html#directory)
+L'instruction Directory permet de définir des permissions et configuration qui sont propre au répertoire sur le système de fichier du serveur. Nous verrons qu'il est aussi possible avec l'instruction Location de définir des permissions selon l'URL du site web. La configuration définie pour le répertoire parent sont par défaut hérité au répertoire enfant. Dans la configuration définie ci-dessous l'ensemble des répertoires sous **/var/www** ont les permissions définie par  **Directory /var/www** , pour le répertoire **/home/bob** ou **/tmp/** ils auront les permissions définie par l'instruction **Directory /**.
+Nous reviendrons bientôt sur les configurations et permission pour le moment constatons la configuration par défaut.
+
+        <Directory />
+                Options FollowSymLinks
+                AllowOverride None
+                Require all denied
+        </Directory>
+        <Directory /usr/share>
+                AllowOverride None
+                Require all granted
+        </Directory>
+        <Directory /var/www/>
+                Options Indexes FollowSymLinks
+                AllowOverride None
+                Require all granted
+        </Directory>
+
+* [LogFormat](https://httpd.apache.org/docs/2.4/fr/mod/mod_log_config.html#logformat)
+Définition du format des Log lors de l'accès des clients, ceci permet de collecter plus d'information telle que l'utilisateur (%u) la requête (%r) selon un ordre définie. Ceci est principalement utilisé quand votre système de gestion de statique désire avoir un format particulier. 99% du temps j'utilise __vhost_combined__ qui répond à mon besoin et à mon logiciel de statistique. Note : avec la version 2.4 il est aussi possible de modifier le [format du message d'erreur](https://httpd.apache.org/docs/2.4/fr/mod/core.html#errorlogformat).
+
+        LogFormat "%v:%p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" vhost_combined
+        LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined
+        LogFormat "%h %l %u %t \"%r\" %>s %O" common
+        LogFormat "%{Referer}i -> %U" referer
+        LogFormat "%{User-agent}i" agent
+
+
+## Fichiers Incluent
+
+Debian / Ubuntu structure d'une manière particulière les fichiers d'Apache, on aime ou on n'aime pas je suis pas ici pour me prononcer, mais pour expliquer le concept.
+
+Si nous listons les répertoires présent dans le répertoires nous verrons ceci :
+
+
+    $ ls -1  /etc/apache2/
+    conf-available
+    conf-enabled
+    mods-available
+    mods-enabled
+    sites-available
+    sites-enabled
+
+Nous pouvons constater 3 groupes :
+
+* conf
+    * conf-avaible
+    * conf-enabled
+* mods
+    * mods-avaible
+    * mods-enables
+* sites
+    *  sites-avaible
+    *  sites-enabled
+
+Le concept est le suivent l'ensemble des configurations sont disponible dans le répertoire conf-available et pour les activés un lien symbolique est créé dans la répertoire conf-enabled pointant vers le fichier original dans le répertoire conf-available. Cette philosophie s'applique pour les trois groupes **conf**,**mods** et **sites**. 
+
+L'exemple le plus claire est le chargements des modules apaches, regardons la liste des fichiers dans le répertoire des modules disponibles.
+
+    $ ls -l /etc/apache2/mods-available/
+    total 516
+    -rw-r--r-- 1 root root  100 Jan  7  2014 access_compat.load
+    -rw-r--r-- 1 root root  377 Jan  3  2014 actions.conf
+    -rw-r--r-- 1 root root   66 Jan  3  2014 actions.load
+    -rw-r--r-- 1 root root  843 Jan  3  2014 alias.conf
+    -rw-r--r-- 1 root root   62 Jan  3  2014 alias.load
+    -rw-r--r-- 1 root root   76 Jan  3  2014 allowmethods.load
+    -rw-r--r-- 1 root root   76 Jan  3  2014 asis.load
+    [ .... ]
+    [ .... ]
+    
+    # Soit 129 fichier
+    $ ls -l /etc/apache2/mods-available/ | wc -l
+    129
+    
+    # A présent les modules activés
+    $ ls -l /etc/apache2/mods-enabled/  | head
+    total 0
+    lrwxrwxrwx 1 root root 36 Nov 25 08:20 access_compat.load -> ../mods-available/access_compat.load
+    lrwxrwxrwx 1 root root 28 Nov 25 08:20 alias.conf -> ../mods-available/alias.conf
+    lrwxrwxrwx 1 root root 28 Nov 25 08:20 alias.load -> ../mods-available/alias.load
+    lrwxrwxrwx 1 root root 33 Nov 25 08:20 auth_basic.load -> ../mods-available/auth_basic.load
+    lrwxrwxrwx 1 root root 33 Nov 25 08:20 authn_core.load -> ../mods-available/authn_core.load
+    lrwxrwxrwx 1 root root 33 Nov 25 08:20 authn_file.load -> ../mods-available/authn_file.load
+    lrwxrwxrwx 1 root root 33 Nov 25 08:20 authz_core.load -> ../mods-available/authz_core.load
+    lrwxrwxrwx 1 root root 33 Nov 25 08:20 authz_host.load -> ../mods-available/authz_host.load
+    lrwxrwxrwx 1 root root 33 Nov 25 08:20 authz_user.load -> ../mods-available/authz_user.load
+    [ .... ]
+    [ .... ]
+
+    # Il y a donc 28 fichiers de chargé par la configuration apache
+    $ ls -l /etc/apache2/mods-enabled/ | wc -l
+    28
+
+
+Conclusion sur 129 fichiers uniquement sont réellement chargé par Apache. Nous ne retrouvons pas ce concept sous Redhat.
+Nous mettre de coté tous ces fichiers de configuration qui sont chargés pour visualiser la configuration du site web par défaut, dans un deuxième temps lors de la configuration de nos site web  nous reviendrons sur l'ajout de fonctionnalité et de modules. Bien entendu libre à vous de jeter un œil aux fichiers et de rechercher la document sur Internet.
+
+
+# Virtual Host par défaut
+
+L'ensemble des sites sont donc chargé en lisant les fichiers contenu dans **/etc/apache2/sites-enabled/**. 
+Le système met un fichier par défaut avec le nom **000-default.conf**. Voici le contenu (sans les commentaires):
+
+    <VirtualHost *:80>
+
+        ServerAdmin webmaster@localhost
+        DocumentRoot /var/www/html
+        
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+    </VirtualHost>
+
+Nous avons l'instruction :
+* [<VirtualHost *:80>](https://httpd.apache.org/docs/2.4/mod/core.html#virtualhost): Cette instruction indique qu'il peut y avoir plusieurs site web sur le port 80 des Hôtes virtuel ... Heu merci pour la traduction ;-).
+* [ServerAdmin](https://httpd.apache.org/docs/2.4/mod/core.html#serveradmin) : URL de l'administrateur qui peut être afficher lors de messages d'erreur 
+* [DocumentRoot](https://httpd.apache.org/docs/2.4/mod/core.html#documentroot): Répertoire racine du site web.
+* [ErrorLog](https://httpd.apache.org/docs/2.4/mod/core.html#errorlog) : Chemin d'accès ou le fichier d'erreur PROPRE à ce site web sera écrit. On voudra avoir un fichier d'erreur par site web ceci facilite grandement l'identification des problèmes plutôt qu'avoir un gros fichier pour tout le monde. De plus nous serons en mesure de fournir le fichier au développeur pour qu'il analyse les problèmes. 
+* [CustomLog](https://httpd.apache.org/docs/2.4/mod/mod_log_config.html#customlog): Fichier contenant les informations d'accès des clients tout comme pour le fichier d'erreur, un fichier d'accès par site. Nous retrouvons l'argument **combined** qui est un des format de log précédemment définie avec l'instruction **Logformat**
+
+Et voilà :) , c'est ceci qui nous a permit de mettre notre fichier **demo.html** et de visualiser le contenu.
+
+
+# Paramétrisation du serveur
+
+Maintenant que nous avons vu l'idée générale de la configuration c'est le temps de commencé à y mettre un peu d'ordre ou de désordre :).
+
+## Paramétrisation de la configuration **Directory**
+
+Pour le plaisir nous allons fonctionné par un exemple claire, car bien souvent une démonstration aide à la compréhension. Changeons de place le site web de /var/www/html/ vers  /data/www/, peut importe la raison , peut-être plus d'espace disque dur , peut importe.
+
+    # Création du répertoire et copie des fichiers
+    $ sudo mkdir -p /data/www
+    $ sudo cp /var/www/html/*.html  /data/www/
+
+Les fichiers sont donc maintenant dans le nouveau répertoire il reste à modifier la configuration du serveur Web. Nous allons donc modifier la configuration du [DocumentRoot](https://httpd.apache.org/docs/2.4/mod/core.html#documentroot). 
+Éditons le fichier **/etc/apache2/sites-available/000-default.conf**
+
+    # Changement de 
+    DocumentRoot /var/www/html
+
+    # Pour la nouvelle valeur
+    DocumentRoot /data/www
+
+Validons la configuration syntaxique du serveur, c'est toujours une bonne pratique de réaliser cette opération après vos modifications ceci permet de corrigé des problèmes avant même de recharger la configuration.
+
+    $  sudo apache2ctl configtest
+    Syntax OK
+
+Rechargez la configuration :
+TODO  continuer la redaction
+
+Voici le résultat quand nous 
+
+TODO: demontration du symlink vers /etc/passwd == sudo ln -s /etc/ /var/www/html/sys
