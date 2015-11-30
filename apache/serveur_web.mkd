@@ -1,4 +1,7 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+
 # Introduction
+
 
 Apache est apparu en avril 1995. Au début, il s'agissait d'une collection de correctifs et d'additions au serveur NCSA HTTPd 1.3, qui était dans le domaine public et le serveur HTTP alors le plus répandu. De cette origine, de nombreuses personnes affirment que le nom Apache vient de a patchy server, soit « un serveur rafistolé ». Par la suite, Apache a été complètement réécrit, de sorte que, dans la version 2, il ne reste pas de trace de NCSA HTTPd.
 
@@ -68,7 +71,7 @@ Démarrage du service Apache :
     $ sudo service httpd start
 
 
-Vous pouvez dès a présent valider l'installation en allant a l'URL http://IP_du_serveur ou http://127.0.0.1 si l'installation est réalisé directement sur votre poste. Voici le résultat pour Ubuntu :
+Vous pouvez dès a présent valider l'installation en allant a l'URL http://IP-du-serveur ou http://127.0.0.1 si l'installation est réalisé directement sur votre poste. Voici le résultat pour Ubuntu :
 TODO: Ajouter une copie d'écran de la page par défaut d'Apache.
 
 Nous allons maintenant mettre une petite page web pour démontré que nous somme bien en mesure de modifier le contenu. Vous pouvez utiliser votre éditeur préféré pour créer le fichier **/var/www/html/demo.html**
@@ -76,7 +79,7 @@ Nous allons maintenant mettre une petite page web pour démontré que nous somme
     $ cat /var/www/html/demo.html
     Bonjour Ceci fonctionne bien
 
-Pour valider que tout fonctionne bien vous pouvez aller à l'URL http://IP_du_serveur/demo.html ou http://127.0.0.1/demo.html. Déjà à ce stade il est possible d'avoir son site web de disponible en installant l'ensemble de vos fichiers dans ce répertoire.
+Pour valider que tout fonctionne bien vous pouvez aller à l'URL http://IP-du-serveur/demo.html ou http://127.0.0.1/demo.html. Déjà à ce stade il est possible d'avoir son site web de disponible en installant l'ensemble de vos fichiers dans ce répertoire.
 
 Nous allons maintenant allé un peu plus loin avec l'analyse de la configuration et mieux comprendre comment tous ceci fonctionne.
 
@@ -87,6 +90,7 @@ L'ensemble de la rédaction du fichier de configuration est équivalant pour les
 ## Fichier Principale 
 
 Le fichier principale est :
+
 * Redhat : **/etc/httpd/conf/httpd.conf**
 * Ubuntu : **/etc/apache2/apache2.conf**
 
@@ -290,7 +294,8 @@ Le système met un fichier par défaut avec le nom **000-default.conf**. Voici l
     </VirtualHost>
 
 Nous avons l'instruction :
-* [<VirtualHost *:80>](https://httpd.apache.org/docs/2.4/mod/core.html#virtualhost): Cette instruction indique qu'il peut y avoir plusieurs site web sur le port 80 des Hôtes virtuel ... Heu merci pour la traduction ;-).
+
+* [ VirtualHost *:80 ](https://httpd.apache.org/docs/2.4/mod/core.html#virtualhost): Cette instruction indique qu'il peut y avoir plusieurs site web sur le port 80 des Hôtes virtuel ... Heu merci pour la traduction ;-), nous y reviendrons quand nous couvrirons la possibilité d'avoir plusieurs site web .
 * [ServerAdmin](https://httpd.apache.org/docs/2.4/mod/core.html#serveradmin) : URL de l'administrateur qui peut être afficher lors de messages d'erreur 
 * [DocumentRoot](https://httpd.apache.org/docs/2.4/mod/core.html#documentroot): Répertoire racine du site web.
 * [ErrorLog](https://httpd.apache.org/docs/2.4/mod/core.html#errorlog) : Chemin d'accès ou le fichier d'erreur PROPRE à ce site web sera écrit. On voudra avoir un fichier d'erreur par site web ceci facilite grandement l'identification des problèmes plutôt qu'avoir un gros fichier pour tout le monde. De plus nous serons en mesure de fournir le fichier au développeur pour qu'il analyse les problèmes. 
@@ -305,7 +310,9 @@ Maintenant que nous avons vu l'idée générale de la configuration c'est le tem
 
 ## Paramétrisation de la configuration **Directory**
 
-Pour le plaisir nous allons fonctionné par un exemple claire, car bien souvent une démonstration aide à la compréhension. Changeons de place le site web de /var/www/html/ vers  /data/www/, peut importe la raison , peut-être plus d'espace disque dur , peut importe.
+### Changement du répertoire Racine ( [DocumentRoot](https://httpd.apache.org/docs/2.4/mod/core.html#documentroot) ) du serveur 
+
+Pour le plaisir nous allons fonctionné par un exemple claire, car bien souvent une démonstration qui aide à la compréhension. Changeons de place le site web de /var/www/html/ vers  /data/www/, peut importe la raison , peut-être plus d'espace disque dur , peut importe.
 
     # Création du répertoire et copie des fichiers
     $ sudo mkdir -p /data/www
@@ -326,8 +333,146 @@ Validons la configuration syntaxique du serveur, c'est toujours une bonne pratiq
     Syntax OK
 
 Rechargez la configuration :
-TODO  continuer la redaction
 
-Voici le résultat quand nous 
+    $ sudo service apache2 reload
+    * Reloading web server apache2
+    *
+
+
+Voici le résultat quand nous accédons à la page principale :  http://127.0.0.1 ou http://127.0.0.1/demo.html
+
+    TODO: AJOUT IMG de l'erreur Forbiden 
+
+Nous avons donc une erreur **403** qui est un refus d'accès au serveur. Ceci correspond à un refus d'accès vous pouvez avoir la liste des codes des états sur Wikipédia :  [Code 4xx Erreur Client](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#4xx_Client_Error) 
+
+Le mieux pour comprendre l'erreur reste toujours les logs visualisons donc ce que nous avons dans les fichiers. Pour nous rafraîchir la mémoire nous allons valider la définition des fichiers de logs:
+
+    $ grep "log" /etc/apache2/sites-enabled/000-default.conf | grep -v "#"
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    # Et pour la valeur de ${APACHE_LOG_DIR}
+    $ grep "APACHE_LOG_DIR" /etc/apache2/envvars 
+    export APACHE_LOG_DIR=/var/log/apache2
+
+* Fichier d'accès **/var/log/apache2/access.log**:
+
+    $ sudo tail -f /var/log/apache2/access.log
+    172.17.42.1 - - [27/Nov/2015:08:20:52 -0500] "GET / HTTP/1.1" 403 494 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+    172.17.42.1 - - [27/Nov/2015:08:21:27 -0500] "GET /demo.html HTTP/1.1" 403 503 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+
+* Fichier d'erreur **/var/log/apache2/error.log**
+
+    $ sudo tail -f /var/log/apache2/error.log
+    [Fri Nov 27 08:20:52.199792 2015] [authz_core:error] [pid 133:tid 3046103872] [client 172.17.42.1:58878] AH01630: client denied by server configuration: /data/www/
+    [Fri Nov 27 08:21:27.097668 2015] [authz_core:error] [pid 132:tid 3029318464] [client 172.17.42.1:58882] AH01630: client denied by server configuration: /data/www/demo.html
+
+
+Le message du serveur est explicite la configuration du serveur refuse d'offrir l'accès au fichier **/data/www/**. COOL !! Le problème est claire et identifier , il ne reste que LA solution :).
+
+### Autorisation d'accès par hostname ou ip ( [Require](https://httpd.apache.org/docs/2.4/mod/mod_authz_core.html#require) )
+
+L'autorisation des accès à l'arborescence du système est définie par les configurations **Directory**, nous avons cette définition dans le fichier **/etc/apache2/apache2.conf** 
+
+        <Directory />
+                Options FollowSymLinks
+                AllowOverride None
+                Require all denied
+        </Directory>
+        <Directory /usr/share>
+                AllowOverride None
+                Require all granted
+        </Directory>
+        <Directory /var/www/>
+                Options Indexes FollowSymLinks
+                AllowOverride None
+                Require all granted
+        </Directory>
+
+Les valeurs de configuration hérité selon l'arborescence ce qui veut dire que **TOUS** les répertoires du file système à l'exception de **/usr/share** et **/var/www** (incluant leur sous répertoire) ont la configuration suivante :
+
+         <Directory />
+                Options FollowSymLinks
+                AllowOverride None
+                Require all denied
+        </Directory>
+
+Nous sommes donc actuellement bloqué par l'instruction : [Require](https://httpd.apache.org/docs/2.4/mod/mod_authz_core.html#require). Sous Ubuntu l'ensemble des accès au système de fichier est refusé depuis la racine (root / ) en dehors des deux répertoires nommés plus tôt.
+
+Vous me demanderez probablement mais pourquoi /usr/share pour permettre l'accès à la documentation, des icônes ou fichier d'erreur page personnalisé pour les erreurs 404 (not found) depuis l'interface web des icônes.
+
+Nous allons confirmer mes propos , en ajoutant les lignes suivante sous l'instruction __<Directory />__ , dans le fichier **/etc/apache2/apache2.conf** voici le résultat:
+
+        <Directory />
+            Options FollowSymLinks
+            AllowOverride None
+            Require all denied
+        </Directory>
+
+        <Directory /data/www >
+            Options FollowSymLinks
+            AllowOverride None
+            Require all granted
+        </Directory>
+
+        <Directory /usr/share>
+        [ .... ]
+
+
+Validons la configuration avant de recharger la configuration :
+
+        $ sudo apachectl configtest
+        Syntax OK
+
+        $ sudo service apache2 reload 
+        * Reloading web server apache2
+        *
+
+Allons à l'URL : [http://127.0.0.1/demo.html](http://127.0.0.1/demo.html) 
+
+Cette notion d'héritage des permissions est très important afin de comprendre l'impacte de permission trop permissive au niveau supérieur de la hiérarchie du système de fichier. 
+
+Profitons de l'occasion pour limiter l'accès à un répertoire pour uniquement un segment réseau , car pour la démonstration ci-dessus nous avons simplement ouvert à TOUS l'accès si nous avions un répertoire __admin__ ou __private__ disponible pour le réseau interne mais qui ne devrais pas être disponible sur l'Internet publique.
+L'instruction [require](https://httpd.apache.org/docs/2.4/mod/mod_authz_core.html#require) nous permet de faire cette limitation . Nous verrons aussi qu'il est possible de mettre un système d'authentification avec nom d'utilisateur et mot de passe.
+
+Nous allons permettre l'accès uniquement au réseau 192.168.100.0/24 (donc toutes les adresses ip qui commence par 192.168.100) et l'ip 192.168.42.42 (juste pour voir la possibilité de mettre plusieurs valeur :) ). Voici le résultat :
+
+        <Directory /data/www >
+            Options FollowSymLinks
+            AllowOverride None
+            Require all granted
+       </Directory>
+
+       <Directory /data/www/admin >
+            Options FollowSymLinks
+            AllowOverride None
+            Require  ip 192.168.100 192.168.42.42
+       </Directory>
+
+Validation de la configuration (oui ! Je suis chiant un peu avec ça mais honnêtement ça l'aide BEAUCOUP ) :
+
+    $ sudo apachectl configtest
+    Syntax OK
+
+Validation du résultat :
+
+![rep_admin_404.png](./imgs/rep_admin_404.png)
+ 
+Dans mon cas j'aurais dû avoir une erreur d'accès car l'ip de ma machine ne correspond pas à celle autorisé, cependant j'ai une erreur 404 (page non trouvée). Ceci est compréhensible car nous n'avons pas fait la création du répertoire **/data/www/admin** . Ceci veut donc dire que Apache valide l'existence du répertoire avant de valider les permissions d'accès , ceci est un détail cependant je désirai le partagé , je croyais que c'était le contraire :D.
+
+Nous allons donc faire la création du répertoire :
+
+    $ sudo mkdir /data/www/admin 
+
+Voilà le bon message d'erreur :) : 
+
+![rep_admin_403.png](./imgs/rep_admin_403.png)
+
+
+# Référence :
+
+* [Documentation Apache 2.4](https://httpd.apache.org/docs/2.4/) : https://httpd.apache.org/docs/2.4/
+* [Liste des code d'état du protocole http](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes): https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+
 
 TODO: demontration du symlink vers /etc/passwd == sudo ln -s /etc/ /var/www/html/sys
