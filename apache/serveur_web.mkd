@@ -469,6 +469,76 @@ Voilà le bon message d'erreur :) :
 ![rep_admin_403.png](./imgs/rep_admin_403.png)
 
 
+### Utilisation du Virtual host par défaut (bonne pratique)
+
+Nous avons modifié la configuration du fichier **/etc/apache2/apache2.conf**, à moins que les configurations sont vraiment général pour l'ensemble du serveur je vous conseil de définir vos configurations dans le virtual host approprié. Ceci est pour la simple et bonne raison qu'il est plus facile de migré la configuration d'un site quand on a l'ensemble de ça définition dans un fichier plutôt qu'avoir des configurations éparpillé. 
+Plusieurs avantage :
+
+* Visualisation de l'ensemble de la configuration à un point
+* Plus facile de migré la site sur un autre serveur , car uniquement un fichier a transférer
+* La configuration du site peut être délégué a une autre personne en lui permettant d'éditer qu'un fichier
+* Permet d'activer ou désactivé l'ensemble des configurations facilement au lieu d'avoir des configurations qui traine quand un site n'est plus en activité.
+* Je pourrais en trouver probablement d'autre mais vous avez compris le concept.
+
+Pour le moment nous n'avons qu'un site je vais donc procéder à la migration de la configuration des répertoires **/data/www** et **/data/www/admin** dans le fichier **/etc/apache2/sites-available/000-default.conf**.
+
+Je vais donc supprimé le ligne du fichier **/etc/apache2/apache2.conf**
+
+    -<Directory /data/www >
+    -       Options FollowSymLinks
+    -       AllowOverride None
+    -       Require all granted 
+    -</Directory>
+    -
+    -<Directory /data/www/admin >
+    -        Options FollowSymLinks
+    -        AllowOverride None
+    -        Require  ip 192.168.100 192.168.42.42
+    -</Directory>
+
+Et les rajouter dans le fichier **/etc/apache2/sites-available/000-default.conf** , Personnellement je le met toujours après le [DocumentRoot](https://httpd.apache.org/docs/2.4/mod/core.html#documentroot), mais c'est juste une habitude.
+
+Validation et relecture de la configuration :) :
+
+    $ sudo apache2ctl configtest && sudo service apache2 reload 
+    Syntax OK
+    * Reloading web server apache2
+    * 
+
+Donc à partir de maintenant nous manipulerons principalement les fichiers de vhost à moins que nous appliquions une modification global au système telle que l'ajout de module.
+
+* NOTE : __commit 5428ce0375006d6be9edf40614c78655409f370b__
+
+### Autorisation d'accès avec authentification local
+
+Nous allons maintenant revoir notre configuration pour l'accès au répertoire admin , au lieu d'utiliser un système de limitation par adresse ip, nous allons mettre en place un authentification local. La limitation par adresse ip c'est bien malheureusement quand nous sommes en mouvement nous n'avons pas toujours la même adresse ip. Nous allons utiliser le module apache [mod_authn_core](https://httpd.apache.org/docs/2.4/mod/mod_authn_core.html#authtype). 
+
+Commençons par valider que ce dernier est bien chargé :
+
+    $ ls -l /etc/apache2/mods-enabled/*auth*
+    lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/auth_basic.load -> ../mods-available/auth_basic.load
+    lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authn_core.load -> ../mods-available/authn_core.load
+    lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authn_file.load -> ../mods-available/authn_file.load
+    lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authz_core.load -> ../mods-available/authz_core.load
+    lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authz_host.load -> ../mods-available/authz_host.load
+    lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authz_user.load -> ../mods-available/authz_user.load
+
+Comme nous pouvons le constater plusieurs module d'authentification sont chargé par défaut incluant [mod_authn_core](https://httpd.apache.org/docs/2.4/mod/mod_authn_core.html#authtype) (ligne 2 :P )
+
+Pour information voici le contenu :
+
+    $ cat /etc/apache2/mods-enabled/authn_core.load 
+    LoadModule authn_core_module /usr/lib/apache2/modules/mod_authn_core.so
+
+Apache charge un fichier **.so** qui est l'équivalent d'un **DLL** qui permet d'avoir une suite d'instruction en plus de disponible pour le service. Le module fut compilé pour la version spécifique d'Apache il n'est pas possible de prendre un module écrit pour la version 2.2 et le faire fonctionner sur la version 2.4 .
+
+TODO: ICI
+ 
+    $ sudo apt-get install apache2-utils
+
+* Référence 
+    * [https://wiki.apache.org/httpd/PasswordBasicAuth](https://wiki.apache.org/httpd/PasswordBasicAuth)
+
 # Référence :
 
 * [Documentation Apache 2.4](https://httpd.apache.org/docs/2.4/) : https://httpd.apache.org/docs/2.4/
