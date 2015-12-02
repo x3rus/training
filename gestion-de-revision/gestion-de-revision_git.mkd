@@ -1,0 +1,38 @@
+# Introduction
+
+Un logiciel de gestion de versions (ou VCS en anglais, pour Version Control System) est un logiciel qui permet de stocker un ensemble de fichiers en conservant la chronologie de toutes les modifications qui ont été effectuées dessus. Il permet notamment de retrouver les différentes versions d'un lot de fichiers connexes. Le système enregistre l'évolution d'un fichier ou d'un ensemble de fichiers au cours du temps de manière à ce qu'on puisse rappeler une version antérieure d'un fichier à tout moment.
+
+Il existe aussi des logiciels et services de gestion de versions décentralisé (distribué) (ou DVCS en anglais, pour Distributed Version Control System). [Git](https://fr.wikipedia.org/wiki/Git) et [Mercurial](https://fr.wikipedia.org/wiki/Mercurial) sont deux exemples de logiciel de gestion de versions décentralisé et sont disponibles sur la plupart des systèmes Unix et Windows. Il est aussi disponible des logiciel de gestion de version centralisé telle que [SVN](https://fr.wikipedia.org/wiki/Apache_Subversion) qui nécessite un serveur pour conserver les fichiers et assuré la gestion des conflits.
+
+Si vous êtes un dessinateur ou un développeur web, et que vous voulez conserver toutes les versions d'une image ou d'une mise en page (ce que vous souhaiteriez assurément), un système de gestion de version (VCS en anglais pour Version Control System) est un outil qu'il est très sage d'utiliser. Il vous permet de ramener un fichier à un état précédent, de ramener le projet complet à un état précédent, de visualiser les changements au cours du temps, de voir qui a modifié quelque chose qui pourrait causer un problème, qui a introduit un problème et quand, et plus encore. Utiliser un VCS signifie aussi généralement que si vous vous trompez ou que vous perdez des fichiers, vous pouvez facilement revenir à un état stable. De plus, vous obtenez tous ces avantages avec peu de travail additionnel.
+
+## La bonne veille méthode 
+
+La méthode historique pour la gestion de version est généralement de recopier les fichiers dans un autre répertoire (peut-être avec un nom incluant la date dans le meilleur des cas). Cette méthode est la plus courante parce que c'est la plus simple, mais c'est aussi la moins fiable. Il est facile d'oublier le répertoire dans lequel vous êtes et d'écrire accidentellement dans le mauvais fichier ou d'écraser des fichiers que vous vouliez conserver. 
+
+Cette méthode souvent à plusieurs lacune, le fichier de "backup" est souvent copié dans un répertoire temporaire, donc parfois effacé lors de nettoyage du système de fichier. Si le fichier est mis à coté de l'original avec une date telle que __httpd.conf__ et  __httpd.conf-2015-06-06__ nous avons une prolifération de fichier dans un même répertoire ce qui ne facilite pas la visualisation des fichiers de configuration. Pire si nous n'avons pas la date et uniquement des extensions __.bak__ , __.bak2__, ... Nous n'avons pas une historique claire des changements réalisé dans le temps, ni qui à réalisé ces changements. Si je fais référence à qui ce n'est pas uniquement pour pouvoir blâmer la personne mais comprendre l'origine du changement qui aujourd'hui me cause un problème.
+
+## Les systèmes de gestion de version centralisés
+
+Le problème majeur que les gens rencontrent est qu'ils ont besoin de collaborer avec des développeurs sur d'autres ordinateurs. Pour traiter ce problème, les systèmes de gestion de version centralisés (CVCS en anglais pour Centralized Version Control Systems) furent développés. Ces systèmes tels que CVS, Subversion, et Perforce, mettent en place un serveur central qui contient tous les fichiers sous gestion de version, et des clients qui peuvent extraire les fichiers de ce dépôt central. Pendant de nombreuses années, cela a été le standard pour la gestion de version .
+
+![VCS_centraliser](./imgs/CVCS-diag.png)
+
+Ce schéma offre de nombreux avantages par rapport à la gestion de version locale. Par exemple, chacun sait jusqu'à un certain point ce que tous les autres sont en train de faire sur le projet. Les administrateurs ont un contrôle fin des permissions et il est beaucoup plus facile d'administrer un CVCS que de gérer des bases de données locales.
+
+Cependant ce système a aussi de nombreux défauts. Le plus visible est le point unique de panne que le serveur centralisé représente. Si ce serveur est en panne pendant une heure, alors durant cette heure, aucun client ne peut collaborer ou **enregistrer les modifications** issues de son travail. Dès qu'on a tout l'historique d'un projet sauvegardé à un endroit unique, on prend le risque de tout perdre.
+
+## Les systèmes de gestion de version distribués
+
+C'est à ce moment que les systèmes de gestion de version distribués entrent en jeu (DVCS en anglais pour Distributed Version Control Systems). Dans un DVCS (tel que Git, Mercurial, Bazaar ou Darcs), les clients n'extraient plus seulement la dernière version d'un fichier, mais ils dupliquent complètement le   [dépôt](https://fr.wikipedia.org/wiki/D%C3%A9p%C3%B4t_%28informatique%29) . Ainsi, si le serveur disparaît et si les systèmes collaboraient via ce serveur, n'importe quel dépôt d'un des clients peut être copié sur le serveur pour le restaurer. Chaque extraction devient une sauvegarde complète de toutes les données .
+
+![DVCS-diag](DVCS-diag.png)
+
+## Dépôt et processus de modification 
+
+
+Les fichiers __versionnés__ sont mis à dispositions sur un [dépôt](https://fr.wikipedia.org/wiki/D%C3%A9p%C3%B4t_%28informatique%29), c'est-à-dire un espace de stockage public géré par un logiciel de gestion de versions.
+
+Pour pouvoir effectuer des modifications, le développeur doit d'abord faire une copie locale des fichiers qu'il souhaite modifier, ou de tout le dépôt. Selon les systèmes de gestion de version, certains fichiers peuvent être verrouillés ou protégés en écriture pour tout le monde, ou pour certaines personnes.
+
+Le développeur fait ces modifications et effectue ses premiers tests localement, indépendamment des modifications faites sur le dépôt du fait du travail simultané d'autres développeurs. Il doit ensuite faire un commit (une soumission), c'est-à-dire soumettre ses modifications, afin qu'elles soient enregistrées sur le dépôt. C'est là que peuvent apparaître des conflits entre ce que le développeur souhaite soumettre et les modifications effectuées depuis la dernière copie locale effectuée. Ces conflits doivent être résolus (merge) pour que le patch soit accepté sur le dépôt.

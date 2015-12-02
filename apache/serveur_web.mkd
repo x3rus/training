@@ -1,5 +1,6 @@
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
 
+
 # Introduction
 
 
@@ -512,7 +513,7 @@ Donc à partir de maintenant nous manipulerons principalement les fichiers de vh
 
 * NOTE : __commit 5428ce0375006d6be9edf40614c78655409f370b__
 
-### Autorisation d'accès avec authentification local
+## Autorisation d'accès avec authentification local
 
 Nous allons maintenant revoir notre configuration pour l'accès au répertoire admin , au lieu d'utiliser un système de limitation par adresse ip, nous allons mettre en place un authentification local. La limitation par adresse ip c'est bien malheureusement quand nous sommes en mouvement nous n'avons pas toujours la même adresse ip. Nous allons utiliser le module apache [mod_authn_core](https://httpd.apache.org/docs/2.4/mod/mod_authn_core.html#authtype). 
 
@@ -577,7 +578,7 @@ Par contre, comme nous n'avons jamais définie de nom d'usagé / mot de passe qu
     [Tue Dec 01 08:40:05.516453 2015] [authn_file:error] [pid 457:tid 2869857088] (2)No such file or directory: [client 172.17.42.1:52744] AH01620: Could not open password file: /data/private-www/.htpasswd-admin
 
 
-#### Création du fichier de mot de passe
+### Création du fichier de mot de passe ( __htpasswd__ )
 
 Pour réaliser la création du fichier contenant le nom d'utilisateur et le mot de passe nous avons besoin de l'application **htpasswd** , cette application est disponible dans le pacquage : **apache2-utils**
 
