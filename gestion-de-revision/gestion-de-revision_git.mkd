@@ -1,3 +1,6 @@
+
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+
 # Introduction
 
 Un logiciel de gestion de versions (ou VCS en anglais, pour Version Control System) est un logiciel qui permet de stocker un ensemble de fichiers en conservant la chronologie de toutes les modifications qui ont été effectuées dessus. Il permet notamment de retrouver les différentes versions d'un lot de fichiers connexes. Le système enregistre l'évolution d'un fichier ou d'un ensemble de fichiers au cours du temps de manière à ce qu'on puisse rappeler une version antérieure d'un fichier à tout moment.
@@ -92,7 +95,44 @@ L'utilisation standard de Git se passe comme suit :
 * vous indexez les fichiers modifiés, ce qui ajoute des instantanés de ces fichiers dans la zone d'index ;
 * vous validez, ce qui a pour effet de basculer les instantanés des fichiers de l'index dans la base de données du répertoire Git.
 
-## Creation d'un dépôt local
+## Création d'un dépôt local (nouveau et récupération d'un dépôt existant)
+
+
+### Initialisation d'un nouveau dépôt local 
+
+Nous allons commencer avec la création d'un nouveau dépôt Git sur le système local. 
+
+1. Déplacez vous dans le répertoire qui contiendra le projet Git, ce dernier peut contenir ou non des fichiers 
+2. utilisez la commande **git init** pour initialisé le dépôt, ceci aura pour effet de créer un répertoire .git dans le répertoire courant contenant le squelette du dépôt car aucun fichier n'est versionné . ( si vous désirez savoir ce que contient ce répertoire en détail voir [les tripes de git](https://git-scm.com/book/fr/v1/Les-tripes-de-Git) 
+
+        $ git init 
+3. Nous allons ajouter des fichiers afin qu'il soit versionné nous allons utiliser la commande **git add**. 
+
+        $ git add *.c
+        $ git add README
+4. Une fois l'identification des fichiers à ajouter dans le contrôle de révision nous pousser cette information dans le dépôt Git , avec un message indiquant la raison de l'opération.
+
+        $ git commit –m 'version initiale du projet'
+
+### Récupération d'un dépôt existant 
+
+Pour récupéré un dépôt existant nous devons utiliser la commande **git clone** , lors du clonage Git reçoit une copie de quasiment toutes les données dont le serveur dispose. Toutes les versions de tous les fichiers pour l'historique du projet sont téléchargées. Si le disque du serveur se corrompt, vous pouvez utiliser n'importe quel clone pour remettre le serveur dans l'état où il était au moment du clonage (vous pourriez perdre quelques paramètres du serveur, mais toutes les données sous gestion de version seraient récupérées. 
+
+Ceci est une particularité important car contrairement à un système de contrôle de révision centralisé quand nous allons interroger l'historique d'un fichier Git n'interroge pas le serveur centrale, mais consulte ça copie local.
+
+Passons à l'étape pratique avec la récupération du dépôt que j'utilise pour la préparation de cette formation disponible sur [GitHub](https://github.com/x3rus]. 
+
+1. Vous positionnez dans un répertoire qui contiendra le dépôt
+2. Utilisation de la commande **git clone** pour faire l'extraction.
+
+        $ git clone https://github.com/x3rus/training.git
+3. Ceci aura pour effet de créer un répertoire training dans le répertoire courant, si vous désirez avoir un autre nom il faut passez en paramètre le nom du répertoire distant telle que démontré ci-dessous, ceci va créer le répertoire formation.
+
+        $ git clone https://github.com/x3rus/training.git formation
+4. Tous comme lors de l'initialisation du dépôt local vous aurez un répertoire **.git** dans le répertoire training ou formation contenant l'information du dépôt avec l'ensemble de l'historique des fichiers versionnés .
+
+Dans l'exemple ci-dessus je fais la démonstration avec un dépôt public la commande est équivalente lors de l'utilisation d'un dépôt privé , git clone vous demandera un nom d'utilisateur et mot de passe .
+
 ## Configuration de git 
 ## Manipulation du dépôt
 ### Ajout , suppression
