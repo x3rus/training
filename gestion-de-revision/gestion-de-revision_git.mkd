@@ -134,9 +134,285 @@ Passons à l'étape pratique avec la récupération du dépôt que j'utilise pou
 Dans l'exemple ci-dessus je fais la démonstration avec un dépôt public la commande est équivalente lors de l'utilisation d'un dépôt privé , git clone vous demandera un nom d'utilisateur et mot de passe .
 
 ## Configuration de git 
+
+TODO: Ajouter la configuration de git avec identification de l'utilisateur ...
+
 ## Manipulation du dépôt
-### Ajout , suppression
+
+Nous allons à présent voir comment utiliser concrètement le système **git** à l'aide d'exemple , ceci est une introduction, il est possible d'aller beaucoup plus loin, je vous invite si le sujet vous intéresse à poursuivre ...
+
+Je vais initialisé un nouveau dépôt et définir un fichier __README__ . 
+
+        $ mkdir demo-git 
+        $ ls -a 
+        .  ..
+        $ git init
+        Initialized empty Git repository in /home/bob/git/demo-git/.git/
+        $ ls -a 
+        .  ..  .git
+        $ echo " Demonstration de GIT " > README
+        $ git add README
+        $ git commit -m " Premier commit avec le fichier README explicatif"
+        [master (root-commit) f044b87]  Premier commit avec le fichier README explicatif
+         1 file changed, 1 insertion(+)
+         create mode 100644 README
+
+Voilà le premier commit avec un fichier Indexé .
+
+Nous allons voir le cycle de vie d'un fichier telle que représenté par l'image ci dessous .
+
+TODO : ajout fichier : https://git-scm.com/figures/18333fig0201-tn.png
+
+
+### Ajout 
+
+Validons l'état du dépôt avec **git status**
+
+        $ git status
+        On branch master
+        nothing to commit, working directory clean
+
+Bon tous est parfait :D , comme le dit le message : **working directory clean**, pour la partie de la __branch__ on y reviendra plus tard.
+
+Si nous ajoutons un fichier le message sera différent nous indiquant que le nouveau fichier n'est pas révisionné.
+
+        $ echo "le nouveau Fichier, le README mais francais  " > README_FR
+        $ git status 
+        On branch master
+        Untracked files:
+          (use "git add <file>..." to include in what will be committed)
+
+              README_FR
+
+        nothing added to commit but untracked files present (use "git add" to track)
+
+Le système nous indique la présence du nouveau fichier mais que le dépôt ne conserve pas l'historique du fichier. Comme le message l'indique et comme nous l'avons déjà fait pour le fichier __README__ nous allons utiliser la commande ***git add** pour faire l'ajout du fichier.
+
+        $ git add README_FR
+        $ git status
+        On branch master
+        Changes to be committed:
+         (use "git reset HEAD <file>..." to unstage)
+
+               new file:   README_FR
+
+À ce stade le fichier est indexé , en mode **staged** dans le diagramme présenté plus tôt , quand les fichiers seront validé **commit** alors se fichier sera placé dans le dépôt Git, avec l'ensemble des autre fichiers dans l'indexe ou __"stagé"__.
+
+Dans le cas d'un fichier déjà présent dans le dépôt telle que **README** si nous réalisons une modification dans le fichier et que nous affichons l'état du dépôt. 
+
+        $  echo "Une nouvelle ligne dans le README " >> README 
+        $ cat README
+        Demonstration de GIT 
+        Une nouvelle ligne dans le README 
+        $ git status 
+        On branch master
+        Changes to be committed:
+          (use "git reset HEAD <file>..." to unstage)
+
+                  new file:   README_FR
+
+        Changes not staged for commit:
+          (use "git add <file>..." to update what will be committed)
+          (use "git checkout -- <file>..." to discard changes in working directory)
+
+                  modified:   README
+
+Je ne vous ferai pas une traduction du message , en gros après avoir fait une modification sur un fichier pour le mettre en état indexé donc __stagé__ nous devrions réaliser la commande **git add** de nouveau sur le fichier. Ceci fera en sorte que le fichier **README** qui fut déjà révisionné lors de l'initialisation du dépôt sera mis dans l'état Indexé pour le __staging__ de la prochaine validation . Nous ferions donc :
+
+        $ git add README
+        $ git status 
+        On branch master
+        Changes to be committed:
+        (use "git reset HEAD <file>..." to unstage)
+
+             modified:   README
+             new file:   README_FR
+
+Nous allons valider **commit** les fichiers afin de bien voir la finalité des états des fichiers 
+
+        $ git commit -m " Une dremonstration de l'ajout de fichier et la modification de fichier "
+        [master 3bb562a]  Une dremonstration de l'ajout de fichier et la modification de fichier
+         2 files changed, 2 insertions(+)
+         create mode 100644 README_FR
+        $ git status 
+        On branch master
+        nothing to commit, working directory clean
+
+Retour à un dépôt propre car l'ensemble des fichiers placé dans l'état Indexé (__staging__) sont maintenant validé dans le dépôt Git.
+
+Je me doute ce que vous vous dites , c'est vraiment lourd d'être obligé de faire **git add** à chaque fois que je modifie un fichier pour le mettre dans l'index pour la prochain commit. Faut le voir comme un système de sécurité surtout si vous manipulez des fichiers __critiques__ de production. Effectivement si vous réalisez un modification de plusieurs fichier , comme c'est le cas lors du développement applicatif cette opération peut être perçu comme fastidieuse .
+
+La solution est d'utiliser l'option **-a** lors de la validation  **commit**. Démonstration :
+
+        $ echo "Une nouvelle modification afin de demontrer l'option -a " >> README
+        bob@xerus:~/git/demo-git$ git status
+        On branch master
+        Changes not staged for commit:
+          (use "git add <file>..." to update what will be committed)
+          (use "git checkout -- <file>..." to discard changes in working directory)
+
+                modified:   README
+
+        no changes added to commit (use "git add" and/or "git commit -a")
+
+        $ git commit -a -m "Demontration que l'on est pas obliger de faire add pour les fichier modifier" 
+         [master 94e83f3] Demontration que l'on est pas obliger de faire add pour les fichier modifier
+         1 file changed, 1 insertion(+)
+
+**ATTENTION** : ceci ne fonctionne que si le fichier fut ajouté dans le dépôt sinon vous aurez un message d'erreur 
+
+        $ touch Un_nouveau_fichier
+        $ git status
+        On branch master
+        Untracked files:
+        (use "git add <file>..." to include in what will be committed)
+
+            Un_nouveau_fichier
+
+        nothing added to commit but untracked files present (use "git add" to track)
+        $ git commit -a -m " test d'ajout d'un nouveau fichier qui ne fut pas ajouter dans le depot"
+        On branch master
+        Untracked files:
+                   Un_nouveau_fichier
+
+        nothing added to commit but untracked files present
+        $ git status
+        On branch master
+        Untracked files:
+          (use "git add <file>..." to include in what will be committed)
+
+                Un_nouveau_fichier
+
+        nothing added to commit but untracked files present (use "git add" to track)
+
+
+Pour les personnes qui utilisent déjà Git maintenant vous savez pourquoi vous devez mettre l'option **-a** , vous le ferez maintenant en connaissance de cause pas uniquement parce que le message vous le suggère.
+
+Je vais supprimer le fichier car nous n'en avons plus besoin ce n'était que pour la démonstration.
+
+        $ rm Un_nouveau_fichier
+
+### Ignore files
+
+C'est sympathique que Git nous indique les fichiers qui ne sont pas indexé ou non révisionné, cependant il est possible que des fichiers se trouve dans le répertoire mais que l'on désire pas avoir dans le dépôt. Les raisons sont nombreuses , a commencé parce que l'on a pas envoie :P ou c'est des fichiers qui sont généré lors de l'utilisation , telle que les fichiers __.swp__ de Vim , les fichiers __.so__  lors de la compilation du programmes ... 
+
+Pour corriger le problème nous pouvons définir un fichier nommé **.gitignore**, voici la structure:
+
+* **#** : pour définir des commentaires 
+* Utilisation des expressions régulière pour définir les fichiers
+* s'il y a utilisation du caractère **!** il est possible d'invalider les autres règles et donc de s'assurer que le fichier soit révisionné.
+* S'il y a un **/** à la fin ceci indique que l'on parle d'un répertoire
+
+Voici un exemple très simple si nous désirons ignorer les fichiers de type **.dtd**
+
+        $ touch data_generate.dtd
+        $ touch scrubble_data.dtd
+        $ git status
+        On branch master
+        Untracked files:
+          (use "git add <file>..." to include in what will be committed)
+
+                data_generate.dtd
+                scrubble_data.dtd
+        $ vim .gitignore
+        # Exclusion des fichier .dtd
+        *.dtd
+        $ git status
+        On branch master
+        Untracked files:
+          (use "git add <file>..." to include in what will be committed)
+
+            .gitignore
+
+        nothing added to commit but untracked files present (use "git add" to track)
+
+Nous n'avons plus la présence des fichiers __.dtd__, bien entendu nous avons le fichier **.gitignore** que l'on voudra probablement définir dans le dépôt car si le fichier est pertinent pour nous il l'ai probablement pour l'ensemble des collaborateurs .
+
+        $ git add .gitignore 
+        $ git status
+        On branch master
+        Changes to be committed:
+          (use "git reset HEAD <file>..." to unstage)
+
+                  new file:   .gitignore
+
+        $ git commit -m " Ajout du fichier pour ignorer , les fichiers generes"
+        [master 1b7ba93]  Ajout du fichier pour ignorer , les fichiers generes
+         1 file changed, 2 insertions(+)
+         create mode 100644 .gitignore
+        $ git status
+        On branch master
+         nothing to commit, working directory clean
+
+Voici un exemple d'un autre fichier **.gitignore** très instructif :
+
+        # un commentaire, cette ligne est ignorée
+        # pas de fichier .a
+        *.a
+        # mais suivre lib.a malgré la règle précédente
+        !lib.a
+        # ignorer uniquement le fichier TODO à la racine du projet
+        /TODO
+        # ignorer tous les fichiers dans le répertoire build
+        build/
+        # ignorer doc/notes.txt, mais pas doc/server/arch.txt
+        doc/*.txt
+        # ignorer tous les fichiers .txt sous le répertoire doc/
+        doc/**/*.txt
+
+
+### Suppression et renommer 
+
+Pour effacer un fichier de Git, vous devez l'éliminer des fichiers en suivi de version (plus précisément, l'effacer dans la zone d'index) puis valider. La commande **git rm** réalise cette action mais efface aussi ce fichier de votre copie de travail de telle sorte que vous ne le verrez pas réapparaître comme fichier non suivi en version à la prochaine validation.
+
+Démonstration, ajoutons un fichier pour le supprimer par la suite :
+
+        $ echo "Le mauvais contenu " >> un_mauvais_fichier
+        $ git add un_mauvais_fichier
+        git commit -m "ajout d'un fichier pour le supprimer "
+        [master 2b89a72] ajout d'un fichier pour le supprimer
+         1 file changed, 1 insertion(+)
+         create mode 100644 un_mauvais_fichier
+
+Procédons à la suppression :
+
+        $ git rm un_mauvais_fichier 
+        rm 'un_mauvais_fichier'
+        $ ls
+        README  README_FR  data_generate.dtd  scrubble_data.dtd
+        $ git status
+        On branch master
+        Changes to be committed:
+          (use "git reset HEAD <file>..." to unstage)
+
+                deleted:    un_mauvais_fichier
+        $ git commit -m " suppression d'un fichier "
+        [master 4df0865]  suppression d'un fichier
+         1 file changed, 1 deletion(-)
+         delete mode 100644 un_mauvais_fichier
+        $ git status
+        On branch master
+        nothing to commit, working directory clean
+
+
+Pour la récupération d'un fichier supprimé dans le dépôt mais qui finalement été importante nous le verrons plus tard , pour les gens pressé voir ici (TODO : ajouter le lien , quand l'article sera fait :P )
+
+À la différence des autres VCS, Git ne suit pas explicitement les mouvements des fichiers. Si vous renommez un fichier suivi par Git, aucune méta-donnée indiquant le renommage n'est stockée par Git. Néanmoins, Git est assez malin pour s'en apercevoir après coup — la détection de mouvement de fichier sera traitée plus loin.
+
+        $ git mv README_FR LISEZMOI  
+        $ git status
+        On branch master
+        Changes to be committed:
+          (use "git reset HEAD <file>..." to unstage)
+
+                  renamed:    README_FR -> LISEZMOI
+        $ git commit -m " Renommage de README_FR par LISEZMOI"
+        [master 41a1679]  Renommage de README_FR par LISEZMOI
+         1 file changed, 0 insertions(+), 0 deletions(-)
+         rename README_FR => LISEZMOI (100%)
+
 ### Visualisation
 ### Retour arrière
 ## Manipulation de branche
 ## Merge
+## Utilisation d'application Graphique
