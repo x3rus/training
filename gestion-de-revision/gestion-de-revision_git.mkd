@@ -411,8 +411,76 @@ Pour la récupération d'un fichier supprimé dans le dépôt mais qui finalemen
          1 file changed, 0 insertions(+), 0 deletions(-)
          rename README_FR => LISEZMOI (100%)
 
+Bien entendu pour enregistrer cette modification vous devrez utiliser la commande **git commit** pour valider le changement.
+
 ### Visualisation
+
+L'avantage principale du système de gestion de contrôle de révision est de pouvoir visualiser dans le temps les modifications et de revenir en arrière. Nous venons de visualiser comment créer un dépôt, et valider nos modifications il est temps de visualiser nos modifications dans le temps. Afin de faire la démonstration, je vais utiliser un dépôt publique qui contient déjà plusieurs **commit** . Procédons avec le clonage du dépôt [glpi-nwipe https://github.com/x3rus/glpi-nwipe.git](https://github.com/x3rus/glpi-nwipe.git).
+
+        $ cd ~/git/
+        $ git clone https://github.com/x3rus/glpi-nwipe.git
+        Cloning into 'glpi-nwipe'...
+        remote: Counting objects: 77, done.
+        remote: Total 77 (delta 0), reused 0 (delta 0), pack-reused 77
+        Unpacking objects: 100% (77/77), done.
+        Checking connectivity... done.
+        $ cd glpi-nwipe
+
+Pour information ce dépôt est un ensemble de script qui permet avec un serveur __PXE__ de supprimer l'ensemble du contenu d'un disque dur avec __nwipe__ l'équivalent de l'application __dban__ puis change la configuration dans __GLPI__ afin que le statut de la machine soit conforme. Si vous voulez plus d'information nous pourrons en parler en dehors de cette formation.
+
+Nous allons maintenant utiliser la commande **git log** , pour visualiser l'ensemble des validations (**commit**) qui furent réalisés. Voici le résultat de la commande pour le dépôt __glpi-nwipe__ 
+
+        $ git log
+        commit 27b3d4550df9c8da87861fe68d2ab929319d83fe
+        Author: x3rus <Thomas.boutry@x3rus.com>
+        Date:   Wed May 27 16:05:30 2015 -0400
+
+                Update LICENSE.md
+        
+                Ajout de la licence
+
+        commit 349541d3272da9f1cf9845ccfe498c957801f1a1
+        Author: Thomas Boutry <thomas.boutry@x3rus.com>
+        Date:   Wed May 27 16:12:28 2015 -0400
+
+                ajustement de la documentation, il faut encore definir les instructions pour l'installation du serveur PXE ls!
+
+        commit 9c607e8dd1792c91bafa27947930ae714dd071ee
+        Author: Thomas Boutry <thomas.boutry@x3rus.com>
+        Date:   Wed May 27 15:58:06 2015 -0400
+
+                ajustement pour publication sur github
+
+        commit b1b5cdff8cac093101629c830851a4de2ab05ccf
+        Author: Thomas Boutry <thomas.boutry@x3rus.com>
+        Date:   Wed May 27 15:52:16 2015 -0400
+
+                Correction des print pour que ce soit compatible python3
+
+        commit ac0a04f1776fc8b83e7bf411dde3d5a315351fcd
+        Author: Thomas Boutry <thomas.boutry@x3rus.com>
+        Date:   Mon Mar 2 17:43:15 2015 -0500
+
+                Ajout de la documention pour la mise en place du setup
+
+        [ ... Trunqué ... ]
+        [ ... Trunqué ... ]
+
+Nous voyons l'ensemble des **commits** avec :
+
+* le nom de la personne qui fait la modification
+* La date du changement 
+* le commentaire que la personne a laissé lors de la validation
+* Un numéro d'identification du commit de 41 caractère
+
+Si l'on regarde l'ensemble du résultat on peu constater que le projet à commencer le décembre 9 2014 et le dernier commit date du mai 27 2015. 
+
+TODO : continuer ici
+
 ### Retour arrière
 ## Manipulation de branche
 ## Merge
 ## Utilisation d'application Graphique
+# Avantage et défauts
+
+TODO : Fournir un cheat cheet pour git
