@@ -475,12 +475,110 @@ Nous voyons l'ensemble des **commits** avec :
 
 Si l'on regarde l'ensemble du résultat on peu constater que le projet à commencer le décembre 9 2014 et le dernier commit date du mai 27 2015. 
 
-TODO : continuer ici
+Il est possible de visualiser les fichiers qui furent modifiés lors de la validation (**commit**) avec les plus et les moins , avec l'argument **stat**
+
+        $ git log --stat
+        commit 27b3d4550df9c8da87861fe68d2ab929319d83fe
+        Author: x3rus <Thomas.boutry@x3rus.com>
+        Date:   Wed May 27 16:05:30 2015 -0400
+
+            Update LICENSE.md
+                
+        Ajout de la licence
+
+         LICENSE.md | 674 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+         1 file changed, 674 insertions(+)
+
+        commit 349541d3272da9f1cf9845ccfe498c957801f1a1
+        Author: Thomas Boutry <thomas.boutry@x3rus.com>
+        Date:   Wed May 27 16:12:28 2015 -0400
+
+            ajustement de la documentation , il faut encore definir les instructions pour l'installation du serveur PXE ls!
+
+         README             |  0
+         README.md          | 20 ++++++++++----------
+         Setup_DHCP.md      |  4 ++--
+         Setup_PXEserver.md | 11 +++++++++--
+         4 files changed, 21 insertions(+), 14 deletions(-)
+
+        [ ... Trunqué ... ]
+        [ ... Trunqué ... ]
+
+
+Allons encore plus loin avec l'ensemble des détails des modifications avec l'option **-p**, il est possible de passer un nombre pour n'afficher que le # validation (**commit**) .
+
+        $ git log -p 
+        [ ... Trunqué ... ]
+        [ ... Trunqué ... ]
+        commit 349541d3272da9f1cf9845ccfe498c957801f1a1
+        Author: Thomas Boutry <thomas.boutry@x3rus.com>
+        Date:   Wed May 27 16:12:28 2015 -0400
+
+             ajustement de la documentation , il faut encore definir les instructions pour l'installation du serveur PXE ls!
+
+        diff --git a/README b/README
+        deleted file mode 100644
+        index e69de29..0000000
+        diff --git a/README.md b/README.md
+             ajustement de la documentation , il faut encore definir les instructions pour l'installation du serveur PXE ls!
+
+        diff --git a/README b/README
+        deleted file mode 100644
+        index e69de29..0000000
+        diff --git a/README.md b/README.md
+        index d0d0253..064948b 100644
+        --- a/README.md
+        +++ b/README.md
+        @@ -2,26 +2,27 @@
+
+             French version available here : README-FR.md
+
+             -This script was originaly created when we had to wipe hundred computers and 
+             -update the inventory system (GLPI -> URL-project) with the new status. 
+             +This script was originally created when we had to wipe hundred computers and 
+             +update the inventory system (GLPI : http://www.glpi-project.org) with the new status. 
+
+             -We used the  dban cd (URL-project) for one or two computer it's ok , and manually updated the
+             -GLPI web site. 
+             +Boot with the  dban cd (http://www.dban.org) and manually updated GLPI, it's ok for 
+             +one or two computer but after ... 
+        [ ... Trunqué ... ]
+        [ ... Trunqué ... ]
+
+Ceci est pour la ligne de commande bien entendu il existe aussi des applications graphiques 
+
+* **gitk** : Version officiel de git , pas très beau mais efficace :D
+* **giggle** : Version de gnome  http://live.gnome.org/giggle
+* **gitg** : Autre Version de gnome http://wiki.gnome.org/Apps/Gitg
+
+Je ne dis pas que ceux nommé ci-dessus son les meilleurs pour le moment personnellement je n'utilise que **gitk** , si vous en connaissez d'autre agréable et surtout libre , n'hésitez pas à le partager avec moi :D.
 
 ### Retour arrière
+
+Un autre point avantageux avec l'utilisation d'un gestionnaire de révision est le coté révision :P et la possibilité d'avoir un retour arrière. Ceci est un filet de sécurité important ! Je vous conseil fortement d'être confortable avec votre système de gestionnaire de révision avec les questions de retour arrière, ceci sera un atout majeur pour vous.
+Bon fini le blabla on y va dans le vif du sujet.
+
+Débutons avec la visualisation de l'état de notre dépôt (__glpi-nwipe__):
+
+        $ git status
+        On branch master
+        Your branch is up-to-date with 'origin/master'.
+
+        nothing to commit, working directory clean
+
+Visualisons les derniers **commit**
+
+        $ git log --pretty=oneline
+        27b3d4550df9c8da87861fe68d2ab929319d83fe Update LICENSE.md
+        349541d3272da9f1cf9845ccfe498c957801f1a1  ajustement de la documentation , il faut encore definir les instructions pour l'inst
+        9c607e8dd1792c91bafa27947930ae714dd071ee  ajustement pour publication sur github
+
+Nous allons faire quelques modifications, pour manipuler le tous .
+
+TODO : reprendre modification realisation dans le dépôt glpi-nwipe .. afficher le diff et faire un reverte d'un fichier
+
 ## Manipulation de branche
 ## Merge
-## Utilisation d'application Graphique
 # Avantage et défauts
 
 TODO : Fournir un cheat cheet pour git
