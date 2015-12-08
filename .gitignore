@@ -1,2 +1,4 @@
 # Ignore les fichiers .html car ces derniers sont le résultat de la génération avec markdown
 *.html
+# Ignore swap file from VIM
+*.swp
