@@ -555,7 +555,7 @@ Je ne dis pas que ceux nommé ci-dessus son les meilleurs pour le moment personn
 
 ### Retour arrière
 
-Un autre point avantageux avec l'utilisation d'un gestionnaire de révision est le coté révision :P et la possibilité d'avoir un retour arrière. Ceci est un filet de sécurité important ! Je vous conseil fortement d'être confortable avec votre système de gestionnaire de révision avec les questions de retour arrière, ceci sera un atout majeur pour vous.
+Un autre point avantageux avec l'utilisation d'un gestionnaire de révision est le coté révision :P et la possibilité d'avoir un retour arrière. Ceci est un filet de sécurité important ! Je vous conseil fortement d'être confortable avec votre système de gestionnaire de révision pour les retour arrière, ceci sera un atout majeur pour vous.
 Bon fini le blabla on y va dans le vif du sujet.
 
 Débutons avec la visualisation de l'état de notre dépôt (__glpi-nwipe__):
@@ -574,6 +574,65 @@ Visualisons les derniers **commit**
         9c607e8dd1792c91bafa27947930ae714dd071ee  ajustement pour publication sur github
 
 Nous allons faire quelques modifications, pour manipuler le tous .
+
+#### Rectification du dernier commit
+
+##### Amend (correction du dernier commit)
+
+Commençons avec le correctif du dernier **commit**, dans le cas où vous réaliser un commit et que vous constatez que vous avec oublié un fichier ou que le commentaire est erroné. La commande **--amend** nous permet de rectifier le dernier commit.
+Voici un exemple d'utilisation sur le dépôt local de __glpi-nwipe__:
+
+    $ # Edition du fichier README.md
+    $ vim  README
+    $ git diff 
+    git diff
+    diff --git a/README.md b/README.md
+    index 064948b..8f74c4a 100644
+    --- a/README.md
+    +++ b/README.md
+    @@ -5,7 +5,7 @@ French version available here : README-FR.md
+    This script was originally created when we had to wipe hundred computers and
+    update the inventory system (GLPI : http://www.glpi-project.org) with the new status.
+
+     -Boot with the  dban cd (http://www.dban.org) and manually updated GLPI, it's ok for 
+     +The original procedure was to boot with the  dban cd (http://www.dban.org) and manually updated GLPI, it's ok for 
+      one or two computer but after ...
+
+      This script should be use with a PXE server, you boot the computer on the network and
+    $ git commit -a -m " Modification de README "
+    [master af2a818]  Modification de README
+     1 file changed, 1 insertion(+), 1 deletion(-)
+    $ git status
+    On branch master
+    Your branch is ahead of 'origin/master' by 1 commit.
+      (use "git push" to publish your local commits)
+
+      nothing to commit, working directory clean
+
+
+Avec la commande **git commit --amend** je vais pourvoir **REFAIRE** mon __commit__ avec le nouveau contenu ça peut être juste pour modifier le commentaire de commit ou pour rajouter d'autre modification dans le dernier commit. Ceci est très intéressant car on est souvent porté à __commiter__ rapidement pour garder une trace. Ceci n'est plus un problème, car il est possible de rajouter de l'information sur le dernier __commit__.
+**Note**: Ceci est possible sur le dépôt local , cependant une fois pousser sur un serveur distant ceci n'est pas possible.
+
+##### Annulation des modifications d'un fichier
+
+Autre situation très connu, on travail sur un fichier du dépôt puis finalement le résultat est pire qu'a l'origine :P. Il y a des jours comme ça, finalement on se dit le fichier d'origine été mieux. Ceci est possible **avant** de faire son __commit__ , il est possible de reprendre un ou plusieurs fichiers. 
+
+    $ vim README.md
+    $ head README.md
+    == Description ==
+
+    Je rajouter du texte que je ne veux pas finalement mais je le sais pas encore 
+
+    French version available here : README-FR.md
+    $ git status
+    [ ... COUPÉ ...]
+    modified:   README.md
+    [ ... COUPÉ ...]
+    $ git checkout README.md
+    $ git status
+    nothing to commit, working directory clean
+#### Reset
+#### Revert
 
 TODO : reprendre modification realisation dans le dépôt glpi-nwipe .. afficher le diff et faire un reverte d'un fichier
 
