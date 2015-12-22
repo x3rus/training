@@ -615,7 +615,7 @@ Avec la commande **git commit --amend** je vais pourvoir **REFAIRE** mon __commi
 
 ##### Annulation des modifications d'un fichier
 
-Autre situation très connu, on travail sur un fichier du dépôt puis finalement le résultat est pire qu'a l'origine :P. Il y a des jours comme ça, finalement on se dit le fichier d'origine été mieux. Ceci est possible **avant** de faire son __commit__ , il est possible de reprendre un ou plusieurs fichiers. 
+Autre situation très connu, on travail sur un fichier du dépôt puis finalement le résultat est pire qu'a l'origine :P. Il y a des jours comme ça, finalement on se dit le fichier d'origine été mieux. Il est possible **avant** de faire son __commit__ de reprendre le fichier original avec la commande **git checkout**.
 
     $ vim README.md
     $ head README.md
@@ -631,7 +631,56 @@ Autre situation très connu, on travail sur un fichier du dépôt puis finalemen
     $ git checkout README.md
     $ git status
     nothing to commit, working directory clean
+
 #### Reset
+
+Je vous suggère de ne pas utiliser la méthode __reset__ mais de toujours privilégier la méthode suivante __Revert__ , j'ai hésité à faire la démonstration de cette méthode. Finalement, est-ce à moi de juger par omission si une fonctionnalité doit être présenté ou non :D.
+
+Pour rappel git identifie chaque commit avec un **id** , nous pouvons voir dans le temps les modifications. Ceci peut être représenté avec le diagramme suivant : 
+
+TODO: Ajouter une image avec la représentation de git.
+
+Lors de l'utilisation de la commande __reset__ nous indiquons à **git** de supprimer l'ensemble des __commit__ effectué pour ne conservé comme dernier __commit__ ( aussi appelé la tête **HEAD**) le commit fournit en paramètre. Si nous reprenons la représentation graphique ceci donne :
+
+TODO: Ajouter une image avec le résultat du git reset.
+
+Pourquoi cette méthode est peu élégante ?? La raison principale et que nous perdons l'information sur l'historique des modifications . Si vous êtes seul sur le projet l'impact est probablement moins critique bien que dans 6 mois votre mémoire aura probablement oublié qu'une partie des modifications fut supprimer sans aucune trace.
+La méthode suivante __revert__ nous permet de conserver cette historique.
+
+Voici un exemple d'utilisation de **git reset** , voici un dépôt GIT , avec quelques 4 __commits__
+
+    $ git log --pretty=oneline
+    b520936b2fbd52666092c3ce1d88c99c1124c25c  ajout de A et B dans Fichier[AB]
+    6caacfa169041ab7b8055c56911e7c813cbc8694 modification des 3 fichiers
+    2e1ce9386472407c2d2f15a2aa13532aa79ce2d7  Ajout du fichier C
+    84f8cd1340aade4b38310c838d3122589c3dd7c3  Initialisation  , avec fichier A et B
+
+Nous allons procéder à un **reset** pour annuler les modifications "ajout de A et B dans Fichier[AB]" ET "modification des 3 fichiers". Voici la commande et le résultat de l'opération :
+
+    $ git reset 2e1ce9386472407c2d2f15a2aa13532aa79ce2d7
+    Unstaged changes after reset:
+    M       FichierA
+    M       FichierB
+    M       FichierC
+    $ git log --pretty=oneline
+    2e1ce9386472407c2d2f15a2aa13532aa79ce2d7  Ajout du fichier C
+    84f8cd1340aade4b38310c838d3122589c3dd7c3  Initialisation  , avec fichier A et B
+
+Comme vous pouvez le constater nous avons perdu TOUTES traces des explication des modifications , dans notre cas l'impact est de uniquement 2 __commits__ ceci est probablement moins critique mais sur 5 ou 6 __commits__ voir plus ceci être ennuyeux.
+Nous devons __commiter__ le changement pour qu'il soit tout de même inscrit dans l'historique.
+
+    $ git status -s         
+    M FichierA
+    M FichierB
+    M FichierC
+    $ git commit -a -m " Reset de plusieurs commits "
+    $ git log --pretty=oneline
+    bb6a8d445bd9d84479b47c1debd87b4208057490  Reset de plusieurs commits
+    2e1ce9386472407c2d2f15a2aa13532aa79ce2d7  Ajout du fichier C
+    84f8cd1340aade4b38310c838d3122589c3dd7c3  Initialisation  , avec fichier A et B
+
+Bon voyons à présent **revert** si c'est vraiment mieux :P.
+
 #### Revert
 
 TODO : reprendre modification realisation dans le dépôt glpi-nwipe .. afficher le diff et faire un reverte d'un fichier
