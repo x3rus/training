@@ -683,6 +683,8 @@ Bon voyons à présent **revert** si c'est vraiment mieux :P.
 
 #### Revert
 
+Le processus de __revert__ n'est pas tous à fait le même que __reset__ , comme son nom l'indique __reset__ réinitialiser l'ensemble du dépôt à un état dans le passé. L'instruction __revert__ nous permet non pas de réinitialiser un état mais de renverser / annuler un __commit__ particulier, ceci tous en conservant l'historique des modifications.
+
 TODO : reprendre modification realisation dans le dépôt glpi-nwipe .. afficher le diff et faire un reverte d'un fichier
 
 ## Manipulation de branche
