@@ -638,7 +638,7 @@ Je vous suggère de ne pas utiliser la méthode __reset__ mais de toujours privi
 
 Pour rappel git identifie chaque commit avec un **id** , nous pouvons voir dans le temps les modifications. Ceci peut être représenté avec le diagramme suivant : 
 
-TODO: Ajouter une image avec la représentation de git.
+TODO: Ajouter une image avec la représentation de git. (valider licence https://www.atlassian.com/git/tutorials/resetting-checking-out-and-reverting/summary)
 
 Lors de l'utilisation de la commande __reset__ nous indiquons à **git** de supprimer l'ensemble des __commit__ effectué pour ne conservé comme dernier __commit__ ( aussi appelé la tête **HEAD**) le commit fournit en paramètre. Si nous reprenons la représentation graphique ceci donne :
 
@@ -685,7 +685,164 @@ Bon voyons à présent **revert** si c'est vraiment mieux :P.
 
 Le processus de __revert__ n'est pas tous à fait le même que __reset__ , comme son nom l'indique __reset__ réinitialiser l'ensemble du dépôt à un état dans le passé. L'instruction __revert__ nous permet non pas de réinitialiser un état mais de renverser / annuler un __commit__ particulier, ceci tous en conservant l'historique des modifications.
 
+TODO: Ajout d'une représentation graphique du __revert__
+
+Voyons un exemple pour représenter le tout , je vais continuer avec le dépôt __git-demo__, j'ai réalisé quelques modifications pour les besoins voici le __git log__ :
+
+    $ git log --pretty=oneline
+    50dcb3cd131fe7d245cbc205d8d3e9776b556999  Modification du fichier A pour finaliser la demonstration
+    b7c6d7c50b4f0a79d1bd3a1a6ec33a1430792d41  Je modifie C pour avoir un autre com
+    40e85b5d1de8a77313f32780a8bc5347d1069219  Modif fichier B pour ajout info
+    bb6a8d445bd9d84479b47c1debd87b4208057490  Reset de plusieurs commits
+    2e1ce9386472407c2d2f15a2aa13532aa79ce2d7  Ajout du fichier C
+    84f8cd1340aade4b38310c838d3122589c3dd7c3  Initialisation  , avec fichier A et B
+    $ git status
+    On branch master
+    nothing to commit, working directory clean
+
+Je désire renversé le __commit 40e85b5d1de8a77313f32780a8bc5347d1069219__ qui contient la modification du Fichier B, pour le plaisir nous allons visualisé le contenu :D. Nous regardons ce que contient le __commit (Reset de plusieurs commits)__  avec ce que contient le __commit  (Modif fichier B pour ajout info)__.
+
+    $ git diff bb6a8d445bd9d84479b47c1debd87b4208057490 40e85b5d1de8a77313f32780a8bc5347d1069219
+    diff --git a/FichierB b/FichierB
+    index 94c1267..f3ba53b 100644
+    --- a/FichierB
+    +++ b/FichierB
+    @@ -1,3 +1,6 @@
+    un fichier PAS nomme Fichier A
+    Ceci est le deuxieme fichier
+    B
+    +
+    +
+    +Modification du Fichier B pour ajout d'information 
+
+Je vais donc Renversé l'ajout des lignes identifier avec un + contenu dans **fichierB**.
+
+    $ git revert 40e85b5d1de8a77313f32780a8bc5347d1069219
+    [master cf4adb3] Revert " Modif fichier B pour ajout info"
+     1 file changed, 3 deletions(-)
+
+Nous voyons un nouveau commit qui comprend la suppression :
+
+    $ git log --pretty=oneline
+    cf4adb3ce6e6bf76429f88e5a53087cdc79407e8 Revert " Modif fichier B pour ajout info"
+    50dcb3cd131fe7d245cbc205d8d3e9776b556999  Modification du fichier A pour finaliser la demonstration
+    b7c6d7c50b4f0a79d1bd3a1a6ec33a1430792d41  Je modifie C pour avoir un autre com
+    40e85b5d1de8a77313f32780a8bc5347d1069219  Modif fichier B pour ajout info
+    bb6a8d445bd9d84479b47c1debd87b4208057490  Reset de plusieurs commits
+    2e1ce9386472407c2d2f15a2aa13532aa79ce2d7  Ajout du fichier C
+    84f8cd1340aade4b38310c838d3122589c3dd7c3  Initialisation  , avec fichier A et B
+
+Si nous visualisons le fichier effectivement le contenu n'est plus présent et le différentiel du commit le confirme :D
+
+    $ cat FichierB
+    un fichier PAS nomme Fichier A
+    Ceci est le deuxieme fichier
+    B
+
+
+    $ git diff 50dcb3cd131fe7d245cbc205d8d3e9776b556999 cf4adb3ce6e6bf76429f88e5a53087cdc79407e8
+    diff --git a/FichierB b/FichierB
+    index f3ba53b..94c1267 100644
+    --- a/FichierB
+    +++ b/FichierB
+    @@ -1,6 +1,3 @@
+    un fichier PAS nomme Fichier A
+    Ceci est le deuxieme fichier
+    B
+    -
+    -
+    -Modification du Fichier B pour ajout d'information
+
 TODO : reprendre modification realisation dans le dépôt glpi-nwipe .. afficher le diff et faire un reverte d'un fichier
+
+#### Checkout dans un commit passé 
+
+Il est aussi possible de renversé un fichier dans un état passer avec la commande **checkout** déjà aperçu un peu plus tôt. Voici l'état du dépôt __git-demo__:
+
+    $ git log --pretty=oneline
+    f8152f8c96762c39a7efb61f370feb04619d347d modif de C avant de faire le checkout
+    64bd30cb5ce64b4fe38a9db12b40ca5da7ec7660  modif de A et C
+    cf4adb3ce6e6bf76429f88e5a53087cdc79407e8 Revert " Modif fichier B pour ajout info"
+    50dcb3cd131fe7d245cbc205d8d3e9776b556999  Modification du fichier A pour finaliser la demonstration
+    b7c6d7c50b4f0a79d1bd3a1a6ec33a1430792d41  Je modifie C pour avoir un autre com
+    40e85b5d1de8a77313f32780a8bc5347d1069219  Modif fichier B pour ajout info
+    bb6a8d445bd9d84479b47c1debd87b4208057490  Reset de plusieurs commits
+    2e1ce9386472407c2d2f15a2aa13532aa79ce2d7  Ajout du fichier C
+    84f8cd1340aade4b38310c838d3122589c3dd7c3  Initialisation  , avec fichier A et B
+
+Je vais renversé le **fichierC**  à sont état lors du __commitcf4adb3ce6e6bf76429f88e5a53087cdc79407e8(Revert " Modif fichier B pour ajout info"__ . Dans le cas présent je ne peux pas renversé le __commit 64bd30cb5ce64b4fe38a9db12b40ca5da7ec7660  modif de A et C)__ car il y a aussi une modification du **fichierA**.
+
+Voici les différences :
+
+    $ git diff cf4adb3ce6e6bf76429f88e5a53087cdc79407e8 64bd30cb5ce64b4fe38a9db12b40ca5da7ec7660
+    diff --git a/FichierA b/FichierA
+    index e8ef86e..9b2a687 100644
+    --- a/FichierA
+    +++ b/FichierA
+    @@ -3,3 +3,5 @@ Ceci est le premier fichier
+    A
+      
+    Et le dernier pour modifier le fichier A
+    +
+    +Modification pour la demo du checkout
+    diff --git a/FichierC b/FichierC
+    index 181c9df..b25562b 100644
+    --- a/FichierC
+    +++ b/FichierC
+    @@ -2,3 +2,4 @@ Un fichier nomme avec un C a la fin
+    Ceci est le troisieme fichier
+        
+    un autre commit pour modification du fichier C
+    +demonstration pour le checkout
+
+    $ git diff cf4adb3ce6e6bf76429f88e5a53087cdc79407e8
+    diff --git a/FichierA b/FichierA
+    index e8ef86e..9b2a687 100644
+    --- a/FichierA
+    +++ b/FichierA
+    @@ -3,3 +3,5 @@ Ceci est le premier fichier
+    A
+      
+    Et le dernier pour modifier le fichier A
+    +
+    +Modification pour la demo du checkout
+    diff --git a/FichierC b/FichierC
+    index 181c9df..e032e9f 100644
+    --- a/FichierC
+    +++ b/FichierC
+    @@ -2,3 +2,5 @@ Un fichier nomme avec un C a la fin
+    Ceci est le troisieme fichier
+        
+    un autre commit pour modification du fichier C
+    +demonstration pour le checkout
+    +encore une autre modification 
+
+Réalisation de l'opération de **checkout** :
+
+    $ git checkout cf4adb3ce6e6bf76429f88e5a53087cdc79407e8 FichierC 
+    [ AUCUN OUTPUT ]
+    $ git status -s
+    M  FichierC
+ 
+On voit bien que  **fichierC** fut modifier mais pas A , qui a conservé le contenu du commit. Validons et réalisons un __commit__ de la modification pour enregistrer le **checkout** dans le passé de **fichierC**.
+
+    $ git commit -a -m " checkout du fichierC depuis le passe "
+    [master dffa227]  checkout du fichierC depuis le passe
+    1 file changed, 2 deletions(-)
+    bob@xerus:~/git/git-demo$ git log --pretty=oneline
+    dffa227a72fff9e3c34d6b34e13e581ffb765617  checkout du fichierC depuis le passe
+    f8152f8c96762c39a7efb61f370feb04619d347d modif de C avant de faire le checkout
+    64bd30cb5ce64b4fe38a9db12b40ca5da7ec7660  modif de A et C
+    cf4adb3ce6e6bf76429f88e5a53087cdc79407e8 Revert " Modif fichier B pour ajout info"
+    50dcb3cd131fe7d245cbc205d8d3e9776b556999  Modification du fichier A pour finaliser la demonstration
+    b7c6d7c50b4f0a79d1bd3a1a6ec33a1430792d41  Je modifie C pour avoir un autre com
+    40e85b5d1de8a77313f32780a8bc5347d1069219  Modif fichier B pour ajout info
+    bb6a8d445bd9d84479b47c1debd87b4208057490  Reset de plusieurs commits
+    2e1ce9386472407c2d2f15a2aa13532aa79ce2d7  Ajout du fichier C
+    84f8cd1340aade4b38310c838d3122589c3dd7c3  Initialisation  , avec fichier A et B
+
+
+Simple mais faut ce rappeler des commandes :P.
 
 ## Manipulation de branche
 ## Merge
