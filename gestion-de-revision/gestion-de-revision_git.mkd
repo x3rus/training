@@ -1,6 +1,7 @@
 
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
 
+TODO: mettre de la couleur un peu pour les tage code : http://stackoverflow.com/questions/13119441/code-tags-css-like-wikipedia
 # Introduction
 
 Un logiciel de gestion de versions (ou VCS en anglais, pour Version Control System) est un logiciel qui permet de stocker un ensemble de fichiers en conservant la chronologie de toutes les modifications qui ont été effectuées dessus. Il permet notamment de retrouver les différentes versions d'un lot de fichiers connexes. Le système enregistre l'évolution d'un fichier ou d'un ensemble de fichiers au cours du temps de manière à ce qu'on puisse rappeler une version antérieure d'un fichier à tout moment.
@@ -829,7 +830,7 @@ On voit bien que  **fichierC** fut modifier mais pas A , qui a conservé le cont
     $ git commit -a -m " checkout du fichierC depuis le passe "
     [master dffa227]  checkout du fichierC depuis le passe
     1 file changed, 2 deletions(-)
-    bob@xerus:~/git/git-demo$ git log --pretty=oneline
+    $ git log --pretty=oneline
     dffa227a72fff9e3c34d6b34e13e581ffb765617  checkout du fichierC depuis le passe
     f8152f8c96762c39a7efb61f370feb04619d347d modif de C avant de faire le checkout
     64bd30cb5ce64b4fe38a9db12b40ca5da7ec7660  modif de A et C
@@ -842,10 +843,52 @@ On voit bien que  **fichierC** fut modifier mais pas A , qui a conservé le cont
     84f8cd1340aade4b38310c838d3122589c3dd7c3  Initialisation  , avec fichier A et B
 
 
-Simple mais faut ce rappeler des commandes :P.
+Simple mais faut ce rappeler des commandes :P, toujours le même secret pour s'en rappeler l'utiliser régulièrement :D.
 
 ## Manipulation de branche
+
+Quasiment tous les __VCS__ ont une forme ou une autre de gestion de branche. Créer une branche signifie diverger de la ligne principale de développement et continuer à travailler sans se préoccuper de cette ligne principale. Dans de nombreux outils de gestion de version, cette fonctionnalité est souvent chère en ressources et nécessite de créer une nouvelle copie du répertoire de travail, ce qui peut prendre longtemps dans le cas de gros projets.
+
+De nombreuses personnes font référence au modèle de gestion de branche de Git comme LA fonctionnalité et c'est sûrement la spécificité de Git par rapport à la communauté des gestionnaires de version. Pourquoi est-elle si spéciale ? La méthode de Git pour gérer les branches est particulièrement légère, permettant de réaliser des embranchements quasi instantanément et de basculer entre les branches généralement aussi rapidement. À la différence de nombreux autres gestionnaires de version, Git encourage à travailler avec des méthodes qui privilégient la création et la fusion de branches, jusqu'à plusieurs fois par jour. Bien comprendre et maîtriser cette fonctionnalité est un atout pour faire de Git un outil unique qui peut littéralement changer la manière de développer.
+
+### Concept des branches 
+
+Ce qui suit est très intéressant  en plus de couvrir la question des branches sous git, nous allons voir un peu plus comment le système __git__ fonctionne pour stocker les informations de l'historique.
+Revoyons comment le système fonctionne pour le stockage des données lors d'un __commit__. Lorsqu'on __commit__ dans Git, le système stocke un **objet commit** qui contient un pointeur vers l'instantané (__snapshot__) du contenu qui a été indexé, les méta-données d'auteur , le message et zéro ou plusieurs pointeurs vers le ou les __commits__ qui sont les parents directs de ce commit : zéro parent pour le première __commit__, un parent pour un __commit__ normal et des parents multiples pour des __commits__ qui sont le résultat de la fusion d'une ou plusieurs branches.
+
+Voici un exemple de lors de la création du dépôt et le commit des 3 fichiers :
+
+    $ git init
+    $ git add LISEZMOI test.rb LICENCE
+    $ git commit -m 'commit initial de mon projet'
+
+
+Le dépôt **git** contient à présent cinq objets : un __blob__ pour le contenu de chacun des trois fichiers, un arbre qui liste le contenu du répertoire et spécifie quels noms de fichiers sont attachés à quels __blobs__ et un objet commit avec le pointeur vers l'arbre d'origine et toutes les méta-données attachées au commit. Conceptuellement, les données contenues dans votre dépôt Git ressemblent 
+
+![representation_commit.png](./imgs/representation_commit.png)
+
+Voici un autre représentation mais pour un ensemble de __commit__ : 
+
+![representation_multi_commit.png](./imgs/representation_multi_commit.png)
+
+La branche par défaut sous __git__ se nomme **master** cette dernière est implicite lors de la création de dépôt nous le voyons lors de l'utilisation de la commande **git status** :
+
+    $ git status 
+    On branch master
+    nothing to commit, working directory clean
+
+Ce qui représente la branche **master** est simplement un pointeur vers un objet __commit__
+
+![representation_commit_branche_master.png](./imgs/representation_commit_branche_master.png)
+
+
+## Travailler avec un dépôt distant 
 ## Merge
 # Avantage et défauts
+# Fonctionnalité non traité ici
+
+J'ai omis certaine fonctionnalité car pour le moment je ne les utilises rarement. Cependant il est possible que ces dernières vous soit requis voici donc des liens vers une documentation complémentaire :
+
+* __Tags__/étiquetage : http://git-scm.com/book/fr/v1/Les-bases-de-Git-%C3%89tiquetage
 
 TODO : Fournir un cheat cheet pour git
