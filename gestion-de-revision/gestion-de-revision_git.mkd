@@ -905,7 +905,9 @@ L'étoile indique sur quelle branche nous travaillions actuellement localement s
 
 ![head-position.png](./imgs/head-position.png)
 
-Pour changer de branche :
+#### Changer de branche
+
+Voici la commande : 
 
     $ git checkout testing
     Switched to branch 'testing'
@@ -939,6 +941,37 @@ Réalisons une modification sur cette branche et visualisons le résultat de l'o
 Parce que dans Git, une branche n'est en fait qu'un simple fichier contenant les 40 caractères de la somme de contrôle SHA-1 du commit sur lequel elle pointe, les branches ne coûtent rien à créer et détruire. Créer une branche est aussi rapide qu'écrire un fichier de 41 caractères (40 caractères plus un retour chariot).
 
 C'est une différence de taille avec la manière dont la plupart des VCS gèrent les branches, qui implique de copier tous les fichiers du projet dans un second répertoire. 
+
+### Exemple d'utilisation des branches :
+
+Voici une démonstration de l'utilisation des branches l'objectif ici est de démontrer l'avantage de l'utilisation de **git** et principalement la simplicité du système de branche. En plus de l'intérêt de la décentralisation , l'autre aspect intéressant est le système de branche performant .
+
+Mise en situation , vous travaillez sur un site web avec git , voici l'état du projet "simple" :
+
+![utilisation_des_branches_1.png](./imgs/utilisation_des_branches_1.png)
+
+Vous recevez une demande pour une amélioration requise dans la prochaine version **ticket/issue #53** , vous créer un nouvelle branche pour réaliser les modifications , pour rappel : **git branch iss53** , **git checkout iss53**. Vous commencez votre développement, après un __commit__ voici le résultat.
+
+![utilisation_des_branches_2.png](./imgs/utilisation_des_branches_2.png)
+
+Comme toujours on ne vous laisse pas tranquille sur vos projets :P, on vient vous signaler un problème à changer en production . Avec Git, vous n'avez pas besoin de déployer les modifications déjà validées pour **iss53** avec les correctifs du problème et vous n'avez pas non plus à suer pour éliminer ces modifications avant de pouvoir appliquer les correctifs du problème en production. Tout ce que vous avez à faire, c'est simplement rebasculer sur la branche **master**. Prendre note qu'il faudra __commiter__ vos changement dans la branche **iss53** avant de faire le changement.
+
+    $ git checkout master
+    Switched to branch "master"
+
+À présent, votre répertoire de copie de travail est exactement dans l'état précédent les modifications pour le problème #53 et vous pouvez vous consacrer à votre correctif. C'est un point important : Git réinitialise le répertoire de travail pour qu'il ressemble à l'instantané de la validation sur laquelle la branche que vous extrayez pointe. Il ajoute, retire et modifie les fichiers automatiquement pour assurer que la copie de travail soit identique à ce qu'elle était lors de votre dernière validation sur la branche.
+
+Pour répondre à la demande "urgente" nous allons créer une nouvelle branche pour ce besoin, c'est pas chère et plus propre.
+
+    $ git checkout -b 'hotfix'
+    Switched to a new branch "hotfix"
+    $ vim index.html
+    $ git commit -a -m "correction d'une adresse mail incorrecte"
+    [correctif]: created 3a0874c: "correction d'une adresse mail incorrecte"
+     1 files changed, 0 insertions(+), 1 deletions(-)
+
+
+![utilisation_des_branches_3.png](./imgs/utilisation_des_branches_3.png)
 
 ## Travailler avec un dépôt distant 
 ## Merge
