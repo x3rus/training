@@ -881,6 +881,64 @@ Ce qui représente la branche **master** est simplement un pointeur vers un obje
 
 ![representation_commit_branche_master.png](./imgs/representation_commit_branche_master.png)
 
+#### Création d'une branche
+
+Afin de démontrer l'utilisation des branches le plus simple reste de réaliser une démonstration, nous allons donc créer une branche nommé __testing__.
+
+    $ git branch testing
+
+Si nous reprenons la représentation graphique précédent voici la nouvelle configuration :
+
+![representation_creation_branch.png](./imgs/representation_creation_branch.png)
+
+
+Comment Git connaît il la branche sur laquelle vous vous trouvez ? Il conserve un pointeur spécial appelé **HEAD**. Remarquez que sous cette appellation se cache un concept très différent de celui utilisé dans les autres __VCS__ tels que __Subversion__. Dans Git, c'est un pointeur sur la **branche locale** où vous vous trouvez. Dans notre cas, vous vous trouvez toujours sur **master**. La commande **git branch** n'a fait que créer une nouvelle branche 
+
+Vous pouvez visualiser les branches avec la commande **git branch** sans argument :
+
+    $ git branch
+    * master
+      testing
+
+L'étoile indique sur quelle branche nous travaillions actuellement localement sur notre dépôt. Un petite visualisation graphique :
+
+
+![head-position.png](./imgs/head-position.png)
+
+Pour changer de branche :
+
+    $ git checkout testing
+    Switched to branch 'testing'
+
+La représentation graphique :
+
+![head-position-testing-branch.png](./imgs/head-position-testing-branch.png)
+
+Pour finir voyons ce qui se passe lors d'un changement de la branche **testing** 
+
+    $ vim test.rb
+    $ git commit -a -m "une modification "
+
+![change_testing_branche.png](./imgs/change_testing_branche.png)
+
+
+Retournons sur la branche **master** :
+
+    $ git checkout master
+    Switched to branch 'master'
+
+Cette commande a réalisé deux actions. Elle a remis le pointeur **HEAD** sur la branche **master** et elle a replacé les fichiers de la copie de travail dans l'état pointé par **master**. Cela signifie aussi que les modifications que vous réalisez à partir de maintenant divergeront de l'ancienne version du projet. Cette commande retire les modifications réalisées dans la branche test pour vous permettre de repartir dans une autre direction de développement.
+
+Réalisons une modification sur cette branche et visualisons le résultat de l'opération avec une représentation graphique :
+
+    $ vim test.rb
+    $ git commit -a -m " Un autre changement"
+
+![branche_multiple_changement.png](./imgs/branche_multiple_changement.png)
+
+Parce que dans Git, une branche n'est en fait qu'un simple fichier contenant les 40 caractères de la somme de contrôle SHA-1 du commit sur lequel elle pointe, les branches ne coûtent rien à créer et détruire. Créer une branche est aussi rapide qu'écrire un fichier de 41 caractères (40 caractères plus un retour chariot).
+
+C'est une différence de taille avec la manière dont la plupart des VCS gèrent les branches, qui implique de copier tous les fichiers du projet dans un second répertoire. 
 
 ## Travailler avec un dépôt distant 
 ## Merge
@@ -892,3 +950,8 @@ J'ai omis certaine fonctionnalité car pour le moment je ne les utilises raremen
 * __Tags__/étiquetage : http://git-scm.com/book/fr/v1/Les-bases-de-Git-%C3%89tiquetage
 
 TODO : Fournir un cheat cheet pour git
+
+# Référence : 
+
+* site de **git** : http://git-scm.com/book/fr/v1/
+* site __atlassian__ : https://www.atlassian.com/git/tutorials/resetting-checking-out-and-reverting/summary
