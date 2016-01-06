@@ -973,6 +973,106 @@ Pour répondre à la demande "urgente" nous allons créer une nouvelle branche p
 
 ![utilisation_des_branches_3.png](./imgs/utilisation_des_branches_3.png)
 
+
+### Fusionner (merge) les branches
+
+Suite au nombreux testes et probablement plusieurs __commit__ vous avez corrigé le problème de production avec un __hotfix__. 
+Nous allons maintenant **merger** , inclure ses nouvelles modifications dans la branche principal **master**.
+
+Nous basculons sous la branche de destination **master** et nous exécutons la commande **git merge** avec le nom de la branche comme référence. 
+
+    $ git checkout master
+    $ git merge hotfix
+    Updating f42c576..3a0874c
+    Fast forward
+     index.html|    1 -
+     1 files changed, 0 insertions(+), 1 deletions(-)
+
+
+Vous noterez la mention " **Fast forward** " qui signifie avance rapide dans cette fusion. Comme le commit pointé par la branche que vous avez fusionnée était directement descendant du commit sur lequel vous vous trouvez, Git a avancé le pointeur en avant. Autrement dit, lorsque l'on cherche à fusionner un commit qui peut être joint en suivant l'historique depuis le commit d'origine, Git avance simplement le pointeur car il n'y a pas de travaux divergents à réellement fusionner — ceci s'appelle l'avance rapide.
+
+![utilisation_des_branches_4.png](./imgs/utilisation_des_branches_4.png)
+
+
+### Suppression d'une branche
+
+Il est possible de supprimer une branche, dans notre cas la branche **hotfix** n'étant plus requise car la fusion fut réalisé dans la branche **master**.
+
+    $ git branch -d hotfix
+    Deleted branch hotfix (3a0874c).
+
+
+### Fusionner (merge) de branches non séquentiel
+
+Il est utile de noter que le travail réalisé dans correctif n'est pas contenu dans les fichiers de la branche **iss53**. Si vous avez besoin de les y rapatrier, vous pouvez fusionner la branche **master** dans la branche **iss53** en lançant la commande **git merge master**, ou vous pouvez retarder l'intégration de ces modifications jusqu'à ce que vous décidiez plus tard de rapatrier la branche **iss53** dans **master**. Pour les besoins de la démonstration, je vais prendre l'option 2 , soit de fusionner la branche **iss53** une fois l'ensemble du correctif terminé .
+
+Toujours dans l'esprit d'avoir une démonstration complète voici l'opération de retour sous la branche **iss53** , une petite modification et le **commit**
+
+    $ git checkout iss53
+    Switched to branch "iss53"
+    $ vim index.html
+    $ git commit -a -m 'Nouveau pied de page terminé [problème 53]'
+    [iss53]: created ad82d7a: "Nouveau pied de page terminé [problème 53]"
+     1 files changed, 1 insertions(+), 0 deletions(-)
+
+La représentation graphique du dépôt:
+
+![utilisation_des_branches_5.png](./imgs/utilisation_des_branches_5.png)
+
+Nous allons à présent rapatrier / fusionner les changements réalisé dans la branche **iss53** dans la branche **master**. Au niveau de l'utilisation des commandes nous utilisons toujours **git merge** pour faire l'opération.
+
+    $ git checkout master
+    $ git merge iss53
+    Merge made by recursive.
+     index.html |    1 +
+      1 files changed, 1 insertions(+), 0 deletions(-)
+
+Vous constaterez que dans le cas présent il n'y a pas l'indication " **Fast forward** " , car l'historique des **commits** ne sont pas identique :
+
+![utilisation_des_branches_6.png](./imgs/utilisation_des_branches_6.png)
+
+Dans ce cas, l'historique de développement a divergé à un certain point. Comme le commit sur la branche sur laquelle vous vous trouvez n'est plus un ancêtre direct de la branche que vous cherchez à fusionner, Git doit travailler. Dans ce cas, Git réalise une simple fusion à trois sources, en utilisant les deux instantanés pointés par les sommets des branches et l'ancêtre commun des deux.
+
+Au lieu d'avancer simplement le pointeur de branche, Git crée un nouvel instantané qui résulte de la fusion à trois branches et crée automatiquement un nouveau commit qui pointe dessus. On appelle ceci un commit de fusion, qui est spécial en ce qu'il comporte plus d'un parent.
+
+![utilisation_des_branches_7.png](./imgs/utilisation_des_branches_7.png)
+
+
+### Gestion de conflit lors de la fusion ("merge")
+
+La démonstration ci-dessus est dans le meilleur des cas , malheureusement il est possible qu'il y est des conflits lors de la fusion. Si vous avez modifié différemment la même partie du même fichier dans les deux branches que vous souhaitez fusionner, Git ne sera pas capable de réaliser proprement la fusion.
+
+Dans notre cas, si le correctif contenu dans la branche **hotfix** touche la même section du fichier contenu dans **iss53** nous auront l'erreur suivante : 
+
+    $ git merge iss53
+    Auto-merging index.html
+    CONFLICT (content): Merge conflict in index.html
+    Automatic merge failed; fix conflicts and then commit the result
+
+Git n'a pas automatiquement créé le commit du fusion. Il a arrêté le processus le temps que vous résolviez le conflit. Lancez **git status** pour voir à tout moment après l'apparition du conflit de fusion quels fichiers n'ont pas été fusionnés
+
+    $  git status
+    index.html: needs merge
+    # On branch master
+    # Changes not staged for commit:
+    #   (use "git add <file>..." to update what will be committed)
+    #   (use "git checkout -- <file>..." to discard changes in working directory)
+    #
+    #   unmerged:   index.html
+    #
+
+Tout ce qui comporte des conflits de fusion et n'a pas été résolu est listé comme **unmerged**. Git ajoute des marques de conflit standard dans les fichiers qui comportent des conflits, pour que vous puissiez les ouvrir et résoudre les conflits manuellement. Votre fichier contient des sections qui ressemblent à ceci :
+
+    <<<<<<< HEAD:index.html
+    <div id="footer">contact : email.support@github.com</div>
+    =======
+    <div id="footer">
+      please contact us at support@github.com
+    </div>
+    >>>>>>> iss53:index.html
+
+Cela signifie que la version dans **HEAD** (votre branche **master**, parce que c'est celle que vous aviez extraite quand vous avez lancé votre commande de fusion) est la partie supérieure de ce bloc (tout ce qui se trouve au dessus de la **ligne =======**), tandis que la version de la branche **iss53** se trouve en dessous. Pour résoudre le conflit, vous devez choisir une partie ou l'autre ou bien fusionner leurs contenus par vous-même
+
 ## Travailler avec un dépôt distant 
 ## Merge
 # Avantage et défauts
