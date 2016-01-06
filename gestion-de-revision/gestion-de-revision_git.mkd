@@ -6,7 +6,7 @@ TODO: mettre de la couleur un peu pour les tage code : http://stackoverflow.com/
 
 Un logiciel de gestion de versions (ou VCS en anglais, pour Version Control System) est un logiciel qui permet de stocker un ensemble de fichiers en conservant la chronologie de toutes les modifications qui ont été effectuées dessus. Il permet notamment de retrouver les différentes versions d'un lot de fichiers connexes. Le système enregistre l'évolution d'un fichier ou d'un ensemble de fichiers au cours du temps de manière à ce qu'on puisse rappeler une version antérieure d'un fichier à tout moment.
 
-Il existe aussi des logiciels et services de gestion de versions décentralisé (distribué) (ou DVCS en anglais, pour Distributed Version Control System). [Git](https://fr.wikipedia.org/wiki/Git) et [Mercurial](https://fr.wikipedia.org/wiki/Mercurial) sont deux exemples de logiciel de gestion de versions décentralisé et sont disponibles sur la plupart des systèmes Unix et Windows. Il est aussi disponible des logiciel de gestion de version centralisé telle que [SVN](https://fr.wikipedia.org/wiki/Apache_Subversion) qui nécessite un serveur pour conserver les fichiers et assuré la gestion des conflits.
+Il existe des logiciels et services de gestion de versions décentralisé (distribué) (ou DVCS en anglais, pour Distributed Version Control System). [Git](https://fr.wikipedia.org/wiki/Git) et [Mercurial](https://fr.wikipedia.org/wiki/Mercurial) sont deux exemples de logiciel de gestion de versions décentralisé et sont disponibles sur la plupart des systèmes Unix et Windows. Vous avez aussi des logiciel de gestion de version centralisé telle que [SVN](https://fr.wikipedia.org/wiki/Apache_Subversion) qui nécessite un serveur pour conserver les fichiers et assurer la gestion des conflits.
 
 Si vous êtes un dessinateur ou un développeur web, et que vous voulez conserver toutes les versions d'une image ou d'une mise en page (ce que vous souhaiteriez assurément), un système de gestion de version (VCS en anglais pour Version Control System) est un outil qu'il est très sage d'utiliser. Il vous permet de ramener un fichier à un état précédent, de ramener le projet complet à un état précédent, de visualiser les changements au cours du temps, de voir qui a modifié quelque chose qui pourrait causer un problème, qui a introduit un problème et quand, et plus encore. Utiliser un VCS signifie aussi généralement que si vous vous trompez ou que vous perdez des fichiers, vous pouvez facilement revenir à un état stable. De plus, vous obtenez tous ces avantages avec peu de travail additionnel.
 
@@ -14,7 +14,7 @@ Si vous êtes un dessinateur ou un développeur web, et que vous voulez conserve
 
 La méthode historique pour la gestion de version est généralement de recopier les fichiers dans un autre répertoire (peut-être avec un nom incluant la date dans le meilleur des cas). Cette méthode est la plus courante parce que c'est la plus simple, mais c'est aussi la moins fiable. Il est facile d'oublier le répertoire dans lequel vous êtes et d'écrire accidentellement dans le mauvais fichier ou d'écraser des fichiers que vous vouliez conserver. 
 
-Cette méthode souvent à plusieurs lacune, le fichier de "backup" est souvent copié dans un répertoire temporaire, donc parfois effacé lors de nettoyage du système de fichier. Si le fichier est mis à coté de l'original avec une date telle que __httpd.conf__ et  __httpd.conf-2015-06-06__ nous avons une prolifération de fichier dans un même répertoire ce qui ne facilite pas la visualisation des fichiers de configuration. Pire si nous n'avons pas la date et uniquement des extensions __.bak__ , __.bak2__, ... Nous n'avons pas une historique claire des changements réalisé dans le temps, ni qui à réalisé ces changements. Si je fais référence à qui ce n'est pas uniquement pour pouvoir blâmer la personne mais comprendre l'origine du changement qui aujourd'hui me cause un problème.
+Cette méthode a plusieurs lacune, le fichier de "backup" est souvent copié dans un répertoire temporaire, donc parfois effacé lors de nettoyage du système de fichier. Si le fichier est mis à coté de l'original avec une date telle que __httpd.conf__ et  __httpd.conf-2015-06-06__ nous avons une prolifération de fichier dans un même répertoire ce qui ne facilite pas la visualisation des fichiers de configuration. Pire si nous n'avons pas la date et uniquement des extensions __.bak__ , __.bak2__, ... Nous n'avons pas une historique claire des changements réalisé dans le temps, ni qui à réalisé ces changements. Si je fais référence à qui, ce n'est pas uniquement pour pouvoir blâmer la personne mais comprendre l'origine du changement qui aujourd'hui me cause un problème.
 
 ## Les systèmes de gestion de version centralisés
 
@@ -30,6 +30,8 @@ Cependant ce système a aussi de nombreux défauts. Le plus visible est le point
 
 C'est à ce moment que les systèmes de gestion de version distribués entrent en jeu (DVCS en anglais pour Distributed Version Control Systems). Dans un DVCS (tel que Git, Mercurial, Bazaar ou Darcs), les clients n'extraient plus seulement la dernière version d'un fichier, mais ils dupliquent complètement le   [dépôt](https://fr.wikipedia.org/wiki/D%C3%A9p%C3%B4t_%28informatique%29) . Ainsi, si le serveur disparaît et si les systèmes collaboraient via ce serveur, n'importe quel dépôt d'un des clients peut être copié sur le serveur pour le restaurer. Chaque extraction devient une sauvegarde complète de toutes les données .
 
+TODO : image non présente 
+
 ![DVCS-diag](DVCS-diag.png)
 
 
@@ -43,17 +45,17 @@ Pour pouvoir effectuer des modifications, le développeur doit d'abord faire une
 Le développeur fait ces modifications et effectue ses premiers tests localement, indépendamment des modifications faites sur le dépôt du fait du travail simultané d'autres développeurs. Il doit ensuite faire un commit (une soumission), c'est-à-dire soumettre ses modifications, afin qu'elles soient enregistrées sur le dépôt. C'est là que peuvent apparaître des conflits entre ce que le développeur souhaite soumettre et les modifications effectuées depuis la dernière copie locale effectuée. Ces conflits doivent être résolus (merge) pour que le patch soit accepté sur le dépôt.
 
 
-## c'est beau tous ça mais pour les administrateurs ??
+## C'est beau tous ça mais pour les administrateurs ??
 
-Quand on parle de contrôler de révision la littérature fait principalement référence à l'utilisation de se système pour les développeur. Pour l'administrateur système le besoin est identique , nous avons de connaître :
+Quand on parle de contrôleur de révision la littérature fait principalement référence à l'utilisation de se système pour les développeur. Pour l'administrateur système le besoin est identique , nous avons besoin de connaître :
 
 * l'historique d'un fichier 
 * quand ce dernier fut modifier 
 * quelle sont les différences entre la date T et T'
 * pourquoi le fichier fut modifier , par qui 
-* pouvoir revenir a un état de configuration antérieur à une date donnée.
+* pouvoir revenir a un état de configuration antérieur pour une date donnée.
 
-Ou il peut y avoir un divergence principale est dans le fait que nous avons moins de risque de conflit de configuration car moins de personne travaille sur les fichiers. De plus il est plus rare que nous soyons plusieurs à modifier les mêmes fichiers sur le serveur. Autre différence principale et gestion de version , nous restons souvent à la version 1 , principale car il est moins pertinent de créer des version telle 1.2 ou 2.3 , bien que j'imagine que pour des systèmes plus volumineux le fait d'identifier la version du serveur avec la version du logiciel déployer peut être intéressant. 
+Là où il peut y avoir une divergence principale est dans le fait que nous avons moins de risque de conflit de configuration, car moins de personne travaille sur les fichiers. De plus il est plus rare que nous soyons plusieurs à modifier les mêmes fichiers sur le serveur. Autre différence principale et gestion de version , nous restons souvent à la version 1 , principalement car il est moins pertinent de créer des version telle 1.2 ou 2.3 , bien que j'imagine que pour des systèmes plus volumineux le fait d'identifier la version du serveur avec la version du logiciel déployer peut être intéressant. 
 
 La centralisation des configurations n'est pas critique ou indispensable bien que ... Je m'explique , comme la configuration d'une machine est moins propagé que le code source d'une application le fait d'avoir la révision du code uniquement Localement sur la machine est moins critique . Par contre le fait de ne pas avoir de serveur de contrôleur de révision fait en sorte qu'il n'y a pas de copie du dépôt en dehors de celui sur le serveur. De plus si vous désirez vous y référé il est obligatoire de ce connecter sur la machine, voilà pourquoi je pense qu'avoir un serveur contenant les dépôts est intéressant sans être obligatoire ceci dépend de la taille de votre organisation. 
 
@@ -84,7 +86,7 @@ Ceci nous mène aux trois sections principales d'un projet Git : le répertoire 
 
 ![local-operation.png](./imgs/local-operation.png)
 
-Le répertoire Git est l'endroit où Git stocke les méta-données et la base de données des objets de votre projet. C'est la partie la plus importante de Git, et c'est ce qui est copié lorsque vous clonez un dépôt depuis un autre ordinateur.
+Le répertoire **.git** est l'endroit où Git stocke les méta-données et la base de données des objets de votre projet. C'est la partie la plus importante de Git, et c'est ce qui est copié lorsque vous clonez un dépôt depuis un autre ordinateur.
 
 Le répertoire de travail est une extraction unique d'une version du projet. Ces fichiers sont extraits depuis la base de données compressée dans le répertoire Git et placés sur le disque pour pouvoir être utilisés ou modifiés.
 
@@ -104,7 +106,7 @@ L'utilisation standard de Git se passe comme suit :
 Nous allons commencer avec la création d'un nouveau dépôt Git sur le système local. 
 
 1. Déplacez vous dans le répertoire qui contiendra le projet Git, ce dernier peut contenir ou non des fichiers 
-2. utilisez la commande **git init** pour initialisé le dépôt, ceci aura pour effet de créer un répertoire .git dans le répertoire courant contenant le squelette du dépôt car aucun fichier n'est versionné . ( si vous désirez savoir ce que contient ce répertoire en détail voir [les tripes de git](https://git-scm.com/book/fr/v1/Les-tripes-de-Git) 
+2. utilisez la commande **git init** pour initialisé le dépôt, ceci aura pour effet de créer un répertoire .git dans le répertoire courant contenant le squelette du dépôt car aucun fichier n'est versionné . ( si vous désirez savoir ce que contient ce répertoire en détail voir [les tripes de git](https://git-scm.com/book/fr/v1/Les-tripes-de-Git) )
 
         $ git init 
 3. Nous allons ajouter des fichiers afin qu'il soit versionné nous allons utiliser la commande **git add**. 
@@ -121,7 +123,7 @@ Pour récupéré un dépôt existant nous devons utiliser la commande **git clon
 
 Ceci est une particularité important car contrairement à un système de contrôle de révision centralisé quand nous allons interroger l'historique d'un fichier Git n'interroge pas le serveur centrale, mais consulte ça copie local.
 
-Passons à l'étape pratique avec la récupération du dépôt que j'utilise pour la préparation de cette formation disponible sur [GitHub](https://github.com/x3rus]. 
+Passons à l'étape pratique avec la récupération du dépôt que j'utilise pour la préparation de cette formation disponible sur [GitHub](https://github.com/x3rus). 
 
 1. Vous positionnez dans un répertoire qui contiendra le dépôt
 2. Utilisation de la commande **git clone** pour faire l'extraction.
@@ -187,7 +189,7 @@ Si nous ajoutons un fichier le message sera différent nous indiquant que le nou
 
         nothing added to commit but untracked files present (use "git add" to track)
 
-Le système nous indique la présence du nouveau fichier mais que le dépôt ne conserve pas l'historique du fichier. Comme le message l'indique et comme nous l'avons déjà fait pour le fichier __README__ nous allons utiliser la commande ***git add** pour faire l'ajout du fichier.
+Le système nous indique la présence du nouveau fichier mais que le dépôt ne conserve pas l'historique du fichier. Comme le message l'indique et comme nous l'avons déjà fait pour le fichier __README__ nous allons utiliser la commande **git add** pour faire l'ajout du fichier.
 
         $ git add README_FR
         $ git status
@@ -241,7 +243,7 @@ Nous allons valider **commit** les fichiers afin de bien voir la finalité des �
 
 Retour à un dépôt propre car l'ensemble des fichiers placé dans l'état Indexé (__staging__) sont maintenant validé dans le dépôt Git.
 
-Je me doute ce que vous vous dites , c'est vraiment lourd d'être obligé de faire **git add** à chaque fois que je modifie un fichier pour le mettre dans l'index pour la prochain commit. Faut le voir comme un système de sécurité surtout si vous manipulez des fichiers __critiques__ de production. Effectivement si vous réalisez un modification de plusieurs fichier , comme c'est le cas lors du développement applicatif cette opération peut être perçu comme fastidieuse .
+Je me doute ce que vous vous dites , c'est vraiment lourd d'être obligé de faire **git add** à chaque fois que je modifie un fichier pour le mettre dans l'index pour la prochain commit. Faut le voir comme un système de sécurité surtout si vous manipulez des fichiers __critiques__ de production. Effectivement si vous réalisez un modification de plusieurs fichiers , comme c'est le cas lors du développement applicatif cette opération peut être perçu comme fastidieuse .
 
 La solution est d'utiliser l'option **-a** lors de la validation  **commit**. Démonstration :
 
@@ -289,13 +291,10 @@ La solution est d'utiliser l'option **-a** lors de la validation  **commit**. D�
 
 Pour les personnes qui utilisent déjà Git maintenant vous savez pourquoi vous devez mettre l'option **-a** , vous le ferez maintenant en connaissance de cause pas uniquement parce que le message vous le suggère.
 
-Je vais supprimer le fichier car nous n'en avons plus besoin ce n'était que pour la démonstration.
-
-        $ rm Un_nouveau_fichier
 
 ### Ignore files
 
-C'est sympathique que Git nous indique les fichiers qui ne sont pas indexé ou non révisionné, cependant il est possible que des fichiers se trouve dans le répertoire mais que l'on désire pas avoir dans le dépôt. Les raisons sont nombreuses , a commencé parce que l'on a pas envoie :P ou c'est des fichiers qui sont généré lors de l'utilisation , telle que les fichiers __.swp__ de Vim , les fichiers __.so__  lors de la compilation du programmes ... 
+C'est sympathique que Git nous indique les fichiers qui ne sont pas indexé ou non révisionné, cependant il est possible que des fichiers se trouve dans le répertoire mais que l'on désire pas avoir dans le dépôt. Les raisons sont nombreuses , à commencer parce que l'on a pas envie :P ou c'est des fichiers qui sont généré lors de l'utilisation , telle que les fichiers __.swp__ de Vim , les fichiers __.so__  lors de la compilation du programmes ... 
 
 Pour corriger le problème nous pouvons définir un fichier nommé **.gitignore**, voici la structure:
 
@@ -754,7 +753,6 @@ Si nous visualisons le fichier effectivement le contenu n'est plus présent et l
     -
     -Modification du Fichier B pour ajout d'information
 
-TODO : reprendre modification realisation dans le dépôt glpi-nwipe .. afficher le diff et faire un reverte d'un fichier
 
 #### Checkout dans un commit passé 
 
@@ -1071,10 +1069,13 @@ Tout ce qui comporte des conflits de fusion et n'a pas été résolu est listé 
     </div>
     >>>>>>> iss53:index.html
 
-Cela signifie que la version dans **HEAD** (votre branche **master**, parce que c'est celle que vous aviez extraite quand vous avez lancé votre commande de fusion) est la partie supérieure de ce bloc (tout ce qui se trouve au dessus de la **ligne =======**), tandis que la version de la branche **iss53** se trouve en dessous. Pour résoudre le conflit, vous devez choisir une partie ou l'autre ou bien fusionner leurs contenus par vous-même
+Cela signifie que la version dans **HEAD** (votre branche **master**, parce que c'est celle que vous aviez extraite quand vous avez lancé votre commande de fusion) est la partie supérieure de ce bloc (tout ce qui se trouve au dessus de la **ligne =======**), tandis que la version de la branche **iss53** se trouve en dessous. Pour résoudre le conflit, vous devez choisir une partie ou l'autre ou bien fusionner leurs contenus par vous-même.
+
+Une fois l'édition des fichiers terminé avec la bonne information entre les **<<<<<<<** et **>>>>>** et qu'il n'y a donc plus les lignes : **<<<<<<<, ======= et >>>>>>>**. Nous ajoutons le fichier dans l'index avec la commande **git add** et vous pouvez faire le commit **git commit**.
+
+Si vous souhaitez utiliser un outil graphique pour résoudre ces problèmes, vous pouvez lancer **git mergetool** qui démarre l'outil graphique de fusion approprié et vous permet de naviguer dans les conflits .
 
 ## Travailler avec un dépôt distant 
-## Merge
 # Avantage et défauts
 # Fonctionnalité non traité ici
 
