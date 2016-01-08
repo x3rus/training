@@ -18,6 +18,8 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
            * [Initialisation d'un nouveau dépôt local ](#init_depot) 
            * [Récupération d'un dépôt existant ](#depot_distant) 
        * [Configuration de git ](#client_setup_git) 
+           * [Configuration du nom d'utilisateur](#setup_username) 
+           * [Configuration de l'éditeur](#setup_editor) 
        * [Manipulation du dépôt](#process_depot) 
            * [Ajout ](#add_files) 
            * [Ignore files](#ignore_files) 
@@ -43,7 +45,6 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 * [Fonctionnalité non traité ici](#other_feature) 
 * [Référence : ](#ref) 
 
-TODO: mettre de la couleur un peu pour les tage code : http://stackoverflow.com/questions/13119441/code-tags-css-like-wikipedia
 
 # <a name="intro" />Introduction
 
@@ -179,7 +180,67 @@ Dans l'exemple ci-dessus je fais la démonstration avec un dépôt public la com
 
 ## <a name="client_setup_git" />Configuration de git 
 
-TODO: Ajouter la configuration de git avec identification de l'utilisateur ...
+Il y a 3 niveau de configuration :
+
+* Système / __system__ : Cette configuration est global pour l'ensemble de la machine pour tous les utilisateurs, le fichier de configuration est : **/etc/gitconfig**.
+* Globale / __global__ : Cette configuration est global pour l'utilisateur qui exécute __git__ , ceci s'applique pour l'ensemble des dépôts utilisé par l'utilisateur. Le fichier de configuration est : **~/.gitconfig**
+* Par dépôt : Tous les dépôt comprenne un fichier de configuration sous le répertoire **/path/repo/.git/config**.
+
+La lecture des fichiers de configuration est hiérarchique le plus spécifique à le dernier mot sur la valeur de la variable.
+Bien entendu pour être en mesure de modifier la configuration système il faut avoir les permissions sur le fichier dans le répertoire **etc**.
+
+Il est possible d'éditer directement le fichier ou d'utiliser la commande **git config**, dans la réalité ceci ressemble beaucoup à un mixe. Avec la commande **git config -l** je peux visualiser la configuration.
+
+Je ne vais pas couvrir en détail l'ensemble des configurations possible , je vous invite a consulter la documentation : [Personnalisation de Git](http://git-scm.com/book/fr/v1/Personnalisation-de-Git-Configuration-de-Git)
+
+### <a name="setup_username" />Configuration du nom d'utilisateur
+
+Une configuration classique et même requise par git est l'identification de l'utilisateur , nous allons donc voir comment configuration globalement pour l'utilisateur son nom d'usager et courriel. Pour ce faire nous utiliserons **git config --global**
+
+        $ git config --global user.name "Robert Nesta (Bob) Marley"
+        $ git config --global user.email Bob@x3rus.com
+
+Le résultat est la création du fichier dans __l'home__ de l'usager :
+
+        $ cat ~/.gitconfig
+        [user]  
+                email = Bob@x3rus.com
+                name = Robert Nesta (Bob) Marley
+
+        $ git config -l
+        user.email=Bob@x3rus.com
+        user.name=Robert Nesta (Bob) Marley
+
+Si je ne met pas l'identifiant **glocal** dans ce cas nous allons modifier la configuration du dépôt en cours d'utilisation, si je reprend le dépôt préalablement créé. Je vais me déplacer dans le répertoire du dépôt :
+
+        $ cd le_depot
+        $ git config -l
+        user.email=Bob@x3rus.com
+        user.name=Robert Nesta (Bob) Marley
+        core.repositoryformatversion=0
+        core.filemode=true
+        core.bare=false
+        core.logallrefupdates=true
+        $ git config user.name "John Doe"
+        $ git config -l
+        user.email=Bob@x3rus.com
+        user.name=Robert Nesta (Bob) Marley
+        core.repositoryformatversion=0
+        core.filemode=true
+        core.bare=false
+        core.logallrefupdates=true
+        user.name=John Doe
+
+Le nom de l'utilisateur ayant fait les __commits__ sera maintenant __John Doe__ au lieu de __Robert Nesta Marley__ uniquement pour ce dépôt , n'ayant pas redéfinie l'adresse courriel la valeur "globale" sera utilisé.
+
+### <a name="setup_editor" />Configuration de l'éditeur
+
+En plus de s'identifier il est important d'avoir son éditeur préféré ! Donc **VIM** ou **emacs**, nous nous battrons pour dire qui est le meilleur éditeur :P. Par défaut git choisi le bon , donc **VIM**, pour les personnes qui désire avoir emacs voici l'instruction :
+
+        $ git config --global core.editor emacs 
+
+Je vous invite fortement à regarder les autres options disponible sur la page : [Personnalisation de Git](http://git-scm.com/book/fr/v1/Personnalisation-de-Git-Configuration-de-Git)
+
 
 ## <a name="process_depot" />Manipulation du dépôt
 
@@ -436,7 +497,7 @@ Procédons à la suppression :
         nothing to commit, working directory clean
 
 
-Pour la récupération d'un fichier supprimé dans le dépôt mais qui finalement été importante nous le verrons plus tard , pour les gens pressé voir ici (TODO : ajouter le lien , quand l'article sera fait :P )
+Pour la récupération d'un fichier supprimé dans le dépôt mais qui finalement été importante nous le verrons plus tard , pour les gens pressé voir ici [Retour arrière](#roll_back) 
 
 À la différence des autres VCS, Git ne suit pas explicitement les mouvements des fichiers. Si vous renommez un fichier suivi par Git, aucune méta-donnée indiquant le renommage n'est stockée par Git. Néanmoins, Git est assez malin pour s'en apercevoir après coup — la détection de mouvement de fichier sera traitée plus loin.
 
