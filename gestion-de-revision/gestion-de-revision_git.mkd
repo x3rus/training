@@ -1,8 +1,48 @@
 
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
 
+# Index  
+
+* [Introduction](#intro) 
+       * [La bonne veille méthode ](#old_technique) 
+       * [Les systèmes de gestion de version centralisés](#CCVC) 
+       * [Les systèmes de gestion de version distribués](#DCVC) 
+       * [Dépôt et processus de modification ](#Depot) 
+       * [C'est beau tous ça mais pour les administrateurs ??](#for_admin) 
+* [Git](#git) 
+       * [Les trois états](#3_steps) 
+       * [Création d'un dépôt local (nouveau et récupération d'un dépôt existant)](#local_depot) 
+           * [Initialisation d'un nouveau dépôt local ](#init_depot) 
+           * [Récupération d'un dépôt existant ](#depot_distant) 
+       * [Configuration de git ](#client_setup_git) 
+       * [Manipulation du dépôt](#process_depot) 
+           * [Ajout ](#add_files) 
+           * [Ignore files](#ignore_files) 
+           * [Suppression et renommer ](#delete_file) 
+           * [Visualisation](#view) 
+           * [Retour arrière](#roll_back) 
+               * [Rectification du dernier commit](#change_last_commit) 
+                   * [Amend (correction du dernier commit)](#amend) 
+                   * [Annulation des modifications d'un fichier](#cancel_change) 
+               * [Reset](#reset) 
+               * [Revert](#revert) 
+               * [Checkout dans un commit passé ](#checkout_old_file) 
+       * [Manipulation de branche](#branch) 
+           * [Concept des branches ](#branch_concept) 
+               * [Création d'une branche](#create_branch) 
+               * [Changer de branche](#change_branche) 
+           * [Exemple d'utilisation des branches :](#demo_use_branche) 
+           * [Fusionner (merge) les branches](#merge_branch_simple) 
+           * [ Suppression d'une branche](#delete_branch) 
+           * [ Fusionner (merge) de branches non séquentiel](#merge_branch_comp) 
+           * [Gestion de conflit lors de la fusion ("merge")](#merge_conflit) 
+       * [Travailler avec un dépôt distant ](#work_remote_repo) 
+* [Fonctionnalité non traité ici](#other_feature) 
+* [Référence : ](#ref) 
+
 TODO: mettre de la couleur un peu pour les tage code : http://stackoverflow.com/questions/13119441/code-tags-css-like-wikipedia
-# Introduction
+
+# <a name="intro" />Introduction
 
 Un logiciel de gestion de versions (ou VCS en anglais, pour Version Control System) est un logiciel qui permet de stocker un ensemble de fichiers en conservant la chronologie de toutes les modifications qui ont été effectuées dessus. Il permet notamment de retrouver les différentes versions d'un lot de fichiers connexes. Le système enregistre l'évolution d'un fichier ou d'un ensemble de fichiers au cours du temps de manière à ce qu'on puisse rappeler une version antérieure d'un fichier à tout moment.
 
@@ -10,13 +50,13 @@ Il existe des logiciels et services de gestion de versions décentralisé (distr
 
 Si vous êtes un dessinateur ou un développeur web, et que vous voulez conserver toutes les versions d'une image ou d'une mise en page (ce que vous souhaiteriez assurément), un système de gestion de version (VCS en anglais pour Version Control System) est un outil qu'il est très sage d'utiliser. Il vous permet de ramener un fichier à un état précédent, de ramener le projet complet à un état précédent, de visualiser les changements au cours du temps, de voir qui a modifié quelque chose qui pourrait causer un problème, qui a introduit un problème et quand, et plus encore. Utiliser un VCS signifie aussi généralement que si vous vous trompez ou que vous perdez des fichiers, vous pouvez facilement revenir à un état stable. De plus, vous obtenez tous ces avantages avec peu de travail additionnel.
 
-## La bonne veille méthode 
+## <a name="old_technique" />La bonne veille méthode 
 
 La méthode historique pour la gestion de version est généralement de recopier les fichiers dans un autre répertoire (peut-être avec un nom incluant la date dans le meilleur des cas). Cette méthode est la plus courante parce que c'est la plus simple, mais c'est aussi la moins fiable. Il est facile d'oublier le répertoire dans lequel vous êtes et d'écrire accidentellement dans le mauvais fichier ou d'écraser des fichiers que vous vouliez conserver. 
 
 Cette méthode a plusieurs lacune, le fichier de "backup" est souvent copié dans un répertoire temporaire, donc parfois effacé lors de nettoyage du système de fichier. Si le fichier est mis à coté de l'original avec une date telle que __httpd.conf__ et  __httpd.conf-2015-06-06__ nous avons une prolifération de fichier dans un même répertoire ce qui ne facilite pas la visualisation des fichiers de configuration. Pire si nous n'avons pas la date et uniquement des extensions __.bak__ , __.bak2__, ... Nous n'avons pas une historique claire des changements réalisé dans le temps, ni qui à réalisé ces changements. Si je fais référence à qui, ce n'est pas uniquement pour pouvoir blâmer la personne mais comprendre l'origine du changement qui aujourd'hui me cause un problème.
 
-## Les systèmes de gestion de version centralisés
+## <a name="CCVC" />Les systèmes de gestion de version centralisés
 
 Le problème majeur que les gens rencontrent est qu'ils ont besoin de collaborer avec des développeurs sur d'autres ordinateurs. Pour traiter ce problème, les systèmes de gestion de version centralisés (CVCS en anglais pour Centralized Version Control Systems) furent développés. Ces systèmes tels que CVS, Subversion, et Perforce, mettent en place un serveur central qui contient tous les fichiers sous gestion de version, et des clients qui peuvent extraire les fichiers de ce dépôt central. Pendant de nombreuses années, cela a été le standard pour la gestion de version .
 
@@ -26,16 +66,14 @@ Ce schéma offre de nombreux avantages par rapport à la gestion de version loca
 
 Cependant ce système a aussi de nombreux défauts. Le plus visible est le point unique de panne que le serveur centralisé représente. Si ce serveur est en panne pendant une heure, alors durant cette heure, aucun client ne peut collaborer ou **enregistrer les modifications** issues de son travail. Dès qu'on a tout l'historique d'un projet sauvegardé à un endroit unique, on prend le risque de tout perdre.
 
-## Les systèmes de gestion de version distribués
+## <a name="DCVC" />Les systèmes de gestion de version distribués
 
 C'est à ce moment que les systèmes de gestion de version distribués entrent en jeu (DVCS en anglais pour Distributed Version Control Systems). Dans un DVCS (tel que Git, Mercurial, Bazaar ou Darcs), les clients n'extraient plus seulement la dernière version d'un fichier, mais ils dupliquent complètement le   [dépôt](https://fr.wikipedia.org/wiki/D%C3%A9p%C3%B4t_%28informatique%29) . Ainsi, si le serveur disparaît et si les systèmes collaboraient via ce serveur, n'importe quel dépôt d'un des clients peut être copié sur le serveur pour le restaurer. Chaque extraction devient une sauvegarde complète de toutes les données .
 
-TODO : image non présente 
-
-![DVCS-diag](DVCS-diag.png)
+![DVCS-diag](./imgs/DVCS-diag.png)
 
 
-## Dépôt et processus de modification 
+## <a name="Depot" />Dépôt et processus de modification 
 
 
 Les fichiers __versionnés__ sont mis à dispositions sur un [dépôt](https://fr.wikipedia.org/wiki/D%C3%A9p%C3%B4t_%28informatique%29), c'est-à-dire un espace de stockage public géré par un logiciel de gestion de versions.
@@ -45,7 +83,7 @@ Pour pouvoir effectuer des modifications, le développeur doit d'abord faire une
 Le développeur fait ces modifications et effectue ses premiers tests localement, indépendamment des modifications faites sur le dépôt du fait du travail simultané d'autres développeurs. Il doit ensuite faire un commit (une soumission), c'est-à-dire soumettre ses modifications, afin qu'elles soient enregistrées sur le dépôt. C'est là que peuvent apparaître des conflits entre ce que le développeur souhaite soumettre et les modifications effectuées depuis la dernière copie locale effectuée. Ces conflits doivent être résolus (merge) pour que le patch soit accepté sur le dépôt.
 
 
-## C'est beau tous ça mais pour les administrateurs ??
+## <a name="for_admin" />C'est beau tous ça mais pour les administrateurs ??
 
 Quand on parle de contrôleur de révision la littérature fait principalement référence à l'utilisation de se système pour les développeur. Pour l'administrateur système le besoin est identique , nous avons besoin de connaître :
 
@@ -62,7 +100,7 @@ La centralisation des configurations n'est pas critique ou indispensable bien qu
 Dans le reste de la démonstration je vais principalement uniquement utiliser un dépôt local sans serveur et à la fin je vais montré un exemple de serveur centralisé.
 
 
-# Git
+# <a name="git" />Git
 
 La différence majeure entre Git et les autres VCS (Subversion et autres) réside dans la manière dont Git considère les données. Au niveau conceptuel, la plupart des autres VCS gèrent l'information comme une liste de modifications de fichiers. Ces systèmes (CVS, Subversion, Perforce, Bazaar et autres) considèrent l'information qu'ils gèrent comme une liste de fichiers et les modifications effectuées sur chaque fichier dans le temps, comme illustré .
 
@@ -74,7 +112,7 @@ Git ne gère pas et ne stocke pas les informations de cette manière. À la plac
 
 Dans Git, tout est vérifié par une somme de contrôle avant d'être stocké et par la suite cette somme de contrôle, signature unique, sert de référence. Cela signifie qu'il est impossible de modifier le contenu d'un fichier ou d'un répertoire sans que Git ne s'en aperçoive. Cette fonctionnalité est ancrée dans les fondations de Git et fait partie intégrante de sa philosophie. Vous ne pouvez pas perdre des données en cours de transfert ou corrompre un fichier sans que Git ne puisse le détecter.
 
-## Les trois états
+## <a name="3_steps" />Les trois états
 
 Git gère trois états dans lesquels les fichiers peuvent résider : **validé** , **modifié** et **indexé**. 
 
@@ -98,10 +136,10 @@ L'utilisation standard de Git se passe comme suit :
 * vous indexez les fichiers modifiés, ce qui ajoute des instantanés de ces fichiers dans la zone d'index ;
 * vous validez, ce qui a pour effet de basculer les instantanés des fichiers de l'index dans la base de données du répertoire Git.
 
-## Création d'un dépôt local (nouveau et récupération d'un dépôt existant)
+## <a name="local_depot" />Création d'un dépôt local (nouveau et récupération d'un dépôt existant)
 
 
-### Initialisation d'un nouveau dépôt local 
+### <a name="init_depot" />Initialisation d'un nouveau dépôt local 
 
 Nous allons commencer avec la création d'un nouveau dépôt Git sur le système local. 
 
@@ -117,7 +155,7 @@ Nous allons commencer avec la création d'un nouveau dépôt Git sur le système
 
         $ git commit –m 'version initiale du projet'
 
-### Récupération d'un dépôt existant 
+### <a name="depot_distant" />Récupération d'un dépôt existant 
 
 Pour récupéré un dépôt existant nous devons utiliser la commande **git clone** , lors du clonage Git reçoit une copie de quasiment toutes les données dont le serveur dispose. Toutes les versions de tous les fichiers pour l'historique du projet sont téléchargées. Si le disque du serveur se corrompt, vous pouvez utiliser n'importe quel clone pour remettre le serveur dans l'état où il était au moment du clonage (vous pourriez perdre quelques paramètres du serveur, mais toutes les données sous gestion de version seraient récupérées. 
 
@@ -136,11 +174,11 @@ Passons à l'étape pratique avec la récupération du dépôt que j'utilise pou
 
 Dans l'exemple ci-dessus je fais la démonstration avec un dépôt public la commande est équivalente lors de l'utilisation d'un dépôt privé , git clone vous demandera un nom d'utilisateur et mot de passe .
 
-## Configuration de git 
+## <a name="client_setup_git" />Configuration de git 
 
 TODO: Ajouter la configuration de git avec identification de l'utilisateur ...
 
-## Manipulation du dépôt
+## <a name="process_depot" />Manipulation du dépôt
 
 Nous allons à présent voir comment utiliser concrètement le système **git** à l'aide d'exemple , ceci est une introduction, il est possible d'aller beaucoup plus loin, je vous invite si le sujet vous intéresse à poursuivre ...
 
@@ -164,10 +202,10 @@ Voilà le premier commit avec un fichier Indexé .
 
 Nous allons voir le cycle de vie d'un fichier telle que représenté par l'image ci dessous .
 
-TODO : ajout fichier : https://git-scm.com/figures/18333fig0201-tn.png
+![git_files_status.png](./imgs/git_files_status.png)
 
 
-### Ajout 
+### <a name="add_files" />Ajout 
 
 Validons l'état du dépôt avec **git status**
 
@@ -292,7 +330,7 @@ La solution est d'utiliser l'option **-a** lors de la validation  **commit**. D�
 Pour les personnes qui utilisent déjà Git maintenant vous savez pourquoi vous devez mettre l'option **-a** , vous le ferez maintenant en connaissance de cause pas uniquement parce que le message vous le suggère.
 
 
-### Ignore files
+### <a name="ignore_files" />Ignore files
 
 C'est sympathique que Git nous indique les fichiers qui ne sont pas indexé ou non révisionné, cependant il est possible que des fichiers se trouve dans le répertoire mais que l'on désire pas avoir dans le dépôt. Les raisons sont nombreuses , à commencer parce que l'on a pas envie :P ou c'est des fichiers qui sont généré lors de l'utilisation , telle que les fichiers __.swp__ de Vim , les fichiers __.so__  lors de la compilation du programmes ... 
 
@@ -351,8 +389,8 @@ Voici un exemple d'un autre fichier **.gitignore** très instructif :
         *.a
         # mais suivre lib.a malgré la règle précédente
         !lib.a
-        # ignorer uniquement le fichier TODO à la racine du projet
-        /TODO
+        # ignorer uniquement le fichier AFAIRE à la racine du projet
+        /AFAIRE
         # ignorer tous les fichiers dans le répertoire build
         build/
         # ignorer doc/notes.txt, mais pas doc/server/arch.txt
@@ -361,7 +399,7 @@ Voici un exemple d'un autre fichier **.gitignore** très instructif :
         doc/**/*.txt
 
 
-### Suppression et renommer 
+### <a name="delete_file" />Suppression et renommer 
 
 Pour effacer un fichier de Git, vous devez l'éliminer des fichiers en suivi de version (plus précisément, l'effacer dans la zone d'index) puis valider. La commande **git rm** réalise cette action mais efface aussi ce fichier de votre copie de travail de telle sorte que vous ne le verrez pas réapparaître comme fichier non suivi en version à la prochaine validation.
 
@@ -413,7 +451,7 @@ Pour la récupération d'un fichier supprimé dans le dépôt mais qui finalemen
 
 Bien entendu pour enregistrer cette modification vous devrez utiliser la commande **git commit** pour valider le changement.
 
-### Visualisation
+### <a name="view" />Visualisation
 
 L'avantage principale du système de gestion de contrôle de révision est de pouvoir visualiser dans le temps les modifications et de revenir en arrière. Nous venons de visualiser comment créer un dépôt, et valider nos modifications il est temps de visualiser nos modifications dans le temps. Afin de faire la démonstration, je vais utiliser un dépôt publique qui contient déjà plusieurs **commit** . Procédons avec le clonage du dépôt [glpi-nwipe https://github.com/x3rus/glpi-nwipe.git](https://github.com/x3rus/glpi-nwipe.git).
 
@@ -553,7 +591,7 @@ Ceci est pour la ligne de commande bien entendu il existe aussi des applications
 
 Je ne dis pas que ceux nommé ci-dessus son les meilleurs pour le moment personnellement je n'utilise que **gitk** , si vous en connaissez d'autre agréable et surtout libre , n'hésitez pas à le partager avec moi :D.
 
-### Retour arrière
+### <a name="roll_back" />Retour arrière
 
 Un autre point avantageux avec l'utilisation d'un gestionnaire de révision est le coté révision :P et la possibilité d'avoir un retour arrière. Ceci est un filet de sécurité important ! Je vous conseil fortement d'être confortable avec votre système de gestionnaire de révision pour les retour arrière, ceci sera un atout majeur pour vous.
 Bon fini le blabla on y va dans le vif du sujet.
@@ -575,9 +613,9 @@ Visualisons les derniers **commit**
 
 Nous allons faire quelques modifications, pour manipuler le tous .
 
-#### Rectification du dernier commit
+#### <a name="change_last_commit" />Rectification du dernier commit
 
-##### Amend (correction du dernier commit)
+##### <a name="amend" />Amend (correction du dernier commit)
 
 Commençons avec le correctif du dernier **commit**, dans le cas où vous réaliser un commit et que vous constatez que vous avec oublié un fichier ou que le commentaire est erroné. La commande **--amend** nous permet de rectifier le dernier commit.
 Voici un exemple d'utilisation sur le dépôt local de __glpi-nwipe__:
@@ -613,7 +651,7 @@ Voici un exemple d'utilisation sur le dépôt local de __glpi-nwipe__:
 Avec la commande **git commit --amend** je vais pourvoir **REFAIRE** mon __commit__ avec le nouveau contenu ça peut être juste pour modifier le commentaire de commit ou pour rajouter d'autre modification dans le dernier commit. Ceci est très intéressant car on est souvent porté à __commiter__ rapidement pour garder une trace. Ceci n'est plus un problème, car il est possible de rajouter de l'information sur le dernier __commit__.
 **Note**: Ceci est possible sur le dépôt local , cependant une fois pousser sur un serveur distant ceci n'est pas possible.
 
-##### Annulation des modifications d'un fichier
+##### <a name="cancel_change" />Annulation des modifications d'un fichier
 
 Autre situation très connu, on travail sur un fichier du dépôt puis finalement le résultat est pire qu'a l'origine :P. Il y a des jours comme ça, finalement on se dit le fichier d'origine été mieux. Il est possible **avant** de faire son __commit__ de reprendre le fichier original avec la commande **git checkout**.
 
@@ -632,17 +670,17 @@ Autre situation très connu, on travail sur un fichier du dépôt puis finalemen
     $ git status
     nothing to commit, working directory clean
 
-#### Reset
+#### <a name="reset" />Reset
 
 Je vous suggère de ne pas utiliser la méthode __reset__ mais de toujours privilégier la méthode suivante __Revert__ , j'ai hésité à faire la démonstration de cette méthode. Finalement, est-ce à moi de juger par omission si une fonctionnalité doit être présenté ou non :D.
 
-Pour rappel git identifie chaque commit avec un **id** , nous pouvons voir dans le temps les modifications. Ceci peut être représenté avec le diagramme suivant : 
+Pour rappel git identifie chaque commit avec un **id** , nous pouvons voir dans le temps les modifications. 
 
-TODO: Ajouter une image avec la représentation de git. (valider licence https://www.atlassian.com/git/tutorials/resetting-checking-out-and-reverting/summary)
 
 Lors de l'utilisation de la commande __reset__ nous indiquons à **git** de supprimer l'ensemble des __commit__ effectué pour ne conservé comme dernier __commit__ ( aussi appelé la tête **HEAD**) le commit fournit en paramètre. Si nous reprenons la représentation graphique ceci donne :
 
-TODO: Ajouter une image avec le résultat du git reset.
+<img src="./imgs/reset_avant_apres.svg" width="700px" />
+
 
 Pourquoi cette méthode est peu élégante ?? La raison principale et que nous perdons l'information sur l'historique des modifications . Si vous êtes seul sur le projet l'impact est probablement moins critique bien que dans 6 mois votre mémoire aura probablement oublié qu'une partie des modifications fut supprimer sans aucune trace.
 La méthode suivante __revert__ nous permet de conserver cette historique.
@@ -681,11 +719,12 @@ Nous devons __commiter__ le changement pour qu'il soit tout de même inscrit dan
 
 Bon voyons à présent **revert** si c'est vraiment mieux :P.
 
-#### Revert
+#### <a name="revert" />Revert
 
 Le processus de __revert__ n'est pas tous à fait le même que __reset__ , comme son nom l'indique __reset__ réinitialiser l'ensemble du dépôt à un état dans le passé. L'instruction __revert__ nous permet non pas de réinitialiser un état mais de renverser / annuler un __commit__ particulier, ceci tous en conservant l'historique des modifications.
 
-TODO: Ajout d'une représentation graphique du __revert__
+
+<img src="./imgs/revert_avant_apres.svg" width="700px" />
 
 Voyons un exemple pour représenter le tout , je vais continuer avec le dépôt __git-demo__, j'ai réalisé quelques modifications pour les besoins voici le __git log__ :
 
@@ -754,7 +793,7 @@ Si nous visualisons le fichier effectivement le contenu n'est plus présent et l
     -Modification du Fichier B pour ajout d'information
 
 
-#### Checkout dans un commit passé 
+#### <a name="checkout_old_file" />Checkout dans un commit passé 
 
 Il est aussi possible de renversé un fichier dans un état passer avec la commande **checkout** déjà aperçu un peu plus tôt. Voici l'état du dépôt __git-demo__:
 
@@ -843,13 +882,13 @@ On voit bien que  **fichierC** fut modifier mais pas A , qui a conservé le cont
 
 Simple mais faut ce rappeler des commandes :P, toujours le même secret pour s'en rappeler l'utiliser régulièrement :D.
 
-## Manipulation de branche
+## <a name="branch" />Manipulation de branche
 
 Quasiment tous les __VCS__ ont une forme ou une autre de gestion de branche. Créer une branche signifie diverger de la ligne principale de développement et continuer à travailler sans se préoccuper de cette ligne principale. Dans de nombreux outils de gestion de version, cette fonctionnalité est souvent chère en ressources et nécessite de créer une nouvelle copie du répertoire de travail, ce qui peut prendre longtemps dans le cas de gros projets.
 
 De nombreuses personnes font référence au modèle de gestion de branche de Git comme LA fonctionnalité et c'est sûrement la spécificité de Git par rapport à la communauté des gestionnaires de version. Pourquoi est-elle si spéciale ? La méthode de Git pour gérer les branches est particulièrement légère, permettant de réaliser des embranchements quasi instantanément et de basculer entre les branches généralement aussi rapidement. À la différence de nombreux autres gestionnaires de version, Git encourage à travailler avec des méthodes qui privilégient la création et la fusion de branches, jusqu'à plusieurs fois par jour. Bien comprendre et maîtriser cette fonctionnalité est un atout pour faire de Git un outil unique qui peut littéralement changer la manière de développer.
 
-### Concept des branches 
+### <a name="branch_concept" />Concept des branches 
 
 Ce qui suit est très intéressant  en plus de couvrir la question des branches sous git, nous allons voir un peu plus comment le système __git__ fonctionne pour stocker les informations de l'historique.
 Revoyons comment le système fonctionne pour le stockage des données lors d'un __commit__. Lorsqu'on __commit__ dans Git, le système stocke un **objet commit** qui contient un pointeur vers l'instantané (__snapshot__) du contenu qui a été indexé, les méta-données d'auteur , le message et zéro ou plusieurs pointeurs vers le ou les __commits__ qui sont les parents directs de ce commit : zéro parent pour le première __commit__, un parent pour un __commit__ normal et des parents multiples pour des __commits__ qui sont le résultat de la fusion d'une ou plusieurs branches.
@@ -879,7 +918,7 @@ Ce qui représente la branche **master** est simplement un pointeur vers un obje
 
 ![representation_commit_branche_master.png](./imgs/representation_commit_branche_master.png)
 
-#### Création d'une branche
+#### <a name="create_branch" />Création d'une branche
 
 Afin de démontrer l'utilisation des branches le plus simple reste de réaliser une démonstration, nous allons donc créer une branche nommé __testing__.
 
@@ -903,7 +942,7 @@ L'étoile indique sur quelle branche nous travaillions actuellement localement s
 
 ![head-position.png](./imgs/head-position.png)
 
-#### Changer de branche
+#### <a name="change_branche" />Changer de branche
 
 Voici la commande : 
 
@@ -940,7 +979,7 @@ Parce que dans Git, une branche n'est en fait qu'un simple fichier contenant les
 
 C'est une différence de taille avec la manière dont la plupart des VCS gèrent les branches, qui implique de copier tous les fichiers du projet dans un second répertoire. 
 
-### Exemple d'utilisation des branches :
+### <a name="demo_use_branche" />Exemple d'utilisation des branches :
 
 Voici une démonstration de l'utilisation des branches l'objectif ici est de démontrer l'avantage de l'utilisation de **git** et principalement la simplicité du système de branche. En plus de l'intérêt de la décentralisation , l'autre aspect intéressant est le système de branche performant .
 
@@ -972,7 +1011,7 @@ Pour répondre à la demande "urgente" nous allons créer une nouvelle branche p
 ![utilisation_des_branches_3.png](./imgs/utilisation_des_branches_3.png)
 
 
-### Fusionner (merge) les branches
+### <a name="merge_branch_simple" />Fusionner (merge) les branches
 
 Suite au nombreux testes et probablement plusieurs __commit__ vous avez corrigé le problème de production avec un __hotfix__. 
 Nous allons maintenant **merger** , inclure ses nouvelles modifications dans la branche principal **master**.
@@ -992,7 +1031,7 @@ Vous noterez la mention " **Fast forward** " qui signifie avance rapide dans cet
 ![utilisation_des_branches_4.png](./imgs/utilisation_des_branches_4.png)
 
 
-### Suppression d'une branche
+### <a name="delete_branch" /> Suppression d'une branche
 
 Il est possible de supprimer une branche, dans notre cas la branche **hotfix** n'étant plus requise car la fusion fut réalisé dans la branche **master**.
 
@@ -1000,7 +1039,7 @@ Il est possible de supprimer une branche, dans notre cas la branche **hotfix** n
     Deleted branch hotfix (3a0874c).
 
 
-### Fusionner (merge) de branches non séquentiel
+### <a name="merge_branch_comp" /> Fusionner (merge) de branches non séquentiel
 
 Il est utile de noter que le travail réalisé dans correctif n'est pas contenu dans les fichiers de la branche **iss53**. Si vous avez besoin de les y rapatrier, vous pouvez fusionner la branche **master** dans la branche **iss53** en lançant la commande **git merge master**, ou vous pouvez retarder l'intégration de ces modifications jusqu'à ce que vous décidiez plus tard de rapatrier la branche **iss53** dans **master**. Pour les besoins de la démonstration, je vais prendre l'option 2 , soit de fusionner la branche **iss53** une fois l'ensemble du correctif terminé .
 
@@ -1036,7 +1075,7 @@ Au lieu d'avancer simplement le pointeur de branche, Git crée un nouvel instant
 ![utilisation_des_branches_7.png](./imgs/utilisation_des_branches_7.png)
 
 
-### Gestion de conflit lors de la fusion ("merge")
+### <a name="merge_conflit" />Gestion de conflit lors de la fusion ("merge")
 
 La démonstration ci-dessus est dans le meilleur des cas , malheureusement il est possible qu'il y est des conflits lors de la fusion. Si vous avez modifié différemment la même partie du même fichier dans les deux branches que vous souhaitez fusionner, Git ne sera pas capable de réaliser proprement la fusion.
 
@@ -1075,17 +1114,18 @@ Une fois l'édition des fichiers terminé avec la bonne information entre les **
 
 Si vous souhaitez utiliser un outil graphique pour résoudre ces problèmes, vous pouvez lancer **git mergetool** qui démarre l'outil graphique de fusion approprié et vous permet de naviguer dans les conflits .
 
-## Travailler avec un dépôt distant 
-# Avantage et défauts
-# Fonctionnalité non traité ici
+## <a name="work_remote_repo" />Travailler avec un dépôt distant 
+ TODO : Travailler avec un dépôt distant 
+
+# <a name="other_feature" />Fonctionnalité non traité ici
 
 J'ai omis certaine fonctionnalité car pour le moment je ne les utilises rarement. Cependant il est possible que ces dernières vous soit requis voici donc des liens vers une documentation complémentaire :
 
 * __Tags__/étiquetage : http://git-scm.com/book/fr/v1/Les-bases-de-Git-%C3%89tiquetage
 
-TODO : Fournir un cheat cheet pour git
 
-# Référence : 
+# <a name="ref" />Référence : 
 
 * site de **git** : http://git-scm.com/book/fr/v1/
+* Git Cheat sheet : https://training.github.com/kit/downloads/github-git-cheat-sheet.pdf
 * site __atlassian__ : https://www.atlassian.com/git/tutorials/resetting-checking-out-and-reverting/summary
