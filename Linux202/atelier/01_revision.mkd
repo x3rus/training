@@ -1,0 +1,75 @@
+# Description
+
+Un petit atelier pour vous donner l'occasion de mettre un peu en pratique ce que nous avons couvert lors de la révision.
+
+# Structure des répertoires 
+
+* Quelle est le répertoire qui contient l'ensemble des configurations du systèmes ?
+
+* Quelle est la différence entre les binaires contenu dans **/bin** et **/sbin** ?
+
+* Quelle est le répertoire contenant les données variables , contenant les données des serveurs ?
+
+
+# Fichiers 
+
+## Manipulation de fichiers
+
+
+* Créer la structure dans le répertoire de l'utilisateur  :
+
+        /home/bob/ateliers/01_rev/gestion de fichiers/
+        /home/bob/ateliers/01_rev/files/
+
+    * Les espaces ne sont pas une erreur ;-) .
+
+* Copier le fichier **/usr/share/icons/hicolor/48x48/apps/xterm-color.png** dans le répertoire **/home/bob/ateliers/01_rev/files** . 
+    * [Optionnel] pour le plaisir essayer de conserver lors de la copie la création des répertoires parent , ceci donnerai comme résultat __/home/bob/ateliers/01_rev/files/usr/share/icons/hicolor/48x48/apps/xterm-color.png__ au lieu de __/home/bob/ateliers/01_rev/files/xterm-color.png__. Bien entendu en une commande 
+
+* Création d'un lien symbolique nommé **/home/bob/ateliers/01_rev/files/Fichier_password** qui point vers le fichier **/etc/passwd**
+    * [Optionnel] Utilisé l'annotation avec le chemin relatif et non absolue 
+
+
+## Permissions des fichiers 
+
+* Est-ce que l'utilisateur suivant peut modifier ce fichier  ?
+
+        $ whoami
+        bob
+        $ ls -l  mon_fichier 
+        -r--rw-rw- 1 bob bob 0 Jan  8 17:19 mon_fichier
+
+* Comment puis je changer les permissions du fichier __mon_fichier__ afin que je puisse le modifier ?
+
+* Si j'ai le répertoire suivant **depot** avec les permissions , est-ce que je suis en mesure d'y copier un fichier  ?
+
+        $ whoami
+        bob
+        $ id
+        uid=1000(bob) gid=1000(bob) groups=1000(bob),27(sudo)
+        $ ls -ld depot/
+        d-------wx 2 root root 4096 Jan  8 17:24 depot/
+
+    Si oui pourquoi, sinon pourquoi ?
+    [Truc] si vous voulez faire le test pour rappel  __sudo chown__ pour changer le propriétaire d'un fichier/répertoire. 
+
+# Redirection de commande & Chainage de commande 
+
+* Créé le répertoire **/home/bob/ateliers/files/cmds_redirection** 
+
+## Redirection 
+
+* Avec la commande suivante , rediriger les erreurs dans le fichier **/home/bob/ateliers/files/cmds_redirection/head_erreurs**: 
+
+        $ head -3 /etc/passwd /etc/lsb-release /etc/shadow 
+
+* Rediriger l'ensemble du résultat dans un fichier erreur et bonne valeur  **/home/bob/ateliers/files/cmds_redirection/head_complet**: 
+
+        $ head -3 /etc/passwd /etc/lsb-release /etc/shadow 
+
+## Chainage de commande 
+
+* Utiliser le fichier **/etc/passwd** comme source et compter le nombre de ligne qui contienne le mot **nologin** , bien entendu utiliser des commandes chainer pour cette opération . Ceci devrez vous donnez comme résultat __17__
+    * [Optionnel] Reprendre la même commande avec une petite modification pour compter le nombre de ligne qui ne contient **PAS nologin**
+
+
