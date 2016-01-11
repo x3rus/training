@@ -1,8 +1,27 @@
-# Description
+
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+# Index 
+
+* [Description](#Desction)
+* [Structure des répertoires ](#structure_rep)
+* [Fichiers ](#File)
+       * [Manipulation de fichiers](#manip_files)
+       * [Permissions des fichiers ](#perms)
+* [Redirection de commande & Chainage de commande ](#redirection_cmd)
+       * [Redirection ](#redirect)
+       * [Chainage de commande ](#chaine_cmd)
+* [Installation de pacquage](#install_app)
+
+
+# <a name="Desction" />Description
 
 Un petit atelier pour vous donner l'occasion de mettre un peu en pratique ce que nous avons couvert lors de la révision.
 
-# Structure des répertoires 
+# <a name="structure_rep" />Structure des répertoires 
 
 * Quelle est le répertoire qui contient l'ensemble des configurations du systèmes ?
 
@@ -11,9 +30,9 @@ Un petit atelier pour vous donner l'occasion de mettre un peu en pratique ce que
 * Quelle est le répertoire contenant les données variables , contenant les données des serveurs ?
 
 
-# Fichiers 
+# <a name="File" />Fichiers 
 
-## Manipulation de fichiers
+## <a name="manip_files" />Manipulation de fichiers
 
 
 * Créer la structure dans le répertoire de l'utilisateur  :
@@ -30,7 +49,7 @@ Un petit atelier pour vous donner l'occasion de mettre un peu en pratique ce que
     * [Optionnel] Utilisé l'annotation avec le chemin relatif et non absolue 
 
 
-## Permissions des fichiers 
+## <a name="perms" />Permissions des fichiers 
 
 * Est-ce que l'utilisateur suivant peut modifier ce fichier  ?
 
@@ -53,11 +72,11 @@ Un petit atelier pour vous donner l'occasion de mettre un peu en pratique ce que
     Si oui pourquoi, sinon pourquoi ?
     [Truc] si vous voulez faire le test pour rappel  __sudo chown__ pour changer le propriétaire d'un fichier/répertoire. 
 
-# Redirection de commande & Chainage de commande 
+# <a name="redirection_cmd" />Redirection de commande & Chainage de commande 
 
 * Créé le répertoire **/home/bob/ateliers/files/cmds_redirection** 
 
-## Redirection 
+## <a name="redirect" />Redirection 
 
 * Avec la commande suivante , rediriger les erreurs dans le fichier **/home/bob/ateliers/files/cmds_redirection/head_erreurs**: 
 
@@ -67,9 +86,49 @@ Un petit atelier pour vous donner l'occasion de mettre un peu en pratique ce que
 
         $ head -3 /etc/passwd /etc/lsb-release /etc/shadow 
 
-## Chainage de commande 
+## <a name="chaine_cmd" />Chainage de commande 
 
 * Utiliser le fichier **/etc/passwd** comme source et compter le nombre de ligne qui contienne le mot **nologin** , bien entendu utiliser des commandes chainer pour cette opération . Ceci devrez vous donnez comme résultat __17__
     * [Optionnel] Reprendre la même commande avec une petite modification pour compter le nombre de ligne qui ne contient **PAS nologin**
 
+* En partant du fichier **/etc/lsb-release** faire en sorte pour que le résultat soit sur une seul ligne , donc :
+    * Voici la différence entre le fichier original et le résultat attendu :D
+            
+            $ cat /etc/lsb-release
+            DISTRIB_ID=Ubuntu
+            DISTRIB_RELEASE=14.04
+            DISTRIB_CODENAME=trusty
+            DISTRIB_DESCRIPTION="Ubuntu 14.04 LTS"
+            $ La_SUPER_COMMANDE_qui_est_la_solution
+            Ubuntu 14.04 trusty "Ubuntu 14.04 LTS"
 
+    * [Optionnel] modifier le résultat pour que 14.04 soit remplacé par 60.10 :P 
+    
+            $ La_2_ieme_super_commande
+            Ubuntu 60.10 trusty "Ubuntu 60.10 LTS"
+
+* Utiliser la commande **dpkg -l** pour lister les pacquages installés , filtrer le résultat pour que ne soit afficher que le nom du pacquage et la description.
+
+        $ dpkg -l | head -7
+        Desired=Unknown/Install/Remove/Purge/Hold
+        | Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
+        |/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)
+        ||/ Name                            Version                         Architecture Description
+        +++-===============================-===============================-============-===============================================================================
+        ii  adduser                         3.113+nmu3ubuntu3               all          add and remove users and groups
+        ii  apt                             1.0.1ubuntu2                    i386         commandline package manager
+
+        $ Votre_super_commande_avec_head_-7 
+        Desired=Unknown/Install/Remove/Purge/Hold
+        Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
+        Err?=(none)/Reinst-required
+        Name Description
+        +++-===============================-===============================-============-===============================================================================
+        adduser add and remove users and groups
+        apt commandline package manager
+
+
+# <a name="install_app" />Installation de pacquage
+
+* Mettre à jour la base de donnée local des pacquages disponible sur internet 
+* Faire l'installation du pacquage **netcat**, une fois l'opération réussie vous devriez avoir l'application **/bin/nc** disponible .
