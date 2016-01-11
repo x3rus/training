@@ -15,8 +15,25 @@ pre {
 
 ![docker Logo](https://docs.docker.com/dist/assets/images/logo.png "Optional title").
 
-Docker Introduction 
-===================
+* [ Docker Introduction ](#docker_intro) 
+       * [Un container n'est pas une VM](#docker_not_vm) 
+       * [Pourquoi Docker](#why_docker) 
+       * [Architecture de Docker](#architecture) 
+           * [Creation d'un container](#creation) 
+               * [Récupération d'une images depuis [dockerhub](https://hub.docker.com/)](#recup_img") 
+               * [Visualisation des dockers présent ](#visualisation_docker) 
+               * [Executer ce container](#run_docker) 
+               * [Creation d'une image personnalisé](#create_custom) 
+       * [Utilisation des dockers](#use_docker) 
+           * [Réseau ](#network) 
+           * [Utilisation des données dans un container ](#utilisation_donnee) 
+               * [MountBind](#mountbind) 
+               * [Assigner un nom au docker == un layer ](#name_docker) 
+               * [Bruler un layer ( ajout d'une couche )](#burn_layer) 
+               * [Definition de service au bootup](#bootup) 
+       * [Le cycle de vie avec Docker](#lifecycle)
+
+# <a name="docker_intro" /> Docker Introduction 
 
 L'objectif de Docker est d'offire des conteneurs applicatif facile a déployer afin d'encapsulé l'application , incluant l'ensemble de ces dépendances et les versions de ces dernières.
 
@@ -26,7 +43,7 @@ L'objectif de Docker est d'offire des conteneurs applicatif facile a déployer a
 * The lightweight nature of containers, which run without the extra load of a hypervisor, means you can get more out of your hardware.
 * distributing and shipping those containers to your teams for further development and testing
 
-## Un container n'est pas une VM
+## <a name="docker_not_vm" />Un container n'est pas une VM
 
 * Machine Virtuel (Vmware , KVM , ...)
   * Installation d'un système d'exploitation complet 
@@ -55,7 +72,7 @@ Quelle sont les avantages de **docker** comparativement au jail sous BSD qui exi
 
 
 
-## Pourquoi Docker
+## <a name="why_docker" />Pourquoi Docker
 
 * Faster delivery of your applications
   * We want your environment to work better. Docker containers, and the work flow that comes with them, help your developers, sysadmins, QA folks, and release engineers work together to get your code into production and make it useful. We've created a standard container format that lets developers care about their applications inside containers while sysadmins and operators can work on running the container in your deployment.
@@ -75,7 +92,7 @@ Quelle sont les avantages de **docker** comparativement au jail sous BSD qui exi
 
 [Source : About Docker](https://docs.docker.com/engine/misc/ "Ref Sources")
 
-## Architecture de Docker
+## <a name="architecture" />Architecture de Docker
 
 
 Les composantes de docker :
@@ -95,22 +112,22 @@ Docker uses a client-server architecture. The Docker client talks to the Docker 
 
 Voyons les détails avec la création d'une container ceci nous offrira la théorie et la pratique 
 
-### Creation d'un container
+### <a name="creation" />Creation d'un container
 
-#### Récupération d'une images depuis [dockerhub](https://hub.docker.com/)
+#### <a name="recup_img"" />Récupération d'une images depuis [dockerhub](https://hub.docker.com/)
   Ceci est un peu destabilisant car il y a un grand nombre de docker présent qui sont bien souvent uploadé par n'importe qui ! Les distributions grand public (ubuntu, centos) sont identifier comme officiel !
 
     $ docker pull centos 
     $ docker pull ubuntu:14.04
     $ docker pull debian:jessie
 
-#### Visualisation des dockers présent 
+#### <a name="visualisation_docker" />Visualisation des dockers présent 
   Vous pouvez utiliser la commande docker images pour voir les images présent sur votre hôtes
 
     $ docker images 
     TODO ajouter output
 
-#### Executer ce container
+#### <a name="run_docker" />Executer ce container
 Execution du container simplement suite a son extraction depuis le depo , dans notre cas [dockerhub](https://hub.docker.com/). Nous allons utiliser la commande **docker run** avec les arguments:
 
 * -i : interactif
@@ -167,7 +184,7 @@ Comme vous pouvez le constater entre le numéro du container a aussi changé de 
 
 Mais en soit la solution est-elle vraiment importante si on ne comprend pas pourquoi ... voyons donc comment est structuré une image en créant notre propre image.
 
-#### Creation d'une image personnalisé
+#### <a name="create_custom" />Creation d'une image personnalisé
 
 Un container a pour objectif de fournir une application avec son éco système complet, le concept de docker n'est pas de 
 fournir une machine virtuel. Lors images que j'ai télécharger avec la commande **docker pull** sont des containers minimal
@@ -413,11 +430,10 @@ Source :
   * [layering of docker images](http://tuhrig.de/layering-of-docker-images/)
  
 
-## Utilisation des dockers
+## <a name="use_docker" />Utilisation des dockers
 
-### Réseau 
+### <a name="network" />Réseau 
 
-TODO: a completer 
 
 Cette section est encore en cours d'amélioration , l'ensemble des perspectives possible avec docker ne furent pas annalysé. 
 
@@ -460,7 +476,7 @@ Il est possible de démarrer la même image mais de réaliser une redirection de
     tcp6       0      0 :::8082                 :::*                    LISTEN      14668/docker-proxy
 
 
-###  Utilisation des données dans un container 
+### <a name="utilisation_donnee" />Utilisation des données dans un container 
 
 L'ensemble des systèmes de couches c'est bien mais comment mon système vie dans un container ? Est-ce possible d'avoir un container qui conservé les données ? <br>
 Avec l'information présente il n'est pas imaginable d'avoir une base de donnée ou une page web qui conserve de l'information via l'upload de fichiers ou autre ... 
@@ -468,7 +484,7 @@ Avec l'information présente il n'est pas imaginable d'avoir une base de donnée
 Effectivement avec l'information fournit jusque maintenant l'utilisation de docker en dehors de test one shot ne semble pas vraiment possible. Pour la question de base de donnée
 bien entendu il pensable de brulé un layer avec les données de la BD et imaginé qu'au prochain reboot les données seront réinitialisé.
 
-#### MountBind
+#### <a name="mountbind" />MountBind
 
 Afin de solutionner ce problème il est possible de réaliser des **mount bind** d'un répertoire hote sur de container.  Tout comme pour la définition du port foward ceci est un paramètre lors de l'initialisation de container.
 
@@ -496,7 +512,7 @@ Comme le UID 1000 n'est pas définie dans le container **/etc/passwd** le contai
     -rw-r--r-- 1 root root 19 Nov 19 15:20 index.html
     -rw-r--r-- 1 1000 root 21 Nov 19 15:20 userfile.html
 
-#### Assigner un nom au docker == un layer 
+#### <a name="name_docker" />Assigner un nom au docker == un layer 
 
 Lorsque que j'ai démarrer mes container depuis le début nous avons vue le "hostname" changer constament :
 
@@ -550,7 +566,7 @@ Donc je redemarre le container et je m'y rattache
 
 Nous constatons que mon fichier est toujours présent , il est donc possible de démarrer plusieurs container avec la même image cependant il faut que le layer writable soit unique par container , ceci est du au système Linux qui dispose des fichiers temporaire / lock , ... Si nous avions deux container avec le même layer suppérieur le comportement serait étrange.
 
-#### Bruler un layer ( ajout d'une couche )
+#### <a name="burn_layer" />Bruler un layer ( ajout d'une couche )
 
 Si nous avons plusieurs container , donc plusieurs instance et que nous constatons un problème qu'il faut modifier l'image de base , bien entendu l'idéal est de modifier le fichier DockerFile et de reconstruire l'image afin que toute personne utilisant ce container puisse profiter de ce changement . Dans la réalité il est parfois important d'appliquer une modification "rapidement" ou tout simplement de pouvoir manipuler les layers car on peut le faire :D .
 
@@ -689,7 +705,7 @@ On peut voir ça comme des snapshots ... L'utilisation des layers donne beaucoup
 
 [Source: layering-of-docker-images](http://tuhrig.de/layering-of-docker-images/)
 
-#### Definition de service au bootup
+#### <a name="bootup" />Definition de service au bootup
 
 Depuis le debut de l'exercice à chaque fois que j'ai démarrer un container il a utilisé la command par defautl soit **/bin/bash**.
 
@@ -717,7 +733,7 @@ Et le contenu du fichier de configuration  **/etc/supervisor/conf.d/supervisord.
 
 Pourquoi mettre en forground car c'est le process supervisord qui va gerer la mise en arrière plan, le système permet plusieurs instruction telle que le redémarrage automatique si ça plante , .... Pour le moment le manque d'expérience pratique avec ce système ne me permet pas de me prononcé sur les avantages est problème.
 
-## Le cycle de vie avec Docker
+## <a name="lifecycle" />Le cycle de vie avec Docker
 
 TODO: A completer avec l'experience.
 
