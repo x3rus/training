@@ -1177,13 +1177,132 @@ Une fois l'édition des fichiers terminé avec la bonne information entre les **
 Si vous souhaitez utiliser un outil graphique pour résoudre ces problèmes, vous pouvez lancer **git mergetool** qui démarre l'outil graphique de fusion approprié et vous permet de naviguer dans les conflits .
 
 ## <a name="work_remote_repo" />Travailler avec un dépôt distant 
- TODO : Travailler avec un dépôt distant 
+
+L'utilisation de **git** de manière décentralisé n'empêche en aucun cas l'utilisation d'un serveur pour faire l'échange des fichier et offrir l'accès à tous au dépôt. Vous pouvez utiliser de manière gratuit **github** [http://github.com/](http://github.com/). La gratuité s'applique pour les dépôts publique si vous voulez avoir un dépôt privé , il faut débourser un peu d'argent.
+
+Il y a 2 modes d'authentification possible avec **GIT** :
+
+* nom utilisateur / mot de passe
+* avec une clef __ssh__
+
+### <a name="git_clone" /> Git Clone
+
+Nous avons déjà eu l'occasion de voir comment extraire un dépôt **GIT** , avec la commande :
+
+        $ git clone URL_du_depot
+        ou
+        $ git clone git@HOSTNAME:path_project
+
+### <a name="visualisation_remote" /> Visualisation des dépôt distant configurer
+
+Pour un même dépôt il est possible d'avoir un ou plusieurs dépôt distant de configurer, nous pouvons utiliser la commande **git remote** pour faire l'ensemble des modifications. L'identifiant **origin** est celui utilisé par défaut lors de l'utilisation de **git clone**. 
+
+Voici un exemple de la visualisation :
+
+        $ git remote -v
+        github  https://github.com/x3rus/training.git (fetch)
+        github  https://github.com/x3rus/training.git (push)
+        origin  https://git.x3rus.com/sysadmin/training.git (fetch)
+        origin  https://git.x3rus.com/sysadmin/training.git (push)
+
+Dans la situation présente j'ai :
+
+* __github__ : qui est mon dépôt publique sur internet où tout le monde peut visualiser mon travaille
+* __origin__ : ceci est mon serveur [gitlab](https://about.gitlab.com/) , ceci est une version libre de __github__ , ça me permet d'avoir une nombre illimité de dépôt privé.
+
+Dans les 2 cas c'est la même configuration pour extraire (__fetch__) et pousser (__push__) les fichiers .
+
+Nous pouvons visualiser si notre dépôt local est synchrone avec la version sur le serveur :
+
+        $ $ git remote show github
+        * remote github
+            Fetch URL: https://github.com/x3rus/training.git
+            Push  URL: https://github.com/x3rus/training.git
+            HEAD branch: master
+            Remote branch:
+            master tracked
+            Local ref configured for 'git push':
+            master pushes to master (up to date)
+
+Dans le cas présent je n'avais qu'une branche , si je prend un autre dépôt qui lui contient plusieurs branches nous allons voir que le résultat est un peu plus complexe :
+
+        $ $ git remote show origin
+        * remote origin
+            Fetch URL: https://git.x3rus.com/webDev/dj_sandbox.git
+            Push  URL: https://git.x3rus.com/webDev/dj_sandbox.git
+            HEAD branch: master
+            Remote branches:
+                master    tracked
+                view_poll tracked
+                x3notes   tracked
+        Local branch configured for 'git pull':
+        view_poll merges with remote view_poll
+        Local refs configured for 'git push':
+            master    pushes to master    (up to date)
+            view_poll pushes to view_poll (up to date)
+            x3notes   pushes to x3notes   (up to date)
+
+### <a name="pull_git" />Mise à jour des fichiers DEPUIS le serveur (pull)
+
+Bien entendu nous désirons récupérer les fichiers qui furent mis à jour par nos collègues , amis , ... Pour ce faire nous utilisons la commande **git pull**
+
+Nous donnons donc l'instruction **git pull** en paramètre la source (l'identifiant) , si je reprends l'exemple plus haut ce pourrait être __origin__ ou __github__, et pour finir la branche que je désire récupérer. Voici un exemple avec des mise à jour.
+
+        $ git pull origin master
+        Username for 'https://git.x3rus.com': USER
+        Password for 'https://USER@git.x3rus.com':
+        remote: Counting objects: 5, done.
+        remote: Compressing objects: 100% (4/4), done.
+        remote: Total 5 (delta 3), reused 0 (delta 0)
+        Unpacking objects: 100% (5/5), done.
+        From https://git.x3rus.com/sysadmin/training
+         * branch            master     -> FETCH_HEAD
+            8b479ec..cd85a27  master     -> origin/master
+            Updating 8b479ec..cd85a27
+         Fast-forward
+         Linux202/atelier/01_revision.mkd | 8 ++++----
+         1 file changed, 4 insertions(+), 4 deletions(-)
+
+Prenons une petite minute pour lire ce que la commande nous fournis. La première section est plus informatif, j'aimerai porter votre attention sur la section qui traite des branches soit :
+        
+         * branch            master     -> FETCH_HEAD
+            8b479ec..cd85a27  master     -> origin/master
+            Updating 8b479ec..cd85a27
+         Fast-forward
+         Linux202/atelier/01_revision.mkd | 8 ++++----
+         1 file changed, 4 insertions(+), 4 deletions(-)
+
+Premièrement le système analyse l'identifiant **HEAD** du dépôt local pour la branche **master** , l'__id__ est __8b479ec__ il compare cette identifiant avec celui extrait depuis le serveur **origin/master** , l'identifiant est __cd85a27__. Comme ceci n'est pas identique il débute le processus de fusion. 
+Nous retrouvons le message **Fast-forward** , car il y a un commit commun dans l'historique __8b479ec__ et que les __commits__ suivant se sont ajouter avec le temps. Comme nous l'avions vu lors de la section de [fusion](#merge_branch_simple), le système va simplement télécharger le nouveau dépôt et modifier le pointeur **HEAD** sur la nouvelle tête.
+
+Autre point à noter nous avons la description des modifications réalisé sur les fichiers, dans le cas présent uniquement le fichier __01\_revision.mkd__ fut modifié , avec des changements mineurs.
+
+### <a name="push_git" />Mise à jour des fichiers VERS le serveur (push)
+
+Maintenant que nous sommes en mesure d'extraire les changements réalisé par les autres voyons comment nous nous pouvons pousser nos fichiers. Bien entendu pour pouvoir pousser des modifications sur le serveur il faut avoir les droits sur le dépôt.
+
+Un petit rappel, nous ne poussons pas des fichiers sur le serveur mais un dépôt , donc pour pouvoir mettre à jour un fichier sur le serveur il faut avoir __commité__ localement les fichiers et c'est le dépôt __commité__ localement que nous synchronisons avec le serveur.
+
+Donc si je désire modifier le fichier __toto.html__ 
+
+1. Je met à jour mon dépôt local (**git pull**)
+1. Je réalise les modifications sur le fichier
+2. Je réalise le commit local (**git commit -a -m "Description"**)
+3. Je pousse mes modifications sur le serveur
+
+Voici l'instruction pour mettre à jour le dépôt :
+
+
+
+### <a name="modifier_depot_ajout_remote" />Ajouter un dépôt distant pour dépôt préexistant
 
 # <a name="other_feature" />Fonctionnalité non traité ici
 
 J'ai omis certaine fonctionnalité car pour le moment je ne les utilises rarement. Cependant il est possible que ces dernières vous soit requis voici donc des liens vers une documentation complémentaire :
 
 * __Tags__/étiquetage : http://git-scm.com/book/fr/v1/Les-bases-de-Git-%C3%89tiquetage
+* spares checkout :
+* submodules :
 
 
 # <a name="ref" />Référence : 
