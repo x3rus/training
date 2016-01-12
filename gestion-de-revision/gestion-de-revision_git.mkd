@@ -1185,6 +1185,7 @@ Il y a 2 modes d'authentification possible avec **GIT** :
 * nom utilisateur / mot de passe
 * avec une clef __ssh__
 
+Je vais réaliser une introduction plus d'information disponible sur le site de git : [https://git-scm.com/book/fr/v1/Les-bases-de-Git-Travailler-avec-des-d%C3%A9p%C3%B4ts-distants](https://git-scm.com/book/fr/v1/Les-bases-de-Git-Travailler-avec-des-d%C3%A9p%C3%B4ts-distants)
 ### <a name="git_clone" /> Git Clone
 
 Nous avons déjà eu l'occasion de voir comment extraire un dépôt **GIT** , avec la commande :
@@ -1292,17 +1293,28 @@ Donc si je désire modifier le fichier __toto.html__
 
 Voici l'instruction pour mettre à jour le dépôt :
 
+        $  git push github master
+        Username for 'https://github.com': USER
+        Password for 'https://USER@github.com': 
+        Counting objects: 4, done.
+        Delta compression using up to 2 threads.
+        Compressing objects: 100% (4/4), done.
+        Writing objects: 100% (4/4), 3.03 KiB | 0 bytes/s, done.
+        Total 4 (delta 2), reused 0 (delta 0)
+        To https://github.com/x3rus/training.git
+           cd85a27..06ed09f  master -> master
 
 
-### <a name="modifier_depot_ajout_remote" />Ajouter un dépôt distant pour dépôt préexistant
+Voilà le dépôt distant à maintenant le nouveau dépôt avec l'ensemble des modifications :D.
+
 
 # <a name="other_feature" />Fonctionnalité non traité ici
 
 J'ai omis certaine fonctionnalité car pour le moment je ne les utilises rarement. Cependant il est possible que ces dernières vous soit requis voici donc des liens vers une documentation complémentaire :
 
 * __Tags__/étiquetage : http://git-scm.com/book/fr/v1/Les-bases-de-Git-%C3%89tiquetage
-* spares checkout :
-* submodules :
+* __spares checkout__/ extraire un sous répertoire  : http://stackoverflow.com/questions/4114887/is-it-possible-to-do-a-sparse-checkout-without-checking-out-the-whole-repository
+* submodules/inclure des dépôt git dans d'autre git :P : https://git-scm.com/book/fr/v1/Utilitaires-Git-Sous-modules
 
 
 # <a name="ref" />Référence : 
