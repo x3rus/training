@@ -43,9 +43,9 @@ Un petit atelier pour vous donner l'occasion de mettre un peu en pratique ce que
     * Les espaces ne sont pas une erreur ;-) .
 
 * Copier le fichier **/usr/share/icons/hicolor/48x48/apps/xterm-color.png** dans le répertoire **/home/bob/ateliers/01_rev/files** . 
-    * [Optionnel] pour le plaisir essayer de conserver lors de la copie la création des répertoires parent , ceci donnerai comme résultat __/home/bob/ateliers/01_rev/files/usr/share/icons/hicolor/48x48/apps/xterm-color.png__ au lieu de __/home/bob/ateliers/01_rev/files/xterm-color.png__. Bien entendu en une commande 
+    * [Optionnel] pour le plaisir essayer de conserver lors de la copie la création des répertoires parent , ceci donnerai comme résultat __/home/bob/ateliers/01\_rev/files/usr/share/icons/hicolor/48x48/apps/xterm-color.png__ au lieu de __/home/bob/ateliers/01_rev/files/xterm-color.png__. Bien entendu en une commande 
 
-* Création d'un lien symbolique nommé **/home/bob/ateliers/01_rev/files/Fichier_password** qui point vers le fichier **/etc/passwd**
+* Création d'un lien symbolique nommé **/home/bob/ateliers/01_rev/files/Fichier\_password** qui point vers le fichier **/etc/passwd**
     * [Optionnel] Utilisé l'annotation avec le chemin relatif et non absolue 
 
 
@@ -78,11 +78,11 @@ Un petit atelier pour vous donner l'occasion de mettre un peu en pratique ce que
 
 ## <a name="redirect" />Redirection 
 
-* Avec la commande suivante , rediriger les erreurs dans le fichier **/home/bob/ateliers/files/cmds_redirection/head_erreurs**: 
+* Avec la commande suivante , rediriger les erreurs dans le fichier **/home/bob/ateliers/files/cmds\_redirection/head\_erreurs**: 
 
         $ head -3 /etc/passwd /etc/lsb-release /etc/shadow 
 
-* Rediriger l'ensemble du résultat dans un fichier erreur et bonne valeur  **/home/bob/ateliers/files/cmds_redirection/head_complet**: 
+* Rediriger l'ensemble du résultat dans un fichier erreur et bonne valeur  **/home/bob/ateliers/files/cmds\_redirection/head\_complet**: 
 
         $ head -3 /etc/passwd /etc/lsb-release /etc/shadow 
 
