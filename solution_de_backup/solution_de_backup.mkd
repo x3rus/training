@@ -1,0 +1,81 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+# Index  
+
+# Introduction 
+
+La sauvegarde de donnée ou __backup__ en anglais est une chose très importante de nos jours. Combien de donnée avez vous sur votre machine qu'ils ne faut surtout pas perdre ?! Que nous parlions des photos de famille, des rapports d'impôt, ... Tous est numérisé, il est important de ne pas perdre les fichiers.
+
+Nous désirons nous protéger des problèmes suivant :
+
+* Panne d'un disque dur 
+* Suppression accidentel de fichiers
+* Corruption de fichiers
+* Destruction de la machine
+
+Sans vouloir avoir l'air simpliste dans le propos, mais j'aimerai clarifier un point:
+
+* **L'important ce n'est pas la prise de sauvegarde, mais la restauration**
+
+Nous allons voir comment définir une stratégie de sauvegarde ainsi que les outils disponible à mettre en place. Peu importe le logiciel que vous mettez en place , la stratégie que vous définirez testez régulièrement vos sauvegardes.
+
+# Stratégie de sauvegarde 
+
+Comme pour tous il est important de prendre quelques minutes de recule et évaluer la stratégie de sauvegarde que l'on veut mettre en place , afin de répondre à nos besoins et contrainte. 
+
+Voici quelques question que vous devriez vous posez :
+
+* Quelle sont les systèmes qui doivent avoir un sauvegarde de sécurité ?
+    * Les système d'exploitation
+    * Leurs disponibilités  (portable , téléphone cellulaire , tablette )
+    * Les logiciels à sauvegarder
+* Qui sont vos utilisateurs, niveau de contientisation de l'importance des sauvegardes ? TODO : corriger
+* La quantité de donnée 
+* Classification de la sensibilité des données
+* Le nombre de jours à conserver
+* La fréquence de la sauvegarde
+* Le support où écrire les données ( DVD , disque dur externe, clé __USB__, __cloud__ )
+* Le lieu de stockage ( maison , bureau , coffre fort)
+* Vitesse de restauration
+* Granularité de la restauration 
+
+## type de backup:
+
+* Sauvegarde complète : tous les fichiers sont sauvegardés sans tenir compte d'une sauvegarde antérieure.
+
+* Sauvegarde différentielle : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde complète. Ainsi, pour tout restaurer, il suffit de restaurer la sauvegarde complète puis la dernière différentielle.
+
+* Sauvegarde incrémentale : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde quelle qu'elle soit (complète, différentielle ou incrémentale). La plupart des logiciels dédiés à la sauvegarde gèrent les sauvegardes incrémentales. Ainsi, pour tout restaurer, il faut restaurer la dernière sauvegarde complète puis toutes les sauvegardes incrémentales effectuées depuis, et dans l'ordre.
+
+* Sauvegarde décrémentale : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde mais à l'inverse de la sauvegarde incrémentale, c'est la sauvegarde la plus récente qui est complète, les plus anciennes sont des différences par rapport à la sauvegarde suivante. Pour tout restaurer il suffit d'utiliser la dernière sauvegarde, mais on conserve l'historique pour récupérer même longtemps après un fichier qui aurait été effacé par erreur. 
+
+## Formulaire par machine 
+
+TODO : Faire un formulaire pour structurer l'information
+
+# Écosystème
+
+# Mise en place de logiciel
+
+rsnapshot Vs BackupPC
+
+## Rsnapshot
+
+## BackupPC
+
+## lvm export
+
+## ghost bare metal
+
+## Mise en place d'une stratégie de la validation de sauvegarde automatique.
+
+# Référence 
+
+* https://openclassrooms.com/courses/la-sauvegarde-sous-gnu-linux
+* https://debian-handbook.info/browse/fr-FR/stable/sect.backup.html
+* https://securityinabox.org/fr/chapter_5_2 : TODO confirmer
+* https://www.freebsd.org/doc/fr_FR.ISO8859-1/books/handbook/backup-strategies.html
+* https://fr.wikipedia.org/wiki/Sauvegarde_%28informatique%29#Finalit.C3.A9
