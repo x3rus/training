@@ -7,7 +7,7 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Introduction 
 
-La sauvegarde de donnée ou __backup__ en anglais est une chose très importante de nos jours. Combien de donnée avez vous sur votre machine qu'ils ne faut surtout pas perdre ?! Que nous parlions des photos de famille, des rapports d'impôt, ... Tous est numérisé, il est important de ne pas perdre les fichiers.
+La sauvegarde de donnée ou __backup__ en anglais est une chose très importante de nos jours. Combien de donnée avez vous sur votre machine qu'il ne faut surtout pas perdre ?! Que nous parlions des photos de famille, des rapports d'impôt, ... Tous est numérisés, il est important de ne pas perdre les fichiers.
 
 Nous désirons nous protéger des problèmes suivant :
 
@@ -18,13 +18,13 @@ Nous désirons nous protéger des problèmes suivant :
 
 Sans vouloir avoir l'air simpliste dans le propos, mais j'aimerai clarifier un point:
 
-* **L'important ce n'est pas la prise de sauvegarde, mais la restauration**
+* **L'important ce n'est pas la prise de sauvegarde, mais la restauration des fichiers**
 
-Nous allons voir comment définir une stratégie de sauvegarde ainsi que les outils disponible à mettre en place. Peu importe le logiciel que vous mettez en place , la stratégie que vous définirez testez régulièrement vos sauvegardes.
+Nous allons voir comment définir une stratégie de sauvegarde ainsi que les outils disponible pour la mettre en place. Peu importe le logiciel que vous mettez en place , la stratégie que vous définirez , il sera important de tester régulièrement vos sauvegardes.
 
 # Stratégie de sauvegarde 
 
-Comme pour tous il est important de prendre quelques minutes de recule et évaluer la stratégie de sauvegarde que l'on veut mettre en place , afin de répondre à nos besoins et contrainte. 
+Comme pour tous il est important de prendre quelques minutes de recule et d'évaluer la stratégie de sauvegarde que l'on veut mettre en place , afin de répondre à nos besoins et contraintes (côut, temps , niveau technique , ...) . 
 
 Voici quelques question que vous devriez vous posez :
 
@@ -38,9 +38,10 @@ Voici quelques question que vous devriez vous posez :
 * Le nombre de jours à conserver
 * La fréquence de la sauvegarde
 * Le support où écrire les données ( DVD , disque dur externe, clé __USB__, __cloud__ )
-* Le lieu de stockage ( maison , bureau , coffre fort)
+* Le lieu de stockage ( maison , bureau , coffre fort, __cloud__)
 * Vitesse de restauration
 * Granularité de la restauration 
+
 
 ## type de backup:
 
