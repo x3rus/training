@@ -1,4 +1,9 @@
 
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
 # Infrastructure de démonstration 
 
 Afin de permettre d'intégrer les concepts du systèmes de sauvegarde voici un exemple d'un environnement que l'on désire sauvegarder. 
