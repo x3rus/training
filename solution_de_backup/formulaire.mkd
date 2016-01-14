@@ -6,51 +6,16 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Formulaire de définition d'une machine
 
-<table border="1" style="width:100%">
-    <thead><tr>
-        <th align="center" style="width:25%">**Nom**</th>
-        <th align="center" style="width:35%">**Info**</th>
-        <th align="center" style="width:35%">**Note**</th>
-    </tr> </thead>
-    <tbody></tr>
-            <td>Système d'exploitation</td>
-            <td align="center"></td>
-            <td align="right"></td>
-        </tr><tr>
-            <td>Type de système</td>
-            <td align="center"></td>
-            <td align="right"></td>
-        </tr><tr>
-            <td>Logiciels particulier</td>
-            <td align="center"></td>
-            <td align="right"></td>
-        </tr><tr>
-            <td>Utilisateur</td>
-            <td align="center"></td>
-            <td align="right"></td>
-        </tr><tr>
-            <td>Quantité total planifier</td>
-            <td align="center"></td>
-            <td align="right"></td>
-        </tr><tr>
-            <td># backups a conserver</td>
-            <td align="center"></td>
-            <td align="right"></td>
-        </tr><tr>
-            <td># fréquence backup</td>
-            <td align="center"></td>
-            <td align="right"></td>
-        </tr><tr>
-            <td>Vitesse pour la restauration</td>
-            <td align="center"></td>
-            <td align="right"></td>
-        </tr><tr>
-            <td>Granularité restauration</td>
-            <td align="center"></td>
-            <td align="right"></td>
-        </tr><tr>
-    </tr></tbody>
-</table>
+Système d'exploitation
+Type de système
+Logiciels particulier
+Utilisateur
+Quantité total planifier
+différence par jour
+\# backups a conserver
+\# fréquence backup
+Vitesse pour la restauration
+Granularité restauration
 
 TODO: faire la creation d'un formulaire PDF avec libreoffice 
 
@@ -61,6 +26,7 @@ TODO: faire la creation d'un formulaire PDF avec libreoffice
 # a jouter
 Répertoires 
 Sensibilité des données
+note
 
 # a ajouter
 support où on écrit

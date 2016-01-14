@@ -22,9 +22,11 @@ Sans vouloir avoir l'air simpliste dans le propos, mais j'aimerai clarifier un p
 
 Nous allons voir comment définir une stratégie de sauvegarde ainsi que les outils disponible pour la mettre en place. Peu importe le logiciel que vous mettez en place , la stratégie que vous définirez , il sera important de tester régulièrement vos sauvegardes.
 
+Afin de faciliter le dialogue voici un exemple d'environnement que nous désirions prendre en sauvegarde : [Infrastructure de démonstration](./infrastructure_demo.html). 
+
 # Stratégie de sauvegarde 
 
-Comme pour tous il est important de prendre quelques minutes de recule et d'évaluer la stratégie de sauvegarde que l'on veut mettre en place , afin de répondre à nos besoins et contraintes (côut, temps , niveau technique , ...) . 
+Comme pour tous il est important de prendre quelques minutes de recule et d'évaluer la stratégie de sauvegarde que l'on veut mettre en place , afin de répondre à nos besoins et contraintes (coût, temps , niveau technique , ...) . 
 
 Voici quelques question que vous devriez vous posez :
 
@@ -43,7 +45,34 @@ Voici quelques question que vous devriez vous posez :
 * Granularité de la restauration 
 
 
-## type de backup:
+## Formulaire par client
+
+Nous avons souvent le reflex de commencé par chercher le logiciel disponible avant dévaluer le plus important ce que l'on doit prendre en backup ! 
+Je vais donc commencer par identifier ce que je dois sauvegarder, car comment ceci me permettra :
+
+* d'identifier les protocole disponible pour communiquer avec le client.
+* Définir la quantité total requise pour ma sauvegarde , et par conséquence choisir le support en prenant en considération le coût final.
+* Grâce à la quantité de donnée je serai aussi en mesure dévaluer le temps de transfert si je préconise l'utilisation du réseau pour le transfert des données.
+* Nous aurons une vision global des données ainsi que leurs sensibilité.
+
+Voici un formulaire qui peut vous aider à structurer ces réflexions :
+
+* Formulaire par système : TODO: faire le formulaire par système
+
+Ceci est un __PDF__ éditable , pas de panique je n'ai pas planifier de faire 2 fois de l'entrée de donnée :P. Nous verrons par la suite comment __scripter__ l'extraction des données :D. Pour les personnes qui désirent savoir comment faire un __PDF__ avec des champs voici la documentation que j'ai suivie : [Création d'un PDF editable (EN)](https://www.maketecheasier.com/create-a-pdf-with-fillable-forms-in-libreoffice/)
+
+À ce stade nous avons une bonne idée de l'ensemble des données et des acteurs qui participe au processus de sauvegarde. Il nous manque un point critique le chef d'orchestre, soit le serveur / logiciel qui orchestre le processus.
+
+## Planification du chef d'orchestre (serveur / logiciel)
+
+### Formulaire pour le chef d'orchestre
+
+Avant de présenter des logiciels j'aimerai clarifier certain concept de sauvegarde afin de pouvoir remplir de manière approprié et surtout en tout connaissance le document. Tout comme pour la partie client j'ai réalisé un formulaire __PDF__ éditable pour entré l'ensemble de l'information.
+Encore une fois l'ensemble de ces questions doivent être poser peu importe le logiciel choisi.
+
+* Formulaire pour le chef d'orchestre : TODO faire le formulaire
+
+### type de backup:
 
 * Sauvegarde complète : tous les fichiers sont sauvegardés sans tenir compte d'une sauvegarde antérieure.
 
@@ -53,9 +82,9 @@ Voici quelques question que vous devriez vous posez :
 
 * Sauvegarde décrémentale : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde mais à l'inverse de la sauvegarde incrémentale, c'est la sauvegarde la plus récente qui est complète, les plus anciennes sont des différences par rapport à la sauvegarde suivante. Pour tout restaurer il suffit d'utiliser la dernière sauvegarde, mais on conserve l'historique pour récupérer même longtemps après un fichier qui aurait été effacé par erreur. 
 
-## Formulaire par machine 
+### Support de sauvegarde
+### Défis des équipements mobile
 
-TODO : Faire un formulaire pour structurer l'information
 
 # Écosystème
 

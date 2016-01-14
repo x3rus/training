@@ -1,0 +1,36 @@
+
+# Infrastructure de démonstration 
+
+Afin de permettre d'intégrer les concepts du systèmes de sauvegarde voici un exemple d'un environnement que l'on désire sauvegarder. 
+
+2 Sites géographique :
+
+* Maison 
+* Centre de donnée 
+
+Mais nous avons des machines qui ne sont pas statique , telle que les téléphones , les tablettes ou les ordinateur portable.
+
+## Maison 
+
+Ceci comprend :
+
+* Une station de travail GNU/Linux (1.5 __Téra__ de disque dur)
+* Une station de travail GNU/Linux (250 __Gig__)
+* N dockers (plusieurs dockers)
+* Un Rasperry PI (32 __Gig__ de disque)
+* Une __PlayStation__ 4
+* Un router __dd-wrt__
+
+## Centre de donnée
+
+* Un serveur GNU/Linux (1 __Téra__)
+* N docker 
+
+## Équipement mobile
+
+* Une tablette Android (4.1) 
+* Un téléphone Android (5.0)
+* Un téléphone Android (6.0)
+* Un téléphone Android (cyanogen) , en cours de planification ;-)
+* Ordinateur portable GNU/Linux (60 __Gig__ de disque dur)
+
