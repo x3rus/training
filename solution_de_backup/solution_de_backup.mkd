@@ -74,23 +74,57 @@ Voici le Formulaire et nous allons le remplir avec l'information présenté ci-d
 
 * Formulaire pour le chef d'orchestre : TODO faire le formulaire
 
-### type de sauvegarde 
+### Type de sauvegarde 
 
 Voici plusieurs mode de sauvegarde , nous allons donc faire notre choix au mieux de notre désire nous verrons par la suite ce que le logiciels choisi nous permettra. En d'autre mots toutes ces méthodes ne sont pas offertes par les logiciels de sauvegarde, mais je préfère définir mes besoins et voir par la suite ce que les logiciels me permette. 
 
-* **Sauvegarde complète** : tous les fichiers sont sauvegardés sans tenir compte d'une sauvegarde antérieure.
+* **Sauvegarde complète** : tous les fichiers sont sauvegardés sans tenir compte d'une sauvegarde antérieure. 
+    * __Pour__ : La restauration des fichiers est simple car la dernière sauvegarde toujours complète, si une planification n'a pas lieu la suivante sera complète
+    * __Contre__ : L'espace disque requis est plus que significatif , le temps de prise de sauvegarde est long car tous est copié .
 
-* **Sauvegarde différentielle** : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde complète. Ainsi, pour tout restaurer, il suffit de restaurer la sauvegarde complète puis la dernière différentielle.
+* **Sauvegarde différentielle** : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde complète. Ainsi, pour tout restaurer, il suffit de restaurer la sauvegarde complète puis la dernière différentielle. En d'autre mot si nous avons pris une sauvegarde complète le Dimanche, le Lundi la sauvegarde différentielle comprendra uniquement les changements de la journée. Le mardi la sauvegarde comprendra les changements de mardi ET lundi  ainsi de suite jusqu'à ce que l'on reprenne une sauvegarde complète.
+    * __Pour__ : Ceci nous permet d'économiser le temps de la prise sauvegarde car uniquement les changements sont transféré, l'espace disque utilisé est aussi réduite. La restauration est simple la sauvegarde complète + le dernier différentielle.
+    * __Contre__ : Il faut s'assurer que la prise de sauvegarde complète est bonne sinon l'ensemble du différencielle est invalide ou est équivalent à une sauvegarde complète , car la source de référence est null. Il faut planifié , une sauvegarde complète régulièrement sinon le différentielle peut devenir très gros. .
 
-* **Sauvegarde incrémentale** : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde quelle qu'elle soit (complète, différentielle ou incrémentale). La plupart des logiciels dédiés à la sauvegarde gèrent les sauvegardes incrémentales. Ainsi, pour tout restaurer, il faut restaurer la dernière sauvegarde complète puis toutes les sauvegardes incrémentales effectuées depuis, et dans l'ordre.
+* **Sauvegarde incrémentale** : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde quelle qu'elle soit (complète, différentielle ou incrémentale). La plupart des logiciels dédiés à la sauvegarde gèrent les sauvegardes incrémentales. Ainsi, pour tout restaurer, il faut restaurer la dernière sauvegarde complète puis toutes les sauvegardes incrémentales effectuées depuis, et dans l'ordre. En d'autre mot si nous avons pris une sauvegarde complète le dimanche, le lundi la sauvegarde incrémentale comprendra uniquement les changements de lundi . Le mardi la sauvegarde comprendra uniquement les changements de mardi. 
+    * __Pour__ : L'espace disque dur est encore plus réduire que lors du différentielle car il n'y a pas accumulation ou de journée, par le fait même le temps de sauvegarde est réduite.
+    * __Contre__ : La restauration est plus compliqué, car il faut rejouer l'ensemble des sauvegardes pour restaurer (complet + n incrémental) imaginé si l'ensemble de la sauvegarde n'est pas localement disponible... Chaque prise de sauvegarde est critique car il n'y a pas d'autre sauvegarde de prise avec ces données. 
 
 * **Sauvegarde décrémentale** : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde mais à l'inverse de la sauvegarde incrémentale, c'est la sauvegarde la plus récente qui est complète, les plus anciennes sont des différences par rapport à la sauvegarde suivante. Pour tout restaurer il suffit d'utiliser la dernière sauvegarde, mais on conserve l'historique pour récupérer même longtemps après un fichier qui aurait été effacé par erreur. 
+    * __Pour__ : Tous comme la sauvegarde incrémental ceci permet de réduire significativement le transfert de donnée , ainsi que l'espace disque utilisé. Contrairement au système incrémentale la restauration est beaucoup plus simple.
+    * __Contre__ : L'accès au fichier historique est moins évident car selon le système il peut être moins simple d'identifier le lieu de stockage. Chaque prise de sauvegarde est critique, car il est unique.
+
+L'ensemble de ses solutions sont bonne , elles comportent des avantages est inconvénients telle que listé ci-dessus. C'est toujours un équilibre entre les avantages et inconvenient.
 
 ### Support de sauvegarde
+
+Tous comme les types de sauvegarde, il existe plusieurs possibilit de support où écrire nos données , avantage inconvenient , c'est repartie 
+
+* **Bande magnétique** : L'utilisation des bandes magnétiques est de plus en plus rare surtout pour les petites entreprises et les particuliers , le prix des systèmes de stockages externe ayant beaucoup baissé. Dans la situation ou vous auriez un grand volume de donnée , nous parlons de __Téra__ au moins par semaines voir par jours , les bandes magnétiques offre un ratio prix / quantité de stockage intéraissant (il reste le coût de l'équipement). 
+    * __Pour__ : Le ratio prix / quantité de stockage, la robustesse des cassettes très important lorsqu'elle sont stocké hors site; La cassette comprend très peu de pièce mobile ceci en fait une valeur sûr comparativement au disque dur si plusieurs année après nous désirons accédé au donnée , il n'est pas garantie que le disque dur soit coopératif. 
+    * __Contre__ : Le coût du lecteur de bande est significatif; Les performances d'écriture ou lecture d'une bande magnétique sont bonne lorsqu'elles sont réalisé de manière séquentielle il est donc important d'offrir un bon débit lors de l'écriture au lecteur et de lire séquentiellement cette dernière.
+* **Disque Dur Interne** : Solution la plus commode qui permet de réaliser une sauvegarde rapidement et facilement
+    * __Pour__ : Simple à mettre en palce et permet de stocker une bonne quantité de donnée à un coût résonnable , l'accès au sauvegarde est simple et rapide
+    * __Contre__ : Ne permet pas d'externaliser la sauvegarde, donc si le site géographique où se trouve le système de sauvegarde est compromis l'ensemble des sauvegardes de sécurité sont perdu. 
+* **Disque Dur Externe**: Deuxième solution simple à mettre en place, le matériel est facilement accéssible. Il est possible de réutiliser le matériel pour le backup de manière temporaire ou permenent.
+    * __Pour__ : Le coût d'achat n'est pas très élevé, la solution __scale__ relativement , si nous avons besoin de plus d'espace il est possible d'acheter un disque dur avec plus de capacité . Il est possible de déplacer le disque dur pour le mettre géographiquement dans un autre lie.
+    * __Contre__ : Ce support ne permet pas un conservation pour plusieurs année du à la fragilité (est-ce que les SSD corrige ce problème ?!? ) , la rotation des diques est manuelle.
+* **Support SSD (ex: cle USB)** :
+* **DVD** :
+* **Service en ligne** :
+
+### exteriorisé les donneés
+
+### Manipulation of data
+
+* compression
+* Encryption
+* Déduplication
+
 ### Défis des équipements mobile
 
 
-# Écosystème
+# Résultat pour l'écosystème de démonstration
 
 # Mise en place de logiciel
 
@@ -112,4 +146,5 @@ rsnapshot Vs BackupPC
 * https://debian-handbook.info/browse/fr-FR/stable/sect.backup.html
 * https://securityinabox.org/fr/chapter_5_2 : TODO confirmer
 * https://www.freebsd.org/doc/fr_FR.ISO8859-1/books/handbook/backup-strategies.html
-* https://fr.wikipedia.org/wiki/Sauvegarde_%28informatique%29#Finalit.C3.A9
+* https://fr.wikipedia.org/wiki/Sauvegarde\_%28informatique%29#Finalit.C3.A9
+* https://en.wikipedia.org/wiki/Backup
