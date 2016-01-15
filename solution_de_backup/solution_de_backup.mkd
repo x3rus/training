@@ -67,20 +67,24 @@ Ceci est un __PDF__ éditable , pas de panique je n'ai pas planifier de faire 2 
 
 ### Formulaire pour le chef d'orchestre
 
-Avant de présenter des logiciels j'aimerai clarifier certain concept de sauvegarde afin de pouvoir remplir de manière approprié et surtout en tout connaissance le document. Tout comme pour la partie client j'ai réalisé un formulaire __PDF__ éditable pour entré l'ensemble de l'information.
-Encore une fois l'ensemble de ces questions doivent être poser peu importe le logiciel choisi.
+Avant de présenter des logiciels j'aimerais clarifier certain concept de sauvegarde afin de pouvoir remplir de manière approprié et surtout en tout connaissance le document. Tout comme pour la partie client j'ai réalisé un formulaire __PDF__ éditable pour entrer l'ensemble des informations.
+Encore une fois l'ensemble de ces questions sont générique peut importe le choix du logiciel.
+
+Voici le Formulaire et nous allons le remplir avec l'information présenté ci-dessous
 
 * Formulaire pour le chef d'orchestre : TODO faire le formulaire
 
-### type de backup:
+### type de sauvegarde 
 
-* Sauvegarde complète : tous les fichiers sont sauvegardés sans tenir compte d'une sauvegarde antérieure.
+Voici plusieurs mode de sauvegarde , nous allons donc faire notre choix au mieux de notre désire nous verrons par la suite ce que le logiciels choisi nous permettra. En d'autre mots toutes ces méthodes ne sont pas offertes par les logiciels de sauvegarde, mais je préfère définir mes besoins et voir par la suite ce que les logiciels me permette. 
 
-* Sauvegarde différentielle : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde complète. Ainsi, pour tout restaurer, il suffit de restaurer la sauvegarde complète puis la dernière différentielle.
+* **Sauvegarde complète** : tous les fichiers sont sauvegardés sans tenir compte d'une sauvegarde antérieure.
 
-* Sauvegarde incrémentale : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde quelle qu'elle soit (complète, différentielle ou incrémentale). La plupart des logiciels dédiés à la sauvegarde gèrent les sauvegardes incrémentales. Ainsi, pour tout restaurer, il faut restaurer la dernière sauvegarde complète puis toutes les sauvegardes incrémentales effectuées depuis, et dans l'ordre.
+* **Sauvegarde différentielle** : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde complète. Ainsi, pour tout restaurer, il suffit de restaurer la sauvegarde complète puis la dernière différentielle.
 
-* Sauvegarde décrémentale : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde mais à l'inverse de la sauvegarde incrémentale, c'est la sauvegarde la plus récente qui est complète, les plus anciennes sont des différences par rapport à la sauvegarde suivante. Pour tout restaurer il suffit d'utiliser la dernière sauvegarde, mais on conserve l'historique pour récupérer même longtemps après un fichier qui aurait été effacé par erreur. 
+* **Sauvegarde incrémentale** : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde quelle qu'elle soit (complète, différentielle ou incrémentale). La plupart des logiciels dédiés à la sauvegarde gèrent les sauvegardes incrémentales. Ainsi, pour tout restaurer, il faut restaurer la dernière sauvegarde complète puis toutes les sauvegardes incrémentales effectuées depuis, et dans l'ordre.
+
+* **Sauvegarde décrémentale** : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde mais à l'inverse de la sauvegarde incrémentale, c'est la sauvegarde la plus récente qui est complète, les plus anciennes sont des différences par rapport à la sauvegarde suivante. Pour tout restaurer il suffit d'utiliser la dernière sauvegarde, mais on conserve l'historique pour récupérer même longtemps après un fichier qui aurait été effacé par erreur. 
 
 ### Support de sauvegarde
 ### Défis des équipements mobile
