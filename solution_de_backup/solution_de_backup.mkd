@@ -96,7 +96,7 @@ Voici plusieurs mode de sauvegarde , nous allons donc faire notre choix au mieux
 
 L'ensemble de ses solutions sont bonne , elles comportent des avantages est inconvénients telle que listé ci-dessus. C'est toujours un équilibre entre les avantages et inconvénient.
 
-### Support de sauvegarde
+### <a name="lst_support" />Support de sauvegarde
 
 Tous comme les types de sauvegarde, il existe plusieurs possibilités de support où écrire nos données , avantage inconvénient , c'est repartie 
 
@@ -125,7 +125,7 @@ Tous comme les types de sauvegarde, il existe plusieurs possibilités de support
     * __Contre__ : Vous n'êtes pas mettre de la solution , si le service s'arrête vous devez changer la solution dans un délais variable. Il faut faire attention où sont stocké vos données , pour avoir un prix intéressant il faut allé au États-Unis cependant les lois protégeant le données ne sont pas les mêmes. Si le logiciel de sauvegarde est fournit est-il libre ? Est-ce que le système utilise des protocoles ouvert ?. Si votre connexion internet est limité , il faut faire attention au coût du au transfert.
 
 
-### Manipulation des données
+### <a name="manip_data" /> Manipulation des données
 
 Nous voyons l'ensemble des fonctionnalités offert par les logiciels de sauvegarde nous analyserons par la suite les options disponibles pour nous.
 
@@ -135,15 +135,32 @@ Nous voyons l'ensemble des fonctionnalités offert par les logiciels de sauvegar
     * Chiffrement réalisé par le système de fichier , GNU/Linux permet de créer une partition chiffré
 * __Déduplication__ : Le système de sauvegarde peut éviter de conserver plusieurs fois le même fichier en effet si nous avons plusieurs machines qui ont le même fichier zip qui est pris en sauvegarde certain logiciel de sauvegarde peut ne conserver qu'un fichier et réaliser un pointeur pour les autres. Ceci permet d'économiser l'espace disque dur de manière significatif s'il y a redondance de fichier.
 
-### Méthode de prise de backup
+### Méthode de prise de sauvegarde
 
-* Copie de fichier
-* Snapshot OS
-* Snapshot FS
-* Base de donnée (chaud / froid)
-* Ghost
+Voici un liste de méthode de prise de sauvegarde, tous les systèmes de sauvegarde n'ont pas l'ensemble des fonctionnalités , il est possible que vous désiriez combiner une ou plusieurs méthodes dans votre environnement. Ceci n'est pas une liste exhaustive , cependant ce sont les méthodes les plus courantes. 
 
-### Défis des équipements mobile
+* __Copie de fichiers__ : Le méthode classique la copie de fichiers , nous prenons les fichiers sur un système et ces derniers sont copiés sur le [support](#lst_support) choisi. Cette méthode peut être combiné avec plusieurs [manipulation de donnée](#manip_data) et peut être sujet au différent [type de sauvegarde](#type_sauvegarde). L'important avec cette méthode de sauvegarde est de ne pas oublié de répertoires et de revisiter la liste périodiquement.
+* __Snapshot OS ,prise d'image__ : La prise de __snapshot__ ou d'image d'un système , ceci va permettre de prendre l'ensemble du système et de l'exporter dans un fichier. Ce fichier contient généralement l'ensemble des fichiers , dans le cadre de __snapshot__ de machine virtuelle, il peut même contenir les informations sur le "matériel" virtuel qui fut utilisé. Dans le cadre d'une image d'une machines physique selon le logiciel il peut prendre une copie de la structure des tables de partition. Ceci à l'avantage de permettre la restauration **complète** du système dans un délai très court. L'inconvénient selon le système d'exploitation sauvegardé l'image ne peut pas être réutilisé selon le matériel. Autre point problématique la taille des sauvegardes qui sont souvent volumineuse pour des données non critiques ou requises, cependant vous êtes sûr de rien oublier.
+* __Snapshot du système de fichier__ : Selon le système de fichier que vous utilisez il est parfois possible de réaliser des __snapshot__ temporaire ou permanent du système de fichier donc une partition. Ceci à l'avantage d'offrir la possibilité de valider une mise à jour par exemple et de réaliser un retour arrière en cas de problème ou de réaliser une image complète d'un système de fichier. Ceci permet d'avoir une alternative entre la prise d'image complète de l'ensemble du système incluant le système d'exploitation et uniquement le système de fichier contenant les données.
+* __Base de donnée__ (chaud / froid) : Les systèmes de base de données sont particulier il est fortement déconseiller de prendre uniquement les fichiers de données si la base de données est en activité. L'ensemble de la littérature tant au niveau des logiciel de sauvegarde que des logiciels de base de donnée , la sauvegarde a de forte chance d'être invalide. Pour solutionner ce problème nous pouvons réaliser 2 type de sauvegarde :
+    * __Chaud__ : nous utilisons un agent fournit par le logiciel de sauvegarde pour qu'il se connecte à la base de donnée pour réaliser une copie. L'autre option si votre logiciel de sauvegarde ne supporte pas d'agent ou que le prix est excessif , la réalisation d'un __dump__ local sur le serveur de base de donnée et le logiciel de sauvegarde récupère ce dernier.
+    * __Froid__ : Nous arrêtons la base de donnée et nous prenons l'ensemble des fichiers binaire sous le répertoire du serveur.
+
+### <a name="defi_mobile" /> Défis des équipements mobile
+
+Bla bla bla bla , je présume que lister les possibilités des types, méthodes, et  support de sauvegarde   n'est pas forcément ce que vous désirez avoir. Nous allons aller dans le vif du sujet avec  des considérations de réalisation de sauvegarde.
+
+L'ensemble de notre vie est de plus en plus connecter, si nous reprenons l'infrastructure d'exemple sur laquelle nous allons bâtir nos solutions, vous constaterez que sur 11 équipements nous avons 5 qui sont des équipements mobile. Comment allons traiter ses équipements qui ne sont pas toujours disponible ? Nous ne pouvons simplement pas les ignorer, l'importance que prend le téléphone cellulaire et la quantité de données qu'il contient ne peut pas être mis de côté.
+
+Je vais vous présenter ici la solution que j'ai mis en place pour répondre à ce besoin, comme toujours si vous avez des suggestions pour d'autre méthode je suis à l'écoute :P.
+
+Voici l'état de la situation :
+
+* L'équipement n'est pas toujours disponible où le logiciel de sauvegarde est en fonction
+* La présence peut varier être présent quelques heures et repartir cependant nous ne savons pas l'heure exacte de ça présence.
+* Indiquer à l'utilisateur de réaliser la copie de ses fichiers comporte un risque important d'oublis et surtout ceci est très ennuyeux.
+
+
 
 ### exteriorisé les donneés
 
@@ -158,8 +175,10 @@ rsnapshot Vs BackupPC
 ## BackupPC
 
 ## lvm export
+http://tldp.org/HOWTO/LVM-HOWTO/snapshots_backup.html
 
 ## ghost bare metal
+## Backup de sanpshot de VM
 
 ## Mise en place d'une stratégie de la validation de sauvegarde automatique.
 
