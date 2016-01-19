@@ -84,45 +84,68 @@ Voici plusieurs mode de sauvegarde , nous allons donc faire notre choix au mieux
 
 * **Sauvegarde différentielle** : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde complète. Ainsi, pour tout restaurer, il suffit de restaurer la sauvegarde complète puis la dernière différentielle. En d'autre mot si nous avons pris une sauvegarde complète le Dimanche, le Lundi la sauvegarde différentielle comprendra uniquement les changements de la journée. Le mardi la sauvegarde comprendra les changements de mardi ET lundi  ainsi de suite jusqu'à ce que l'on reprenne une sauvegarde complète.
     * __Pour__ : Ceci nous permet d'économiser le temps de la prise sauvegarde car uniquement les changements sont transféré, l'espace disque utilisé est aussi réduite. La restauration est simple la sauvegarde complète + le dernier différentielle.
-    * __Contre__ : Il faut s'assurer que la prise de sauvegarde complète est bonne sinon l'ensemble du différencielle est invalide ou est équivalent à une sauvegarde complète , car la source de référence est null. Il faut planifié , une sauvegarde complète régulièrement sinon le différentielle peut devenir très gros. .
+    * __Contre__ : Il faut s'assurer que la prise de sauvegarde complète est bonne sinon l'ensemble du différentielle est invalide ou est équivalent à une sauvegarde complète , car la source de référence est null. Il faut planifié , une sauvegarde complète régulièrement sinon le différentielle peut devenir très gros. .
 
 * **Sauvegarde incrémentale** : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde quelle qu'elle soit (complète, différentielle ou incrémentale). La plupart des logiciels dédiés à la sauvegarde gèrent les sauvegardes incrémentales. Ainsi, pour tout restaurer, il faut restaurer la dernière sauvegarde complète puis toutes les sauvegardes incrémentales effectuées depuis, et dans l'ordre. En d'autre mot si nous avons pris une sauvegarde complète le dimanche, le lundi la sauvegarde incrémentale comprendra uniquement les changements de lundi . Le mardi la sauvegarde comprendra uniquement les changements de mardi. 
     * __Pour__ : L'espace disque dur est encore plus réduire que lors du différentielle car il n'y a pas accumulation ou de journée, par le fait même le temps de sauvegarde est réduite.
-    * __Contre__ : La restauration est plus compliqué, car il faut rejouer l'ensemble des sauvegardes pour restaurer (complet + n incrémental) imaginé si l'ensemble de la sauvegarde n'est pas localement disponible... Chaque prise de sauvegarde est critique car il n'y a pas d'autre sauvegarde de prise avec ces données. 
+    * __Contre__ : La restauration est plus compliqué, car il faut rejouer l'ensemble des sauvegardes pour restaurer (complet + n incrémentale) imaginé si l'ensemble de la sauvegarde n'est pas localement disponible... Chaque prise de sauvegarde est critique car il n'y a pas d'autre sauvegarde de prise avec ces données. 
 
 * **Sauvegarde décrémentale** : on ne sauvegarde que ce qui a changé depuis la dernière sauvegarde mais à l'inverse de la sauvegarde incrémentale, c'est la sauvegarde la plus récente qui est complète, les plus anciennes sont des différences par rapport à la sauvegarde suivante. Pour tout restaurer il suffit d'utiliser la dernière sauvegarde, mais on conserve l'historique pour récupérer même longtemps après un fichier qui aurait été effacé par erreur. 
-    * __Pour__ : Tous comme la sauvegarde incrémental ceci permet de réduire significativement le transfert de donnée , ainsi que l'espace disque utilisé. Contrairement au système incrémentale la restauration est beaucoup plus simple.
+    * __Pour__ : Tous comme la sauvegarde incrémentale ceci permet de réduire significativement le transfert de donnée , ainsi que l'espace disque utilisé. Contrairement au système incrémentale la restauration est beaucoup plus simple.
     * __Contre__ : L'accès au fichier historique est moins évident car selon le système il peut être moins simple d'identifier le lieu de stockage. Chaque prise de sauvegarde est critique, car il est unique.
 
-L'ensemble de ses solutions sont bonne , elles comportent des avantages est inconvénients telle que listé ci-dessus. C'est toujours un équilibre entre les avantages et inconvenient.
+L'ensemble de ses solutions sont bonne , elles comportent des avantages est inconvénients telle que listé ci-dessus. C'est toujours un équilibre entre les avantages et inconvénient.
 
 ### Support de sauvegarde
 
-Tous comme les types de sauvegarde, il existe plusieurs possibilit de support où écrire nos données , avantage inconvenient , c'est repartie 
+Tous comme les types de sauvegarde, il existe plusieurs possibilités de support où écrire nos données , avantage inconvénient , c'est repartie 
 
-* **Bande magnétique** : L'utilisation des bandes magnétiques est de plus en plus rare surtout pour les petites entreprises et les particuliers , le prix des systèmes de stockages externe ayant beaucoup baissé. Dans la situation ou vous auriez un grand volume de donnée , nous parlons de __Téra__ au moins par semaines voir par jours , les bandes magnétiques offre un ratio prix / quantité de stockage intéraissant (il reste le coût de l'équipement). 
+* **Bande magnétique** : L'utilisation des bandes magnétiques est de plus en plus rare surtout pour les petites entreprises et les particuliers , le prix des systèmes de stockages externe ayant beaucoup baissé. Dans la situation ou vous auriez un grand volume de donnée , nous parlons de __Téra__ au moins par semaines voir par jours , les bandes magnétiques offre un ratio prix / quantité de stockage intéressant (il reste le coût de l'équipement). 
     * __Pour__ : Le ratio prix / quantité de stockage, la robustesse des cassettes très important lorsqu'elle sont stocké hors site; La cassette comprend très peu de pièce mobile ceci en fait une valeur sûr comparativement au disque dur si plusieurs année après nous désirons accédé au donnée , il n'est pas garantie que le disque dur soit coopératif. 
     * __Contre__ : Le coût du lecteur de bande est significatif; Les performances d'écriture ou lecture d'une bande magnétique sont bonne lorsqu'elles sont réalisé de manière séquentielle il est donc important d'offrir un bon débit lors de l'écriture au lecteur et de lire séquentiellement cette dernière.
+
 * **Disque Dur Interne** : Solution la plus commode qui permet de réaliser une sauvegarde rapidement et facilement
-    * __Pour__ : Simple à mettre en palce et permet de stocker une bonne quantité de donnée à un coût résonnable , l'accès au sauvegarde est simple et rapide
-    * __Contre__ : Ne permet pas d'externaliser la sauvegarde, donc si le site géographique où se trouve le système de sauvegarde est compromis l'ensemble des sauvegardes de sécurité sont perdu. 
-* **Disque Dur Externe**: Deuxième solution simple à mettre en place, le matériel est facilement accéssible. Il est possible de réutiliser le matériel pour le backup de manière temporaire ou permenent.
+    * __Pour__ : Simple à mettre en place et permet de stocker une bonne quantité de donnée à un coût raisonnable , l'accès au sauvegarde est simple et rapide
+    * __Contre__ : Ne permet pas sortir les sauvegardes, donc si le site géographique où se trouve le système de sauvegarde est compromis l'ensemble des sauvegardes de sécurité sont perdu. 
+
+* **Disque Dur Externe**: Deuxième solution simple à mettre en place, le matériel est facilement accessible. Il est possible de réutiliser le matériel pour le backup de manière temporaire ou permanent.
     * __Pour__ : Le coût d'achat n'est pas très élevé, la solution __scale__ relativement , si nous avons besoin de plus d'espace il est possible d'acheter un disque dur avec plus de capacité . Il est possible de déplacer le disque dur pour le mettre géographiquement dans un autre lie.
-    * __Contre__ : Ce support ne permet pas un conservation pour plusieurs année du à la fragilité (est-ce que les SSD corrige ce problème ?!? ) , la rotation des diques est manuelle.
-* **Support SSD (ex: cle USB)** :
-* **DVD** :
-* **Service en ligne** :
+    * __Contre__ : Ce support ne permet pas un conservation pour plusieurs année du à la fragilité (est-ce que les SSD corrige ce problème ?!? ) , la rotation des disques est manuelle, comparativement au bande magnétique.
 
-### exteriorisé les donneés
+* **cle USB** : Pour de petite quantité de sauvegarde cette solution peut être idéal.
+    * __Pour__ : Le coût n'est pas très grand pour des quantités entre 32 Gigs et 64 Gigs . Le transport est simple dû à la taille des clés. La résistance des __clés USB__ est très bonne en cas de chute ou autre. Comme il n'y a pas de pièces mobile, nous pouvons présumer que la conservation des données peut être conservé pour plusieurs année.
+    * __Contre__ : L'avantage de la taille est aussi un problème car plus facile de les perdre. La taille est tout de même réduit si vous avez une grosse quantité de données.
 
-### Manipulation of data
+* **DVD, blu-ray** : Autre possibilité l'utilisation de DVD , solution de moins en moins utilisé principalement à cause de la taille du stockage du support.
+    * __Pour__ : Le support permet une conservation des données pour plusieurs années . Permet de disposer des copies à plusieurs endroit à moindre de coût, Le prix d'un DVD ou Blu-ray  est nettement moins élevé qu'un disque externe. Moins sensible à l'humidité que les disques durs
+    * __Contre__ : La quantité de donnée disponible sur le support. Le temps d'écriture sur le support lors de la sauvegarde , l'obligation de réaliser une rotation manuel.
 
-* compression
-* Encryption
-* Déduplication
+* **Service en ligne** : Cette solution prends de plus en plus d'ampleur avec le temps, les offres étant de moins en moins chère, la quantité de stockage offert est bonne (selon le prix) , les connexions internet ayant un débit plus important nous pouvons évaluer ces solutions. (information : je ne suis pas un partisan de cette solution , je ne suis donc pas impartial )
+    * __Pour__ : La solution est extensible si vous avez besoin de plus d'espace généralement il est simple d'augmenter la taille offert. Vous n'avez pas à gérer l'infrastructure . La solution de backup est même parfois offert en prime :P. Comme le serveur est sur internet , la prise de sauvegarde peut être réalisé n'importe où.
+    * __Contre__ : Vous n'êtes pas mettre de la solution , si le service s'arrête vous devez changer la solution dans un délais variable. Il faut faire attention où sont stocké vos données , pour avoir un prix intéressant il faut allé au États-Unis cependant les lois protégeant le données ne sont pas les mêmes. Si le logiciel de sauvegarde est fournit est-il libre ? Est-ce que le système utilise des protocoles ouvert ?. Si votre connexion internet est limité , il faut faire attention au coût du au transfert.
+
+
+### Manipulation des données
+
+Nous voyons l'ensemble des fonctionnalités offert par les logiciels de sauvegarde nous analyserons par la suite les options disponibles pour nous.
+
+* __Compression__ : Beaucoup de système de sauvegarde offre la possibilité de compresser les données lors du stockage , la solution peut être logiciel ou matériel . Le lecteur de bande magnétique offre généralement une compression matériel.
+* __Chiffremention__ : Nous parlions un peu plus tôt de sortir les sauvegardes du lieu géographique où ils sont pris, bien entendu il y a toujours un risque de perdre ou de vol de nos sauvegardes. Afin de ce prévenir contre cette situation il est possible de chiffrer les données. Nous avons deux possibilités de réaliser cette opération :
+    * Chiffrement réalisé par le logiciel de sauvegarde
+    * Chiffrement réalisé par le système de fichier , GNU/Linux permet de créer une partition chiffré
+* __Déduplication__ : Le système de sauvegarde peut éviter de conserver plusieurs fois le même fichier en effet si nous avons plusieurs machines qui ont le même fichier zip qui est pris en sauvegarde certain logiciel de sauvegarde peut ne conserver qu'un fichier et réaliser un pointeur pour les autres. Ceci permet d'économiser l'espace disque dur de manière significatif s'il y a redondance de fichier.
+
+### Méthode de prise de backup
+
+* Copie de fichier
+* Snapshot OS
+* Snapshot FS
+* Base de donnée (chaud / froid)
+* Ghost
 
 ### Défis des équipements mobile
 
+### exteriorisé les donneés
 
 # Résultat pour l'écosystème de démonstration
 
