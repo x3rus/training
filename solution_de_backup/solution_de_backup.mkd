@@ -158,15 +158,51 @@ Voici l'état de la situation :
 
 * L'équipement n'est pas toujours disponible où le logiciel de sauvegarde est en fonction
 * La présence peut varier être présent quelques heures et repartir cependant nous ne savons pas l'heure exacte de ça présence.
-* Indiquer à l'utilisateur de réaliser la copie de ses fichiers comporte un risque important d'oublis et surtout ceci est très ennuyeux.
+* Demander à l'utilisateur de réaliser la copie de ses fichiers comporte un risque important d'oublis et surtout ceci est très ennuyeux.
 
+Afin de répondre à ses problèmes voici la solution que j'ai mis en place, j'ai suivie ces principes :
 
+1. Réaliser la copie des données quand l'équipement est sur un réseau __WIFI__, afin de ne peut utiliser de bande passante payante.
+2. Permettre le transfert via le réseaux mobile (LTE,4G,...) sur demande.
+3. Réaliser la copie des fichiers vers un serveur distant.
+ 
+Une des solutions la plus "simple" et la plus répandu est l'utilisation d'un service en ligne, ceci à l'avantage de permettre le transfert des fichiers peut importe où l'équipement mobile se trouve. Le seule critère important est la présence d'un point d'accès __WIFI__.
+N'étant pas un adepte des solutions de service en ligne en (TODO )impartition, nous allons suivre ce principe mais en utilisant nos serveurs. Si nous reprenons  [l'infrastructure de démonstration](./infrastructure_demo.html), deux systèmes pourrons faire le travaille de passerelle soit le serveur dans le centre de donnée ou la station de travaille avec 1.5 Téra disponible.
 
-### exteriorisé les donneés
+Pour le moment nous ne sommes que dans l'étape de planification pour la réalisation proprement dite, voici la section pour les TROP pressés. (TODO  : ajouter lien vers section mobile)
+
+### Sortir les sauvegardes du lieu 
+
+**IMPORTANT** 
+
+La majorité des entreprises sortent les sauvegardes des bureaux pour les entreposer dans les lieux sécuritaire :
+
+* Fournisseur de service de voûte telle que : __Iron Montaine__
+* Coffre fort dans une institution bancaire 
+
+Ceci à l'avantage d'offrir une sécurité physique des sauvegardes dans un environnement approprié humidité, température, café des collègues :P, verre de lait des enfants :P ...
+
+Cette pratique est malheureusement moins fréquente lors que l'on parle de sauvegarde des données des particuliers , bien souvent nous réalisons des sauvegardons que nous conservons sur le bureau à coté de la machine d'origine. Ceci nous protège très bien des risques :
+* Problème matériel (disque dur , ...)
+* Erreur de manipulation ( suppression de données)
+* Corruption des données 
+
+Malheureusement en cas de sinistre, notre sauvegarde risque d'être endommagé en même temps que la machine d'origine, que nous parlons de dégât d'eau et de feu. C'est pourquoi il est primordial de sortir les sauvegardes, car vous avez des données précieuse , que l'on parle de photos de famille ou de document de travail une fois perdu c'est fini !
+
+Lorsque nous avons listé les supports disponible j'ai fait mention de lors qu'il est  possible d'utiliser le média pour sortir les données revoici la liste des supports :
+* __DVD, blu-ray__
+* __Disque Externe__
+* __Bande Magnétique__
+* __Clé USB__
+* __Service en ligne__ de par la nature du support :D
 
 # Résultat pour l'écosystème de démonstration
 
+Courage, la théorie achève sous peu, nous allons maintenant procéder avec la compilation de l'ensemble de cette théorie et voir comment j'ai mis en place les différents critères pour définir ma stratégie de sauvegarde. Ceci est un point de départ afin d'avoir un dialogue sur du concret, cependant tous comme les recettes de cuisine je vous invite à y faire des modifications afin de répondre à VOS besoin.
+
 # Mise en place de logiciel
+
+TODO continuer la documentation ....
 
 rsnapshot Vs BackupPC
 
@@ -181,6 +217,8 @@ http://tldp.org/HOWTO/LVM-HOWTO/snapshots_backup.html
 ## Backup de sanpshot de VM
 
 ## Mise en place d'une stratégie de la validation de sauvegarde automatique.
+## Indicateur de prise de backup pour PS4 
+## Indicateur d'absence de backup des Téléphone
 
 # Référence 
 
