@@ -130,7 +130,7 @@ Tous comme les types de sauvegarde, il existe plusieurs possibilités de support
 Nous voyons l'ensemble des fonctionnalités offert par les logiciels de sauvegarde nous analyserons par la suite les options disponibles pour nous.
 
 * __Compression__ : Beaucoup de système de sauvegarde offre la possibilité de compresser les données lors du stockage , la solution peut être logiciel ou matériel . Le lecteur de bande magnétique offre généralement une compression matériel.
-* __Chiffremention__ : Nous parlions un peu plus tôt de sortir les sauvegardes du lieu géographique où ils sont pris, bien entendu il y a toujours un risque de perdre ou de vol de nos sauvegardes. Afin de ce prévenir contre cette situation il est possible de chiffrer les données. Nous avons deux possibilités de réaliser cette opération :
+* __Chiffrement__: Nous parlions un peu plus tôt de sortir les sauvegardes du lieu géographique où ils sont pris, bien entendu il y a toujours un risque de perdre ou de vol de nos sauvegardes. Afin de ce prévenir contre cette situation il est possible de chiffrer les données. Nous avons deux possibilités de réaliser cette opération :
     * Chiffrement réalisé par le logiciel de sauvegarde
     * Chiffrement réalisé par le système de fichier , GNU/Linux permet de créer une partition chiffré
 * __Déduplication__ : Le système de sauvegarde peut éviter de conserver plusieurs fois le même fichier en effet si nous avons plusieurs machines qui ont le même fichier zip qui est pris en sauvegarde certain logiciel de sauvegarde peut ne conserver qu'un fichier et réaliser un pointeur pour les autres. Ceci permet d'économiser l'espace disque dur de manière significatif s'il y a redondance de fichier.
@@ -140,8 +140,12 @@ Nous voyons l'ensemble des fonctionnalités offert par les logiciels de sauvegar
 Voici un liste de méthode de prise de sauvegarde, tous les systèmes de sauvegarde n'ont pas l'ensemble des fonctionnalités , il est possible que vous désiriez combiner une ou plusieurs méthodes dans votre environnement. Ceci n'est pas une liste exhaustive , cependant ce sont les méthodes les plus courantes. 
 
 * __Copie de fichiers__ : Le méthode classique la copie de fichiers , nous prenons les fichiers sur un système et ces derniers sont copiés sur le [support](#lst_support) choisi. Cette méthode peut être combiné avec plusieurs [manipulation de donnée](#manip_data) et peut être sujet au différent [type de sauvegarde](#type_sauvegarde). L'important avec cette méthode de sauvegarde est de ne pas oublié de répertoires et de revisiter la liste périodiquement.
+
 * __Snapshot OS ,prise d'image__ : La prise de __snapshot__ ou d'image d'un système , ceci va permettre de prendre l'ensemble du système et de l'exporter dans un fichier. Ce fichier contient généralement l'ensemble des fichiers , dans le cadre de __snapshot__ de machine virtuelle, il peut même contenir les informations sur le "matériel" virtuel qui fut utilisé. Dans le cadre d'une image d'une machines physique selon le logiciel il peut prendre une copie de la structure des tables de partition. Ceci à l'avantage de permettre la restauration **complète** du système dans un délai très court. L'inconvénient selon le système d'exploitation sauvegardé l'image ne peut pas être réutilisé selon le matériel. Autre point problématique la taille des sauvegardes qui sont souvent volumineuse pour des données non critiques ou requises, cependant vous êtes sûr de rien oublier.
+
 * __Snapshot du système de fichier__ : Selon le système de fichier que vous utilisez il est parfois possible de réaliser des __snapshot__ temporaire ou permanent du système de fichier donc une partition. Ceci à l'avantage d'offrir la possibilité de valider une mise à jour par exemple et de réaliser un retour arrière en cas de problème ou de réaliser une image complète d'un système de fichier. Ceci permet d'avoir une alternative entre la prise d'image complète de l'ensemble du système incluant le système d'exploitation et uniquement le système de fichier contenant les données.
+
+
 * __Base de donnée__ (chaud / froid) : Les systèmes de base de données sont particulier il est fortement déconseiller de prendre uniquement les fichiers de données si la base de données est en activité. L'ensemble de la littérature tant au niveau des logiciel de sauvegarde que des logiciels de base de donnée , la sauvegarde a de forte chance d'être invalide. Pour solutionner ce problème nous pouvons réaliser 2 type de sauvegarde :
     * __Chaud__ : nous utilisons un agent fournit par le logiciel de sauvegarde pour qu'il se connecte à la base de donnée pour réaliser une copie. L'autre option si votre logiciel de sauvegarde ne supporte pas d'agent ou que le prix est excessif , la réalisation d'un __dump__ local sur le serveur de base de donnée et le logiciel de sauvegarde récupère ce dernier.
     * __Froid__ : Nous arrêtons la base de donnée et nous prenons l'ensemble des fichiers binaire sous le répertoire du serveur.
@@ -183,6 +187,7 @@ La majorité des entreprises sortent les sauvegardes des bureaux pour les entrep
 Ceci à l'avantage d'offrir une sécurité physique des sauvegardes dans un environnement approprié humidité, température, café des collègues :P, verre de lait des enfants :P ...
 
 Cette pratique est malheureusement moins fréquente lors que l'on parle de sauvegarde des données des particuliers , bien souvent nous réalisons des sauvegardons que nous conservons sur le bureau à coté de la machine d'origine. Ceci nous protège très bien des risques :
+
 * Problème matériel (disque dur , ...)
 * Erreur de manipulation ( suppression de données)
 * Corruption des données 
@@ -190,6 +195,7 @@ Cette pratique est malheureusement moins fréquente lors que l'on parle de sauve
 Malheureusement en cas de sinistre, notre sauvegarde risque d'être endommagé en même temps que la machine d'origine, que nous parlons de dégât d'eau et de feu. C'est pourquoi il est primordial de sortir les sauvegardes, car vous avez des données précieuse , que l'on parle de photos de famille ou de document de travail une fois perdu c'est fini !
 
 Lorsque nous avons listé les supports disponible j'ai fait mention de lors qu'il est  possible d'utiliser le média pour sortir les données revoici la liste des supports :
+
 * __DVD, blu-ray__
 * __Disque Externe__
 * __Bande Magnétique__
@@ -199,6 +205,31 @@ Lorsque nous avons listé les supports disponible j'ai fait mention de lors qu'i
 # Résultat pour l'écosystème de démonstration
 
 Courage, la théorie achève sous peu, nous allons maintenant procéder avec la compilation de l'ensemble de cette théorie et voir comment j'ai mis en place les différents critères pour définir ma stratégie de sauvegarde. Ceci est un point de départ afin d'avoir un dialogue sur du concret, cependant tous comme les recettes de cuisine je vous invite à y faire des modifications afin de répondre à VOS besoin.
+
+Voici un résumé de l'ensemble des répertoires et données a prendre en sauvegarde .
+TODO: ajouter l'info
+
+## Stratégie pour le chef d'orchestre 
+
+* **Type de sauvegarde** :
+    Mon critère primaire est de pouvoir réalisé une restauration RAPIDE de mes fichiers en cas de problème, je n'ai pas envie de courir après les supports pour réaliser une restauration ! Mon choix se penche donc sur 2 options , je donne 2 options car selon le logiciel de sauvegarde il est possible qu'un de mes choix ne soit pas disponible. Bien entendu l'idée de prendre uniquement des sauvegardes complète est aussi valide cependant l'espace disque requis serait trop volumineux.
+    1. __Sauvegarde décrémentale__ : Ceci me permettra d'avoir le dernier backup complet et de recherché les fichiers plus vieux au besoin. De plus l'utilisation de cette solution me permettra de réduire la quantité des sauvegardes.
+    2. __Sauvegarde différentielle__ : Cette solution rejoint l'idée d'avoir peut d'étape pour réaliser la restauration , soit restauration de la sauvegarde complète + le dernier différenciel. De plus tous comme la solution décrémentale ceci réduit le temps de prise de sauvegarde. 
+
+
+* **Type de support** :
+    Mon critère ici est le rapport taille / prix, bien que pour cette aspect les bandes magnétique serait une bonne idée le coût de l'achat du lecteur me décourage. De plus en cas de bris du lecteur je ne pourrais plus utiliser mes bandes à moins de réinvestir. Autre critère pouvoir sortir mes sauvegardes
+    1. __Disque dur Externe__: La meilleur option reste les disques dur externe qui aujourd'hui offre un coût très intéressant , de toutes taille physique et espace de donnée.
+    2. __DVD , blu-ray__ : j'analyse l'option de stocké des données sur disque optique telle que les photos de famille afin d'avoir une conservation à plus long terme dans un coffre. Je ne suis pas prêt a déployer cette solution donc pour le moment je dupliquerai de manière perpétuel mes données sur les disques Externe.
+
+* **Manipulation des données** :
+    Je vais chercher a réduire la taille de mes backups afin d'optimiser l'espace, bien que le chiffrement des sauvegardes est intéressant je ne désire pas donnée cette tâches au logiciel de sauvegarde. Le problème est que ceci limiterai mes choix, car le nombre d'option réduit. Si je désire réaliser ce type d'opération je le ferai en amont soit en chiffrant l'ensemble du système de fichier de mon disque externe. 
+    1. __Déduplication__ : J'aimerai que le logiciel de sauvegarde puisse réaliser de la déduplication afin de réduire l'espace utilisé lors de la sauvegarde. Car je suis d'accord avec l'idée de ne pas écrire 2 fois les mêmes données.
+
+* **Méthode de prise de sauvegarde** :
+    Ici nous parlons encore de temps de prise de sauvegarde et rapidité de restauration. Je pars du principe que réinstaller un système n'est pas un problème voir même une opportunité :D. Donc je cherche principalement à copies les données du système, je parle ici pour les opérations courante éventuellement il est possible que je prenne une image d'un système afin de pouvoir le restaurer rapidement , principalement si je suis moins confortable avec le système d'exploitation.
+    1. __Copie de fichiers__ : Comme il y a un risque d'oublier de configurer un répertoire il faudra revisité la configuration.
+    2. __Base de donnée à froid__ : n'ayant que très peu de base de donnée et aucune avec une charge énorme la prise de sauvegarde à froid est la plus simple. Ceci ne nécessitera pas de configuration particulière et l'ensemble des logiciels de sauvegarde seront en mesure de faire l'opération.
 
 # Mise en place de logiciel
 
