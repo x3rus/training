@@ -50,8 +50,7 @@ LST_FILE_FOR_THE_YEAR_WITH_SIZE=$(mktemp)
 
 # note : l'opération 1 ET 2 pourrais être réalisé en une command en utilisant l'argument -exec  de find.
 #        je profite de l'oportunité d'utilisé xargs ici pour la démonstration
-# TODO : mettre le paramètre pour les "" de args .. avec sed ... 
-cat $LST_FILE_FOR_THE_YEAR | xargs -l du -s >> $LST_FILE_FOR_THE_YEAR_WITH_SIZE
+cat $LST_FILE_FOR_THE_YEAR | sed 's/.*/"&"/' |  xargs -l du -s >> $LST_FILE_FOR_THE_YEAR_WITH_SIZE
 
 echo " La taille total pour l'anne $STARTING_YEAR  en kilobytes : "
 echo $(cat $LST_FILE_FOR_THE_YEAR_WITH_SIZE |tr "\t" " " | cut -d ' ' -f 1 | sed 's/$/ \+/g' | tr "\n" " " | sed 's/+ $//g') |  bc
