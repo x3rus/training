@@ -4,8 +4,31 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 </style>
 
 # Index  
+* [Introduction ](#intro) 
+* [Stratégie de sauvegarde ](#strategie) 
+       * [Formulaire par client](#form_client) 
+       * [Planification du chef d'orchestre (serveur / logiciel)](#chef_orchestre) 
+           * [Formulaire pour le chef d'orchestre](#form_chef_orchestre) 
+           * [Type de sauvegarde ](#type_sauvegarde) 
+           * [Support de sauvegarde](#lst_support) 
+           * [ Manipulation des données](#manip_data) 
+           * [Méthode de prise de sauvegarde](#methode_sauv) 
+           * [ Défis des équipements mobile](#defi_mobile) 
+           * [Sortir les sauvegardes du lieu ](#sortir_bk) 
+* [Résultat pour l'écosystème de démonstration](#resultat_eco) 
+       * [Stratégie pour le chef d'orchestre ](#strategie_chef_orches) 
+* [Mise en place de logiciel](#mise_en_place) 
+       * [Rsnapshot](#rsnapshot) 
+       *<a name"backupPC" />BackupPC
+       * [lvm export](#lvm_export) 
+       * [ghost bare metal](#ghost_bare_metal) 
+       * [Backup de sanpshot de VM](#backup_snapshot_vmware) 
+       * [Mise en place d'une stratégie de la validation de sauvegarde automatique.](#Validation) 
+       * [Indicateur de prise de backup pour PS4 ](#bk_ps4) 
+       * [Indicateur d'absence de backup des Téléphone](#mobile_bk_check) 
+* [Référence ](#ref) 
 
-# Introduction 
+# <a name="intro" />Introduction 
 
 La sauvegarde de donnée ou __backup__ en anglais est une chose très importante de nos jours. Combien de donnée avez vous sur votre machine qu'il ne faut surtout pas perdre ?! Que nous parlions des photos de famille, des rapports d'impôt, ... Tous est numérisés, il est important de ne pas perdre les fichiers.
 
@@ -24,7 +47,7 @@ Nous allons voir comment définir une stratégie de sauvegarde ainsi que les out
 
 Afin de faciliter le dialogue voici un exemple d'environnement que nous désirions prendre en sauvegarde : [Infrastructure de démonstration](./infrastructure_demo.html). 
 
-# Stratégie de sauvegarde 
+# <a name="strategie" />Stratégie de sauvegarde 
 
 Comme pour tous il est important de prendre quelques minutes de recule et d'évaluer la stratégie de sauvegarde que l'on veut mettre en place , afin de répondre à nos besoins et contraintes (coût, temps , niveau technique , ...) . 
 
@@ -45,7 +68,7 @@ Voici quelques question que vous devriez vous posez :
 * Granularité de la restauration 
 
 
-## Formulaire par client
+## <a name="form_client" />Formulaire par client
 
 Nous avons souvent le reflex de commencé par chercher le logiciel disponible avant dévaluer le plus important ce que l'on doit prendre en backup ! 
 Je vais donc commencer par identifier ce que je dois sauvegarder, car comment ceci me permettra :
@@ -63,9 +86,9 @@ Ceci est un __PDF__ éditable , pas de panique je n'ai pas planifier de faire 2 
 
 À ce stade nous avons une bonne idée de l'ensemble des données et des acteurs qui participe au processus de sauvegarde. Il nous manque un point critique le chef d'orchestre, soit le serveur / logiciel qui orchestre le processus.
 
-## Planification du chef d'orchestre (serveur / logiciel)
+## <a name="chef_orchestre" />Planification du chef d'orchestre (serveur / logiciel)
 
-### Formulaire pour le chef d'orchestre
+### <a name="form_chef_orchestre" />Formulaire pour le chef d'orchestre
 
 Avant de présenter des logiciels j'aimerais clarifier certain concept de sauvegarde afin de pouvoir remplir de manière approprié et surtout en tout connaissance le document. Tout comme pour la partie client j'ai réalisé un formulaire __PDF__ éditable pour entrer l'ensemble des informations.
 Encore une fois l'ensemble de ces questions sont générique peut importe le choix du logiciel.
@@ -74,7 +97,7 @@ Voici le Formulaire et nous allons le remplir avec l'information présenté ci-d
 
 * Formulaire pour le chef d'orchestre : TODO faire le formulaire
 
-### Type de sauvegarde 
+### <a name="type_sauvegarde" />Type de sauvegarde 
 
 Voici plusieurs mode de sauvegarde , nous allons donc faire notre choix au mieux de notre désire nous verrons par la suite ce que le logiciels choisi nous permettra. En d'autre mots toutes ces méthodes ne sont pas offertes par les logiciels de sauvegarde, mais je préfère définir mes besoins et voir par la suite ce que les logiciels me permette. 
 
@@ -135,7 +158,7 @@ Nous voyons l'ensemble des fonctionnalités offert par les logiciels de sauvegar
     * Chiffrement réalisé par le système de fichier , GNU/Linux permet de créer une partition chiffré
 * __Déduplication__ : Le système de sauvegarde peut éviter de conserver plusieurs fois le même fichier en effet si nous avons plusieurs machines qui ont le même fichier zip qui est pris en sauvegarde certain logiciel de sauvegarde peut ne conserver qu'un fichier et réaliser un pointeur pour les autres. Ceci permet d'économiser l'espace disque dur de manière significatif s'il y a redondance de fichier.
 
-### Méthode de prise de sauvegarde
+### <a name="methode_sauv" />Méthode de prise de sauvegarde
 
 Voici un liste de méthode de prise de sauvegarde, tous les systèmes de sauvegarde n'ont pas l'ensemble des fonctionnalités , il est possible que vous désiriez combiner une ou plusieurs méthodes dans votre environnement. Ceci n'est pas une liste exhaustive , cependant ce sont les méthodes les plus courantes. 
 
@@ -175,7 +198,7 @@ N'étant pas un adepte des solutions de service en ligne en (TODO )impartition, 
 
 Pour le moment nous ne sommes que dans l'étape de planification pour la réalisation proprement dite, voici la section pour les TROP pressés. (TODO  : ajouter lien vers section mobile)
 
-### Sortir les sauvegardes du lieu 
+### <a name="sortir_bk" />Sortir les sauvegardes du lieu 
 
 **IMPORTANT** 
 
@@ -202,14 +225,14 @@ Lorsque nous avons listé les supports disponible j'ai fait mention de lors qu'i
 * __Clé USB__
 * __Service en ligne__ de par la nature du support :D
 
-# Résultat pour l'écosystème de démonstration
+# <a name="resultat_eco"/>Résultat pour l'écosystème de démonstration
 
 Courage, la théorie achève sous peu, nous allons maintenant procéder avec la compilation de l'ensemble de cette théorie et voir comment j'ai mis en place les différents critères pour définir ma stratégie de sauvegarde. Ceci est un point de départ afin d'avoir un dialogue sur du concret, cependant tous comme les recettes de cuisine je vous invite à y faire des modifications afin de répondre à VOS besoin.
 
 Voici un résumé de l'ensemble des répertoires et données a prendre en sauvegarde .
 TODO: ajouter l'info
 
-## Stratégie pour le chef d'orchestre 
+## <a name="strategie_chef_orches"/>Stratégie pour le chef d'orchestre 
 
 * **Type de sauvegarde** :
     Mon critère primaire est de pouvoir réalisé une restauration RAPIDE de mes fichiers en cas de problème, je n'ai pas envie de courir après les supports pour réaliser une restauration ! Mon choix se penche donc sur 2 options , je donne 2 options car selon le logiciel de sauvegarde il est possible qu'un de mes choix ne soit pas disponible. Bien entendu l'idée de prendre uniquement des sauvegardes complète est aussi valide cependant l'espace disque requis serait trop volumineux.
@@ -231,27 +254,27 @@ TODO: ajouter l'info
     1. __Copie de fichiers__ : Comme il y a un risque d'oublier de configurer un répertoire il faudra revisité la configuration.
     2. __Base de donnée à froid__ : n'ayant que très peu de base de donnée et aucune avec une charge énorme la prise de sauvegarde à froid est la plus simple. Ceci ne nécessitera pas de configuration particulière et l'ensemble des logiciels de sauvegarde seront en mesure de faire l'opération.
 
-# Mise en place de logiciel
+# <a name="mise_en_place" />Mise en place de logiciel
 
 TODO continuer la documentation ....
 
 rsnapshot Vs BackupPC
 
-## Rsnapshot
+## <a name="rsnapshot" />Rsnapshot
 
-## BackupPC
+## <a name"backupPC" />BackupPC
 
-## lvm export
+## <a name="lvm_export" />lvm export
 http://tldp.org/HOWTO/LVM-HOWTO/snapshots_backup.html
 
-## ghost bare metal
-## Backup de sanpshot de VM
+## <a name="ghost_bare_metal" />ghost bare metal
+## <a name="backup_snapshot_vmware" />Backup de sanpshot de VM
 
-## Mise en place d'une stratégie de la validation de sauvegarde automatique.
-## Indicateur de prise de backup pour PS4 
-## Indicateur d'absence de backup des Téléphone
+## <a name="Validation" />Mise en place d'une stratégie de la validation de sauvegarde automatique.
+## <a name="bk_ps4" />Indicateur de prise de backup pour PS4 
+## <a name="mobile_bk_check" />Indicateur d'absence de backup des Téléphone
 
-# Référence 
+# <a name="ref" />Référence 
 
 * https://openclassrooms.com/courses/la-sauvegarde-sous-gnu-linux
 * https://debian-handbook.info/browse/fr-FR/stable/sect.backup.html
