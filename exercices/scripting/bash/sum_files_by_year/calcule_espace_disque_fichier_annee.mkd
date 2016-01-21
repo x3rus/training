@@ -1,0 +1,16 @@
+# Description
+
+Dans un répertoire donnée faire la recherche des fichiers qui furent modifier l'année passé par exemple entre le 1 janvier 2015 au 31 décembre 2016.
+Sur cette liste de fichier , extraire la taille total des fichiers. 
+
+Le script prend en argument l'année que l'on désire analyser ainsi que le PATH .
+
+usage : 
+        $ sum\_files\_by\_year.sh  PATH   YEAR 
+exemple : 
+        $ sum\_files\_by\_year.sh  /export/data 2015
+
+Truc  : N'hésitez pas a utiliser des fichiers temporaire 
+
+
+

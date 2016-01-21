@@ -254,11 +254,14 @@ TODO: ajouter l'info
     1. __Copie de fichiers__ : Comme il y a un risque d'oublier de configurer un répertoire il faudra revisité la configuration.
     2. __Base de donnée à froid__ : n'ayant que très peu de base de donnée et aucune avec une charge énorme la prise de sauvegarde à froid est la plus simple. Ceci ne nécessitera pas de configuration particulière et l'ensemble des logiciels de sauvegarde seront en mesure de faire l'opération.
 
+* **Rotation des sauvegardes avec l'externe**
+    Pour la rotation des disques dur externe, ma technique n'étais pas optimal à l'origine j'apportai un disque dur au travail et occasionnellement je pensais à reprendre un autre disque externe pour faire la rotation. Le problème avec cette solution est que parfois j'oublie et allant au travaille tous les jours, il y a peu d'indication de la journée particulière et qu'il faut apporter le disque. Lors de la préparation cette formation une personne m'a présenter une autre solution que je vais mettre en place maintenant , ce sera à l'essaie. 
+    Le disque dur sera entreposé chez ma mère, donc lors du repas dominical , on pense aux fleurs et au disque dur. Attention de ne pas offrir le disque ça risquerai de faire un impair :-). Résultat un risque de perte de donnée d'une semaine uniquement, ou un mois selon les visites.
+
 # <a name="mise_en_place" />Mise en place de logiciel
 
 TODO continuer la documentation ....
 
-rsnapshot Vs BackupPC
 
 ## <a name="rsnapshot" />Rsnapshot
 
