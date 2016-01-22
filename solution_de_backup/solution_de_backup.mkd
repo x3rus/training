@@ -260,22 +260,38 @@ TODO: ajouter l'info
 
 # <a name="mise_en_place" />Mise en place de logiciel
 
-TODO continuer la documentation ....
+Suite à la mise en place de la stratégie de sauvegarde il est temps de la mettre en pratique, nous avons définie nos requis et besoin nous allons voir à présent les logiciels disponibles. Nous allons être obligé de faire des concessions car il est possible que les logiciels ne répondes pas à l'ensemble de nos requis. Comme nous utilisons des logiciels libre il serait toujours possible de programmer les fonctionnalités manquante, mais nous sortons du cadre. 
+Je n'ai pas la prétention de présenter l'ensemble des solutions disponibles , en fait à l'origine je n'avais prévue présenter qu'une solution **rsnapshot**, mais pour avoir une formation complète j'ai préféré vous offrir plus de choix. Nous verrons donc 3 solutions de sauvegarde :
+
+* **Rsnapshot** : Solution que j'utilise depuis plusieurs année et qui réponds a mes besoins 
+* **BackupPC** : Solution très populaire dans le monde du libre qui offre une interface web de gestion , donc plus conviviale pour les utilisateurs. (Prendre note que j'ai moins d'expérience avec cette solution)
+* **CloneZilla** : Solution similaire à  __Norton Ghost__ , il clone un disque dur dans son intégralité. 
+
+## <a name="rsnapshot" /> Rsnapshot
+
+__Rsnapshot__ est basé sur le logiciel **rsync** , en fait il est une couche d'abstraction sur __rsync__ nous permettant de définir des sauvegardes de manière périodique d'une machine local ou à distance grâce au protocole **ssh**. La configuration se fait grâce à un fichier texte simple et il est possible de l'industrialiser. 
+
+* Point Fort : __Rsnapshot__ est l'utilisation de lien dur (__Hard Link__) quand les fichiers sont identique ceci à l'avantage de réduire l'utilisation de l'espace disque dur. Le système est aussi très personnalisé les opérations à l'aide de scripts. Offre l'ensemble de la structure du dernier backup complète.
+* Point Faible : __Rsnapshot__ n'offre pas d'interface graphique de configuration et gestion ce qui peut rebuté un peu le client ou l'utilisateur .
 
 
-## <a name="rsnapshot" />Rsnapshot
+## <a name="backupPC" />BackupPC
 
-## <a name"backupPC" />BackupPC
+## <a name="clonezilla" />CloneZilla
 
-## <a name="lvm_export" />lvm export
-http://tldp.org/HOWTO/LVM-HOWTO/snapshots_backup.html
-
-## <a name="ghost_bare_metal" />ghost bare metal
-## <a name="backup_snapshot_vmware" />Backup de sanpshot de VM
+# <a name="la_glue_autour" />Quelques points pour peaufiner la solution
 
 ## <a name="Validation" />Mise en place d'une stratégie de la validation de sauvegarde automatique.
 ## <a name="bk_ps4" />Indicateur de prise de backup pour PS4 
 ## <a name="mobile_bk_check" />Indicateur d'absence de backup des Téléphone
+
+# <a name="other_technique" />Autre Méthode pour des besoins precis.
+
+## <a name="lvm_export" />lvm export
+http://tldp.org/HOWTO/LVM-HOWTO/snapshots_backup.html
+
+## <a name="backup_snapshot_vmware" />Backup de sanpshot de VM
+
 
 # <a name="ref" />Référence 
 

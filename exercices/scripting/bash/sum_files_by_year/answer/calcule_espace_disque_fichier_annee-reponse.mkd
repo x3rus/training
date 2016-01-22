@@ -1,2 +1,0 @@
-find /export/acc-repo/storage -type f -newermt 20150101 -not -newermt 20160101 > ~/acc-repo-file-2015
-echo $(cat acc-repo-file-2015-size   |tr "\t" " " | cut -d ' ' -f 1 | sed 's/$/ \+/g' | tr "\n" " " | sed 's/+ $//g') |  bc
