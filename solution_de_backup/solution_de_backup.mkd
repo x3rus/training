@@ -271,9 +271,54 @@ Je n'ai pas la prétention de présenter l'ensemble des solutions disponibles , 
 
 __Rsnapshot__ est basé sur le logiciel **rsync** , en fait il est une couche d'abstraction sur __rsync__ nous permettant de définir des sauvegardes de manière périodique d'une machine local ou à distance grâce au protocole **ssh**. La configuration se fait grâce à un fichier texte simple et il est possible de l'industrialiser. 
 
-* Point Fort : __Rsnapshot__ est l'utilisation de lien dur (__Hard Link__) quand les fichiers sont identique ceci à l'avantage de réduire l'utilisation de l'espace disque dur. Le système est aussi très personnalisé les opérations à l'aide de scripts. Offre l'ensemble de la structure du dernier backup complète.
-* Point Faible : __Rsnapshot__ n'offre pas d'interface graphique de configuration et gestion ce qui peut rebuté un peu le client ou l'utilisateur .
+* Point Fort : __Rsnapshot__ est l'utilisation de lien dur (__Hard Link__) quand les fichiers sont identique ceci à l'avantage de réduire l'utilisation de l'espace disque dur. Le système est aussi très personnalisé les opérations à l'aide de scripts. Offre l'ensemble de la structure du dernier backup complète. Ne nous oblige pas a installer un agent sur l'ensemble des machines ni d'ouvrir des ports réseaux en plus.
+* Point Faible : __Rsnapshot__ n'offre pas d'interface graphique de configuration et gestion ce qui peut rebuté un peu le client ou l'utilisateur.
 
+Débutons avec la mise en place de la solution, j'entends certain dire enfin :P.
+
+* Référence :
+    * site officiel : http://rsnapshot.org/
+    * __wiki archlinux__ : https://wiki.archlinux.org/index.php/Rsnapshot
+
+### <a name="install_rsnapshot" /> Installation et configuration de Rsnapshot 
+
+* L'installation 
+
+L'installation est très simple la majorité des distributions offre un pacquage pour __rsnapshot__ .
+
+        $ sudo apt-get install rsnapshot
+
+On peut pas me dire que GNU/Linux c'est compliqué :P !
+
+TODO: FAUT ABSOLUMENT VALIDER l'install dans le docker de formation 64 bits ... J'ai du mettre anacron au lieu de cron pour le systeme 32 bits du laptop :(
+
+
+* La configuration
+
+Le fichier de configuration par défaut est **/etc/rsnapshot.conf**, je vous laisse le plaisir de lire le contenu du fichier fournie par la distribution pour vous inspirer.
+
+TODO : sortir d'ici la section ci-dessous mais bon juste pour garder une trace
+
+        $ cd /etc
+        $ git init
+        $ git config --global user.email "Bob@exemple.com "
+        $ git config --global user.name "Bob :D "
+        $ sudo git add rsnapshot.conf
+        $ sudo git add rsnapshot.conf 
+        bob@xerus:/etc$ sudo git commit -a -m " Ajout du fichier original rsnapshot "
+        [master (root-commit) be15580]  Ajout du fichier original rsnapshot
+         1 file changed, 254 insertions(+)
+          create mode 100644 rsnapshot.conf
+        bob@xerus:/etc$ sudo git log
+        commit be15580f0a5e6048e03b69ecf6049bc91617235e
+        Author: Bob :D <Bob@exemple.com>
+        Date:   Fri Jan 22 17:31:12 2016 -0500
+
+            Ajout du fichier original rsnapshot
+
+
+
+### <a name="setup_x3_rsnapshot" /> Ma configuration de Rsnapshot
 
 ## <a name="backupPC" />BackupPC
 
