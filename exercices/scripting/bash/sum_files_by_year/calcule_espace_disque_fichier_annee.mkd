@@ -15,7 +15,7 @@ Truc  : N'hésitez pas a utiliser des fichiers temporaire
 
 Matériel  disponible : 
 
-* __usr\_share\_fonts.tar.bz2 (22 Megs)__ : contient des polices de caractère après extraction validez que les dates furent conservé.
+* [usr_share_fonts.tar.bz2](./usr_share_fonts.tar.bz2) (22 Megs)__ : contient des polices de caractère après extraction validez que les dates furent conservé.
 * Résultat par année : 
     * 2011 : 12 __kilobytes__
     * 2012 : 196 __kilobytes__ (attention il y a une subtilité ici car il y a un fichier avec espaces :P)
