@@ -282,7 +282,7 @@ Débutons avec la mise en place de la solution, j'entends certain dire enfin :P.
 
 ### <a name="install_rsnapshot" /> Installation et configuration de Rsnapshot 
 
-* L'installation 
+####  L'installation 
 
 L'installation est très simple la majorité des distributions offre un pacquage pour __rsnapshot__ .
 
@@ -293,7 +293,7 @@ On peut pas me dire que GNU/Linux c'est compliqué :P !
 TODO: FAUT ABSOLUMENT VALIDER l'install dans le docker de formation 64 bits ... J'ai du mettre anacron au lieu de cron pour le systeme 32 bits du laptop :(
 
 
-* La configuration
+#### La configuration
 
 Le fichier de configuration par défaut est **/etc/rsnapshot.conf**, je vous laisse le plaisir de lire le contenu du fichier fournie par la distribution pour vous inspirer.
 
@@ -303,9 +303,8 @@ TODO : sortir d'ici la section ci-dessous mais bon juste pour garder une trace
         $ git init
         $ git config --global user.email "Bob@exemple.com "
         $ git config --global user.name "Bob :D "
-        $ sudo git add rsnapshot.conf
         $ sudo git add rsnapshot.conf 
-        bob@xerus:/etc$ sudo git commit -a -m " Ajout du fichier original rsnapshot "
+        $ sudo git commit -a -m " Ajout du fichier original rsnapshot "
         [master (root-commit) be15580]  Ajout du fichier original rsnapshot
          1 file changed, 254 insertions(+)
           create mode 100644 rsnapshot.conf
@@ -315,6 +314,93 @@ TODO : sortir d'ici la section ci-dessous mais bon juste pour garder une trace
         Date:   Fri Jan 22 17:31:12 2016 -0500
 
             Ajout du fichier original rsnapshot
+
+Éditer le fichier pour refléter votre configuration , lire les commentaires explicatif fournit dans le fichier.
+Il est aussi possible de consulter le fichier **/usr/share/doc/rsnapshot/examples/rsnapshot.conf.default.gz** contenant un exemple de configuration.
+
+Voici le résultat de la configuration sans les commentaires et les lignes vide :
+
+        $  cat rsnapshot.conf | grep -v "#" | grep -v "^$"
+        config_version  1.2
+        snapshot_root   /var/cache/rsnapshot/
+        cmd_cp          /bin/cp
+        cmd_du          /usr/bin/du
+        cmd_logger      /usr/bin/logger
+        cmd_rm          /bin/rm
+        cmd_rsnapshot_diff      /usr/bin/rsnapshot-diff
+        cmd_rsync       /usr/bin/rsync
+        cmd_ssh /usr/bin/ssh
+        interval        daily           7
+        interval        weekly          4
+        interval        monthly         6
+        verbose         2
+        loglevel        3
+        logfile         /var/log/rsnapshot.log
+        lockfile        /var/run/rsnapshot.pid
+        backup  /etc/           localhost/
+
+Information sur la configuration 
+
+* __snapshot\_root__ : Ceci décrit le répertoire où sera stocké les configurations.
+* __cmd_*__ : Permet de définir les chemins où les binaires sont disponible.
+* __interval__ :  Définie le nombre de rétention selon le type journalier , hebdomadaire , ...
+* __verbose__ et __loglevel__ : Comprend les informations pour les logs :P
+* __backup__ : Décrit les répertoires à prendre en sauvegarde et le répertoire de destination ici __localhost__ sous le répertoire définie par __snapshot_root__
+
+
+**IMPORTANT** : __Rsnapshot__ oblige l'utilisation des tabulations entre les arguments si vous utilisez des espaces vous aurez un message d'erreur, comme ci-dessous :P
+
+        ERROR: interval daily 7 - missing tabs to separate words - change spaces to \
+                 tabs. 
+
+
+#### Utilisation 
+
+Test d'exécution  et validation du résultat : 
+
+        $ sudo rsnapshot -c /etc/rsnapshot.conf daily
+        $ sudo ls -l /var/cache/rsnapshot/
+        total 4
+        drwxr-xr-x 3 root root 4096 Jan 25 08:31 daily.0
+        $ sudo ls -l /var/cache/rsnapshot/daily.0/localhost/etc/passwd
+        -rw-r--r-- 1 root root 1043 Jan 22 17:18 /var/cache/rsnapshot/daily.0/localhost/etc/passwd
+
+Nous avons a présent un répertoire **daily.0** contenant le dernier backup disponible , dans ce dernier comme nous l'avions définie dans le fichier de configuration, nous avons le répertoire __localhost__ contenant la structure que nous voulions prendre en sauvegarde. Si nous listons un fichier , par exemple __/etc/passwd__.
+
+Je relance l'opération normalement rien ou presque ne fut modifier, cette opération est normalement réaliser une fois par jour :P.
+
+        $ sudo rsnapshot -c /etc/rsnapshot.conf daily
+        $ sudo ls -l /var/cache/rsnapshot/
+        total 8
+        drwxr-xr-x 3 root root 4096 Jan 25 08:34 daily.0
+        drwxr-xr-x 3 root root 4096 Jan 25 08:31 daily.1
+        $ sudo du -hsc /var/cache/rsnapshot/daily.0 /var/cache/rsnapshot/daily.1
+        3.7M    /var/cache/rsnapshot/daily.0
+        588K    /var/cache/rsnapshot/daily.1
+        4.3M    total
+        $ sudo ls -li /var/cache/rsnapshot/daily.1/localhost/etc/passwd
+        534727 -rw-r--r-- 2 root root 1043 Jan 22 17:18 /var/cache/rsnapshot/daily.1/localhost/etc/passwd
+        $ sudo ls -li /var/cache/rsnapshot/daily.0/localhost/etc/passwd
+        534727 -rw-r--r-- 2 root root 1043 Jan 22 17:18 /var/cache/rsnapshot/daily.0/localhost/etc/passwd
+
+Nous avons à présent **daily.0** et **daily.1** qui sont respectivement **la sauvegarde la plus récenter** et la **sauvegarde veille d'un jour**. Nous constatons que l'espace disque utilisé par les sauvegardes ne sont pas équivalente, mais que nous parcourions le répertoires __daily.0__ ou __daily.1__ nous aurons l'ensemble de la structure.
+Nous pouvons le voir avec le fichier __/etc/passwd__. __Rsnapshot__ réalise des liens dur (__hard link__) pour faire la référence des fichiers. L'avantage est que nous ne sommes pas obligé de reconstruire la structure des  répertoires avec les anciennes sauvegarde le répertoire  est complet. 
+Comme démontré dans l'exemple ci-dessus nous pouvons constater que le fichier __etc/passwd__ à le même __inode__ et la chiffre indiquant qu'il y a un lien symbolique est à 2 .
+
+Pour bien faire la démonstration je l'exécute une fois de plus, nous passerons donc a 3 le nombre de lien dur.
+
+        $ sudo rsnapshot -c /etc/rsnapshot.conf daily
+        $ sudo ls -li /var/cache/rsnapshot/daily.0/localhost/etc/passwd
+        534727 -rw-r--r-- 3 root root 1043 Jan 22 17:18 /var/cache/rsnapshot/daily.0/localhost/etc/passwd
+        $ sudo ls -li /var/cache/rsnapshot/daily.1/localhost/etc/passwd
+        534727 -rw-r--r-- 3 root root 1043 Jan 22 17:18 /var/cache/rsnapshot/daily.1/localhost/etc/passwd
+        $ sudo ls -li /var/cache/rsnapshot/daily.2/localhost/etc/passwd
+        534727 -rw-r--r-- 3 root root 1043 Jan 22 17:18 /var/cache/rsnapshot/daily.2/localhost/etc/passwd
+
+Pour pouvoir exécuter la sauvegarde hebdomadaire, vous devez avoir l'ensemble des exécutions journalier, sinon vous aurez l'erreur suivante dans vos __log__ :
+
+        [25/Jan/2016:08:53:54] /usr/bin/rsnapshot -c /etc/rsnapshot.conf weekly: started
+        [25/Jan/2016:08:53:54] /var/cache/rsnapshot/daily.6 not present (yet), nothing to copy
 
 
 
