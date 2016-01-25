@@ -402,11 +402,64 @@ Pour pouvoir exécuter la sauvegarde hebdomadaire, vous devez avoir l'ensemble d
         [25/Jan/2016:08:53:54] /usr/bin/rsnapshot -c /etc/rsnapshot.conf weekly: started
         [25/Jan/2016:08:53:54] /var/cache/rsnapshot/daily.6 not present (yet), nothing to copy
 
+Donc une fois les 6 instances créé il est possible d'exécuter la sauvegarde hebdomadaire 
+
+        $ sudo rsnapshot -c /etc/rsnapshot.conf weekly
+        $ sudo ls -l /var/cache/rsnapshot/
+        total 28
+        drwxr-xr-x 3 root root 4096 Jan 25 08:57 daily.0
+        drwxr-xr-x 3 root root 4096 Jan 25 08:57 daily.1
+        drwxr-xr-x 3 root root 4096 Jan 25 08:57 daily.2
+        drwxr-xr-x 3 root root 4096 Jan 25 08:57 daily.3
+        drwxr-xr-x 3 root root 4096 Jan 25 08:57 daily.4
+        drwxr-xr-x 3 root root 4096 Jan 25 08:50 daily.5
+        drwxr-xr-x 3 root root 4096 Jan 25 08:34 weekly.0
+        $ sudo ls -l -i /var/cache/rsnapshot/weekly.0/localhost/etc/passwd
+        534727 -rw-r--r-- 7 root root 1043 Jan 22 17:18 /var/cache/rsnapshot/weekly.0/localhost/etc/passwd
+
+Le concept est le même pour les sauvegardes par mois ou année.
+
+
+#### Configuration des tâches planifiées
+
+L'utilisation à la ligne de commande est pratique pour faire des testes, cependant nous désirons mettre en place cette opérations de manière régulière et planifier. Pour ce faire nous allons éditer le **crontab**. 
+
+Les manières de réaliser l'opération sont multiple , éditer la tache planifié de l'utilisateur __root__ ou éditer le fichier **/etc/crontab** . Je vais prendre la deuxième option, ce qui ne change presque rien à la définition.
+
+Je vais ajouter les lignes suivante au fichier de **/etc/crontab**
+
+        00 02 2-31 * 1-6 root /usr/bin/rsnapshot -c /etc/rsnapshot.conf daily
+        00 02 2-31 * 7   root /usr/bin/rsnapshot -c /etc/rsnapshot.conf weekly
+        00 02 01 * *     root /usr/bin/rsnapshot -c /etc/rsnapshot.conf monthly
+
+* __daily__ : La sauvegarde est exécutée à 2:00 (00 02) le matin , date 02 au 31 (2-31) , du lundi au samedi (1-6)
+* __weekly__ : La sauvegarde est exécutée à 2:00 (00 02) le matin , date 02 au 31 (2-31) , le dimanche (7)
+* __monthly__ : La sauvegarde est exécutée à 2:00 (00 02) le matin , le 1 du mois
+
+Comme vous pouvez le constater les sauvegardes sont programmer pour ne pas se marché dessus. Si nous regardons les fichiers de configuration vous constaterez qu'il y a la définition d'un fichier de verrou afin que si nous réalisons une erreur le problème ne cause pas de problème majeur.
 
 
 ### <a name="setup_x3_rsnapshot" /> Ma configuration de Rsnapshot
 
+Je présume que bien que la solution soit d'une simplicité déconcertante, il y a un peu d'incrédulité par le manque d'information sur l'état des copies , la quantité de donnée transférer , ... En gros on manque de visibilité sur ce qui s'est produit et surtout on aimerait bien recevoir un courriel avec le résultat afin de ne pas le lire et classer dans un répertoire pourvu à cette effet !
+De plus comment on fais pour réaliser la sauvegarde d'une machine distant ? Afin de répondre à la question je vais vous présenter ma configuration.
+
+Je vais donc faire la présentation de l'écosystème que j'ai mis autour pour répondre à ce besoin, je ne prétend pas que c'est la meilleur solution cependant elle a le mérite d'être flexible. L'ensemble des scripts son disponible sous le dépôt [github scripts](https://github.com/x3rus/scripts/).
+
+* Organisation des fichiers de configuration 
+
+Premièrement je ne vais pas utiliser le fichier de configuration __/etc/rsnapshot.conf__ , j'ai créé un répertoire **/etc/rsnapshot/hosts** sous ce dernier j'ai mis la configuration désirer pour chacune des machines.
+
+        $ ls /etc/rsnapshot/hosts
+        goban_x3rus_com.conf  hoshi_x3rus_com.conf  tengen_x3rus_com.conf
+
+* script d'abstraction **backup_runner.sh**
+
+Ce script disponible sous le dépôt [backup_runner.sh](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/backup_runner.sh), permet d'avoir une validation des paramètres transmis. 
+
 ## <a name="backupPC" />BackupPC
+
+TODO: On fera pas on va attendre de voir apache, mysql ...
 
 ## <a name="clonezilla" />CloneZilla
 
