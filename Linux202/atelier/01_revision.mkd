@@ -74,7 +74,7 @@ Un petit atelier pour vous donner l'occasion de mettre un peu en pratique ce que
 
 # <a name="redirection_cmd" />Redirection de commande & Chainage de commande 
 
-* Créé le répertoire **/home/bob/ateliers/files/cmds_redirection** 
+* Créé le répertoire **/home/bob/ateliers/files/cmds\_redirection** 
 
 ## <a name="redirect" />Redirection 
 
