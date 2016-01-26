@@ -439,7 +439,7 @@ Je vais ajouter les lignes suivante au fichier de **/etc/crontab**
 Comme vous pouvez le constater les sauvegardes sont programmer pour ne pas se marché dessus. Si nous regardons les fichiers de configuration vous constaterez qu'il y a la définition d'un fichier de verrou afin que si nous réalisons une erreur le problème ne cause pas de problème majeur.
 
 
-### <a name="setup_x3_rsnapshot" /> Ma configuration de Rsnapshot
+### <a name="setup_x3_rsnapshot_serveur" /> Ma configuration de Rsnapshot serveur
 
 Je présume que bien que la solution soit d'une simplicité déconcertante, il y a un peu d'incrédulité par le manque d'information sur l'état des copies , la quantité de donnée transférer , ... En gros on manque de visibilité sur ce qui s'est produit et surtout on aimerait bien recevoir un courriel avec le résultat afin de ne pas le lire et classer dans un répertoire pourvu à cette effet !
 De plus comment on fais pour réaliser la sauvegarde d'une machine distant ? Afin de répondre à la question je vais vous présenter ma configuration.
@@ -450,12 +450,76 @@ Je vais donc faire la présentation de l'écosystème que j'ai mis autour pour r
 
 Premièrement je ne vais pas utiliser le fichier de configuration __/etc/rsnapshot.conf__ , j'ai créé un répertoire **/etc/rsnapshot/hosts** sous ce dernier j'ai mis la configuration désirer pour chacune des machines.
 
+        $ sudo mkdir -p  /etc/rsnapshot/hosts
         $ ls /etc/rsnapshot/hosts
         goban_x3rus_com.conf  hoshi_x3rus_com.conf  tengen_x3rus_com.conf
+
+* Création de clés __SSH__ pour la communication avec les machines distantes
+
+Nous n'avons pas encore couvert le processus de sauvegarde d'une machine distante, le système __rsnapshot__ utilise __ssh__ pour communiquer. Comme le système de sauvegarde doit être exécuter de manière automatique sans l'intervention humaine, donc sans entrer un mot de passe nous utiliserons l'authentification par clé. Nous allons créer une pair de clé. Contrairement à l'utilisation classique qui crée la clé de le home de l'utilisateur nous allons la créer dans le répertoire __/etc/rsnapshot/keys/__ . La clé ne comprend pas de __passphrase__
+
+        
+        $ sudo mkdir -p  /etc/rsnapshot/keys 
+        $ sudo ssh-keygen
+        Generating public/private rsa key pair.
+        Enter file in which to save the key (/root/.ssh/id_rsa): /etc/rsnapshot/keys/rsnapshot_rsa
+        Enter passphrase (empty for no passphrase): 
+        Enter same passphrase again: 
+        Your identification has been saved in /etc/rsnapshot/keys/rsnapshot_rsa.
+        Your public key has been saved in /etc/rsnapshot/keys/rsnapshot_rsa.pub.
+
+Nous aurons donc la clé disponible sous __/etc/rsnapshot/keys/rsnapshot_rsa__
+
+* Configuration du client __SSH__ pour l'utilisation de la clé
+
+Nous avons définie une clé __ssh__ nous allons maintenant définir une configuration pour que le client __ssh__ de l'utilisateur **root** utilise cette configuration ! Deux option d'offre à nous , la première définir dans le fichier de configuration de __rsnapshot__ du client d'utiliser spécifiquement cette clé. Personnellement n'utilisant jamais le compte __root__ autre que pour des opérations automatisé j'ai définie cette configuration global à l'utilisateur. 
+J'ai édité le fichier **/root/.ssh/config** avec les instructions suivante :
+
+        Host *
+            IdentityFile /etc/rsnapshot/keys/rsnapshot_rsa
+            StrictHostKeyChecking no
+
+Ceci ce traduit comme suit , pour toutes les machines (__Host *__)  utilise la clé __rsnapshot\_rsa__ (__IdentityFile__) lors de l'initialisation de connexion ne pas faire de validation sur l'échange de clé initiale (__StrictHostKeyChecking__)
+
 
 * script d'abstraction **backup_runner.sh**
 
 Ce script disponible sous le dépôt [backup_runner.sh](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/backup_runner.sh), permet d'avoir une validation des paramètres transmis. 
+Si vous lisez le script vous constaterez qu'il valide les paramètres, valide que l'utilisateur utilisé est bien **root**.
+
+Résultat au lieu d'utiliser la commande __rsnapshot__ nous utiliserons :
+
+        $ sudo backup_runner.sh -c Fichier-de-configuration.conf daily
+
+* script de backup et fichier de configuration (__FullBackup.sh__ et __FullBackup.conf__)
+
+__Backup\_runner.sh__ ne réalise la sauvegarde que pour un fichier de configuration nous utiliserons le script __FullBackup.sh__ pour orchestrer l'ensemble du processus de sauvegarde. Ce dernier réalise les opérations suivante :
+
+1. __Mount__ le disque dur externe sur le système de fichier
+2. Réalise la sauvegarde pour l'ensemble des fichiers de configuration présent dans __/etc/rsnapshot/hosts/__
+3. Réalise un graphique des performances.
+4. Envoie un courriel récapitulatif du processus de sauvegarde
+
+Ce fichier utilise un fichier de configuration contenant l'ensemble des paramètres requis pour le bon fonctionnement.
+Le fichier [FullBackup.sh](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/FullBackup.sh) et [FullBackup.conf](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/FullBackup.conf), sont disponible sur __github__.
+
+Bien entendu il est important de modifier le contenu du fichier pour que ce soit représentatif de votre installation !
+
+* script satellite 
+
+Le script [FullBackup.sh](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/FullBackup.sh) appel un autre script nommé [html-email-sender.py](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/html-email-sender.py), ce petit script en python est utilisé pour envoyer un courriel. Pour ceux qui se demande pourquoi je n'ai pas simplement utilisé la commande __mail__ , simplement parce que j'avais besoin de composer un courriel en __html__ pour inclure une image.
+Tout comme les autres script ceci est disponible sur __github__ [html-email-sender.py](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/html-email-sender.py).
+
+Je vous laisse le plaisir de le lire.
+
+Le script [rsnapreport.pl](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/rsnapshot.pl) est en fait un script inclut dans le __package rsnapshot__ vous le retrouverez dans le répertoire __/usr/share/doc/rsnapshot/examples/utils/rsnapreport.pl.gz__. Je l'ai inclue dans le dépôt pour facilité le déploiement de la solution.
+
+### <a name="setup_x3_rsnapshot_client" /> Ma configuration de Rsnapshot client
+
+* configuration de la clé __ssh__ client
+* limitation à rsync
+
+### <a name="setup_x3_rsnapshot_test" /> Ma configuration validation
 
 ## <a name="backupPC" />BackupPC
 
