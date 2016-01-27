@@ -446,6 +446,12 @@ De plus comment on fais pour réaliser la sauvegarde d'une machine distant ? Afi
 
 Je vais donc faire la présentation de l'écosystème que j'ai mis autour pour répondre à ce besoin, je ne prétend pas que c'est la meilleur solution cependant elle a le mérite d'être flexible. L'ensemble des scripts son disponible sous le dépôt [github scripts](https://github.com/x3rus/scripts/).
 
+Comme je désire avoir un graphique sur le temps utilisé pour la réalisation de la sauvegarde nous aurons besoin de [rrd](http://oss.oetiker.ch/rrdtool/) outil qui permet de réaliser des graphiques avec n'importe quelle donnée. 
+De plus pour faire l'envoie de courriel en __HTML__ j'utilise un script python. Nous devons donc installer ces deux pacquages.
+
+        $ sudo apt-get install rrdtool python-minimal
+
+
 #### Organisation des fichiers de configuration 
 
 Premièrement je ne vais pas utiliser le fichier de configuration __/etc/rsnapshot.conf__ , j'ai créé un répertoire **/etc/rsnapshot/hosts** sous ce dernier j'ai mis la configuration désirer pour chacune des machines.
@@ -453,6 +459,14 @@ Premièrement je ne vais pas utiliser le fichier de configuration __/etc/rsnapsh
         $ sudo mkdir -p  /etc/rsnapshot/hosts
         $ ls /etc/rsnapshot/hosts
         goban_x3rus_com.conf  hoshi_x3rus_com.conf  tengen_x3rus_com.conf
+
+De plus par défaut __rsnapshot__ utilise uniquement 1 fichier de __log /var/log/rsnapshot__ nous allons créer un répertoire pour contenir les logs pour chaque sauvegarde.
+
+        $ sudo mkdir /var/log/rsnapshot/
+
+Nous allons aussi créer un répertoire pour stocker le fichier de graphique __rrd__ généré
+
+        $ sudo mkdir /var/lib/rrd/
 
 ####  Création de clés __SSH__ pour la communication avec les machines distantes
 
@@ -503,7 +517,7 @@ __Backup\_runner.sh__ ne réalise la sauvegarde que pour un fichier de configura
 Ce fichier utilise un fichier de configuration contenant l'ensemble des paramètres requis pour le bon fonctionnement.
 Le fichier [FullBackup.sh](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/FullBackup.sh) et [FullBackup.conf](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/FullBackup.conf), sont disponible sur __github__.
 
-Bien entendu il est important de modifier le contenu du fichier pour que ce soit représentatif de votre installation !
+Bien entendu il est important de modifier le contenu du fichier de configuration **FullBackup.conf** pour que ce soit représentatif de votre installation !
 
 #### script satellite 
 
@@ -619,9 +633,85 @@ HEU mais il sort d'où ce fichier **/root/backup/validate-rsync**  ? Nous ne l'a
 
 En gros  le script prend la variable **$SSH_ORIGINAL_COMMAND** qui est transmis par __ssh__ au script et réalise la validation pour __rsync__. Bien entendu pour que ceci fonctionne le script doit être exécutable par l'utilisateur .
 
-        client $ chmod u=rx  /root/backup/validate-rsync
+        client $ sudo chmod u=rx  /root/backup/validate-rsync
+
+Si maintenant nous réalisons un test pour établir une connexion au système avec un __shell__ voici le résultat 
+
+        server $ sudo ssh -i /etc/rsnapshot/keys/rsnapshot_rsa root@192.168.30.100
+        Rejected
+        Connection to 127.0.0.1 closed.
+
+C'est  magnifique :D, mais ça marche vraiment avec __rsync__ :P, validons ...
+
+        server $ sudo rsync -av -e "ssh -i /etc/rsnapshot/keys/rsnapshot_rsa" root@192.168.30.100:/etc /tmp/toto/
+        receiving incremental file list
+        etc/
+        etc/.pwd.lock
+        etc/adduser.conf
+        etc/anacrontab
+        [ ... OUTPUT COUPÉ ... ]
+        etc/xml/xml-core.xml
+        etc/xml/xml-core.xml.old
+
+        sent 11,453 bytes  received 1,228,991 bytes  826,962.67 bytes/sec
+        total size is 1,173,430  speedup is 0.95
 
 ### <a name="setup_x3_rsnapshot_test" /> Ma configuration validation
+
+Nous sommes donc à l'étape de faire un teste passant de la configuration et bien entendu faire les petits correctif qui vont s'imposer , malheureusement ça marche rarement complètement du premier coup .
+
+Donc si je prend ce fichier de configuration
+
+        $ cat /etc/rsnapshot/hosts/client_domain_com.conf 
+        config_version                  1.2
+        snapshot_root                   /mnt/hd_backup/zato
+        no_create_root                  0
+        cmd_cp                          /bin/cp
+        cmd_rm                          /bin/rm
+        cmd_rsync                       /usr/bin/rsync
+        cmd_ssh                         /usr/bin/ssh
+        cmd_logger                      /usr/bin/logger
+        cmd_du                          /usr/bin/du
+        cmd_rsnapshot_diff              /usr/bin/rsnapshot-diff
+        interval                        daily           7
+        interval                        weekly          6
+        interval                        monthly         6
+        verbose                         2
+        loglevel                        3
+        logfile                         /var/log/rsnapshot/zato.log
+        lockfile                        /var/run/rsnapshot-zato.pid
+        #ssh_args                       -i /etc/rsnapshot/keys/rsnapshot_rsa
+        rsync_long_args                 -z --delete --relative --numeric-ids --delete-excluded --stats
+
+        #       List    directory
+        backup                          root@192.168.30.100:/etc 
+
+Je vais faire un teste passant : 
+
+        $ sudo /usr/local/sysadmin/backup-scripts/rsnapshot/backup_runner.sh /etc/rsnapshot/hosts/client_domain_com.conf  daily
+        echo 836 > /var/run/rsnapshot-zato.pid
+        mv /mnt/hd_backup/zato/daily.1/ /mnt/hd_backup/zato/daily.2/
+        /bin/cp -al /mnt/hd_backup/zato/daily.0 /mnt/hd_backup/zato/daily.1
+        /usr/bin/rsync -av -z --delete --relative --numeric-ids --delete-excluded \
+            --stats --rsh=/usr/bin/ssh root@127.0.0.1:/etc \
+            /mnt/hd_backup/zato/daily.0/.
+        receiving incremental file list
+        etc/
+        etc/.pwd.lock
+        etc/adduser.conf
+       [ ... OUTPUT COUPÉ ... ] 
+       touch /mnt/hd_backup/zato/daily.0/
+       rm -f /var/run/rsnapshot-zato.pid
+       /usr/bin/logger -i -p user.info -t rsnapshot /usr/bin/rsnapshot -c \
+           /etc/rsnapshot/hosts/client_domain_com.conf -V daily: completed \
+           successfully
+
+Nous pouvons maintenant utilise le script qui englobe  tous ça :D.
+
+        $ sudo /usr/local/sysadmin/backup-scripts/rsnapshot/FullBackup.sh daily
+
+Si vous n'avez pas de message d'erreur ça veut dire que tout vas bien vous pouvez regarder vos courriel , vous devriez avoir l'état de la sauvegarde.
+
 
 ## <a name="backupPC" />BackupPC
 
