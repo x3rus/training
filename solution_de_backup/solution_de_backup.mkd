@@ -446,7 +446,7 @@ De plus comment on fais pour réaliser la sauvegarde d'une machine distant ? Afi
 
 Je vais donc faire la présentation de l'écosystème que j'ai mis autour pour répondre à ce besoin, je ne prétend pas que c'est la meilleur solution cependant elle a le mérite d'être flexible. L'ensemble des scripts son disponible sous le dépôt [github scripts](https://github.com/x3rus/scripts/).
 
-* Organisation des fichiers de configuration 
+#### Organisation des fichiers de configuration 
 
 Premièrement je ne vais pas utiliser le fichier de configuration __/etc/rsnapshot.conf__ , j'ai créé un répertoire **/etc/rsnapshot/hosts** sous ce dernier j'ai mis la configuration désirer pour chacune des machines.
 
@@ -454,7 +454,7 @@ Premièrement je ne vais pas utiliser le fichier de configuration __/etc/rsnapsh
         $ ls /etc/rsnapshot/hosts
         goban_x3rus_com.conf  hoshi_x3rus_com.conf  tengen_x3rus_com.conf
 
-* Création de clés __SSH__ pour la communication avec les machines distantes
+####  Création de clés __SSH__ pour la communication avec les machines distantes
 
 Nous n'avons pas encore couvert le processus de sauvegarde d'une machine distante, le système __rsnapshot__ utilise __ssh__ pour communiquer. Comme le système de sauvegarde doit être exécuter de manière automatique sans l'intervention humaine, donc sans entrer un mot de passe nous utiliserons l'authentification par clé. Nous allons créer une pair de clé. Contrairement à l'utilisation classique qui crée la clé de le home de l'utilisateur nous allons la créer dans le répertoire __/etc/rsnapshot/keys/__ . La clé ne comprend pas de __passphrase__
 
@@ -470,7 +470,7 @@ Nous n'avons pas encore couvert le processus de sauvegarde d'une machine distant
 
 Nous aurons donc la clé disponible sous __/etc/rsnapshot/keys/rsnapshot_rsa__
 
-* Configuration du client __SSH__ pour l'utilisation de la clé
+#### Configuration du client __SSH__ pour l'utilisation de la clé
 
 Nous avons définie une clé __ssh__ nous allons maintenant définir une configuration pour que le client __ssh__ de l'utilisateur **root** utilise cette configuration ! Deux option d'offre à nous , la première définir dans le fichier de configuration de __rsnapshot__ du client d'utiliser spécifiquement cette clé. Personnellement n'utilisant jamais le compte __root__ autre que pour des opérations automatisé j'ai définie cette configuration global à l'utilisateur. 
 J'ai édité le fichier **/root/.ssh/config** avec les instructions suivante :
@@ -482,7 +482,7 @@ J'ai édité le fichier **/root/.ssh/config** avec les instructions suivante :
 Ceci ce traduit comme suit , pour toutes les machines (__Host *__)  utilise la clé __rsnapshot\_rsa__ (__IdentityFile__) lors de l'initialisation de connexion ne pas faire de validation sur l'échange de clé initiale (__StrictHostKeyChecking__)
 
 
-* script d'abstraction **backup_runner.sh**
+#### script d'abstraction **backup_runner.sh**
 
 Ce script disponible sous le dépôt [backup_runner.sh](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/backup_runner.sh), permet d'avoir une validation des paramètres transmis. 
 Si vous lisez le script vous constaterez qu'il valide les paramètres, valide que l'utilisateur utilisé est bien **root**.
@@ -491,7 +491,7 @@ Résultat au lieu d'utiliser la commande __rsnapshot__ nous utiliserons :
 
         $ sudo backup_runner.sh -c Fichier-de-configuration.conf daily
 
-* script de backup et fichier de configuration (__FullBackup.sh__ et __FullBackup.conf__)
+#### script de backup et fichier de configuration (__FullBackup.sh__ et __FullBackup.conf__)
 
 __Backup\_runner.sh__ ne réalise la sauvegarde que pour un fichier de configuration nous utiliserons le script __FullBackup.sh__ pour orchestrer l'ensemble du processus de sauvegarde. Ce dernier réalise les opérations suivante :
 
@@ -505,7 +505,7 @@ Le fichier [FullBackup.sh](https://github.com/x3rus/scripts/blob/master/backup-s
 
 Bien entendu il est important de modifier le contenu du fichier pour que ce soit représentatif de votre installation !
 
-* script satellite 
+#### script satellite 
 
 Le script [FullBackup.sh](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/FullBackup.sh) appel un autre script nommé [html-email-sender.py](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/html-email-sender.py), ce petit script en python est utilisé pour envoyer un courriel. Pour ceux qui se demande pourquoi je n'ai pas simplement utilisé la commande __mail__ , simplement parce que j'avais besoin de composer un courriel en __html__ pour inclure une image.
 Tout comme les autres script ceci est disponible sur __github__ [html-email-sender.py](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/html-email-sender.py).
@@ -516,8 +516,110 @@ Le script [rsnapreport.pl](https://github.com/x3rus/scripts/blob/master/backup-s
 
 ### <a name="setup_x3_rsnapshot_client" /> Ma configuration de Rsnapshot client
 
-* configuration de la clé __ssh__ client
-* limitation à rsync
+Pour que le système de sauvegarde fonctionne vous devez avoir sur le client :
+
+* service __ssh__ pour la connexion ( __apt-get install openssh-server__ )
+* l'application __rsync__ pour la synchronisation / copie des fichiers ( __apt-get install rsync__ )
+
+Lors de la configuration du serveur nous avons créé une clé __SSH__ afin de permettre au serveur d'établir une connexion sur les machines clients sans mot de passe. Nous allons maintenant procéder à la configuration de cette clé sur le / les clients.
+
+#### configuration de la clé __ssh__ client
+
+Afin de permettre la réalisation de la sauvegarde de l'ensemble du système peut importe les permissions l'opération de sauvegarde sera réalisé par l'utilisateur __root__ . La configuration de __ssh__ doit donc permettre la connexion via l'utilisateur __root__ . Afin de réduire les risques ( __brute force__, ...) en autorisant les accès avec le compte administrateur directement, nous n'autoriseront l'accès que grâce au système de clé. Voici la ligne à valider / modifier dans votre configuration , assurez vous d'avoir __without-password__ :
+
+        $ cat /etc/ssh/sshd_config  | grep PermitRootLogin
+        PermitRootLogin without-password
+
+Si vous avez réalisé une configuration avec limitation d'accès par utilisateur __AllowUsers__ ou __AllowGroups__ il faudra rajouter l'usagé __root__ pour lui permettre la connexion. Bien entendu nous redémarrons le service s'il y a eu modification dans le fichier 
+
+        $ sudo /etc/init.d/ssh restart
+
+Le serveur est configuré , nous allons mettre en place la clé :D. Car si vous avez été trop pressé puis fait le teste , ça marche pas encore :P.
+
+Nous créer le répertoire __ssh__ pour l'utilisateur __root__ puis nous allons déposer la clé publique __rsa__ (**/etc/rsnapshot/keys/rsnapshot_rsa.pub**) , c'est partie.
+
+        client $ sudo mkdir ~root/.ssh
+        client $ sudo chmod u=rwx,g=rx,o= ~root/.ssh
+        server $ cat /etc/rsnapshot/keys/rsnapshot_rsa.pub
+        ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDOqBjtdIK/ybEVTJopK4ZXmYo02ZJcyItXfAY
+        [ .. OUTPUT COUPÉ ... ]
+        client $ sudo vim ~root/.ssh/authorized_keys
+        [ COPIEZ le contenu ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDOqBjtdIK/ybE .... ]
+        client $ sudo cat ~root/.ssh/authorized_keys
+        ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDOqBjtdIK/ybEVTJopK4ZXmYo02ZJcyItXfAY6h0d3/SlrTS7xzBcJArgNq48DCKXnug5MQazJBgqFI6kLFT9Eox1Tbp74laCyGQgpQtl7Ehl6nG0iIpd9QdjwR5j3vFmj9gzTOumg5bp07/JSZ/AIvCpojSio/1R1ftEDJMYG01shhYZhBn2RKrWqoQxTjMiUYfTwxw+ZmDapVC+PtoDWk014iTEg0p+c67PxduMrVnBxJvo7bQI3bBt/KTtZnA9BPoVIBZnkn4v0zGaJMXG9NFiSg2O+hK3oxBAseaGO46/Y0seeGVYzfG5jgzwZjgQVSuVJ01XjZbk9oFkdb36L root@xerus.example.com
+        client $ sudo chmod u=rw,g=,o= ~root/.ssh/authorized_keys
+
+
+Maintenant nous pouvons réaliser une validation, nous utiliserons la commande __ssh__ "normalement" en passant l'argument **-i** afin d'indiquer quelle clé utiliser :
+
+        server $ sudo ssh -i /etc/rsnapshot/keys/rsnapshot_rsa root@client
+
+Nous sommes obligé d'utiliser la commande __sudo__ car le fichier **/etc/rsnapshot/keys/rsnapshot_rsa** n'est lisible QUE par l'utilisateur __root__. Si vous n'avez pas mis l'instruction __sudo__ le système vous demandera un mot de passe. Normalement vous êtes maintenant sur le client avec un __shell__. Vous pouvez faire __logout__. 
+
+À ce stade tous va fonctionné, mais nous allons mettre un peu plus de sécurité sur l'utilisation de cette clé car comme l'ensemble de la sécurité est basé sur un seul fichier **/etc/rsnapshot/keys/rsnapshot_rsa** . Nous allons mettre des mesures de contrôle en plus.
+
+#### limitation de l'utilisation de la clé
+
+Premièrement nous allons limité d'où les connexions peuvent venir, avec l'instruction **from=** sur le client. Ceci nous permet de définir des adresses __IP__ ou des segments réseaux. Voici le résultat :
+
+         client $  sudo cat ~root/.ssh/authorized_keys
+         from="192.168.30.30" ssh-rsa AAAAB3NzaC1yc2EAAAADAQAB
+         [ .. OUTPUT COUPÉ ... ]
+
+À ce stade l'authentification par clé devrait très bien fonctionné depuis la machine __192.168.30.30__ mais d'une autre machine sur le réseau le système va demander le mot de passe .
+
+Cool !! Mais  en fait nous on veut juste permettre l'utilisation de **rsync** est-ce vraiment pertinent de permettre un __shell__ comme __root__  ?!?! (la réponse c'est non :P, pourquoi ? Parce qu'on peut le faire :D.)
+
+Nous allons limité l'utilisation de commandes qui peuvent être réalisé avec cette clé __ssh__ , nous n'allons permettre QUE l'utilisation de la commande __rsync__ car nous n'avons pas besoin de plus. Pour ce faire nous allons rajouter l'instruction **command=** à la définition de la clé sur le client 
+
+        client $ sudo cat ~root/.ssh/authorized_keys
+        from="192.168.30.30",command="/root/backup/validate-rsync" ssh-rsa AAAAB3NzaC1yc2EAAAADA
+         [ .. OUTPUT COUPÉ ... ]
+
+Lors de la connexion __ssh__ le système va appeler le script __/root/backup/validate-rsync__ afin de voir si c'est OK ou NON.
+
+HEU mais il sort d'où ce fichier **/root/backup/validate-rsync**  ? Nous ne l'avons pas encore créé :P... Voici le contenu :
+
+        client $ cat client-site/validate-rsync
+        #!/bin/sh
+        #
+        # Command original from web site : http://troy.jdmz.net/rsync/#validate-rsync
+        #
+
+
+        case "$SSH_ORIGINAL_COMMAND" in
+        *\&*)
+        echo "Rejected"
+        ;;
+        *\(*)
+        echo "Rejected"
+        ;;
+        *\{*)
+        echo "Rejected"
+        ;;
+        *\;*)
+        echo "Rejected"
+        ;;
+        *\<*)
+        echo "Rejected"
+        ;;
+        *\`*)
+        echo "Rejected"
+        ;;
+        *\|*)
+        echo "Rejected"
+        ;;
+        rsync\ --server*)
+        $SSH_ORIGINAL_COMMAND
+        ;;
+        *)
+        echo "Rejected"
+        ;;
+        esac
+
+En gros  le script prend la variable **$SSH_ORIGINAL_COMMAND** qui est transmis par __ssh__ au script et réalise la validation pour __rsync__. Bien entendu pour que ceci fonctionne le script doit être exécutable par l'utilisateur .
+
+        client $ chmod u=rx  /root/backup/validate-rsync
 
 ### <a name="setup_x3_rsnapshot_test" /> Ma configuration validation
 
