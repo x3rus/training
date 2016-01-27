@@ -1,0 +1,274 @@
+
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+# Index 
+
+* [Description](#Desction)
+* [Structure des répertoires ](#structure_rep)
+* [Fichiers ](#File)
+       * [Manipulation de fichiers](#manip_files)
+       * [Permissions des fichiers ](#perms)
+* [Redirection de commande & Chainage de commande ](#redirection_cmd)
+       * [Redirection ](#redirect)
+       * [Chainage de commande ](#chaine_cmd)
+* [Installation de pacquage](#install_app)
+
+
+# <a name="Desction" />Description
+
+Un petit atelier pour vous donner l'occasion de mettre un peu en pratique ce que nous avons couvert lors de la révision.
+
+# <a name="structure_rep" />Structure des répertoires 
+
+* Quelle est le répertoire qui contient l'ensemble des configurations du systèmes ?
+
+    **Réponse:**
+        **/etc** : contient l'ensemble des fichiers de configuration du serveurs
+
+* Quelle est la différence entre les binaires contenu dans **/bin** et **/sbin** ?
+
+    **Réponse:**
+        **/bin** : contient les binaires de base du système telle que cp, bash, ls , vraiment les binaires d'utilisation primaire utilisé par l'ensemble des utilisateurs.
+        **/sbin** : contient les binaires **S**ytème , ifconfig , ... Des binaires essentiel au système mais principalement destiné à l'administrateur du système.
+
+* Quelle est le répertoire contenant les données variables , contenant les données des serveurs ?
+
+    **Réponse:**
+        **/var** : Contient l'ensemble des fichiers dit "variable" du système nous retrouvons par exemple
+         __/var/www/html__ : pour le service web
+         __/var/lib/mysql__ : pour le service de base de donnée mysql
+         __/var/lib/docker__ : pour les conteneurs 
+         __/var/log__ : pour les logs
+
+
+# <a name="File" />Fichiers 
+
+## <a name="manip_files" />Manipulation de fichiers
+
+
+* Créer la structure dans le répertoire de l'utilisateur  :
+
+        /home/bob/ateliers/01_rev/gestion de fichiers/
+        /home/bob/ateliers/01_rev/files/
+
+    * Les espaces ne sont pas une erreur ;-) .
+
+    **Réponse:**
+
+            $ mkdir -p "/home/bob/ateliers/01_rev/gestion de fichiers/"
+            \# ou
+            $ mkdir -p /home/bob/ateliers/01_rev/gestion\ de\ fichiers/
+            $ mkdir /home/bob/ateliers/01_rev/files/
+
+* Copier le fichier **/usr/share/icons/hicolor/48x48/apps/xterm-color.png** dans le répertoire **/home/bob/ateliers/01_rev/files** . 
+
+    **Réponse:**
+
+            $ cp /usr/share/icons/hicolor/48x48/apps/xterm-color.png /home/bob/ateliers/01_rev/files/
+
+    * [Optionnel] pour le plaisir essayer de conserver lors de la copie la création des répertoires parent , ceci donnerai comme résultat __/home/bob/ateliers/01\_rev/files/usr/share/icons/hicolor/48x48/apps/xterm-color.png__ au lieu de __/home/bob/ateliers/01_rev/files/xterm-color.png__. Bien entendu en une commande 
+
+    **Réponse:**
+
+            $ cp --parent /usr/share/icons/hicolor/48x48/apps/xterm-color.png /home/bob/ateliers/01_rev/files/
+
+* Création d'un lien symbolique nommé **/home/bob/ateliers/01_rev/files/Fichier\_password** qui point vers le fichier **/etc/passwd**
+
+    **Réponse:**
+
+            $ ln -s /etc/passwd /home/bob/ateliers/01_rev/files/Fichier_password
+            $ ls -l /home/bob/ateliers/01_rev/files/Fichier_password
+            lrwxrwxrwx 1 bob bob 11 Jan 26 08:26 /home/bob/ateliers/01_rev/files/Fichier_password -> /etc/passwd
+
+    * [Optionnel] Utilisé l'annotation avec le chemin relatif et non absolue 
+
+    **Réponse:**
+
+            $ cd /home/bob/ateliers/01_rev/files
+            $ ln -s ../../../../../etc/passwd Fichier_password 
+            $ ls -l 
+            total 8
+            lrwxrwxrwx 1 bob bob   25 Jan 26 08:27 Fichier_password -> ../../../../../etc/passwd
+
+
+## <a name="perms" />Permissions des fichiers 
+
+
+* Est-ce que l'utilisateur suivant peut modifier ce fichier  ?
+
+        $ whoami
+        bob
+        $ ls -l  mon_fichier 
+        -r--rw-rw- 1 bob bob 0 Jan  8 17:19 mon_fichier
+
+
+    **Réponse:**
+        non car les permissions sur l'utilisateur est à R (Lecture) uniquement donc __bob__ ne peut pas écrire le fichier même si le groupe et les autres peuvent. Dès qu'un critère est valide de gauche à droite le traitement des permissions est arrêté.
+
+* Comment puis je changer les permissions du fichier __mon_fichier__ afin que je puisse le modifier ?
+
+    **Réponse:**
+
+        $ chmod u+w mon_fichier
+        # ou
+        $ chmod u=rw mon_fichier
+        # ou
+        $ chmod 666 mon_fichier
+
+
+* Si j'ai le répertoire suivant **depot** avec les permissions , est-ce que je suis en mesure d'y copier un fichier  ?
+
+        $ whoami
+        bob
+        $ id
+        uid=1000(bob) gid=1000(bob) groups=1000(bob),27(sudo)
+        $ ls -ld depot/
+        d-------wx 2 root root 4096 Jan  8 17:24 depot/
+
+    Si oui pourquoi, sinon pourquoi ?
+    [Truc] si vous voulez faire le test pour rappel  __sudo chown__ pour changer le propriétaire d'un fichier/répertoire. 
+
+    **Réponse:**
+        Je suis en mesure de copier un fichier dans le répertoire mais je ne peux pas lire le contenu !! L'utilisateur à les permissions d'écriture mais pas de lecture.
+
+# <a name="redirection_cmd" />Redirection de commande & Chainage de commande 
+
+* Créé le répertoire **/home/bob/ateliers/01\_rev/files/cmds\_redirection** 
+
+## <a name="redirect" />Redirection 
+
+* Avec la commande suivante , rediriger les erreurs dans le fichier **/home/bob/ateliers/01\_rev/files/cmds\_redirection/head\_erreurs**: 
+
+        $ head -3 /etc/passwd /etc/lsb-release /etc/shadow 
+
+
+    **Réponse:**
+           
+        $ head -3 /etc/passwd /etc/lsb-release /etc/shadow 2>/home/bob/ateliers/01_rev/files/cmds_redirection/heads_erreurs
+        ==> /etc/passwd <==
+        root:x:0:0:root:/root:/bin/bash
+        daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+        bin:x:2:2:bin:/bin:/usr/sbin/nologin
+
+        ==> /etc/lsb-release <==
+        DISTRIB_ID=Ubuntu
+        DISTRIB_RELEASE=14.04
+        DISTRIB_CODENAME=trusty
+        $ cat /home/bob/ateliers/01_rev/files/cmds_redirection/heads_erreurs
+        head: cannot open '/etc/shadow' for reading: Permission denied
+
+* Rediriger l'ensemble du résultat dans un fichier erreur et bonne valeur  **/home/bob/ateliers/01\_rev/files/cmds\_redirection/head\_complet**: 
+
+        $ head -3 /etc/passwd /etc/lsb-release /etc/shadow 
+
+    **Réponse:**
+
+        $ head -3 /etc/passwd /etc/lsb-release /etc/shadow &>/home/bob/ateliers/01_rev/files/cmds_redirection/heads_complet
+        $ cat /home/bob/ateliers/01_rev/files/cmds_redirection/heads_complet
+        ==> /etc/passwd <==
+        root:x:0:0:root:/root:/bin/bash
+        daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+        bin:x:2:2:bin:/bin:/usr/sbin/nologin
+
+        ==> /etc/lsb-release <==
+        DISTRIB_ID=Ubuntu
+        DISTRIB_RELEASE=14.04
+        DISTRIB_CODENAME=trusty
+        head: cannot open '/etc/shadow' for reading: Permission denied
+
+## <a name="chaine_cmd" />Chainage de commande 
+
+* Utiliser le fichier **/etc/passwd** comme source et compter le nombre de ligne qui contienne le mot **nologin** , bien entendu utiliser des commandes chainer pour cette opération . Ceci devrez vous donnez comme résultat __17__
+
+    **Réponse**:
+
+        $ cat /etc/passwd | grep nologin | wc -l
+        17
+        # ou
+        $ grep "nologin" /etc/passwd | wc -l
+        17
+
+
+    * [Optionnel] Reprendre la même commande avec une petite modification pour compter le nombre de ligne qui ne contient **PAS nologin**
+
+    **Réponse**:
+
+        $ grep -v "nologin" /etc/passwd | wc -l
+        4
+
+* En partant du fichier **/etc/lsb-release** faire en sorte pour que le résultat soit sur une seul ligne , donc :
+    * Voici la différence entre le fichier original et le résultat attendu :D
+            
+            $ cat /etc/lsb-release
+            DISTRIB_ID=Ubuntu
+            DISTRIB_RELEASE=14.04
+            DISTRIB_CODENAME=trusty
+            DISTRIB_DESCRIPTION="Ubuntu 14.04 LTS"
+            $ La_SUPER_COMMANDE_qui_est_la_solution
+            Ubuntu 14.04 trusty "Ubuntu 14.04 LTS"
+
+    **Réponse**:
+            
+            $ cat /etc/lsb-release  | tr "\n" " "
+            DISTRIB_ID=Ubuntu DISTRIB_RELEASE=14.04 DISTRIB_CODENAME=trusty DISTRIB_DESCRIPTION="Ubuntu 14.04 LTS"
+
+            # mais le output n'est pas le meme ... entre le texte et le resultat ... donc pour correspondre a l'affichage
+            $ cat /etc/lsb-release  | cut -d "=" -f 2 | tr "\n" " "
+            Ubuntu 14.04 trusty "Ubuntu 14.04 LTS" 
+
+
+    * [Optionnel] modifier le résultat pour que 14.04 soit remplacé par 60.10 :P 
+    
+            $ La_2_ieme_super_commande
+            Ubuntu 60.10 trusty "Ubuntu 60.10 LTS"
+
+    **Réponse**:
+
+            $ cat /etc/lsb-release  | cut -d "=" -f 2 | tr "\n" " " | sed 's/14.04/60.10/g'
+
+* Utiliser la commande **dpkg -l** pour lister les pacquages installés , filtrer le résultat pour que ne soit afficher que le nom du pacquage et la description.
+
+        $ dpkg -l | head -7
+        Desired=Unknown/Install/Remove/Purge/Hold
+        | Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
+        |/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)
+        ||/ Name                            Version                         Architecture Description
+        +++-===============================-===============================-============-===============================================================================
+        ii  adduser                         3.113+nmu3ubuntu3               all          add and remove users and groups
+        ii  apt                             1.0.1ubuntu2                    i386         commandline package manager
+
+        $ Votre_super_commande_avec_head_-7 
+        Desired=Unknown/Install/Remove/Purge/Hold
+        Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
+        Err?=(none)/Reinst-required
+        Name Description
+        +++-===============================-===============================-============-===============================================================================
+        adduser add and remove users and groups
+        apt commandline package manager
+
+    **Réponse:**
+
+        $ dpkg -l | head -7 | tr -s " "  | cut -d " " -f 2,5-   
+        # ou pour les puristes
+        $ dpkg -l | head -7 | tr -s " "  | grep -v "^|"  | egrep -v "^\+|^D" | cut -d " " -f 2,5-
+        adduser add and remove users and groups
+        apt commandline package manager
+
+
+# <a name="install_app" />Installation de pacquage
+
+* Mettre à jour la base de donnée local des pacquages disponible sur internet 
+        
+    **Réponse**:
+
+        $ apt-get update 
+
+* Faire l'installation du pacquage **netcat**, une fois l'opération réussie vous devriez avoir l'application **/bin/nc** disponible .
+
+    **Réponse**:
+
+        $ apt-get install netcat
+
