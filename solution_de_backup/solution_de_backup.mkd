@@ -715,7 +715,38 @@ Si vous n'avez pas de message d'erreur ça veut dire que tout vas bien vous pouv
 
 ## <a name="backupPC" />BackupPC
 
-TODO: On fera pas on va attendre de voir apache, mysql ...
+
+**BackupPC** est un logiciel libre de sauvegarde de système de fichier publié sous licence **GPL**.
+
+Il est utilisé pour sauvegarder sur disque un ensemble de postes clients et de serveurs, sous Unix, Linux, Windows ou Mac OS X. Les protocoles utilisables pour les transferts sont : __SMB, tar over SSH/rsh/nfs, et rsync__. Il ne nécessite l'installation d'aucun logiciel client sur les machines à sauvegarder. Il possède une interface web pour lancer des sauvegardes ou restaurer des fichiers. Il est également possible de sauvegarder des bases de données via un script __shell__ lancé avant la sauvegarde.
+
+Originalement je n'avais pas prévu en faire la démonstration, cependant afin d'offrir plus de choix au personne j'ai changé d'avis , je tiens à préciser que je n'ai que très peu d'expérience avec l'outil. Je vous invite à communiquer tous erreur que vous trouvez , en fait ceci s'applique sur l'ensemble des sections :P.
+
+Site web officiel : [http://backuppc.sourceforge.net/](http://backuppc.sourceforge.net/)
+
+### Installation
+
+TODO: valider l'installation peut-être juste problème avec mon docker 
+TODO: voir comme référence > http://www.klipz.fr/tutoriel_backuppc.html
+
+* Réalisation de l'installation avec le système de pacquage :
+
+        $ sudo apt-get install apache2-utils  backuppc
+
+Je ne prendrais pas beaucoup de temps pour la partie de la configuration de __backuppc__ dans le serveur web __apache__ , car nous verrons en détail le serveur web à la prochaine section.
+
+* Activation de la configuration de __backuppc__ dans apache 
+
+        $ sudo ln -s /etc/backuppc/apache.conf /etc/apache2/sites-enabled/backuppc.conf
+
+* Initialisation du mot de passe pour l'accès à l'interface web, définir le mot de passe que vous désirez.
+
+        $ sudo htpasswd /etc/backuppc/htpasswd backuppc
+
+* Accès à l'interface web : http://le-nom-ou-ip-du-serveur/backuppc/
+
+
+### Configuration 
 
 ## <a name="clonezilla" />CloneZilla
 
