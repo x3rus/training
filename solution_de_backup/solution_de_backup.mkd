@@ -747,6 +747,15 @@ Je ne prendrais pas beaucoup de temps pour la partie de la configuration de __ba
 
 ### Configuration 
 
+L'ensemble de la configuration de __backupPc__ est disponible dans le répertoire __/etc/__ comme la majorité des applications installé par le système de pacquage. Nous y retrouvons :
+
+* __apache.conf__ :  Fichier de configuration pour apache .
+* __config.pl__ : Fichier de configuration général du système.
+* __hosts__ : Fichier réalisant l'association des nom des machines et des utilisateurs responsable , ces derniers recevrons le courriel de l'état de la prise de sauvegarde. De plus il est indiqué si la machine récupère sont adresse __ip__ par __DHCP__.
+* __htpasswd__ : Fichier contenant les nom d'utilisateurs et mot de passe des utilisateur du système.
+* __localhost.pl__ : Fichier de configuration du client __localhost__, nous y reviendrons.
+
+
 * Correction d'un problème d'installation sous Ubuntu conformément au [forum ubuntu](http://ubuntuforums.org/showthread.php?t=2237618) . Nous allons changer le paramètre __Ping6Path__ sinon nous aurons une erreur __impossible de réaliser un ping__.
 
         $ cat -n /etc/backuppc/config.pl  | egrep 'PingPath|Ping6Pa'
@@ -766,7 +775,86 @@ J'ai ajuster la ligne 1646 , afin de fournir le chemin au binaire
            10  $Conf{TarClientCmd} = '/usr/bin/env LC_ALL=C sudo $tarPath -c -v -f - -C $shareName --totals';
 Ajout à la ligne 10 de la commande **sudo** entre la définition du langage et la variable **$tarPath**.
 
-TODO : INFO a extraire pour la schedule https://www.digitalocean.com/community/tutorials/how-to-use-backuppc-to-create-a-backup-server-on-an-ubuntu-12-04-vps
+Démarrage des services, nous avons 2 services requis **backuppc** et **apache** pour l'interface web.
+
+        $ sudo /etc/init.d/backuppc start
+        $ sudo /etc/init.d/apache2 start
+
+
+### Réalisation d'une sauvegarde manuel du serveur backupPC
+
+Nous avons fait mentions que le système __backupc__ supporte plusieurs mode de communication, il supporte aussi **tar**, simple mais efficace pour un petit nombre de fichier. Sous Ubuntu le système prés configuration le serveur __localhost__ avec ce mode . Nous allons donc prendre quelques minutes pour voir la configuration avant de réaliser la configuration d'un client avec __rsync__. L'avantage de __tar__ est la simplicité :D.
+
+Commençons donc par réaliser une sauvegarde complète du serveur.
+
+1. Cliquez en haut à gauche sur "__select a host__"
+2. Sélectionnez la machine.
+
+![01-select-hosts.png](./01-select-hosts.png)
+
+Vous avez maintenant 2 bouton  :
+
+* __Start Full Backup__ : Pour démarrer une sauvegarde complète 
+* __Stop/Dequeue Backup__ : Permet de planifier une sauvegarde dans le temps.
+
+![02-show-localhost-hosts.png](./02-show-localhost-hosts.png)
+
+Nous allons réaliser un backup complète , donc cliquez sur **Start  Full Backup**, après avoir confirmer , vous revenez à la page et vous devriez avoir le backup complète disponible .
+
+![03-resultat-full-backup.png](./03-resultat-full-backup.png)
+
+Si vous cliquez sur le numéro de la sauvegarde vous verrez le contenu de la sauvegarde .
+
+![04-list-le-contenu-du-backup.png](./04-list-le-contenu-du-backup.png)
+
+Nous reviendrons pour la restauration :D.
+
+### Planification des sauvegardes
+
+J'espère réussir à bien exprimer la configuration en place par défaut de __backupPc__ et a représenter de manière adéquate les possibilité de la modifier. Commençons par consulter la configuration disponible, j'aimerai préciser que la modification de la configuration peut être aussi réalisé avec votre éditeur préféré vous n'êtes pas obligé d'utiliser l'interface web pour cette exercice. La fichier **/etc/backuppc/config.pl** est éditable .
+
+Pour visualiser nous :
+
+1. Cliquez dans le menu de gauche sur __Edit config__
+2. Puis sur la page sur l'onglet __Schedule__
+3. Voici le résultat
+
+![05-planification-des-sauvegardes.png](05-planification-des-sauvegardes.png)
+
+
+Par défaut le système est configuré comme suit :
+
+* Réalisation d'une sauvegarde complet 
+    * tous les 7 jours 
+    * conservation uniquement du dernier
+* Réalisation d'une sauvegarde incrémentale
+    * tous les jours
+    * conservation des 6 plus récent
+
+Bon maintenant c'est écrit où ça dans la page ?!?! Personnellement, je ne l'ai pas visualisé du premier coup !
+Voici la même lecture avec les variables, si vous désirez réaliser des modifications .
+
+La réalisation de la sauvegarde complète au 7 jour est définie par la variable :
+
+* __FullBackup__ : 6.97 , La raison pourquoi ce n'est pas écrit 7 est décrite sur [la page de configuration](http://backuppc.sourceforge.net/faq/BackupPC.html#_conf_fullperiod_). __Typically this is set slightly less than an integer number of days. The time taken for the backup, plus the granularity of $Conf{WakeupSchedule} will make the actual backup interval a bit longer.__
+
+La conservation des sauvegardes complète est définie par les deux variables **FullKeepCnt** et **FullKeepCntMin** , actuellement à 1 . 
+
+L'idée est identique pour les sauvegardes incrémentales. Nous avons la variable :
+
+* __IncrPeriod__ : 0.97, qui définie la fréquence de l'exécution des sauvegardes de ce type , nous avons la même explication du chiffre que pour les sauvegardes complètes.
+
+La définition de la conservation des sauvegardes donc définie par les variables :
+
+* __IncrKeepCnt__ : 6 , définie le nombre maximum de sauvegarde incrémentale .
+* __IncrKeepCntMin__ : 1 , définie le nombre minimum de sauvegarde.
+
+
+Woot !!! Mais ça démarre quand ? Le système  ne définie pas d'heure d'exécution mais des heures pendant laquelle les backups ne doivent pas être exécuté. Ceci est définie la variable [blackoutperiods](http://backuppc.sourceforge.net/faq/BackupPC.html#_conf_blackoutperiods_), si nous reprenons la copie d'écran ceci donne :
+
+* de 7:00 heure le matin à 19:50  le soir , du lundi au vendredi pas de sauvegarde sinon c'est disponible.
+
+Point de référence : https://www.digitalocean.com/community/tutorials/how-to-use-backuppc-to-create-a-backup-server-on-an-ubuntu-12-04-vps
 
 ## <a name="clonezilla" />CloneZilla
 
