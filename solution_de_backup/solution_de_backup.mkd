@@ -745,8 +745,28 @@ Je ne prendrais pas beaucoup de temps pour la partie de la configuration de __ba
 
 * Accès à l'interface web : http://le-nom-ou-ip-du-serveur/backuppc/
 
-
 ### Configuration 
+
+* Correction d'un problème d'installation sous Ubuntu conformément au [forum ubuntu](http://ubuntuforums.org/showthread.php?t=2237618) . Nous allons changer le paramètre __Ping6Path__ sinon nous aurons une erreur __impossible de réaliser un ping__.
+
+        $ cat -n /etc/backuppc/config.pl  | egrep 'PingPath|Ping6Pa'
+          1643  #     $Conf{PingPath} = '/bin/echo';
+          1645  $Conf{PingPath} = '/bin/ping';
+          1646  $Conf{Ping6Path} = '/bin/ping6';
+          1651  #   $pingPath      path to ping ($Conf{PingPath})
+J'ai ajuster la ligne 1646 , afin de fournir le chemin au binaire
+
+
+* Correction pour l'erreur 512 de __tar__ lors de l'utilisation local pour __localhost__ , comme les fichiers contenu dans __/etc__ par exemple ne sont pas tous accessible à l'utilisateur __backup__ il devra pouvoir utiliser la commande **sudo** por obtenir les privilèges requis.
+
+        $ sudo visudo 
+        backuppc ALL=NOPASSWD: /bin/tar
+
+        $ sudo cat -n /etc/backuppc/localhost.pl | grep sudo
+           10  $Conf{TarClientCmd} = '/usr/bin/env LC_ALL=C sudo $tarPath -c -v -f - -C $shareName --totals';
+Ajout à la ligne 10 de la commande **sudo** entre la définition du langage et la variable **$tarPath**.
+
+TODO : INFO a extraire pour la schedule https://www.digitalocean.com/community/tutorials/how-to-use-backuppc-to-create-a-backup-server-on-an-ubuntu-12-04-vps
 
 ## <a name="clonezilla" />CloneZilla
 
