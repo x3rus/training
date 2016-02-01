@@ -790,22 +790,22 @@ Commençons donc par réaliser une sauvegarde complète du serveur.
 1. Cliquez en haut à gauche sur "__select a host__"
 2. Sélectionnez la machine.
 
-![01-select-hosts.png](./01-select-hosts.png)
+![01-select-hosts.png](./imgs/01-select-hosts.png)
 
 Vous avez maintenant 2 bouton  :
 
 * __Start Full Backup__ : Pour démarrer une sauvegarde complète 
 * __Stop/Dequeue Backup__ : Permet de planifier une sauvegarde dans le temps.
 
-![02-show-localhost-hosts.png](./02-show-localhost-hosts.png)
+![02-show-localhost-hosts.png](./imgs/02-show-localhost-hosts.png)
 
 Nous allons réaliser un backup complète , donc cliquez sur **Start  Full Backup**, après avoir confirmer , vous revenez à la page et vous devriez avoir le backup complète disponible .
 
-![03-resultat-full-backup.png](./03-resultat-full-backup.png)
+![03-resultat-full-backup.png](./imgs/03-resultat-full-backup.png)
 
 Si vous cliquez sur le numéro de la sauvegarde vous verrez le contenu de la sauvegarde .
 
-![04-list-le-contenu-du-backup.png](./04-list-le-contenu-du-backup.png)
+![04-list-le-contenu-du-backup.png](./imgs/04-list-le-contenu-du-backup.png)
 
 Nous reviendrons pour la restauration :D.
 
@@ -819,7 +819,7 @@ Pour visualiser nous :
 2. Puis sur la page sur l'onglet __Schedule__
 3. Voici le résultat
 
-![05-planification-des-sauvegardes.png](05-planification-des-sauvegardes.png)
+![05-planification-des-sauvegardes.png](./imgs/05-planification-des-sauvegardes.png)
 
 
 Par défaut le système est configuré comme suit :
@@ -855,6 +855,59 @@ Woot !!! Mais ça démarre quand ? Le système  ne définie pas d'heure d'exécu
 * de 7:00 heure le matin à 19:50  le soir , du lundi au vendredi pas de sauvegarde sinon c'est disponible.
 
 Point de référence : https://www.digitalocean.com/community/tutorials/how-to-use-backuppc-to-create-a-backup-server-on-an-ubuntu-12-04-vps
+
+### Configuration d'un client sur le réseau
+
+La solution avec __tar__ est bien pratique pour le système hébergeant le serveur __backupPc__ cependant ceci ne permet pas de réaliser la sauvegarde d'un serveur distant. Nous allons donc voir comment mettre en place __backupPc__ pour utiliser la combinaisons __Rsnapshot__ + __ssh__ , comme nous avons déjà mis en place pour __rsnapshot__ . Ceci nous permettra aussi d'avoir un point de comparaison entre les 2 systèmes.
+
+Dans la même idée que lors de la mise en place de la solution __rsnapshot__ nous allons créer une paire de clé __SSH__ qui seront utilisé pour établir la connexion par le protocole __ssh__. La clé sera disposé dans le répertoire de configuration de __backuppc /etc/backuppc/keys/backupps\_rsa__
+
+        $ sudo mkdir /etc/backuppc/keys
+        $ sudo chown backuppc:backuppc /etc/backuppc/keys
+        $ $ sudo -u backuppc ssh-keygen -t rsa
+        Generating public/private rsa key pair.
+        Enter file in which to save the key (/var/lib/backuppc/.ssh/id_rsa): /etc/backuppc/keys/backupps_rsa
+        Enter passphrase (empty for no passphrase): 
+        [ ... OUTPUT COUPÉ ...]
+
+Nous allons configurer pour que l'utilisateur __backuppc__ utilise maintenant cette clé pour l'ensemble de ses connexions __ssh__. Pour ce faire nous allons éditer le fichier __~backuppc/.ssh/config__
+
+        $ sudo -u backuppc mkdir ~backuppc/.ssh
+        $ sudo -u backuppc vim ~backuppc/.ssh/config
+        $ sudo -u backuppc cat ~backuppc/.ssh/config
+        Host *
+                IdentityFile  /etc/backuppc/keys/backupps_rsa
+                StrictHostKeyChecking no
+
+J'installe la clé publique sur l'ensemble des clients sous l'utilisateur __root__ , voici le contenu du fichier __/root/.ssh/authorized\_keys__
+
+        client $ sudo cat ~root/.ssh/authorized_keys
+        command="/root/backup/validate-rsync" ssh-rsa AAAAB3Nza
+        [ ... OUTPUT COUPÉ ... ]
+
+Vous pouvez valider la connexion :
+
+        $ sudo su - backuppc
+        $ bash
+        backuppc@xerus:~$ ssh root@172.17.0.3
+        Warning: Permanently added '172.17.0.3' (ECDSA) to the list of known hosts.
+        Rejected
+        Connection to 172.17.0.3 closed.
+
+Nous constatons que le système à bien ajouter la machine dans les listes des machines connu avec le message d'avertissement. Le système nous rejette sans nous demander le mot de passe , comme nous avons mis la limitation de l'accès __bash__ ceci semble bon !.
+
+
+Dans le menu de gauche sélectionnez __Edit Hosts__
+
+![06-ajout-machine.png](./imgs/06-ajout-machine.png)
+
+Puis cliquez sur __add__ pour avoir une nouvelle ligne entrez le nom de la machine et l'utilisateur étant responsable , il est possible d'avoir d'autre utilisateur en mesure de voir le système en les ajoutant dans la section __moreUsers__. Ne pas oublié de faire __save__ :P.
+
+![07-ajout-machine-step2.png](./imgs/07-ajout-machine-step2.png)
+
+Sélectionnez la machine dans le menu à gauche ,  pour pouvoir éditer la configuration , vous pouvez cliquez par la suite la configuration en cliquant sur __Edit Config__
+
+![08-select-new-system.png](./imgs/08-select-new-system.png)
 
 ## <a name="clonezilla" />CloneZilla
 
