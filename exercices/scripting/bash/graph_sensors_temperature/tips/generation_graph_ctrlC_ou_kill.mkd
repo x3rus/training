@@ -1,0 +1,12 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+# Description
+
+Pour réalisé réaliser des opérations lorsque l'application se terminé donc lorsque les signaux EXIT ou kill sont reçu vous 
+pouvez utiliser la commande **trap** ceci permet de rendre vos scripts __bash__ plus performant.
+
+* http://tldp.org/LDP/Bash-Beginners-Guide/html/sect_12_02.html
+* http://redsymbol.net/articles/bash-exit-traps/

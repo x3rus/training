@@ -1,0 +1,14 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+# Description
+
+Pour réaliser des graphiques il y a plusieurs possibilité 
+
+* **gnuplot**  [http://www.gnuplot.info/ ](http://www.gnuplot.info/) : Simple et efficace !
+* **rrdtool** [http://oss.oetiker.ch/rrdtool/](http://oss.oetiker.ch/rrdtool/): Ultra performant et permet de conservé un historique de manière très performante , cependant demande beaucoup plus de travail. 
+
+Personnellement j'ai choisi **gnuplot** :P
+

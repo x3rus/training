@@ -1,0 +1,46 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+
+# Description
+
+Réalisez un script qui va réaliser un graphique avec les informations de la température du système, selon votre système l'information peut varier:
+
+* température du __CPU__
+* Température de la mémoire 
+* Vitesse du ventilateur (si information disponible)
+
+L'idée est de mettre en corrélation la température et le __load__ de la machine .
+
+Voici un exemple d'un résultat attendu :
+
+![temp-graph-2016-01-29-08-17.png](./imgs/temp-graph-2016-01-29-08-17.png)
+
+Dans l'exemple ci-dessus je réalise un graphique avec la vitesse du ventilateur , l'information du processeur et autre température , ainsi que le __load__ de la machine afin de voir faire la corrélation. 
+
+Le Y == la valeur
+Le X == le temps , j'ai pris mes points d'information à toutes les 60 secondes.
+
+usage :
+
+    $ ./graph-temp.sh [-c num] [-i num] [-d dir_path] [-b brut_file] [-o png_filename]
+     Options:
+           -c num : Number of data extraction. (DEFAULT : 10)
+                    Use 0 for unlimited
+           -i num : The delay between updates in seconds. (DEFAULT : 60 sec)
+           -d dir_path : Directory use to store temporary file and png graphe (DEFAULT : $HOME/temp_graph
+           -b brut_file: Filename to store information (DEFAULT : raw_temp_graph-$DATE)
+           -o png_file: Filename generate by GNUPlot (DEFAULT : temp_graph-$DATE.png)
+           -h : Show this message
+
+Donc permettre l'exécution sur la ligne de commande avec un nombre d'occurrence déterminé et une intervalle de points déterminé OU exécuté de manière indéterminé et faire en sorte que le graphique ce créer quand on arrête le script avec **CTRL+C**  ou qu'on lui envoie le signal **kill -15**
+
+Indice disponible ici : [Répertoire avec fichiers d'indice](./tips/)
+
+## Optionnel 
+
+Configurer votre session pour que le script parte lors de l'établissement de connexion à l'interface graphique , et qu'il s'arrête lorsque l'on quitte la session, donc qu'il génère le graphique (logoff). 
+Ceci fera en sorte qu'il y aura une historique à chaque connexion de la température en relation avec la charge de la machine.
+
