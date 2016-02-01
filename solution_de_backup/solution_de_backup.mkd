@@ -282,7 +282,7 @@ Débutons avec la mise en place de la solution, j'entends certain dire enfin :P.
 
 ### <a name="install_rsnapshot" /> Installation et configuration de Rsnapshot 
 
-* L'installation 
+####  L'installation 
 
 L'installation est très simple la majorité des distributions offre un pacquage pour __rsnapshot__ .
 
@@ -293,7 +293,7 @@ On peut pas me dire que GNU/Linux c'est compliqué :P !
 TODO: FAUT ABSOLUMENT VALIDER l'install dans le docker de formation 64 bits ... J'ai du mettre anacron au lieu de cron pour le systeme 32 bits du laptop :(
 
 
-* La configuration
+#### La configuration
 
 Le fichier de configuration par défaut est **/etc/rsnapshot.conf**, je vous laisse le plaisir de lire le contenu du fichier fournie par la distribution pour vous inspirer.
 
@@ -303,9 +303,8 @@ TODO : sortir d'ici la section ci-dessous mais bon juste pour garder une trace
         $ git init
         $ git config --global user.email "Bob@exemple.com "
         $ git config --global user.name "Bob :D "
-        $ sudo git add rsnapshot.conf
         $ sudo git add rsnapshot.conf 
-        bob@xerus:/etc$ sudo git commit -a -m " Ajout du fichier original rsnapshot "
+        $ sudo git commit -a -m " Ajout du fichier original rsnapshot "
         [master (root-commit) be15580]  Ajout du fichier original rsnapshot
          1 file changed, 254 insertions(+)
           create mode 100644 rsnapshot.conf
@@ -316,11 +315,546 @@ TODO : sortir d'ici la section ci-dessous mais bon juste pour garder une trace
 
             Ajout du fichier original rsnapshot
 
+Éditer le fichier pour refléter votre configuration , lire les commentaires explicatif fournit dans le fichier.
+Il est aussi possible de consulter le fichier **/usr/share/doc/rsnapshot/examples/rsnapshot.conf.default.gz** contenant un exemple de configuration.
+
+Voici le résultat de la configuration sans les commentaires et les lignes vide :
+
+        $  cat rsnapshot.conf | grep -v "#" | grep -v "^$"
+        config_version  1.2
+        snapshot_root   /var/cache/rsnapshot/
+        cmd_cp          /bin/cp
+        cmd_du          /usr/bin/du
+        cmd_logger      /usr/bin/logger
+        cmd_rm          /bin/rm
+        cmd_rsnapshot_diff      /usr/bin/rsnapshot-diff
+        cmd_rsync       /usr/bin/rsync
+        cmd_ssh /usr/bin/ssh
+        interval        daily           7
+        interval        weekly          4
+        interval        monthly         6
+        verbose         2
+        loglevel        3
+        logfile         /var/log/rsnapshot.log
+        lockfile        /var/run/rsnapshot.pid
+        backup  /etc/           localhost/
+
+Information sur la configuration 
+
+* __snapshot\_root__ : Ceci décrit le répertoire où sera stocké les configurations.
+* __cmd_*__ : Permet de définir les chemins où les binaires sont disponible.
+* __interval__ :  Définie le nombre de rétention selon le type journalier , hebdomadaire , ...
+* __verbose__ et __loglevel__ : Comprend les informations pour les logs :P
+* __backup__ : Décrit les répertoires à prendre en sauvegarde et le répertoire de destination ici __localhost__ sous le répertoire définie par __snapshot_root__
 
 
-### <a name="setup_x3_rsnapshot" /> Ma configuration de Rsnapshot
+**IMPORTANT** : __Rsnapshot__ oblige l'utilisation des tabulations entre les arguments si vous utilisez des espaces vous aurez un message d'erreur, comme ci-dessous :P
+
+        ERROR: interval daily 7 - missing tabs to separate words - change spaces to \
+                 tabs. 
+
+
+#### Utilisation 
+
+Test d'exécution  et validation du résultat : 
+
+        $ sudo rsnapshot -c /etc/rsnapshot.conf daily
+        $ sudo ls -l /var/cache/rsnapshot/
+        total 4
+        drwxr-xr-x 3 root root 4096 Jan 25 08:31 daily.0
+        $ sudo ls -l /var/cache/rsnapshot/daily.0/localhost/etc/passwd
+        -rw-r--r-- 1 root root 1043 Jan 22 17:18 /var/cache/rsnapshot/daily.0/localhost/etc/passwd
+
+Nous avons a présent un répertoire **daily.0** contenant le dernier backup disponible , dans ce dernier comme nous l'avions définie dans le fichier de configuration, nous avons le répertoire __localhost__ contenant la structure que nous voulions prendre en sauvegarde. Si nous listons un fichier , par exemple __/etc/passwd__.
+
+Je relance l'opération normalement rien ou presque ne fut modifier, cette opération est normalement réaliser une fois par jour :P.
+
+        $ sudo rsnapshot -c /etc/rsnapshot.conf daily
+        $ sudo ls -l /var/cache/rsnapshot/
+        total 8
+        drwxr-xr-x 3 root root 4096 Jan 25 08:34 daily.0
+        drwxr-xr-x 3 root root 4096 Jan 25 08:31 daily.1
+        $ sudo du -hsc /var/cache/rsnapshot/daily.0 /var/cache/rsnapshot/daily.1
+        3.7M    /var/cache/rsnapshot/daily.0
+        588K    /var/cache/rsnapshot/daily.1
+        4.3M    total
+        $ sudo ls -li /var/cache/rsnapshot/daily.1/localhost/etc/passwd
+        534727 -rw-r--r-- 2 root root 1043 Jan 22 17:18 /var/cache/rsnapshot/daily.1/localhost/etc/passwd
+        $ sudo ls -li /var/cache/rsnapshot/daily.0/localhost/etc/passwd
+        534727 -rw-r--r-- 2 root root 1043 Jan 22 17:18 /var/cache/rsnapshot/daily.0/localhost/etc/passwd
+
+Nous avons à présent **daily.0** et **daily.1** qui sont respectivement **la sauvegarde la plus récenter** et la **sauvegarde veille d'un jour**. Nous constatons que l'espace disque utilisé par les sauvegardes ne sont pas équivalente, mais que nous parcourions le répertoires __daily.0__ ou __daily.1__ nous aurons l'ensemble de la structure.
+Nous pouvons le voir avec le fichier __/etc/passwd__. __Rsnapshot__ réalise des liens dur (__hard link__) pour faire la référence des fichiers. L'avantage est que nous ne sommes pas obligé de reconstruire la structure des  répertoires avec les anciennes sauvegarde le répertoire  est complet. 
+Comme démontré dans l'exemple ci-dessus nous pouvons constater que le fichier __etc/passwd__ à le même __inode__ et la chiffre indiquant qu'il y a un lien symbolique est à 2 .
+
+Pour bien faire la démonstration je l'exécute une fois de plus, nous passerons donc a 3 le nombre de lien dur.
+
+        $ sudo rsnapshot -c /etc/rsnapshot.conf daily
+        $ sudo ls -li /var/cache/rsnapshot/daily.0/localhost/etc/passwd
+        534727 -rw-r--r-- 3 root root 1043 Jan 22 17:18 /var/cache/rsnapshot/daily.0/localhost/etc/passwd
+        $ sudo ls -li /var/cache/rsnapshot/daily.1/localhost/etc/passwd
+        534727 -rw-r--r-- 3 root root 1043 Jan 22 17:18 /var/cache/rsnapshot/daily.1/localhost/etc/passwd
+        $ sudo ls -li /var/cache/rsnapshot/daily.2/localhost/etc/passwd
+        534727 -rw-r--r-- 3 root root 1043 Jan 22 17:18 /var/cache/rsnapshot/daily.2/localhost/etc/passwd
+
+Pour pouvoir exécuter la sauvegarde hebdomadaire, vous devez avoir l'ensemble des exécutions journalier, sinon vous aurez l'erreur suivante dans vos __log__ :
+
+        [25/Jan/2016:08:53:54] /usr/bin/rsnapshot -c /etc/rsnapshot.conf weekly: started
+        [25/Jan/2016:08:53:54] /var/cache/rsnapshot/daily.6 not present (yet), nothing to copy
+
+Donc une fois les 6 instances créé il est possible d'exécuter la sauvegarde hebdomadaire 
+
+        $ sudo rsnapshot -c /etc/rsnapshot.conf weekly
+        $ sudo ls -l /var/cache/rsnapshot/
+        total 28
+        drwxr-xr-x 3 root root 4096 Jan 25 08:57 daily.0
+        drwxr-xr-x 3 root root 4096 Jan 25 08:57 daily.1
+        drwxr-xr-x 3 root root 4096 Jan 25 08:57 daily.2
+        drwxr-xr-x 3 root root 4096 Jan 25 08:57 daily.3
+        drwxr-xr-x 3 root root 4096 Jan 25 08:57 daily.4
+        drwxr-xr-x 3 root root 4096 Jan 25 08:50 daily.5
+        drwxr-xr-x 3 root root 4096 Jan 25 08:34 weekly.0
+        $ sudo ls -l -i /var/cache/rsnapshot/weekly.0/localhost/etc/passwd
+        534727 -rw-r--r-- 7 root root 1043 Jan 22 17:18 /var/cache/rsnapshot/weekly.0/localhost/etc/passwd
+
+Le concept est le même pour les sauvegardes par mois ou année.
+
+
+#### Configuration des tâches planifiées
+
+L'utilisation à la ligne de commande est pratique pour faire des testes, cependant nous désirons mettre en place cette opérations de manière régulière et planifier. Pour ce faire nous allons éditer le **crontab**. 
+
+Les manières de réaliser l'opération sont multiple , éditer la tache planifié de l'utilisateur __root__ ou éditer le fichier **/etc/crontab** . Je vais prendre la deuxième option, ce qui ne change presque rien à la définition.
+
+Je vais ajouter les lignes suivante au fichier de **/etc/crontab**
+
+        00 02 2-31 * 1-6 root /usr/bin/rsnapshot -c /etc/rsnapshot.conf daily
+        00 02 2-31 * 7   root /usr/bin/rsnapshot -c /etc/rsnapshot.conf weekly
+        00 02 01 * *     root /usr/bin/rsnapshot -c /etc/rsnapshot.conf monthly
+
+* __daily__ : La sauvegarde est exécutée à 2:00 (00 02) le matin , date 02 au 31 (2-31) , du lundi au samedi (1-6)
+* __weekly__ : La sauvegarde est exécutée à 2:00 (00 02) le matin , date 02 au 31 (2-31) , le dimanche (7)
+* __monthly__ : La sauvegarde est exécutée à 2:00 (00 02) le matin , le 1 du mois
+
+Comme vous pouvez le constater les sauvegardes sont programmer pour ne pas se marché dessus. Si nous regardons les fichiers de configuration vous constaterez qu'il y a la définition d'un fichier de verrou afin que si nous réalisons une erreur le problème ne cause pas de problème majeur.
+
+
+### <a name="setup_x3_rsnapshot_serveur" /> Ma configuration de Rsnapshot serveur
+
+Je présume que bien que la solution soit d'une simplicité déconcertante, il y a un peu d'incrédulité par le manque d'information sur l'état des copies , la quantité de donnée transférer , ... En gros on manque de visibilité sur ce qui s'est produit et surtout on aimerait bien recevoir un courriel avec le résultat afin de ne pas le lire et classer dans un répertoire pourvu à cette effet !
+De plus comment on fais pour réaliser la sauvegarde d'une machine distant ? Afin de répondre à la question je vais vous présenter ma configuration.
+
+Je vais donc faire la présentation de l'écosystème que j'ai mis autour pour répondre à ce besoin, je ne prétend pas que c'est la meilleur solution cependant elle a le mérite d'être flexible. L'ensemble des scripts son disponible sous le dépôt [github scripts](https://github.com/x3rus/scripts/).
+
+Comme je désire avoir un graphique sur le temps utilisé pour la réalisation de la sauvegarde nous aurons besoin de [rrd](http://oss.oetiker.ch/rrdtool/) outil qui permet de réaliser des graphiques avec n'importe quelle donnée. 
+De plus pour faire l'envoie de courriel en __HTML__ j'utilise un script python. Nous devons donc installer ces deux pacquages.
+
+        $ sudo apt-get install rrdtool python-minimal
+
+
+#### Organisation des fichiers de configuration 
+
+Premièrement je ne vais pas utiliser le fichier de configuration __/etc/rsnapshot.conf__ , j'ai créé un répertoire **/etc/rsnapshot/hosts** sous ce dernier j'ai mis la configuration désirer pour chacune des machines.
+
+        $ sudo mkdir -p  /etc/rsnapshot/hosts
+        $ ls /etc/rsnapshot/hosts
+        goban_x3rus_com.conf  hoshi_x3rus_com.conf  tengen_x3rus_com.conf
+
+De plus par défaut __rsnapshot__ utilise uniquement 1 fichier de __log /var/log/rsnapshot__ nous allons créer un répertoire pour contenir les logs pour chaque sauvegarde.
+
+        $ sudo mkdir /var/log/rsnapshot/
+
+Nous allons aussi créer un répertoire pour stocker le fichier de graphique __rrd__ généré
+
+        $ sudo mkdir /var/lib/rrd/
+
+####  Création de clés __SSH__ pour la communication avec les machines distantes
+
+Nous n'avons pas encore couvert le processus de sauvegarde d'une machine distante, le système __rsnapshot__ utilise __ssh__ pour communiquer. Comme le système de sauvegarde doit être exécuter de manière automatique sans l'intervention humaine, donc sans entrer un mot de passe nous utiliserons l'authentification par clé. Nous allons créer une pair de clé. Contrairement à l'utilisation classique qui crée la clé de le home de l'utilisateur nous allons la créer dans le répertoire __/etc/rsnapshot/keys/__ . La clé ne comprend pas de __passphrase__
+
+        
+        $ sudo mkdir -p  /etc/rsnapshot/keys 
+        $ sudo ssh-keygen
+        Generating public/private rsa key pair.
+        Enter file in which to save the key (/root/.ssh/id_rsa): /etc/rsnapshot/keys/rsnapshot_rsa
+        Enter passphrase (empty for no passphrase): 
+        Enter same passphrase again: 
+        Your identification has been saved in /etc/rsnapshot/keys/rsnapshot_rsa.
+        Your public key has been saved in /etc/rsnapshot/keys/rsnapshot_rsa.pub.
+
+Nous aurons donc la clé disponible sous __/etc/rsnapshot/keys/rsnapshot_rsa__
+
+#### Configuration du client __SSH__ pour l'utilisation de la clé
+
+Nous avons définie une clé __ssh__ nous allons maintenant définir une configuration pour que le client __ssh__ de l'utilisateur **root** utilise cette configuration ! Deux option d'offre à nous , la première définir dans le fichier de configuration de __rsnapshot__ du client d'utiliser spécifiquement cette clé. Personnellement n'utilisant jamais le compte __root__ autre que pour des opérations automatisé j'ai définie cette configuration global à l'utilisateur. 
+J'ai édité le fichier **/root/.ssh/config** avec les instructions suivante :
+
+        Host *
+            IdentityFile /etc/rsnapshot/keys/rsnapshot_rsa
+            StrictHostKeyChecking no
+
+Ceci ce traduit comme suit , pour toutes les machines (__Host *__)  utilise la clé __rsnapshot\_rsa__ (__IdentityFile__) lors de l'initialisation de connexion ne pas faire de validation sur l'échange de clé initiale (__StrictHostKeyChecking__)
+
+
+#### script d'abstraction **backup_runner.sh**
+
+Ce script disponible sous le dépôt [backup_runner.sh](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/backup_runner.sh), permet d'avoir une validation des paramètres transmis. 
+Si vous lisez le script vous constaterez qu'il valide les paramètres, valide que l'utilisateur utilisé est bien **root**.
+
+Résultat au lieu d'utiliser la commande __rsnapshot__ nous utiliserons :
+
+        $ sudo backup_runner.sh -c Fichier-de-configuration.conf daily
+
+#### script de backup et fichier de configuration (__FullBackup.sh__ et __FullBackup.conf__)
+
+__Backup\_runner.sh__ ne réalise la sauvegarde que pour un fichier de configuration nous utiliserons le script __FullBackup.sh__ pour orchestrer l'ensemble du processus de sauvegarde. Ce dernier réalise les opérations suivante :
+
+1. __Mount__ le disque dur externe sur le système de fichier
+2. Réalise la sauvegarde pour l'ensemble des fichiers de configuration présent dans __/etc/rsnapshot/hosts/__
+3. Réalise un graphique des performances.
+4. Envoie un courriel récapitulatif du processus de sauvegarde
+
+Ce fichier utilise un fichier de configuration contenant l'ensemble des paramètres requis pour le bon fonctionnement.
+Le fichier [FullBackup.sh](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/FullBackup.sh) et [FullBackup.conf](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/FullBackup.conf), sont disponible sur __github__.
+
+Bien entendu il est important de modifier le contenu du fichier de configuration **FullBackup.conf** pour que ce soit représentatif de votre installation !
+
+#### script satellite 
+
+Le script [FullBackup.sh](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/FullBackup.sh) appel un autre script nommé [html-email-sender.py](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/html-email-sender.py), ce petit script en python est utilisé pour envoyer un courriel. Pour ceux qui se demande pourquoi je n'ai pas simplement utilisé la commande __mail__ , simplement parce que j'avais besoin de composer un courriel en __html__ pour inclure une image.
+Tout comme les autres script ceci est disponible sur __github__ [html-email-sender.py](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/html-email-sender.py).
+
+Je vous laisse le plaisir de le lire.
+
+Le script [rsnapreport.pl](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/rsnapshot.pl) est en fait un script inclut dans le __package rsnapshot__ vous le retrouverez dans le répertoire __/usr/share/doc/rsnapshot/examples/utils/rsnapreport.pl.gz__. Je l'ai inclue dans le dépôt pour facilité le déploiement de la solution.
+
+### <a name="setup_x3_rsnapshot_client" /> Ma configuration de Rsnapshot client
+
+Pour que le système de sauvegarde fonctionne vous devez avoir sur le client :
+
+* service __ssh__ pour la connexion ( __apt-get install openssh-server__ )
+* l'application __rsync__ pour la synchronisation / copie des fichiers ( __apt-get install rsync__ )
+
+Lors de la configuration du serveur nous avons créé une clé __SSH__ afin de permettre au serveur d'établir une connexion sur les machines clients sans mot de passe. Nous allons maintenant procéder à la configuration de cette clé sur le / les clients.
+
+#### configuration de la clé __ssh__ client
+
+Afin de permettre la réalisation de la sauvegarde de l'ensemble du système peut importe les permissions l'opération de sauvegarde sera réalisé par l'utilisateur __root__ . La configuration de __ssh__ doit donc permettre la connexion via l'utilisateur __root__ . Afin de réduire les risques ( __brute force__, ...) en autorisant les accès avec le compte administrateur directement, nous n'autoriseront l'accès que grâce au système de clé. Voici la ligne à valider / modifier dans votre configuration , assurez vous d'avoir __without-password__ :
+
+        $ cat /etc/ssh/sshd_config  | grep PermitRootLogin
+        PermitRootLogin without-password
+
+Si vous avez réalisé une configuration avec limitation d'accès par utilisateur __AllowUsers__ ou __AllowGroups__ il faudra rajouter l'usagé __root__ pour lui permettre la connexion. Bien entendu nous redémarrons le service s'il y a eu modification dans le fichier 
+
+        $ sudo /etc/init.d/ssh restart
+
+Le serveur est configuré , nous allons mettre en place la clé :D. Car si vous avez été trop pressé puis fait le teste , ça marche pas encore :P.
+
+Nous créer le répertoire __ssh__ pour l'utilisateur __root__ puis nous allons déposer la clé publique __rsa__ (**/etc/rsnapshot/keys/rsnapshot_rsa.pub**) , c'est partie.
+
+        client $ sudo mkdir ~root/.ssh
+        client $ sudo chmod u=rwx,g=rx,o= ~root/.ssh
+        server $ cat /etc/rsnapshot/keys/rsnapshot_rsa.pub
+        ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDOqBjtdIK/ybEVTJopK4ZXmYo02ZJcyItXfAY
+        [ .. OUTPUT COUPÉ ... ]
+        client $ sudo vim ~root/.ssh/authorized_keys
+        [ COPIEZ le contenu ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDOqBjtdIK/ybE .... ]
+        client $ sudo cat ~root/.ssh/authorized_keys
+        ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDOqBjtdIK/ybEVTJopK4ZXmYo02ZJcyItXfAY6h0d3/SlrTS7xzBcJArgNq48DCKXnug5MQazJBgqFI6kLFT9Eox1Tbp74laCyGQgpQtl7Ehl6nG0iIpd9QdjwR5j3vFmj9gzTOumg5bp07/JSZ/AIvCpojSio/1R1ftEDJMYG01shhYZhBn2RKrWqoQxTjMiUYfTwxw+ZmDapVC+PtoDWk014iTEg0p+c67PxduMrVnBxJvo7bQI3bBt/KTtZnA9BPoVIBZnkn4v0zGaJMXG9NFiSg2O+hK3oxBAseaGO46/Y0seeGVYzfG5jgzwZjgQVSuVJ01XjZbk9oFkdb36L root@xerus.example.com
+        client $ sudo chmod u=rw,g=,o= ~root/.ssh/authorized_keys
+
+
+Maintenant nous pouvons réaliser une validation, nous utiliserons la commande __ssh__ "normalement" en passant l'argument **-i** afin d'indiquer quelle clé utiliser :
+
+        server $ sudo ssh -i /etc/rsnapshot/keys/rsnapshot_rsa root@client
+
+Nous sommes obligé d'utiliser la commande __sudo__ car le fichier **/etc/rsnapshot/keys/rsnapshot_rsa** n'est lisible QUE par l'utilisateur __root__. Si vous n'avez pas mis l'instruction __sudo__ le système vous demandera un mot de passe. Normalement vous êtes maintenant sur le client avec un __shell__. Vous pouvez faire __logout__. 
+
+À ce stade tous va fonctionné, mais nous allons mettre un peu plus de sécurité sur l'utilisation de cette clé car comme l'ensemble de la sécurité est basé sur un seul fichier **/etc/rsnapshot/keys/rsnapshot_rsa** . Nous allons mettre des mesures de contrôle en plus.
+
+#### limitation de l'utilisation de la clé
+
+Premièrement nous allons limité d'où les connexions peuvent venir, avec l'instruction **from=** sur le client. Ceci nous permet de définir des adresses __IP__ ou des segments réseaux. Voici le résultat :
+
+         client $  sudo cat ~root/.ssh/authorized_keys
+         from="192.168.30.30" ssh-rsa AAAAB3NzaC1yc2EAAAADAQAB
+         [ .. OUTPUT COUPÉ ... ]
+
+À ce stade l'authentification par clé devrait très bien fonctionné depuis la machine __192.168.30.30__ mais d'une autre machine sur le réseau le système va demander le mot de passe .
+
+Cool !! Mais  en fait nous on veut juste permettre l'utilisation de **rsync** est-ce vraiment pertinent de permettre un __shell__ comme __root__  ?!?! (la réponse c'est non :P, pourquoi ? Parce qu'on peut le faire :D.)
+
+Nous allons limité l'utilisation de commandes qui peuvent être réalisé avec cette clé __ssh__ , nous n'allons permettre QUE l'utilisation de la commande __rsync__ car nous n'avons pas besoin de plus. Pour ce faire nous allons rajouter l'instruction **command=** à la définition de la clé sur le client 
+
+        client $ sudo cat ~root/.ssh/authorized_keys
+        from="192.168.30.30",command="/root/backup/validate-rsync" ssh-rsa AAAAB3NzaC1yc2EAAAADA
+         [ .. OUTPUT COUPÉ ... ]
+
+Lors de la connexion __ssh__ le système va appeler le script __/root/backup/validate-rsync__ afin de voir si c'est OK ou NON.
+
+HEU mais il sort d'où ce fichier **/root/backup/validate-rsync**  ? Nous ne l'avons pas encore créé :P... Voici le contenu :
+
+        client $ cat client-site/validate-rsync
+        #!/bin/sh
+        #
+        # Command original from web site : http://troy.jdmz.net/rsync/#validate-rsync
+        #
+
+
+        case "$SSH_ORIGINAL_COMMAND" in
+        *\&*)
+        echo "Rejected"
+        ;;
+        *\(*)
+        echo "Rejected"
+        ;;
+        *\{*)
+        echo "Rejected"
+        ;;
+        *\;*)
+        echo "Rejected"
+        ;;
+        *\<*)
+        echo "Rejected"
+        ;;
+        *\`*)
+        echo "Rejected"
+        ;;
+        *\|*)
+        echo "Rejected"
+        ;;
+        rsync\ --server*)
+        $SSH_ORIGINAL_COMMAND
+        ;;
+        *)
+        echo "Rejected"
+        ;;
+        esac
+
+En gros  le script prend la variable **$SSH_ORIGINAL_COMMAND** qui est transmis par __ssh__ au script et réalise la validation pour __rsync__. Bien entendu pour que ceci fonctionne le script doit être exécutable par l'utilisateur .
+
+        client $ sudo chmod u=rx  /root/backup/validate-rsync
+
+Si maintenant nous réalisons un test pour établir une connexion au système avec un __shell__ voici le résultat 
+
+        server $ sudo ssh -i /etc/rsnapshot/keys/rsnapshot_rsa root@192.168.30.100
+        Rejected
+        Connection to 127.0.0.1 closed.
+
+C'est  magnifique :D, mais ça marche vraiment avec __rsync__ :P, validons ...
+
+        server $ sudo rsync -av -e "ssh -i /etc/rsnapshot/keys/rsnapshot_rsa" root@192.168.30.100:/etc /tmp/toto/
+        receiving incremental file list
+        etc/
+        etc/.pwd.lock
+        etc/adduser.conf
+        etc/anacrontab
+        [ ... OUTPUT COUPÉ ... ]
+        etc/xml/xml-core.xml
+        etc/xml/xml-core.xml.old
+
+        sent 11,453 bytes  received 1,228,991 bytes  826,962.67 bytes/sec
+        total size is 1,173,430  speedup is 0.95
+
+### <a name="setup_x3_rsnapshot_test" /> Ma configuration validation
+
+Nous sommes donc à l'étape de faire un teste passant de la configuration et bien entendu faire les petits correctif qui vont s'imposer , malheureusement ça marche rarement complètement du premier coup .
+
+Donc si je prend ce fichier de configuration
+
+        $ cat /etc/rsnapshot/hosts/client_domain_com.conf 
+        config_version                  1.2
+        snapshot_root                   /mnt/hd_backup/zato
+        no_create_root                  0
+        cmd_cp                          /bin/cp
+        cmd_rm                          /bin/rm
+        cmd_rsync                       /usr/bin/rsync
+        cmd_ssh                         /usr/bin/ssh
+        cmd_logger                      /usr/bin/logger
+        cmd_du                          /usr/bin/du
+        cmd_rsnapshot_diff              /usr/bin/rsnapshot-diff
+        interval                        daily           7
+        interval                        weekly          6
+        interval                        monthly         6
+        verbose                         2
+        loglevel                        3
+        logfile                         /var/log/rsnapshot/zato.log
+        lockfile                        /var/run/rsnapshot-zato.pid
+        #ssh_args                       -i /etc/rsnapshot/keys/rsnapshot_rsa
+        rsync_long_args                 -z --delete --relative --numeric-ids --delete-excluded --stats
+
+        #       List    directory
+        backup                          root@192.168.30.100:/etc 
+
+Je vais faire un teste passant : 
+
+        $ sudo /usr/local/sysadmin/backup-scripts/rsnapshot/backup_runner.sh /etc/rsnapshot/hosts/client_domain_com.conf  daily
+        echo 836 > /var/run/rsnapshot-zato.pid
+        mv /mnt/hd_backup/zato/daily.1/ /mnt/hd_backup/zato/daily.2/
+        /bin/cp -al /mnt/hd_backup/zato/daily.0 /mnt/hd_backup/zato/daily.1
+        /usr/bin/rsync -av -z --delete --relative --numeric-ids --delete-excluded \
+            --stats --rsh=/usr/bin/ssh root@127.0.0.1:/etc \
+            /mnt/hd_backup/zato/daily.0/.
+        receiving incremental file list
+        etc/
+        etc/.pwd.lock
+        etc/adduser.conf
+       [ ... OUTPUT COUPÉ ... ] 
+       touch /mnt/hd_backup/zato/daily.0/
+       rm -f /var/run/rsnapshot-zato.pid
+       /usr/bin/logger -i -p user.info -t rsnapshot /usr/bin/rsnapshot -c \
+           /etc/rsnapshot/hosts/client_domain_com.conf -V daily: completed \
+           successfully
+
+Nous pouvons maintenant utilise le script qui englobe  tous ça :D.
+
+        $ sudo /usr/local/sysadmin/backup-scripts/rsnapshot/FullBackup.sh daily
+
+Si vous n'avez pas de message d'erreur ça veut dire que tout vas bien vous pouvez regarder vos courriel , vous devriez avoir l'état de la sauvegarde.
+
 
 ## <a name="backupPC" />BackupPC
+
+
+**BackupPC** est un logiciel libre de sauvegarde de système de fichier publié sous licence **GPL**.
+
+Il est utilisé pour sauvegarder sur disque un ensemble de postes clients et de serveurs, sous Unix, Linux, Windows ou Mac OS X. Les protocoles utilisables pour les transferts sont : __SMB, tar over SSH/rsh/nfs, et rsync__. Il ne nécessite l'installation d'aucun logiciel client sur les machines à sauvegarder. Il possède une interface web pour lancer des sauvegardes ou restaurer des fichiers. Il est également possible de sauvegarder des bases de données via un script __shell__ lancé avant la sauvegarde.
+
+Originalement je n'avais pas prévu en faire la démonstration, cependant afin d'offrir plus de choix au personne j'ai changé d'avis , je tiens à préciser que je n'ai que très peu d'expérience avec l'outil. Je vous invite à communiquer tous erreur que vous trouvez , en fait ceci s'applique sur l'ensemble des sections :P.
+
+Site web officiel : [http://backuppc.sourceforge.net/](http://backuppc.sourceforge.net/)
+
+### Installation
+
+TODO: valider l'installation peut-être juste problème avec mon docker 
+TODO: voir comme référence > http://www.klipz.fr/tutoriel_backuppc.html
+
+* Réalisation de l'installation avec le système de pacquage :
+
+        $ sudo apt-get install apache2-utils  backuppc
+
+Je ne prendrais pas beaucoup de temps pour la partie de la configuration de __backuppc__ dans le serveur web __apache__ , car nous verrons en détail le serveur web à la prochaine section.
+
+* Activation de la configuration de __backuppc__ dans apache 
+
+        $ sudo ln -s /etc/backuppc/apache.conf /etc/apache2/sites-enabled/backuppc.conf
+
+* Initialisation du mot de passe pour l'accès à l'interface web, définir le mot de passe que vous désirez.
+
+        $ sudo htpasswd /etc/backuppc/htpasswd backuppc
+
+* Accès à l'interface web : http://le-nom-ou-ip-du-serveur/backuppc/
+
+### Configuration 
+
+L'ensemble de la configuration de __backupPc__ est disponible dans le répertoire __/etc/__ comme la majorité des applications installé par le système de pacquage. Nous y retrouvons :
+
+* __apache.conf__ :  Fichier de configuration pour apache .
+* __config.pl__ : Fichier de configuration général du système.
+* __hosts__ : Fichier réalisant l'association des nom des machines et des utilisateurs responsable , ces derniers recevrons le courriel de l'état de la prise de sauvegarde. De plus il est indiqué si la machine récupère sont adresse __ip__ par __DHCP__.
+* __htpasswd__ : Fichier contenant les nom d'utilisateurs et mot de passe des utilisateur du système.
+* __localhost.pl__ : Fichier de configuration du client __localhost__, nous y reviendrons.
+
+
+* Correction d'un problème d'installation sous Ubuntu conformément au [forum ubuntu](http://ubuntuforums.org/showthread.php?t=2237618) . Nous allons changer le paramètre __Ping6Path__ sinon nous aurons une erreur __impossible de réaliser un ping__.
+
+        $ cat -n /etc/backuppc/config.pl  | egrep 'PingPath|Ping6Pa'
+          1643  #     $Conf{PingPath} = '/bin/echo';
+          1645  $Conf{PingPath} = '/bin/ping';
+          1646  $Conf{Ping6Path} = '/bin/ping6';
+          1651  #   $pingPath      path to ping ($Conf{PingPath})
+J'ai ajuster la ligne 1646 , afin de fournir le chemin au binaire
+
+
+* Correction pour l'erreur 512 de __tar__ lors de l'utilisation local pour __localhost__ , comme les fichiers contenu dans __/etc__ par exemple ne sont pas tous accessible à l'utilisateur __backup__ il devra pouvoir utiliser la commande **sudo** por obtenir les privilèges requis.
+
+        $ sudo visudo 
+        backuppc ALL=NOPASSWD: /bin/tar
+
+        $ sudo cat -n /etc/backuppc/localhost.pl | grep sudo
+           10  $Conf{TarClientCmd} = '/usr/bin/env LC_ALL=C sudo $tarPath -c -v -f - -C $shareName --totals';
+Ajout à la ligne 10 de la commande **sudo** entre la définition du langage et la variable **$tarPath**.
+
+Démarrage des services, nous avons 2 services requis **backuppc** et **apache** pour l'interface web.
+
+        $ sudo /etc/init.d/backuppc start
+        $ sudo /etc/init.d/apache2 start
+
+
+### Réalisation d'une sauvegarde manuel du serveur backupPC
+
+Nous avons fait mentions que le système __backupc__ supporte plusieurs mode de communication, il supporte aussi **tar**, simple mais efficace pour un petit nombre de fichier. Sous Ubuntu le système prés configuration le serveur __localhost__ avec ce mode . Nous allons donc prendre quelques minutes pour voir la configuration avant de réaliser la configuration d'un client avec __rsync__. L'avantage de __tar__ est la simplicité :D.
+
+Commençons donc par réaliser une sauvegarde complète du serveur.
+
+1. Cliquez en haut à gauche sur "__select a host__"
+2. Sélectionnez la machine.
+
+![01-select-hosts.png](./01-select-hosts.png)
+
+Vous avez maintenant 2 bouton  :
+
+* __Start Full Backup__ : Pour démarrer une sauvegarde complète 
+* __Stop/Dequeue Backup__ : Permet de planifier une sauvegarde dans le temps.
+
+![02-show-localhost-hosts.png](./02-show-localhost-hosts.png)
+
+Nous allons réaliser un backup complète , donc cliquez sur **Start  Full Backup**, après avoir confirmer , vous revenez à la page et vous devriez avoir le backup complète disponible .
+
+![03-resultat-full-backup.png](./03-resultat-full-backup.png)
+
+Si vous cliquez sur le numéro de la sauvegarde vous verrez le contenu de la sauvegarde .
+
+![04-list-le-contenu-du-backup.png](./04-list-le-contenu-du-backup.png)
+
+Nous reviendrons pour la restauration :D.
+
+### Planification des sauvegardes
+
+J'espère réussir à bien exprimer la configuration en place par défaut de __backupPc__ et a représenter de manière adéquate les possibilité de la modifier. Commençons par consulter la configuration disponible, j'aimerai préciser que la modification de la configuration peut être aussi réalisé avec votre éditeur préféré vous n'êtes pas obligé d'utiliser l'interface web pour cette exercice. La fichier **/etc/backuppc/config.pl** est éditable .
+
+Pour visualiser nous :
+
+1. Cliquez dans le menu de gauche sur __Edit config__
+2. Puis sur la page sur l'onglet __Schedule__
+3. Voici le résultat
+
+![05-planification-des-sauvegardes.png](05-planification-des-sauvegardes.png)
+
+
+Par défaut le système est configuré comme suit :
+
+* Réalisation d'une sauvegarde complet 
+    * tous les 7 jours 
+    * conservation uniquement du dernier
+* Réalisation d'une sauvegarde incrémentale
+    * tous les jours
+    * conservation des 6 plus récent
+
+Bon maintenant c'est écrit où ça dans la page ?!?! Personnellement, je ne l'ai pas visualisé du premier coup !
+Voici la même lecture avec les variables, si vous désirez réaliser des modifications .
+
+La réalisation de la sauvegarde complète au 7 jour est définie par la variable :
+
+* __FullBackup__ : 6.97 , La raison pourquoi ce n'est pas écrit 7 est décrite sur [la page de configuration](http://backuppc.sourceforge.net/faq/BackupPC.html#_conf_fullperiod_). __Typically this is set slightly less than an integer number of days. The time taken for the backup, plus the granularity of $Conf{WakeupSchedule} will make the actual backup interval a bit longer.__
+
+La conservation des sauvegardes complète est définie par les deux variables **FullKeepCnt** et **FullKeepCntMin** , actuellement à 1 . 
+
+L'idée est identique pour les sauvegardes incrémentales. Nous avons la variable :
+
+* __IncrPeriod__ : 0.97, qui définie la fréquence de l'exécution des sauvegardes de ce type , nous avons la même explication du chiffre que pour les sauvegardes complètes.
+
+La définition de la conservation des sauvegardes donc définie par les variables :
+
+* __IncrKeepCnt__ : 6 , définie le nombre maximum de sauvegarde incrémentale .
+* __IncrKeepCntMin__ : 1 , définie le nombre minimum de sauvegarde.
+
+
+Woot !!! Mais ça démarre quand ? Le système  ne définie pas d'heure d'exécution mais des heures pendant laquelle les backups ne doivent pas être exécuté. Ceci est définie la variable [blackoutperiods](http://backuppc.sourceforge.net/faq/BackupPC.html#_conf_blackoutperiods_), si nous reprenons la copie d'écran ceci donne :
+
+* de 7:00 heure le matin à 19:50  le soir , du lundi au vendredi pas de sauvegarde sinon c'est disponible.
+
+Point de référence : https://www.digitalocean.com/community/tutorials/how-to-use-backuppc-to-create-a-backup-server-on-an-ubuntu-12-04-vps
 
 ## <a name="clonezilla" />CloneZilla
 

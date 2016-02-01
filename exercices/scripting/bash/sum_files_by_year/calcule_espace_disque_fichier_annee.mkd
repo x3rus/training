@@ -1,3 +1,9 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+
 # Description
 
 Dans un répertoire donnée faire la recherche des fichiers qui furent modifier l'année passé par exemple entre le 1 janvier 2015 au 31 décembre 2016.
@@ -15,14 +21,14 @@ Truc  : N'hésitez pas a utiliser des fichiers temporaire
 
 Matériel  disponible : 
 
-* __usr\_share\_fonts.tar.bz2 (22 Megs)__ : contient des polices de caractère après extraction validez que les dates furent conservé.
+* [usr\_share\_fonts.tar.bz2 (22 Megs)]( https://github.com/x3rus/training/raw/master/exercices/scripting/bash/sum_files_by_year/usr_share_fonts.tar.bz2) : contient des polices de caractère après extraction validez que les dates furent conservé.
 * Résultat par année : 
-    * 2011 : 12 __kilobytes__
+    * 2011 : Aucun Fichiers
     * 2012 : 196 __kilobytes__ (attention il y a une subtilité ici car il y a un fichier avec espaces :P)
     * 2013 : 20 __kilobytes__
     * 2014 : 760 __kilobytes__
     * 2015 : 39480 __kilobytes__
-    * 2016 : 12 __kilobytes__
+    * 2016 : Aucun Fichier
 
 Note : si vous n'avez pas le même résultat mais êtes certains de votre scripts ,SVP communiez avoir moi j'ai peut-être fait une erreur dans ma solution :D.
 
