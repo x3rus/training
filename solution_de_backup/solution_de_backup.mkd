@@ -18,14 +18,38 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 * [Résultat pour l'écosystème de démonstration](#resultat_eco) 
        * [Stratégie pour le chef d'orchestre ](#strategie_chef_orches) 
 * [Mise en place de logiciel](#mise_en_place) 
-       * [Rsnapshot](#rsnapshot) 
-       *<a name"backupPC" />BackupPC
-       * [lvm export](#lvm_export) 
-       * [ghost bare metal](#ghost_bare_metal) 
-       * [Backup de sanpshot de VM](#backup_snapshot_vmware) 
+       * [ Rsnapshot](#rsnapshot) 
+           * [ Installation et configuration de Rsnapshot ](#install_rsnapshot) 
+               * [ L'installation ](#install_rsnapshot_2) 
+               * [La configuration](#configure_rsnapshot) 
+               * [ Utilisation ](#use_rsnapshot) 
+               * [Configuration des tâches planifiées](#planif_rsnapshot) 
+           * [ Ma configuration de Rsnapshot serveur](#setup_x3_rsnapshot_serveur) 
+               * [ Organisation des fichiers de configuration ](#files_rsnapshot) 
+               * [ Création de clés __SSH__ pour la communication avec les machines distantes](#ssh_key_rsnapshot) 
+               * [Configuration du client __SSH__ pour l'utilisation de la clé](#ssh-setup_client_rsnapshot) 
+               * [ script d'abstraction **backup_runner.sh**](#backup_runner.sh) 
+               * [ script de backup et fichier de configuration (__FullBackup.sh__ et __FullBackup.conf__)](#script_bk_rsnapshot) 
+               * [ script satellite ](#script_satellite) 
+           * [ Ma configuration de Rsnapshot client](#setup_x3_rsnapshot_client) 
+               * [ configuration de la clé __ssh__ client](#setup_ssh_client_rsnapshot) 
+               * [ limitation de l'utilisation de la clé](#limitation_ssh_key_rsnapsho) 
+           * [ Ma configuration validation](#setup_x3_rsnapshot_test) 
+       * [ BackupPC](#backupPC) 
+           * [ Installation](#installation_backuppc) 
+           * [Configuration ](#config_backuppc) 
+           *  [ Réalisation d'une sauvegarde manuel du serveur backupPC](#backupmanuel_backuppc) 
+           *  [ Planification des sauvegardes](#planif_backuppc) 
+           * [Configuration d'un client sur le réseau](#setup_net_client_backuppc) 
+           * [ Restauration d'un fichier](#restore_backuppc) 
+       * [CloneZilla](#clonezilla) 
+* [Quelques points pour peaufiner la solution](#la_glue_autour) 
        * [Mise en place d'une stratégie de la validation de sauvegarde automatique.](#Validation) 
        * [Indicateur de prise de backup pour PS4 ](#bk_ps4) 
        * [Indicateur d'absence de backup des Téléphone](#mobile_bk_check) 
+* [Autre Méthode pour des besoins precis.](#other_technique) 
+       * [lvm export](#lvm_export) 
+       * [Backup de sanpshot de VM](#backup_snapshot_vmware) 
 * [Référence ](#ref) 
 
 # <a name="intro" />Introduction 
@@ -282,7 +306,7 @@ Débutons avec la mise en place de la solution, j'entends certain dire enfin :P.
 
 ### <a name="install_rsnapshot" /> Installation et configuration de Rsnapshot 
 
-####  L'installation 
+#### <a name="install_rsnapshot_2" /> L'installation 
 
 L'installation est très simple la majorité des distributions offre un pacquage pour __rsnapshot__ .
 
@@ -293,7 +317,7 @@ On peut pas me dire que GNU/Linux c'est compliqué :P !
 TODO: FAUT ABSOLUMENT VALIDER l'install dans le docker de formation 64 bits ... J'ai du mettre anacron au lieu de cron pour le systeme 32 bits du laptop :(
 
 
-#### La configuration
+#### <a name="configure_rsnapshot" />La configuration
 
 Le fichier de configuration par défaut est **/etc/rsnapshot.conf**, je vous laisse le plaisir de lire le contenu du fichier fournie par la distribution pour vous inspirer.
 
@@ -354,7 +378,7 @@ Information sur la configuration
                  tabs. 
 
 
-#### Utilisation 
+#### <a name="use_rsnapshot" /> Utilisation 
 
 Test d'exécution  et validation du résultat : 
 
@@ -420,7 +444,7 @@ Donc une fois les 6 instances créé il est possible d'exécuter la sauvegarde h
 Le concept est le même pour les sauvegardes par mois ou année.
 
 
-#### Configuration des tâches planifiées
+#### <a name="planif_rsnapshot" />Configuration des tâches planifiées
 
 L'utilisation à la ligne de commande est pratique pour faire des testes, cependant nous désirons mettre en place cette opérations de manière régulière et planifier. Pour ce faire nous allons éditer le **crontab**. 
 
@@ -452,7 +476,7 @@ De plus pour faire l'envoie de courriel en __HTML__ j'utilise un script python. 
         $ sudo apt-get install rrdtool python-minimal
 
 
-#### Organisation des fichiers de configuration 
+#### <a name="files_rsnapshot" /> Organisation des fichiers de configuration 
 
 Premièrement je ne vais pas utiliser le fichier de configuration __/etc/rsnapshot.conf__ , j'ai créé un répertoire **/etc/rsnapshot/hosts** sous ce dernier j'ai mis la configuration désirer pour chacune des machines.
 
@@ -468,7 +492,7 @@ Nous allons aussi créer un répertoire pour stocker le fichier de graphique __r
 
         $ sudo mkdir /var/lib/rrd/
 
-####  Création de clés __SSH__ pour la communication avec les machines distantes
+#### <a name="ssh_key_rsnapshot" /> Création de clés __SSH__ pour la communication avec les machines distantes
 
 Nous n'avons pas encore couvert le processus de sauvegarde d'une machine distante, le système __rsnapshot__ utilise __ssh__ pour communiquer. Comme le système de sauvegarde doit être exécuter de manière automatique sans l'intervention humaine, donc sans entrer un mot de passe nous utiliserons l'authentification par clé. Nous allons créer une pair de clé. Contrairement à l'utilisation classique qui crée la clé de le home de l'utilisateur nous allons la créer dans le répertoire __/etc/rsnapshot/keys/__ . La clé ne comprend pas de __passphrase__
 
@@ -484,7 +508,7 @@ Nous n'avons pas encore couvert le processus de sauvegarde d'une machine distant
 
 Nous aurons donc la clé disponible sous __/etc/rsnapshot/keys/rsnapshot_rsa__
 
-#### Configuration du client __SSH__ pour l'utilisation de la clé
+#### <a name="ssh-setup_client_rsnapshot" />Configuration du client __SSH__ pour l'utilisation de la clé
 
 Nous avons définie une clé __ssh__ nous allons maintenant définir une configuration pour que le client __ssh__ de l'utilisateur **root** utilise cette configuration ! Deux option d'offre à nous , la première définir dans le fichier de configuration de __rsnapshot__ du client d'utiliser spécifiquement cette clé. Personnellement n'utilisant jamais le compte __root__ autre que pour des opérations automatisé j'ai définie cette configuration global à l'utilisateur. 
 J'ai édité le fichier **/root/.ssh/config** avec les instructions suivante :
@@ -496,7 +520,7 @@ J'ai édité le fichier **/root/.ssh/config** avec les instructions suivante :
 Ceci ce traduit comme suit , pour toutes les machines (__Host *__)  utilise la clé __rsnapshot\_rsa__ (__IdentityFile__) lors de l'initialisation de connexion ne pas faire de validation sur l'échange de clé initiale (__StrictHostKeyChecking__)
 
 
-#### script d'abstraction **backup_runner.sh**
+### <a name="backup_runner.sh" /> script d'abstraction **backup_runner.sh**
 
 Ce script disponible sous le dépôt [backup_runner.sh](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/backup_runner.sh), permet d'avoir une validation des paramètres transmis. 
 Si vous lisez le script vous constaterez qu'il valide les paramètres, valide que l'utilisateur utilisé est bien **root**.
@@ -505,7 +529,7 @@ Résultat au lieu d'utiliser la commande __rsnapshot__ nous utiliserons :
 
         $ sudo backup_runner.sh -c Fichier-de-configuration.conf daily
 
-#### script de backup et fichier de configuration (__FullBackup.sh__ et __FullBackup.conf__)
+#### <a name="script_bk_rsnapshot" /> script de backup et fichier de configuration (__FullBackup.sh__ et __FullBackup.conf__)
 
 __Backup\_runner.sh__ ne réalise la sauvegarde que pour un fichier de configuration nous utiliserons le script __FullBackup.sh__ pour orchestrer l'ensemble du processus de sauvegarde. Ce dernier réalise les opérations suivante :
 
@@ -519,7 +543,7 @@ Le fichier [FullBackup.sh](https://github.com/x3rus/scripts/blob/master/backup-s
 
 Bien entendu il est important de modifier le contenu du fichier de configuration **FullBackup.conf** pour que ce soit représentatif de votre installation !
 
-#### script satellite 
+#### <a name="script_satellite" /> script satellite 
 
 Le script [FullBackup.sh](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/FullBackup.sh) appel un autre script nommé [html-email-sender.py](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/html-email-sender.py), ce petit script en python est utilisé pour envoyer un courriel. Pour ceux qui se demande pourquoi je n'ai pas simplement utilisé la commande __mail__ , simplement parce que j'avais besoin de composer un courriel en __html__ pour inclure une image.
 Tout comme les autres script ceci est disponible sur __github__ [html-email-sender.py](https://github.com/x3rus/scripts/blob/master/backup-scripts/rsnapshot/html-email-sender.py).
@@ -537,7 +561,7 @@ Pour que le système de sauvegarde fonctionne vous devez avoir sur le client :
 
 Lors de la configuration du serveur nous avons créé une clé __SSH__ afin de permettre au serveur d'établir une connexion sur les machines clients sans mot de passe. Nous allons maintenant procéder à la configuration de cette clé sur le / les clients.
 
-#### configuration de la clé __ssh__ client
+#### <a name="setup_ssh_client_rsnapshot" /> configuration de la clé __ssh__ client
 
 Afin de permettre la réalisation de la sauvegarde de l'ensemble du système peut importe les permissions l'opération de sauvegarde sera réalisé par l'utilisateur __root__ . La configuration de __ssh__ doit donc permettre la connexion via l'utilisateur __root__ . Afin de réduire les risques ( __brute force__, ...) en autorisant les accès avec le compte administrateur directement, nous n'autoriseront l'accès que grâce au système de clé. Voici la ligne à valider / modifier dans votre configuration , assurez vous d'avoir __without-password__ :
 
@@ -572,7 +596,7 @@ Nous sommes obligé d'utiliser la commande __sudo__ car le fichier **/etc/rsnaps
 
 À ce stade tous va fonctionné, mais nous allons mettre un peu plus de sécurité sur l'utilisation de cette clé car comme l'ensemble de la sécurité est basé sur un seul fichier **/etc/rsnapshot/keys/rsnapshot_rsa** . Nous allons mettre des mesures de contrôle en plus.
 
-#### limitation de l'utilisation de la clé
+#### <a name="limitation_ssh_key_rsnapsho" /> limitation de l'utilisation de la clé
 
 Premièrement nous allons limité d'où les connexions peuvent venir, avec l'instruction **from=** sur le client. Ceci nous permet de définir des adresses __IP__ ou des segments réseaux. Voici le résultat :
 
@@ -713,7 +737,7 @@ Nous pouvons maintenant utilise le script qui englobe  tous ça :D.
 Si vous n'avez pas de message d'erreur ça veut dire que tout vas bien vous pouvez regarder vos courriel , vous devriez avoir l'état de la sauvegarde.
 
 
-## <a name="backupPC" />BackupPC
+## <a name="backupPC" /> BackupPC
 
 
 **BackupPC** est un logiciel libre de sauvegarde de système de fichier publié sous licence **GPL**.
@@ -724,7 +748,7 @@ Originalement je n'avais pas prévu en faire la démonstration, cependant afin d
 
 Site web officiel : [http://backuppc.sourceforge.net/](http://backuppc.sourceforge.net/)
 
-### Installation
+### <a name="installation_backuppc" /> Installation
 
 TODO: valider l'installation peut-être juste problème avec mon docker 
 TODO: voir comme référence > http://www.klipz.fr/tutoriel_backuppc.html
@@ -745,7 +769,7 @@ Je ne prendrais pas beaucoup de temps pour la partie de la configuration de __ba
 
 * Accès à l'interface web : http://le-nom-ou-ip-du-serveur/backuppc/
 
-### Configuration 
+### <a name="config_backuppc" />Configuration 
 
 L'ensemble de la configuration de __backupPc__ est disponible dans le répertoire __/etc/__ comme la majorité des applications installé par le système de pacquage. Nous y retrouvons :
 
@@ -781,7 +805,7 @@ Démarrage des services, nous avons 2 services requis **backuppc** et **apache**
         $ sudo /etc/init.d/apache2 start
 
 
-### Réalisation d'une sauvegarde manuel du serveur backupPC
+###  <a name="backupmanuel_backuppc" /> Réalisation d'une sauvegarde manuel du serveur backupPC
 
 Nous avons fait mentions que le système __backupc__ supporte plusieurs mode de communication, il supporte aussi **tar**, simple mais efficace pour un petit nombre de fichier. Sous Ubuntu le système prés configuration le serveur __localhost__ avec ce mode . Nous allons donc prendre quelques minutes pour voir la configuration avant de réaliser la configuration d'un client avec __rsync__. L'avantage de __tar__ est la simplicité :D.
 
@@ -809,7 +833,7 @@ Si vous cliquez sur le numéro de la sauvegarde vous verrez le contenu de la sau
 
 Nous reviendrons pour la restauration :D.
 
-### Planification des sauvegardes
+###  <a name="planif_backuppc" /> Planification des sauvegardes
 
 J'espère réussir à bien exprimer la configuration en place par défaut de __backupPc__ et a représenter de manière adéquate les possibilité de la modifier. Commençons par consulter la configuration disponible, j'aimerai préciser que la modification de la configuration peut être aussi réalisé avec votre éditeur préféré vous n'êtes pas obligé d'utiliser l'interface web pour cette exercice. La fichier **/etc/backuppc/config.pl** est éditable .
 
@@ -856,7 +880,7 @@ Woot !!! Mais ça démarre quand ? Le système  ne définie pas d'heure d'exécu
 
 Point de référence : https://www.digitalocean.com/community/tutorials/how-to-use-backuppc-to-create-a-backup-server-on-an-ubuntu-12-04-vps
 
-### Configuration d'un client sur le réseau
+### <a name="setup_net_client_backuppc" />Configuration d'un client sur le réseau
 
 La solution avec __tar__ est bien pratique pour le système hébergeant le serveur __backupPc__ cependant ceci ne permet pas de réaliser la sauvegarde d'un serveur distant. Nous allons donc voir comment mettre en place __backupPc__ pour utiliser la combinaisons __Rsnapshot__ + __ssh__ , comme nous avons déjà mis en place pour __rsnapshot__ . Ceci nous permettra aussi d'avoir un point de comparaison entre les 2 systèmes.
 
@@ -882,17 +906,16 @@ Nous allons configurer pour que l'utilisateur __backuppc__ utilise maintenant ce
 J'installe la clé publique sur l'ensemble des clients sous l'utilisateur __root__ , voici le contenu du fichier __/root/.ssh/authorized\_keys__
 
         client $ sudo cat ~root/.ssh/authorized_keys
-        command="/root/backup/validate-rsync" ssh-rsa AAAAB3Nza
+        ssh-rsa AAAAB3Nza
         [ ... OUTPUT COUPÉ ... ]
 
 Vous pouvez valider la connexion :
 
         $ sudo su - backuppc
         $ bash
-        backuppc@xerus:~$ ssh root@172.17.0.3
+        $ ssh root@172.17.0.3
         Warning: Permanently added '172.17.0.3' (ECDSA) to the list of known hosts.
-        Rejected
-        Connection to 172.17.0.3 closed.
+        root@172.17.0.3 $
 
 Nous constatons que le système à bien ajouter la machine dans les listes des machines connu avec le message d'avertissement. Le système nous rejette sans nous demander le mot de passe , comme nous avons mis la limitation de l'accès __bash__ ceci semble bon !.
 
@@ -908,6 +931,56 @@ Puis cliquez sur __add__ pour avoir une nouvelle ligne entrez le nom de la machi
 Sélectionnez la machine dans le menu à gauche ,  pour pouvoir éditer la configuration , vous pouvez cliquez par la suite la configuration en cliquant sur __Edit Config__
 
 ![08-select-new-system.png](./imgs/08-select-new-system.png)
+
+Cliquez sur l'onglet **Xfer** afin de déterminé le mode de communication , changé la configuration par défaut du protocole **smb** pour **rsync**. Voici le résultat , j'ai laissé la majorité des configurations par défaut.
+
+![09-setup-xfer-backup.png](./imgs/09-setup-xfer-backup.png)
+
+
+Dans le menu de gauche cliquez sur le nom du client et cliquez sur **Start Full Backup**, une fois réalisé vous devriez être aussi en mesure de réaliser des sauvegardes incrémentiel. 
+Pour les personnes comme moi qui n'ont pas un amour particulier pour les interfaces graphiques le résultat de l'ensemble de cette configuration est définie dans 2 fichiers :
+
+* **/etc/backuppc/hosts** : Contenant la définition de la machine et des utilisateurs en charge 
+
+        host        dhcp    user    moreUsers     # <--- do not edit this line
+        #farside    0       craig   jill,jeff     # <--- example static IP host entry
+        #larson     1       bill                  # <--- example DHCP host entry
+        client_test     0       backuppc
+        localhost       0       backuppc
+
+* **/etc/backuppc/client_test.pl** : Contenant la configuration du protocole à utiliser pour la sauvegarde ainsi que l'ensemble des valeurs propre à cette machine 
+
+        $ sudo cat client_test.pl
+        $Conf{RsyncClientCmd} = '$sshPath -q -x -l root $host $rsyncPath $argList+';
+        $Conf{RsyncShareName} = [
+          '/etc'
+          ];
+          $Conf{XferMethod} = 'rsync';
+
+Donc si nous reprenons la même opération pour ajouter une machine 
+
+1. Édition du fichier **/etc/backuppc/hosts** 
+
+        ma_super_machine 0      backuppc
+2. Ajout du fichier **/etc/backuppc/ma\_super\_machine** :
+
+        $Conf{RsyncClientCmd} = '$sshPath -q -x -l root $host $rsyncPath $argList+';
+        $Conf{RsyncShareName} = [
+          '/etc'
+          ];
+          $Conf{XferMethod} = 'rsync';
+
+TODO: Voir pour lancé manuellement la commande pour faire un backup
+
+### <a name="restore_backuppc" /> Restauration d'un fichier
+
+* Dans le menu de gauche cliquez sur le nom de la machine que vous désirez , et cliquez sur **browse backups**
+
+![10-restauration-de-fichier.png](./imgs/10-restauration-de-fichier.png)
+
+Cochez les fichiers désirés et à la fin complètement de la page vous avez le bouton __Restore selected files__.
+
+Plusieurs option s'offre à vous le remettre sur un des serveurs distants , télécharger un __zip__ ou un __tar__
 
 ## <a name="clonezilla" />CloneZilla
 
