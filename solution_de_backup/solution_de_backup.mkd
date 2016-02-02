@@ -982,7 +982,54 @@ Cochez les fichiers désirés et à la fin complètement de la page vous avez le
 
 Plusieurs option s'offre à vous le remettre sur un des serveurs distants , télécharger un __zip__ ou un __tar__
 
-## <a name="clonezilla" />CloneZilla
+### <a name="conclusion_backuppc" /> Un petit mot sur Backup PC
+
+Il est possible d'en faire bien plus avec le produit, l'objectif de ce chapitre été d'offrir une présentation des fonctionnalité de base. Je vous invite à consulter le site web du produit et voir l'ensemble des possibilités que ce dernier offre.
+
+Voici l'adresse :  [backuppc.sourceforge.net/info.html](http://backuppc.sourceforge.net/info.html)
+
+## <a name="clonezilla" /> CloneZilla
+
+La solution de __rsnapshot__ ou __backuppc__ sont excellente pour la sauvegarde et la restauration de document cependant si vous perdez l'ensemble du système il vous faudra le réinstaller . Selon le système d'exploitation, ceci peut être très simple et même vu comme une opportunité ou comme un vraie calvaire surtout si vous avez des pilotes (drivers) problématique. 
+Une solution s'offre à vous la réalisation d'une image du système, communément appeler __ghost__ , ceci fut très populaire par le logiciel privatif [Norton Ghost](http://en.wikipedia.org/wiki/Ghost_%28software%29).
+Je vais donc vous présenter une solution **libre** du nom de [CloneZilla](http://clonezilla.org/).
+
+La principe du clone ou __ghost__ d'un système est simple , indépendamment du système d'exploitation en place le logiciel lis les partitions disponible et génère un fichier avec l'intégralité de l'information. Il n'y a pas de logiciel à installé sur le système, car afin de contourner tous les problèmes de verrouillage de fichiers , pour réalisé le clone il faut démarrer le système __cloneZilla__ depuis une __clé USB__.
+
+Le nombre de partition supporté par le logiciel est significatif :
+* __ext2, ext3, ext4, reiserfs, reiser4, xfs, jfs, btrfs and f2fs of GNU/Linux, (2) FAT12, FAT16, FAT32, NTFS of MS Windows, (3) HFS+ of Mac OS, (4) UFS of FreeBSD, NetBSD, and OpenBSD, (5) minix of Minix, and (6) VMFS3 and VMFS5 of VMWare ESX. Therefore you can clone GNU/Linux, MS windows, Intel-based Mac OS, FreeBSD, NetBSD, OpenBSD, Minix, VMWare ESX and Chrome OS/Chromium OS, no matter it's 32-bit (x86) or 64-bit (x86-64) OS__
+
+Pour l'ensemble des systèmes de fichier mentionné ci-dessus uniquement les bloques de données réellement utilisé sont sauvegardé, pour les systèmes de fichiers non supporter le logiciel utilise la méthode **dd** qui copie l'ensemble de bloques de donnée de la partition. Ceci est une solution de contournement car la conséquence est que si la partition fait 100 __Gig__ mais uniquement 30 __Gig__ est utilisé le résultat sera de 100.
+
+* L'image résultant peut être chiffré avec [ecryptfs](http://ecryptfs.org/).
+* L'image peut être sauvegarder sur le disque local , un serveur **ssh :D**, un partage samba, __NFS__ ou un serveur __WebDav__.
+
+### <a name="install_clonezilla" /> Installation CloneZilla
+
+Telle que mentionné précédemment il n'y a pas d'installation de logiciel a réaliser , il faut créer un CD/DVD ou une clé __USB__ pour démarrer le système. 
+
+* Allez  sur la page de [Téléchargement de cloneZilla](http://clonezilla.org/downloads/download.php?branch=stable)
+
+* Il y a deux type de fichier :
+    * **ISO**  : Ceci vous permet de créer le CD/DVD .
+    * **zip**  : Ceci comprend le contenu pour installé le fichier sur une clé __USB__
+
+Si vous désirez créer une clé __USB__ je vous invite à consulter le site [http://tuxboot.org/about/](http://tuxboot.org/about/). Ceci est la solution la plus simple une fois __TuxBoot__ d'installer le démarrer et choisir la création de __CloneZilla__ depuis le menu, telle que décrit dans la copie d'écran ci-dessous :
+
+![img-tuxboot-creation-clonezilla](http://tuxboot.org/images/Tuxboot-sel-dist.png)
+
+
+### <a name="use_clonezilla" /> Utilisation de CloneZilla
+
+Configurer le système afin qu'il essaye de démarrer sur le __cd-rom__ ou sur la clé __USB__ avant le disque dur local.
+
+Voici le résultat lorsque le système démarrera avec __cloneZilla__
+
+![01-boot-clonezilla.png](./imgs/01-boot-clonezilla.png)
+
+
+* Vous devrez choisir la langue et le type de clavier que vous désirez utiliser.
+* Deux mode s'offre à vous par la suite démarrer __CloneZilla__ ou avoir un terminal .
 
 # <a name="la_glue_autour" />Quelques points pour peaufiner la solution
 
