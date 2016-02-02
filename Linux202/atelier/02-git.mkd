@@ -1,0 +1,44 @@
+
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+# Index 
+
+# <a name="Desction" /> Description
+
+Petit exercice sur le contrôleur de révision **GIT** .
+
+## <a name="config_git" /> Configuration du client git
+
+* Définir votre nom et adresse courriel pour l'ensemble des projets **git** que votre utilisateur manipulera
+
+* Configurer **git** pour votre utilisateur afin qu'il utilise votre éditeur préféré (indice : votre éditeur préféré est **vim** , c'est une blague à votre convenance )
+
+## <a name="depot_public" /> Dépôt public 
+
+* Extraire depuis __github__ le dépôt suivant  ( TODO: AJOUTER le dépôt sur __github__)
+
+## <a name="work_with_repo" /> Manipulation du dépôt
+
+* Afficher l'historique des modifications (qui, quand et le message informatif) réalisé sur le dépôt . Voici un exemple du résultat , ceci n'est pas le résultat attendu mais un exemple , vous devriez avoir plusieurs lignes.
+
+        commit b7c6d7c50b4f0a79d1bd3a1a6ec33a1430792d41
+        Author: Robert Nesta (Bob) Marley <Bob@x3rus.com>
+        Date:   Tue Dec 22 17:01:16 2015 -0500
+
+             Je modifie C pour avoir un autre com
+
+
+* Créez un fichier nommé **Atelier02.txt** avec le contenu suivant 
+
+        TODO ajouter le contenu du fichier
+
+* Ajoutez dans le dépôt le fichier **Aterlier02.txt** et valider (commit) le pour qu'il soit partie intégrante du dépôt. Lors de l'ajout utiliser le message suivant : __"L'atelier 02 est pas trop mal "__
+
+* Une fois l'opération réalisée , ajouter l'entrée suivant au fichier **Atelier02.txt** et amendé la dernière validation (commit) afin que ce ne soit que la nouvelle modification qui soit présent dans l'historique. Avec le message : __"L'atelier 02 est COOL :P "__
+
+* Créez une Branche nommée **atelier02** et basculer sur cette branche
+
+* 
