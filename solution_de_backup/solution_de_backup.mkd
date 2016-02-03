@@ -1029,7 +1029,73 @@ Voici le résultat lorsque le système démarrera avec __cloneZilla__
 
 
 * Vous devrez choisir la langue et le type de clavier que vous désirez utiliser.
-* Deux mode s'offre à vous par la suite démarrer __CloneZilla__ ou avoir un terminal .
+* Deux mode s'offre à vous par la suite démarrer __CloneZilla__ ou avoir uniquement un terminal .
+
+Si nous sélectionnons d'utiliser __CloneZilla__ nous avons encore 2 choix :
+
+* Réaliser un clone / image d'une partition vers un fichier de type image
+* Réaliser un clone / image d'une partition vers une autre partition
+
+![02-choice-source-clonezilla.png](./imgs/02-choice-source-clonezilla.png)
+
+Dans la démonstration , j'ai sélectionné __device-image__. Je dois à présent choisir la source ou la destination ou sera l'image . Comme vous pouvez le constater j'ai plusieurs choix 
+
+* **local_dev** : utilisation d'un équipement local telle qu'un disque externe ou un clé __USB__
+* **ssh_server** : Utilisation d'un serveur __ssh__ sur le réseau
+* **samba_server** : Utilisation d'un serveur de partage utilisant le protocole Windows.
+* **nfs_server** : Utilisation d'un serveur __nfs__ sur le réseau, protocole de partage de fichier __Unix__
+* **webdav_server** : Utilisation d'un serveur utilisant le protocole __webdav__, ceci est nouveau :D
+
+Personnellement j'ai choisi pour la démonstration un équipement local , donc l'utilisation d'une clé __USB__.
+
+![03-save-image-local-drive-clonezilla.png](./imgs/03-save-image-local-drive-clonezilla.png)
+
+Nous allons maintenant indiquer à __CloneZilla__ quelle partition __mounté__ et quelle répertoire. **ATTENTION** ici nous définissons la destination , où l'image sera sauvegardé ! 
+
+Nous avons 2 disques de présent dans la démonstration , __sda__ le premier disque dur avec 2 partition (__sda1__, __sda2__) et nous avons le deuxième disque dur __sdb__ qui n'a qu'une partition (__sdb1__). Nous utiliserons ce deuxième disque pour sauvegarder l'image.
+
+![04-select-device-destination-colonzille.png](./imgs/04-select-device-destination-colonzille.png)
+
+Dans un second temps le système vous demandera d'entrer le répertoire présent sur la partition où sauvegarder l'image.
+
+Vous aurez le choix entre 2 modes :
+
+* **beginner** : Avec l'ensemble des options par défaut
+* **expert** : Comme le mode __beginner__fonctionne très bien je n'ai pas d'expérience avec le mode expert.
+
+Vous avez 2 possibilité de sauvegarde :
+
+* **savedisk** : Réalisation de la sauvegarde de l'ensemble du disque dur dans le fichier image
+* **saveparts** : Réalisation de la sauvegarde de(s) partition(s)
+
+Pour la démonstration je vais sélectionner **savedisk**
+
+![05-select-save-mode-clonezilla.png](./imgs/05-select-save-mode-clonezilla.png)
+
+Le système demandera le nom de l'image qui devra être utilisé lors de la sauvegarde.
+Une fois le nom définie le système demande / valide le disque dur qui doit être pris en sauvegarde .
+
+![06-select-disque-to-save-clonezilla.png](./imgs/06-select-disque-to-save-clonezilla.png)
+
+Selon le système de fichier que vous utilisez, il est possible que __CloneZilla__ vous demande s'il fait une validation du système de fichier avant de réalisé l'image. Ceci à l'avantage de corrigé des problèmes avant la restauration future. 
+
+__CloneZilla__ vous demandera aussi si une fois l'image réalisé s'il faut effectuer une validation de cette dernière , bien entendu ceci augmente le temps de prise de sauvegarde. 
+
+Optionnellement vous pouvez chiffrer l'image avec un mot de passe .
+
+Avant de procéder vous aurez une dernière validation :
+
+![07-confirmation-clonezilla.png](./imgs/07-confirmation-clonezilla.png)
+
+Et voilà c'est partie pour la sauvegarde de chaque partition qui compose le disque !
+
+![08-realisation-de-la-sauvegarde-clonezilla.png](./imgs/08-realisation-de-la-sauvegarde-clonezilla.png)
+
+Une fois terminé vous aurez le menu vous offrant de réaliser un redémarrage du système , éteindre le système ou refaire le processus ...
+
+L'ensemble des instructions provient du site de __CloneZilla__:
+
+* Référence : [clonezilla  - fine-print-live](http://clonezilla.org/fine-print-live-doc.php)
 
 # <a name="la_glue_autour" />Quelques points pour peaufiner la solution
 
