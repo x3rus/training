@@ -81,7 +81,7 @@ Voici quelques question que vous devriez vous posez :
     * Les système d'exploitation
     * Leurs disponibilités  (portable , téléphone cellulaire , tablette )
     * Les logiciels à sauvegarder
-* Qui sont vos utilisateurs, niveau de contientisation de l'importance des sauvegardes ? TODO : corriger
+* Qui sont vos utilisateurs , sont ils conscient de l'importance des sauvegardes ?
 * La quantité de donnée 
 * Classification de la sensibilité des données
 * Le nombre de jours à conserver
@@ -218,7 +218,7 @@ Afin de répondre à ses problèmes voici la solution que j'ai mis en place, j'a
 3. Réaliser la copie des fichiers vers un serveur distant.
  
 Une des solutions la plus "simple" et la plus répandu est l'utilisation d'un service en ligne, ceci à l'avantage de permettre le transfert des fichiers peut importe où l'équipement mobile se trouve. Le seule critère important est la présence d'un point d'accès __WIFI__.
-N'étant pas un adepte des solutions de service en ligne en (TODO )impartition, nous allons suivre ce principe mais en utilisant nos serveurs. Si nous reprenons  [l'infrastructure de démonstration](./infrastructure_demo.html), deux systèmes pourrons faire le travaille de passerelle soit le serveur dans le centre de donnée ou la station de travaille avec 1.5 Téra disponible.
+N'étant pas un adepte des solutions de service en ligne en impartition, nous allons suivre ce principe mais en utilisant nos serveurs. Si nous reprenons  [l'infrastructure de démonstration](./infrastructure_demo.html), deux systèmes pourrons faire le travaille de passerelle soit le serveur dans le centre de donnée ou la station de travaille avec 1.5 Téra disponible.
 
 Pour le moment nous ne sommes que dans l'étape de planification pour la réalisation proprement dite, voici la section pour les TROP pressés. (TODO  : ajouter lien vers section mobile)
 
@@ -314,14 +314,11 @@ L'installation est très simple la majorité des distributions offre un pacquage
 
 On peut pas me dire que GNU/Linux c'est compliqué :P !
 
-TODO: FAUT ABSOLUMENT VALIDER l'install dans le docker de formation 64 bits ... J'ai du mettre anacron au lieu de cron pour le systeme 32 bits du laptop :(
 
 
 #### <a name="configure_rsnapshot" />La configuration
 
 Le fichier de configuration par défaut est **/etc/rsnapshot.conf**, je vous laisse le plaisir de lire le contenu du fichier fournie par la distribution pour vous inspirer.
-
-TODO : sortir d'ici la section ci-dessous mais bon juste pour garder une trace
 
         $ cd /etc
         $ git init
@@ -750,8 +747,6 @@ Site web officiel : [http://backuppc.sourceforge.net/](http://backuppc.sourcefor
 
 ### <a name="installation_backuppc" /> Installation
 
-TODO: valider l'installation peut-être juste problème avec mon docker 
-TODO: voir comme référence > http://www.klipz.fr/tutoriel_backuppc.html
 
 * Réalisation de l'installation avec le système de pacquage :
 
@@ -1115,7 +1110,6 @@ http://tldp.org/HOWTO/LVM-HOWTO/snapshots_backup.html
 
 * https://openclassrooms.com/courses/la-sauvegarde-sous-gnu-linux
 * https://debian-handbook.info/browse/fr-FR/stable/sect.backup.html
-* https://securityinabox.org/fr/chapter_5_2 : TODO confirmer
 * https://www.freebsd.org/doc/fr_FR.ISO8859-1/books/handbook/backup-strategies.html
 * https://fr.wikipedia.org/wiki/Sauvegarde\_%28informatique%29#Finalit.C3.A9
 * https://en.wikipedia.org/wiki/Backup
