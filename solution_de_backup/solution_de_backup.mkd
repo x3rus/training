@@ -1099,6 +1099,8 @@ L'ensemble des instructions provient du site de __CloneZilla__:
 
 # <a name="la_glue_autour" />Quelques points pour peaufiner la solution
 
+Nous avons donc à présent 2 solutions de sauvegarde de fichier ainsi qu'une solution d'image (__ghost__) total du système. Nous allons mettre en place quelques mécanisme afin de nous assurer que les sauvegardes sont bonne, nous avons confiance au système de sauvegarde ... Mais nous parlons de sauvegarde de NOS données , ceci est "critique" !
+
 ## <a name="Validation" />Mise en place d'une stratégie de la validation de sauvegarde automatique.
 ## <a name="bk_ps4" />Indicateur de prise de backup pour PS4 
 ## <a name="mobile_bk_check" />Indicateur d'absence de backup des Téléphone
