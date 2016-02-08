@@ -1096,13 +1096,52 @@ L'ensemble des instructions provient du site de __CloneZilla__:
 
 Nous avons donc à présent 2 solutions de sauvegarde de fichier ainsi qu'une solution d'image (__ghost__) total du système. Nous allons mettre en place quelques mécanisme afin de nous assurer que les sauvegardes sont bonne, nous avons confiance au système de sauvegarde ... Mais nous parlons de sauvegarde de NOS données , ceci est "critique" !
 
+## <a name="Sauvegarde_des_mobiles" />Réalisation de la sauvegarde des équipements mobile
+
+Nous avons couvert la réalisation de sauvegarde pour des machines "fixe" disponible sur le réseau, mais lors de la définition de la liste des équipements à supporter nous avions 3 téléphones et 1 tablette. Telle que mentionné au début la stratégie adopté fut la synchronisation des données sur le serveur de fichiers interne qui lui est pris en sauvegarde.
+
+
+### Android
+
+Voici comment le mettre en place, ce fut testé sur __android__, mais le concept s'applique peut importe l'__OS__.
+
+1. Sur chaque équipement installé un logiciel de synchronisation , dans mon cas j'utilise [FileSync](https://play.google.com/store/apps/details?id=dk.tacit.android.foldersync.full) il est aussi possible d'utiliser la version gratuite [FilSync Lite](https://play.google.com/store/apps/details?id=dk.tacit.android.foldersync.lite) 
+Le logiciel support plusieurs protocoles utilisable :
+
+    * FTP
+    * FTPS (SSL/TLS implicit)
+    * FTPES (SSL/TLS explicit)
+    * SFTP (SSH File Transfer)
+    * Samba/CIFS/Windows Share
+    * WebDAV (HTTP/HTTPS)
+
+2. Configurer sur votre serveur de fichiers l'un des protocoles listé ci-dessus afin de permettre au téléphone de réaliser le transfert
+
+3. Configurer __FileSync__ pour que le transfert ce réalise , quand le __wifi__ est disponible à l'heure de votre convenance :D
+
+### Portable GNU/Linux
+
+Le concept est le même pour un ordinateur portable, la différence est la logiciel , voici donc les instructions pour GNU/Linux .
+
+TODO lire :https://wiki.archlinux.org/index.php/NetworkManager#Mount_remote_folder_with_sshfs
+
+
 ## <a name="Validation" />Mise en place d'une stratégie de la validation de sauvegarde automatique.
+
+Chaque logiciel offre des validations de sauvegarde, nous pouvons faire confiance au système , mais ne serions nous pas plus confortable d'avoir une validation externe certifiant les fichiers. Je propose en plus de réalise une validation de fichiers de manière aléatoire, ceci permettra de confirmer que tous est sous contrôle.
+
+J'ai réalisé un script qui réalise l'opération, prenant la configuration de __rsnapshot__ et valide le fichier sur le disque dur de sauvegarde et sur le serveur distant. 
+
+Le script est disponible ici : TODO ajout du lien vers le fichiers
+
 ## <a name="bk_ps4" />Indicateur de prise de backup pour PS4 
+
 ## <a name="mobile_bk_check" />Indicateur d'absence de backup des Téléphone
 
 # <a name="other_technique" />Autre Méthode pour des besoins precis.
 
 ## <a name="lvm_export" />lvm export
+
 http://tldp.org/HOWTO/LVM-HOWTO/snapshots_backup.html
 
 ## <a name="backup_snapshot_vmware" />Backup de sanpshot de VM
