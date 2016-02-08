@@ -3,19 +3,28 @@
 import subprocess
 import sys
 
-user="xerus"
-HOST="127.0.0.1"
+def remote_md5sum_file(user,host,filename):
+#    cmd_to_run = "md5sum \"" + str(filename) + "\" | cut -d ' ' -f 1 "
+    cmd_to_run = "md5sum " + str(filename) + " | cut -d ' ' -f 1 "
+    print (cmd_to_run)
+    # Ports are handled in ~/.ssh/config since we use OpenSSH
+    ssh = subprocess.Popen(["ssh", "%s@%s" % (user, host) , cmd_to_run],
+                            shell=False,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    result = ssh.stdout.readlines()
+    if result == []:
+        error = ssh.stderr.readlines()
+        print ("ERROR: %s" % error)
+    else :
+        return result[0].decode('utf-8')
 
-# Ports are handled in ~/.ssh/config since we use OpenSSH
-COMMAND="uname -a"
+# END remote_md5sum_file
 
-ssh = subprocess.Popen(["ssh", "%s@%s" % (user, HOST), COMMAND ],
-        shell=False,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
-result = ssh.stdout.readlines()
-if result == []:
-    error = ssh.stderr.readlines()
-    print >>sys.stderr, "ERROR: %s" % error
-else :
-    print (result)
+
+# Get remote md5sum value
+md5sumFile_REMOTE_file = remote_md5sum_file('xerus','127.0.0.1','/home/xerus/Nathalie_doc/Nathalie Spitz.doc')
+
+print (md5sumFile_REMOTE_file)
+print (type(md5sumFile_REMOTE_file))
+

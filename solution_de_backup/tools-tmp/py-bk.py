@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # Description :
 #   Analyse ou valide un fichier du bk
@@ -19,7 +20,9 @@ def random_file_quick(dir):
     """ From http://stackoverflow.com/ 
     http://stackoverflow.com/questions/6411811/randomly-selecting-a-file-from-a-tree-of-directories-in-a-completely-fair-manner 
     """
-    print ("REP " + dir)
+
+    if o_verbose : 
+        print ("REP " + dir)
     file = os.path.join(dir, random.choice(os.listdir(dir)));
     if os.path.isdir(file):
         return random_file(file)
@@ -35,18 +38,18 @@ def random_file_long(dir):
     lst_files = []
     for dirname, dirnames, filenames in os.walk(dir):
         for filename in filenames:
-            print ("The Filename :" + os.path.join(dirname, filename)) 
             lst_files.append(os.path.join(dirname, filename))
 
     return random.choice(lst_files)
 
 # END random_file_long
 
-def random_file(dir,short_search=True):
+def random_file(original_dir,short_search=True):
     """
         Get a random file
     """
     rnd_file = None
+    dir=original_dir
 
     try :
         if short_search :
@@ -56,7 +59,13 @@ def random_file(dir,short_search=True):
     except IndexError as e:
         # Maybe the quick search select the wrong directory try long search
         if short_search : 
-           rnd_file =  random_file(dir,False)
+            if o_verbose :
+                # TODO Fix ca marche pas la recherche est realiser sur le dernier rep. 
+                # dir et original_dir  equal
+                print ("recherche longue " )
+                print (dir)
+                print (original_dir)
+            rnd_file =  random_file(original_dir,False)
     except PermissionError as e:
         print (" You don't have permissions for the directory  " + dir )
 
@@ -79,14 +88,15 @@ def get_md5sum(filename):
 
 # END get_md5sum 
 
-def remote_md5sum_file(user,host,filename):
+def remote_md5sum_file(user,host,filename,encoding='utf-8'):
     """
         TODO : ajouter ici 
     """
 
-    cmd_to_run = "md5sum " + str(filename) + " | cut -d ' ' -f 1 "
+    cmd_to_run = "md5sum \"" + str(filename) + "\" | cut -d ' ' -f 1 "
 
-    print (cmd_to_run)
+    if o_verbose:
+        print (cmd_to_run)
 
     # Ports are handled in ~/.ssh/config since we use OpenSSH
     ssh = subprocess.Popen(["ssh", "%s@%s" % (user, host) , cmd_to_run],
@@ -98,8 +108,8 @@ def remote_md5sum_file(user,host,filename):
     if result == []:
         error = ssh.stderr.readlines()
         print ("ERROR: %s" % error)
-    else:
-        print (str(result[0]).strip())
+    else :
+        return result[0].decode(encoding)
 
 # END remote_md5sum_file
 ###############
@@ -148,10 +158,6 @@ if len(lst_bk_lines) == 0 :
 
 rdm_line_num=random.randrange(1,len(lst_bk_lines))
 
-# TODO remove juste debug
-print (rdm_line_num)
-print (lst_bk_lines[rdm_line_num])
-
 try :
     re_line_clean = re.compile(r'^backup\t+(?P<bkuser>[\w0-9-_]+)@(?P<bkhost>.*):(?P<bkRemotePath>.*)\t+(?P<bklocalPath>.*)\t?$')
     re_line_clean_m = re_line_clean.match(lst_bk_lines[rdm_line_num])
@@ -164,22 +170,32 @@ except sre_constants.error as e:
 
 #{'bkhost': '10.10.11.1', 'bklocalPath': '.', 'bkRemotePath': '//var/lib/iptables ', 'bkuser': 'root'}
 
-BK_Directory =  str(snapshot_root).strip() + str(dct_bk_info['bklocalPath']).strip() + "/daily.0/" \
+BK_Directory =  str(snapshot_root).strip() + "/" + str(dct_bk_info['bklocalPath']).strip() + "/daily.0/" \
                + str(dct_bk_info['bkRemotePath']).strip()
 
-snapshot_root="/"
-BK_Directory = str(dct_bk_info['bkRemotePath']).strip()
 the_bk_file = random_file(BK_Directory, True)
 
 if the_bk_file != None :
+    the_remote_file = the_bk_file.replace(str(snapshot_root).strip() + "/" + str(dct_bk_info['bklocalPath']).strip() + "/daily.0/" ,"")
     md5sumFile_BK_file = get_md5sum(the_bk_file)
     if o_verbose : 
         print (" File : " + the_bk_file )
         print (" MD5: " + md5sumFile_BK_file)
         
+    # Get remote md5sum value
+    md5sumFile_REMOTE_file = remote_md5sum_file(dct_bk_info['bkuser'],dct_bk_info['bkhost'],the_remote_file)
 
-# Get remote md5sum value
-remote_md5sum_file('xerus','127.0.0.1',the_bk_file)
+    if md5sumFile_BK_file == md5sumFile_REMOTE_file.strip() :
+        print ("OK: md5 Validation")
+    else :
+        print ("File Don't match : ")
+        print (" Backup File : " + the_bk_file + "( " + md5sumFile_BK_file + " )")
+        print (" Remote File : " + the_remote_file + "( " + md5sumFile_REMOTE_file.strip() + " )")
+        sys.exit(1)
+else :
+    print ("KO : No file under directory : " + BK_Directory)
+    sys.exit(1)
 
+sys.exit(0)
 #random_file():
 
