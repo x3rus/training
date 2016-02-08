@@ -1134,9 +1134,13 @@ J'ai réalisé un script qui réalise l'opération, prenant la configuration de 
 
 Le script est disponible ici : TODO ajout du lien vers le fichiers
 
-## <a name="bk_ps4" />Indicateur de prise de backup pour PS4 
+## <a name="bk_ps4" /> Sauvegarde de la PS4
 
-## <a name="mobile_bk_check" />Indicateur d'absence de backup des Téléphone
+Pour les personnes qui espérait lire une méthode de sauvegarde à distance ici, j'ai le regret de vous dire que __Sony__ ne le veut pas :P. Donc la sauvegarde sera réalisé sur le même principe que les sauvegardes de téléphone mobile, cependant ce sera pire, car vous devrez réaliser la sauvegarde avec une clé __USB__ et copier les fichiers sur votre machine GNU/Linux . 
+
+Alors pourquoi ce paragraphe, car comme nous avons une opération manuelle nous allons l'oublier , nous allons donc voir comment mettre en place un système de validation de sauvegarde de fichier. 
+
+Nous allons mettre un script dans la tâche planifier afin de valider la date des fichiers de sauvegarde de la __PS4__ si les fichiers sont trop vieux un courriel vous sera transmis. Ce n'est certainement pas l'idéal ,mais c'est mieux que rien.
 
 # <a name="other_technique" />Autre Méthode pour des besoins precis.
 
@@ -1146,6 +1150,7 @@ http://tldp.org/HOWTO/LVM-HOWTO/snapshots_backup.html
 
 ## <a name="backup_snapshot_vmware" />Backup de sanpshot de VM
 
+TODO : Voir chez Eric
 
 # <a name="ref" />Référence 
 
