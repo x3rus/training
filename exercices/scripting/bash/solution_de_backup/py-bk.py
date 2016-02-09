@@ -25,7 +25,7 @@ def random_file_quick(dir):
         print ("REP " + dir)
     file = os.path.join(dir, random.choice(os.listdir(dir)));
     if os.path.isdir(file):
-        return random_file(file)
+        return random_file_quick(file)
     else :
         return file
 
