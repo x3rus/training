@@ -104,7 +104,7 @@ Je vais donc commencer par identifier ce que je dois sauvegarder, car comment ce
 
 Voici un formulaire qui peut vous aider à structurer ces réflexions :
 
-* Formulaire par système : TODO: faire le formulaire par système
+* Formulaire par système : [Formulaire_backup_client.pdf](./formulaire_ajout_systeme.pdf)
 
 Ceci est un __PDF__ éditable , pas de panique je n'ai pas planifier de faire 2 fois de l'entrée de donnée :P. Nous verrons par la suite comment __scripter__ l'extraction des données :D. Pour les personnes qui désirent savoir comment faire un __PDF__ avec des champs voici la documentation que j'ai suivie : [Création d'un PDF editable (EN)](https://www.maketecheasier.com/create-a-pdf-with-fillable-forms-in-libreoffice/)
 
@@ -220,7 +220,7 @@ Afin de répondre à ses problèmes voici la solution que j'ai mis en place, j'a
 Une des solutions la plus "simple" et la plus répandu est l'utilisation d'un service en ligne, ceci à l'avantage de permettre le transfert des fichiers peut importe où l'équipement mobile se trouve. Le seule critère important est la présence d'un point d'accès __WIFI__.
 N'étant pas un adepte des solutions de service en ligne en impartition, nous allons suivre ce principe mais en utilisant nos serveurs. Si nous reprenons  [l'infrastructure de démonstration](./infrastructure_demo.html), deux systèmes pourrons faire le travaille de passerelle soit le serveur dans le centre de donnée ou la station de travaille avec 1.5 Téra disponible.
 
-Pour le moment nous ne sommes que dans l'étape de planification pour la réalisation proprement dite, voici la section pour les TROP pressés. (TODO  : ajouter lien vers section mobile)
+Pour le moment nous ne sommes que dans l'étape de planification pour la réalisation proprement dite, voici la section pour les TROP pressés. [Sauvegarde mobile](#Sauvegarde_des_mobiles)
 
 ### <a name="sortir_bk" />Sortir les sauvegardes du lieu 
 
@@ -254,7 +254,7 @@ Lorsque nous avons listé les supports disponible j'ai fait mention de lors qu'i
 Courage, la théorie achève sous peu, nous allons maintenant procéder avec la compilation de l'ensemble de cette théorie et voir comment j'ai mis en place les différents critères pour définir ma stratégie de sauvegarde. Ceci est un point de départ afin d'avoir un dialogue sur du concret, cependant tous comme les recettes de cuisine je vous invite à y faire des modifications afin de répondre à VOS besoin.
 
 Voici un résumé de l'ensemble des répertoires et données a prendre en sauvegarde .
-TODO: ajouter l'info
+L'information est disponible dans l'ensemble des fichiers __PDF__ contenu dans le répertoire : [Formulaires PDF](./forms/)
 
 ## <a name="strategie_chef_orches"/>Stratégie pour le chef d'orchestre 
 
@@ -965,7 +965,10 @@ Donc si nous reprenons la même opération pour ajouter une machine
           ];
           $Conf{XferMethod} = 'rsync';
 
-TODO: Voir pour lancé manuellement la commande pour faire un backup
+Pour executer manuellement la sauvegarde vous pouvez utilisé la commande suivante, cette dernière réalise une sauvegarde complète :
+
+        $ sudo -u backuppc  /usr/share/backuppc/bin/BackupPC_serverMesg backup
+        ma_super_machine backuppc 1
 
 ### <a name="restore_backuppc" /> Restauration d'un fichier
 
@@ -1123,7 +1126,7 @@ Le logiciel support plusieurs protocoles utilisable :
 
 Le concept est le même pour un ordinateur portable, la différence est la logiciel , voici donc les instructions pour GNU/Linux .
 
-TODO lire :https://wiki.archlinux.org/index.php/NetworkManager#Mount_remote_folder_with_sshfs
+TODO lire : https://wiki.archlinux.org/index.php/NetworkManager#Use_dispatcher_to_connect_to_a_VPN_after_a_network_connection_is_established
 
 
 ## <a name="Validation" />Mise en place d'une stratégie de la validation de sauvegarde automatique.
@@ -1150,7 +1153,10 @@ http://tldp.org/HOWTO/LVM-HOWTO/snapshots_backup.html
 
 ## <a name="backup_snapshot_vmware" />Backup de sanpshot de VM
 
-TODO : Voir chez Eric
+Voici une application vous permettant de réaliser des sauvegardes de machine virtuelle pour les systèmes ESX. Ceci va réaliser un snapshot de la VM et récupérer le fichier complète du vmdk.
+
+* [GhettoVCB application](https://github.com/lamw/ghettoVCB)
+* [GhettoVCD Documentation](https://communities.vmware.com/docs/DOC-8760)
 
 # <a name="ref" />Référence 
 
