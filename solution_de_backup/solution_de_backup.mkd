@@ -1135,7 +1135,7 @@ Chaque logiciel offre des validations de sauvegarde, nous pouvons faire confianc
 
 J'ai réalisé un script qui réalise l'opération, prenant la configuration de __rsnapshot__ et valide le fichier sur le disque dur de sauvegarde et sur le serveur distant. 
 
-Le script est disponible ici : TODO ajout du lien vers le fichiers
+Le script est disponible ici : [validation_rsnapshot_bk.py](./tools/validation_rsnapshot_bk.py)
 
 ## <a name="bk_ps4" /> Sauvegarde de la PS4
 
