@@ -1,0 +1,11 @@
+
+# script pour commiter sur 2 ou plus repo
+* git remote -v 
+* git push 
+* fic configuration pour authentification
+
+
+#  TimeSheet
+* avoir avec les logs de git un résultat de timesheet
+* utilisation de pre-commmit 
+https://gist.github.com/bartoszmajsak/1396344
