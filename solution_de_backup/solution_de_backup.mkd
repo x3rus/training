@@ -1137,7 +1137,7 @@ Le système de **NetworkManager** va appeler ce script avec 2 arguments :
 Voici un exemple du script :
 
         #!/bin/sh
-        ESSID="SGH-I337M"
+        ESSID="MAISON"
         DATE=$(date)
         LOG_FILE="/var/log/sync_files_backup.log"
 
@@ -1148,7 +1148,7 @@ Voici un exemple du script :
         case $status in
             up)
                 if iwgetid | grep -qs ":\"$ESSID\""; then
-                    rsync -az -e ssh /etc root@backup_server:/data/backup/$HOSTNAME/ >> $LOG_FILE
+                    rsync -az -e ' ssh -i /etc/ssh/keys/bck_keys.id' /etc root@backup_server:/data/backup/$HOSTNAME/ & >> $LOG_FILE
                 fi
             ;;
             down)
@@ -1159,7 +1159,14 @@ Voici un exemple du script :
         esac
 
 
-TODO a completer
+Petite explication du script lors de l'établissement de connexion au __wifi__ avec le __SSID__ maison le système va réaliser un rsync du répertoire __/etc__ vers le serveur __backup\_server__ par __ssh__ avec l'utilisateur __root__.
+
+Une fois le script créé, il est important que les permissions soit convenable , vous pouvez exécuter les commandes suivante :
+
+        $ sudo chown root:root /etc/NetworkManager/dispatcher.d/99sync_files 
+        $ sudo chmod 755 /etc/NetworkManager/dispatcher.d/99sync_files 
+
+Et voilà  aussi simple que ça :D.
 
 * Référence
     * https://wiki.archlinux.org/index.php/NetworkManager#Use_dispatcher_to_connect_to_a_VPN_after_a_network_connection_is_established
