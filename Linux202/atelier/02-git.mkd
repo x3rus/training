@@ -18,7 +18,8 @@ Petit exercice sur le contrôleur de révision **GIT** .
 
 ## <a name="depot_public" /> Dépôt public 
 
-* Extraire depuis __github__ le dépôt suivant  ( TODO: AJOUTER le dépôt sur __github__)
+* Extraire depuis __github__ le dépôt suivant  : [https://github.com/x3rus/atelier_git](https://github.com/x3rus/atelier_git)
+    Note j'ai mis la page web de __github__ volontairement l'information pour cloner le dépôt est présent sur la page
 
 ## <a name="work_with_repo" /> Manipulation du dépôt
 
@@ -28,7 +29,7 @@ Petit exercice sur le contrôleur de révision **GIT** .
         Author: Robert Nesta (Bob) Marley <Bob@x3rus.com>
         Date:   Tue Dec 22 17:01:16 2015 -0500
 
-             Je modifie C pour avoir un autre com
+        Je modifie C pour avoir un autre com
 
 
 * Créez un fichier nommé **Atelier02.txt** avec le contenu suivant 
@@ -37,8 +38,70 @@ Petit exercice sur le contrôleur de révision **GIT** .
 
 * Ajoutez dans le dépôt le fichier **Aterlier02.txt** et valider (commit) le pour qu'il soit partie intégrante du dépôt. Lors de l'ajout utiliser le message suivant : __"L'atelier 02 est pas trop mal "__
 
-* Une fois l'opération réalisée , ajouter l'entrée suivant au fichier **Atelier02.txt** et amendé la dernière validation (commit) afin que ce ne soit que la nouvelle modification qui soit présent dans l'historique. Avec le message : __"L'atelier 02 est COOL :P "__
+* Une fois l'opération réalisée , modifier le fichier **Atelier02.txt** et amendé la dernière validation (commit) afin que ce ne soit que la nouvelle modification qui soit présent dans l'historique. Avec le message : __"L'atelier 02 est COOL :P "__
+
+    * Texte à ajouter dans Atelier02 :
+            
+            Amender un commit me permet de modifier le DERNIER commit en modifier un fichier ou le message du commit
+
+## <a name="Rollback"/> Retour en arrière 
+
+* Visualiser le contenu du **commit** : b1c717f0384de9e9c7b386edcc38f5ff2c5c8071
+
+* Faire un **revert** de cette modification qui ne devrait pas être présent et valider que le contenu du commit est bien supprimé 
+
+## <a name="Gestion_de_branche"/> Gestion de branche 
 
 * Créez une Branche nommée **atelier02** et basculer sur cette branche
 
-* 
+* Sous cette branche faire la créer le fichier : **fichier\_from\_atelier02.sh**
+
+        #!/bin/bash
+        #
+        ##########
+        ## MAIN ##
+
+        #une commande 
+        echo "Thomas " | showkey -a 2>/dev/null | grep -v "^Press" | grep -v ^$
+
+        #une commande similaire
+        echo "Thomas" |  od -A n -t x1 |sed 's/ /\\x/g'
+
+* Ajouter et commité le fichier avec le message : " fichier qui donne de l'hexa :D "
+
+* Revenir dans la Branche **master** et commiter , normalement ce devrais être direct comme commit !
+
+* Sous la Branche master créer le fichier : __30\_caractere\_random.txt__ avec le contenu :
+
+        Voici 30 caractère random !!  : 
+        ci-dessous 
+
+* Ajouter les 30 caractère random à l'aide de la commande : 
+
+        $ strings /dev/urandom | grep -o '[[:alnum:]]' | head -n 30 | tr -d '\n' >> 30_caractere_random.txt
+
+* ajouter et commiter le fichier dans la branche **master** 
+
+* Créez une Branche nommée **branche_pas_facile** et basculer sur cette branche
+
+* Editer le fichier et supprimer la ligne générer des 30 caractère avec votre editeur préféré. tous en conservant le texte entré à la main.
+
+* Réutiliser la commande pour générer les chiffres random :
+
+        $ strings /dev/urandom | grep -o '[[:alnum:]]' | head -n 30 | tr -d '\n' >> 30_caractere_random.txt
+ 
+* Commiter dans votre branche **branche_pas_facile**
+
+* Retourner dans la branche **master** et merger les modifications depuis la branche **branche_pas_facile** , vous devriez avoir un conflit sur le fichier __30\_caractere\_random.txt__ .
+
+* Résolvez le conflit en conservant la valeur généré dans la branche **branche_pas_facile**
+
+## <a name="utilisation_serveur"> Utilisation d'un serveur Git
+
+* Pour cette section vous aurez besoin d'un compte sur [GitHub](http://github.com), créez ce compte ceci est gratuit :D.
+
+* Créer un dépôt sur __GitHub__ , ce dernier contiendra votre dépôt de l'atelier. Créer le dépôt public afin de ne pas avoir de frais , je vous invite à créer le dépôt **VIDE** (__empty__) afin déviter des conflits lors de la synchronisation.
+
+* Configurer votre dépôt local pour qu'il utilise votre dépôt __Github__ comme serveur remote 
+
+* Pousser votre dépôt sur Github.

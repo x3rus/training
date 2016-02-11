@@ -1127,6 +1127,7 @@ Le logiciel support plusieurs protocoles utilisable :
 Le concept est le même pour un ordinateur portable, la différence est la logiciel , voici donc les instructions pour GNU/Linux .
 
 TODO lire : https://wiki.archlinux.org/index.php/NetworkManager#Use_dispatcher_to_connect_to_a_VPN_after_a_network_connection_is_established
+Faire attention au permission du fichier !!
 
 
 ## <a name="Validation" />Mise en place d'une stratégie de la validation de sauvegarde automatique.
