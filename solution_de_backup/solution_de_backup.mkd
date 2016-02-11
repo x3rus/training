@@ -1124,10 +1124,45 @@ Le logiciel support plusieurs protocoles utilisable :
 
 ### Portable GNU/Linux
 
-Le concept est le même pour un ordinateur portable, la différence est la logiciel , voici donc les instructions pour GNU/Linux .
+Le concept est le même pour un ordinateur portable, la différence est la logiciel , voici donc les instructions pour GNU/Linux . Voici donc les instructions comment démarrer un script lors de l'établissement de connexion du __Wifi__ ou de l'interface filaire. L'exemple ci-dessous n'est pas parfait car vous ne voulez peut-être pas que la synchronisation débute tous de suite lors de l'établissement de connexion cependant ceci est un point de départ.
 
-TODO lire : https://wiki.archlinux.org/index.php/NetworkManager#Use_dispatcher_to_connect_to_a_VPN_after_a_network_connection_is_established
-Faire attention au permission du fichier !!
+Dans mon cas j'utilise le système **NetworkManager** pour faire la gestion de mes connexions réseaux, c'est le système par défaut sous __Ubuntu__ . Pour les autres système, je ne pourrais pas me prononcer , sous __Arch Linux__ vous devez le configurer manuellement.
+
+Nous allons mettre un script dans le répertoire **/etc/NetworkManager/dispatcher.d/** nous le nommerons **99sync_files.sh**, bien que je n'ai qu'un script en place j'utilise le chiffre 99 afin qu'il soit exécuté en dernier . 
+Le système de **NetworkManager** va appeler ce script avec 2 arguments :
+
+* l'interface , le premier argument
+* l'état de la connexion : deuxième argument
+
+Voici un exemple du script :
+
+        #!/bin/sh
+        ESSID="SGH-I337M"
+        DATE=$(date)
+        LOG_FILE="/var/log/sync_files_backup.log"
+
+        interface=$1 status=$2
+
+        echo "LOG $interface $status at $DATE" >> $LOG_FILE
+
+        case $status in
+            up)
+                if iwgetid | grep -qs ":\"$ESSID\""; then
+                    rsync -az -e ssh /etc root@backup_server:/data/backup/$HOSTNAME/ >> $LOG_FILE
+                fi
+            ;;
+            down)
+                if iwgetid | grep -qs ":\"$ESSID\""; then
+                    echo "Quit Wireless connexion" >> $LOG_FILE
+                fi
+            ;;
+        esac
+
+
+TODO a completer
+
+* Référence
+    * https://wiki.archlinux.org/index.php/NetworkManager#Use_dispatcher_to_connect_to_a_VPN_after_a_network_connection_is_established
 
 
 ## <a name="Validation" />Mise en place d'une stratégie de la validation de sauvegarde automatique.

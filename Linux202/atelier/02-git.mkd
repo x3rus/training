@@ -82,7 +82,7 @@ Petit exercice sur le contrôleur de révision **GIT** .
 
 * ajouter et commiter le fichier dans la branche **master** 
 
-* Créez une Branche nommée **branche_pas_facile** et basculer sur cette branche
+* Créez une Branche nommée **branche\_pas\_facile** et basculer sur cette branche
 
 * Editer le fichier et supprimer la ligne générer des 30 caractère avec votre editeur préféré. tous en conservant le texte entré à la main.
 
@@ -90,11 +90,11 @@ Petit exercice sur le contrôleur de révision **GIT** .
 
         $ strings /dev/urandom | grep -o '[[:alnum:]]' | head -n 30 | tr -d '\n' >> 30_caractere_random.txt
  
-* Commiter dans votre branche **branche_pas_facile**
+* Commiter dans votre branche **branche\_pas\_facile**
 
-* Retourner dans la branche **master** et merger les modifications depuis la branche **branche_pas_facile** , vous devriez avoir un conflit sur le fichier __30\_caractere\_random.txt__ .
+* Retourner dans la branche **master** et merger les modifications depuis la branche **branche\_pas\_facile** , vous devriez avoir un conflit sur le fichier __30\_caractere\_random.txt__ .
 
-* Résolvez le conflit en conservant la valeur généré dans la branche **branche_pas_facile**
+* Résolvez le conflit en conservant la valeur généré dans la branche **branche\_pas\_facile**
 
 ## <a name="utilisation_serveur"> Utilisation d'un serveur Git
 
