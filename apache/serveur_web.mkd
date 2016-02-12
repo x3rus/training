@@ -84,12 +84,12 @@ Et maintenant pour Redhat :
 
 Démarrage du service Apache :
 
-    # Pour Ubuntu
-    $ sudo service apache2 start
-    * Starting web server apache2
-      
-    # Pour RedHat
-    $ sudo service httpd start
+        # Pour Ubuntu
+        $ sudo service apache2 start
+        * Starting web server apache2
+          
+        # Pour RedHat
+        $ sudo service httpd start
 
 
 Vous pouvez dès a présent valider l'installation en allant a l'URL http://IP-du-serveur ou http://127.0.0.1 si l'installation est réalisé directement sur votre poste. Voici le résultat pour Ubuntu :
@@ -97,8 +97,8 @@ TODO: Ajouter une copie d'écran de la page par défaut d'Apache.
 
 Nous allons maintenant mettre une petite page web pour démontré que nous somme bien en mesure de modifier le contenu. Vous pouvez utiliser votre éditeur préféré pour créer le fichier **/var/www/html/demo.html**
 
-    $ cat /var/www/html/demo.html
-    Bonjour Ceci fonctionne bien
+        $ cat /var/www/html/demo.html
+        Bonjour Ceci fonctionne bien
 
 Pour valider que tout fonctionne bien vous pouvez aller à l'URL http://IP-du-serveur/demo.html ou http://127.0.0.1/demo.html. Déjà à ce stade il est possible d'avoir son site web de disponible en installant l'ensemble de vos fichiers dans ce répertoire.
 
@@ -172,12 +172,12 @@ Nous allons aussi nous appuyer sur une documentation solide disponible sur le si
 
 Nous voyons dans le fichier des variables désigné sous la forme __${Nom\_variable}__ l'ensemble des valeurs sont disponible dans le fichier **/etc/apache2/envvars** dont voici le contenu
 
-    export APACHE_RUN_USER=www-data
-    export APACHE_RUN_GROUP=www-data
-    export APACHE_PID_FILE=/var/run/apache2/apache2$SUFFIX.pid
-    export APACHE_RUN_DIR=/var/run/apache2$SUFFIX
-    export APACHE_LOCK_DIR=/var/lock/apache2$SUFFIX
-    export APACHE_LOG_DIR=/var/log/apache2$SUFFIX
+        export APACHE_RUN_USER=www-data
+        export APACHE_RUN_GROUP=www-data
+        export APACHE_PID_FILE=/var/run/apache2/apache2$SUFFIX.pid
+        export APACHE_RUN_DIR=/var/run/apache2$SUFFIX
+        export APACHE_LOCK_DIR=/var/lock/apache2$SUFFIX
+        export APACHE_LOG_DIR=/var/log/apache2$SUFFIX
 
 
 L'ensemble des valeurs ne seront pas couverte pas que ce n'est pas intéressent, nous pourrons prendre le temps dans le future pour creusé plus en détail. L'objectif pour le moment est d'être en mesure de comprendre et configurer simplement Apache. L'optimisation et l'amélioration de configuration pourra être vu éventuellement dans le future, nous en reparlerons.
@@ -234,13 +234,13 @@ Debian / Ubuntu structure d'une manière particulière les fichiers d'Apache, on
 Si nous listons les répertoires présent dans le répertoires nous verrons ceci :
 
 
-    $ ls -1  /etc/apache2/
-    conf-available
-    conf-enabled
-    mods-available
-    mods-enabled
-    sites-available
-    sites-enabled
+        $ ls -1  /etc/apache2/
+        conf-available
+        conf-enabled
+        mods-available
+        mods-enabled
+        sites-available
+        sites-enabled
 
 Nous pouvons constater 3 groupes :
 
@@ -258,40 +258,40 @@ Le concept est le suivent l'ensemble des configurations sont disponible dans le 
 
 L'exemple le plus claire est le chargements des modules apaches, regardons la liste des fichiers dans le répertoire des modules disponibles.
 
-    $ ls -l /etc/apache2/mods-available/
-    total 516
-    -rw-r--r-- 1 root root  100 Jan  7  2014 access_compat.load
-    -rw-r--r-- 1 root root  377 Jan  3  2014 actions.conf
-    -rw-r--r-- 1 root root   66 Jan  3  2014 actions.load
-    -rw-r--r-- 1 root root  843 Jan  3  2014 alias.conf
-    -rw-r--r-- 1 root root   62 Jan  3  2014 alias.load
-    -rw-r--r-- 1 root root   76 Jan  3  2014 allowmethods.load
-    -rw-r--r-- 1 root root   76 Jan  3  2014 asis.load
-    [ .... ]
-    [ .... ]
+        $ ls -l /etc/apache2/mods-available/
+        total 516
+        -rw-r--r-- 1 root root  100 Jan  7  2014 access_compat.load
+        -rw-r--r-- 1 root root  377 Jan  3  2014 actions.conf
+        -rw-r--r-- 1 root root   66 Jan  3  2014 actions.load
+        -rw-r--r-- 1 root root  843 Jan  3  2014 alias.conf
+        -rw-r--r-- 1 root root   62 Jan  3  2014 alias.load
+        -rw-r--r-- 1 root root   76 Jan  3  2014 allowmethods.load
+        -rw-r--r-- 1 root root   76 Jan  3  2014 asis.load
+        [ .... ]
+        [ .... ]
+        
+        # Soit 129 fichier
+        $ ls -l /etc/apache2/mods-available/ | wc -l
+        129
+        
+        # A présent les modules activés
+        $ ls -l /etc/apache2/mods-enabled/  | head
+        total 0
+        lrwxrwxrwx 1 root root 36 Nov 25 08:20 access_compat.load -> ../mods-available/access_compat.load
+        lrwxrwxrwx 1 root root 28 Nov 25 08:20 alias.conf -> ../mods-available/alias.conf
+        lrwxrwxrwx 1 root root 28 Nov 25 08:20 alias.load -> ../mods-available/alias.load
+        lrwxrwxrwx 1 root root 33 Nov 25 08:20 auth_basic.load -> ../mods-available/auth_basic.load
+        lrwxrwxrwx 1 root root 33 Nov 25 08:20 authn_core.load -> ../mods-available/authn_core.load
+        lrwxrwxrwx 1 root root 33 Nov 25 08:20 authn_file.load -> ../mods-available/authn_file.load
+        lrwxrwxrwx 1 root root 33 Nov 25 08:20 authz_core.load -> ../mods-available/authz_core.load
+        lrwxrwxrwx 1 root root 33 Nov 25 08:20 authz_host.load -> ../mods-available/authz_host.load
+        lrwxrwxrwx 1 root root 33 Nov 25 08:20 authz_user.load -> ../mods-available/authz_user.load
+        [ .... ]
+        [ .... ]
     
-    # Soit 129 fichier
-    $ ls -l /etc/apache2/mods-available/ | wc -l
-    129
-    
-    # A présent les modules activés
-    $ ls -l /etc/apache2/mods-enabled/  | head
-    total 0
-    lrwxrwxrwx 1 root root 36 Nov 25 08:20 access_compat.load -> ../mods-available/access_compat.load
-    lrwxrwxrwx 1 root root 28 Nov 25 08:20 alias.conf -> ../mods-available/alias.conf
-    lrwxrwxrwx 1 root root 28 Nov 25 08:20 alias.load -> ../mods-available/alias.load
-    lrwxrwxrwx 1 root root 33 Nov 25 08:20 auth_basic.load -> ../mods-available/auth_basic.load
-    lrwxrwxrwx 1 root root 33 Nov 25 08:20 authn_core.load -> ../mods-available/authn_core.load
-    lrwxrwxrwx 1 root root 33 Nov 25 08:20 authn_file.load -> ../mods-available/authn_file.load
-    lrwxrwxrwx 1 root root 33 Nov 25 08:20 authz_core.load -> ../mods-available/authz_core.load
-    lrwxrwxrwx 1 root root 33 Nov 25 08:20 authz_host.load -> ../mods-available/authz_host.load
-    lrwxrwxrwx 1 root root 33 Nov 25 08:20 authz_user.load -> ../mods-available/authz_user.load
-    [ .... ]
-    [ .... ]
-
-    # Il y a donc 28 fichiers de chargé par la configuration apache
-    $ ls -l /etc/apache2/mods-enabled/ | wc -l
-    28
+        # Il y a donc 28 fichiers de chargé par la configuration apache
+        $ ls -l /etc/apache2/mods-enabled/ | wc -l
+        28
 
 
 Conclusion sur 129 fichiers uniquement 28 sont réellement chargé par Apache. Nous ne retrouvons pas ce concept sous Redhat.
@@ -303,14 +303,14 @@ Nous mettrons de coté tous ces fichiers de configuration qui sont chargés pour
 L'ensemble des sites sont donc chargés en lisant les fichiers contenu dans **/etc/apache2/sites-enabled/**. 
 Le système met un fichier par défaut avec le nom **000-default.conf**. Voici le contenu (sans les commentaires):
 
-    <VirtualHost *:80>
-
-        ServerAdmin webmaster@localhost
-        DocumentRoot /var/www/html
-        
-        ErrorLog ${APACHE_LOG_DIR}/error.log
-        CustomLog ${APACHE_LOG_DIR}/access.log combined
-    </VirtualHost>
+        <VirtualHost *:80>
+    
+            ServerAdmin webmaster@localhost
+            DocumentRoot /var/www/html
+            
+            ErrorLog ${APACHE_LOG_DIR}/error.log
+            CustomLog ${APACHE_LOG_DIR}/access.log combined
+        </VirtualHost>
 
 Nous avons l'instruction :
 
@@ -333,28 +333,28 @@ Maintenant que nous avons vu l'idée générale de la configuration c'est le tem
 
 Pour le plaisir nous allons fonctionné par un exemple claire, car bien souvent une démonstration aide à la compréhension. Changeons de place le site web de /var/www/html/ vers  /data/www/, peut importe la raison (espace disque dur, réorganisation du système , ...).
 
-    # Création du répertoire et copie des fichiers
-    $ sudo mkdir -p /data/www
-    $ sudo cp /var/www/html/*.html  /data/www/
+        # Création du répertoire et copie des fichiers
+        $ sudo mkdir -p /data/www
+        $ sudo cp /var/www/html/*.html  /data/www/
 
 Les fichiers sont donc maintenant dans le nouveau répertoire il reste à modifier la configuration du serveur Web. Nous allons donc modifier la configuration du [DocumentRoot](https://httpd.apache.org/docs/2.4/mod/core.html#documentroot). 
 Éditons le fichier **/etc/apache2/sites-available/000-default.conf**
 
-    # Changement de 
-    DocumentRoot /var/www/html
-
-    # Pour la nouvelle valeur
-    DocumentRoot /data/www
+        # Changement de 
+        DocumentRoot /var/www/html
+    
+        # Pour la nouvelle valeur
+        DocumentRoot /data/www
 
 Validons la configuration syntaxique du serveur, c'est toujours une bonne pratique de réaliser cette opération après vos modifications ceci permet de corriger des problèmes avant même de recharger la configuration.
 
-    $  sudo apache2ctl configtest
-    Syntax OK
+        $  sudo apache2ctl configtest
+        Syntax OK
 
 Rechargez la configuration :
 
-    $ sudo service apache2 reload
-    * Reloading web server apache2
+        $ sudo service apache2 reload
+        * Reloading web server apache2
 
 Voici le résultat quand nous accédons à la page principale :  http://127.0.0.1 ou http://127.0.0.1/demo.html
 
@@ -364,13 +364,13 @@ Nous avons donc une erreur **403** qui est un refus d'accès au serveur. Ceci co
 
 Le mieux pour comprendre l'erreur reste toujours les logs visualisons donc ce que nous avons dans les fichiers. Pour nous rafraîchir la mémoire nous allons valider la définition des fichiers de logs:
 
-    $ grep "log" /etc/apache2/sites-enabled/000-default.conf | grep -v "#"
-    ErrorLog ${APACHE_LOG_DIR}/error.log
-    CustomLog ${APACHE_LOG_DIR}/access.log combined
-
-    # Et pour la valeur de ${APACHE_LOG_DIR}
-    $ grep "APACHE_LOG_DIR" /etc/apache2/envvars 
-    export APACHE_LOG_DIR=/var/log/apache2
+        $ grep "log" /etc/apache2/sites-enabled/000-default.conf | grep -v "#"
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+    
+        # Et pour la valeur de ${APACHE_LOG_DIR}
+        $ grep "APACHE_LOG_DIR" /etc/apache2/envvars 
+        export APACHE_LOG_DIR=/var/log/apache2
 
 * Fichier d'accès **/var/log/apache2/access.log**:
 
@@ -468,8 +468,8 @@ Nous allons permettre l'accès uniquement au réseau 192.168.100.0/24 (donc tout
 
 Validation de la configuration (oui ! Je suis chiant un peu avec ça mais honnêtement ça l'aide BEAUCOUP ) :
 
-    $ sudo apachectl configtest
-    Syntax OK
+        $ sudo apachectl configtest
+        Syntax OK
 
 Validation du résultat :
 
@@ -479,10 +479,10 @@ Dans mon cas j'aurais dû avoir une erreur d'accès car l'ip de ma machine ne co
 
 Nous allons donc faire la création du répertoire et mettre un petit fichier **index.html** :
 
-    $ sudo mkdir /data/www/admin 
-    $ sudo vim /data/www/admin/index.html
-    $ cat /data/www/admin/index.html
-    section prive
+        $ sudo mkdir /data/www/admin 
+        $ sudo vim /data/www/admin/index.html
+        $ cat /data/www/admin/index.html
+        section prive
 
 Voilà le bon message d'erreur :) : 
 
@@ -504,27 +504,27 @@ Pour le moment nous n'avons qu'un site je vais donc procéder à la migration de
 
 Je vais donc supprimé le ligne du fichier **/etc/apache2/apache2.conf**
 
-    -<Directory /data/www >
-    -       Options FollowSymLinks
-    -       AllowOverride None
-    -       Require all granted 
-    -</Directory>
-    -
-    -<Directory /data/www/admin >
-    -        Options FollowSymLinks
-    -        AllowOverride None
-    -        Require  ip 192.168.100 192.168.42.42
-    -</Directory>
+        -<Directory /data/www >
+        -       Options FollowSymLinks
+        -       AllowOverride None
+        -       Require all granted 
+        -</Directory>
+        -
+        -<Directory /data/www/admin >
+        -        Options FollowSymLinks
+        -        AllowOverride None
+        -        Require  ip 192.168.100 192.168.42.42
+        -</Directory>
 
 Et les rajouter dans le fichier **/etc/apache2/sites-available/000-default.conf** , Personnellement je le met toujours après le [DocumentRoot](https://httpd.apache.org/docs/2.4/mod/core.html#documentroot), mais c'est juste une habitude.
 
 Validation et relecture de la configuration :) :
 
-    $ sudo apache2ctl configtest && sudo service apache2 reload 
-    Syntax OK
-    * Reloading web server apache2
-    * 
-
+        $ sudo apache2ctl configtest && sudo service apache2 reload 
+        Syntax OK
+        * Reloading web server apache2
+        * 
+    
 Donc à partir de maintenant nous manipulerons principalement les fichiers de vhost à moins que nous appliquions une modification global au système telle que l'ajout de module.
 
 
@@ -534,36 +534,36 @@ Nous allons maintenant revoir notre configuration pour l'accès au répertoire a
 
 Commençons par valider que ce dernier est bien chargé :
 
-    $ ls -l /etc/apache2/mods-enabled/*auth*
-    lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/auth_basic.load -> ../mods-available/auth_basic.load
-    lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authn_core.load -> ../mods-available/authn_core.load
-    lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authn_file.load -> ../mods-available/authn_file.load
-    lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authz_core.load -> ../mods-available/authz_core.load
-    lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authz_host.load -> ../mods-available/authz_host.load
-    lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authz_user.load -> ../mods-available/authz_user.load
+        $ ls -l /etc/apache2/mods-enabled/*auth*
+        lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/auth_basic.load -> ../mods-available/auth_basic.load
+        lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authn_core.load -> ../mods-available/authn_core.load
+        lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authn_file.load -> ../mods-available/authn_file.load
+        lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authz_core.load -> ../mods-available/authz_core.load
+        lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authz_host.load -> ../mods-available/authz_host.load
+        lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authz_user.load -> ../mods-available/authz_user.load
 
 Comme nous pouvons le constater plusieurs module d'authentification sont chargé par défaut incluant [mod_authn_core](https://httpd.apache.org/docs/2.4/mod/mod_authn_core.html#authtype) (ligne 2 :P )
 
 Pour information voici le contenu :
 
-    $ cat /etc/apache2/mods-enabled/authn_core.load 
-    LoadModule authn_core_module /usr/lib/apache2/modules/mod_authn_core.so
+        $ cat /etc/apache2/mods-enabled/authn_core.load 
+        LoadModule authn_core_module /usr/lib/apache2/modules/mod_authn_core.so
 
 Apache charge un fichier **.so** qui est l'équivalent d'un **DLL** qui permet d'avoir une suite d'instruction en plus, disponible pour le service. Le module fut compilé pour la version spécifique d'Apache il n'est pas possible de prendre un module écrit pour la version 2.2 et le faire fonctionner sur la version 2.4 . Nous verrons plus en détail plus tard les modules apaches cependant il est bien d'avoir une compréhension, sommaire du fonctionnement.
 
 
 Procédons à la modification du fichier de configuration de notre site par défaut (**/etc/apache2/sites-available/000-default.conf**). Voici la configuration :
 
-    <Directory /data/www/admin >
-        Options FollowSymLinks
-        AllowOverride None
-
-        #  Section d'authentification
-        AuthType Basic
-        AuthName "Authentication Required"
-        AuthUserFile "/data/private-www/.htpasswd-admin"
-        Require valid-user
-    </Directory>
+        <Directory /data/www/admin >
+            Options FollowSymLinks
+            AllowOverride None
+    
+            #  Section d'authentification
+            AuthType Basic
+            AuthName "Authentication Required"
+            AuthUserFile "/data/private-www/.htpasswd-admin"
+            Require valid-user
+        </Directory>
 
 Analysons les paramètres :
 
@@ -578,10 +578,10 @@ Analysons les paramètres :
 
 Validons qu'il n'y pas d'erreur syntaxique et rechargeons le fichier de configuration :
 
-    $ sudo apache2ctl configtest && sudo service apache2 restart
-    Syntax OK
-     * Restarting web server apache2
-     *    ...done.
+        $ sudo apache2ctl configtest && sudo service apache2 restart
+        Syntax OK
+        * Restarting web server apache2
+        *    ...done.
 
 Donc si nous allons à l'URL nous avons bien le message demandant le nom d'utilisateur et mot de passe :
 
@@ -589,39 +589,37 @@ Donc si nous allons à l'URL nous avons bien le message demandant le nom d'utili
 
 Par contre, comme nous n'avons jamais définie de nom d'usagé / mot de passe quand on rentre n'importe quoi nous avons une [erreur 500](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#5xx_Server_Error) indiquant un problème sur le serveur. Le message d'erreur sur le serveur est très claire :
 
-    $ sudo tail /var/log/apache2/error.log
-    [Tue Dec 01 08:40:05.516453 2015] [authn_file:error] [pid 457:tid 2869857088] (2)No such file or directory: [client 172.17.42.1:52744] AH01620: Could not open password file: /data/private-www/.htpasswd-admin
+        $ sudo tail /var/log/apache2/error.log
+        [Tue Dec 01 08:40:05.516453 2015] [authn_file:error] [pid 457:tid 2869857088] (2)No such file or directory: [client 172.17.42.1:52744] AH01620: Could not open password file: /data/private-www/.htpasswd-admin
 
 
 ### <a name="htpasswd" /> Création du fichier de mot de passe ( __htpasswd__ )
 
 Pour réaliser la création du fichier contenant le nom d'utilisateur et le mot de passe nous avons besoin de l'application **htpasswd** , cette application est disponible dans le pacquage : **apache2-utils**
 
-    $ sudo apt-get install apache2-utils
+        $ sudo apt-get install apache2-utils
 
 Nous allons faire la création du fichier :
 
-    $ sudo mkdir /data/private-www/
-    $ sudo htpasswd -c /data/private-www/.htpasswd-admin admin
-    New password:
-    Re-type new password:
-    Adding password for user admin
-    $ sudo htpasswd  /data/private-www/.htpasswd-admin robert
-    New password: 
-    Re-type new password: 
-    Adding password for user robert
+        $ sudo mkdir /data/private-www/
+        $ sudo htpasswd -c /data/private-www/.htpasswd-admin admin
+        New password:
+        Re-type new password:
+        Adding password for user admin
+        $ sudo htpasswd  /data/private-www/.htpasswd-admin robert
+        New password: 
+        Re-type new password: 
+        Adding password for user robert
 
 **IMPORTANT** : entre le 2 commandes il y a une différence, pour réaliser la création du fichier j'ai utilisé l'option **-c** par la suite je ne l'utilise pas . En fait il faut surtout pas que je l'utilise sinon ça vide le fichier pour créer un nouveau fichier , nous perdons donc l'information :-/ . Ouin c'est dangereux, heureusement que vous savez ce que vous faites :D, sinon il y a les backups ...
 
 Visualisons le contenu du fichier, dans les 2 cas j'ai mis le même mot de passe (toto) :
 
-    $ cat /data/private-www/.htpasswd-admin
-    admin:$apr1$6gHZyTty$lxisZ66JPD7yK6K8fcXlU.
-    robert:$apr1$fUI6se3h$40k/ftJPUtVOrptHlMiYB0
+        $ cat /data/private-www/.htpasswd-admin
+        admin:$apr1$6gHZyTty$lxisZ66JPD7yK6K8fcXlU.
+        robert:$apr1$fUI6se3h$40k/ftJPUtVOrptHlMiYB0
 
 Si nous retournons à l'URL nous devrions avoir une authentification avec succès avec l'un ou l'autre des utilisateurs. La page indiquant que nous sommes dans une "section prive" devrais s'afficher.
-
-
 
 
 # <a name="Reference" /> Référence :

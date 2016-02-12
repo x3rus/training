@@ -1,13 +1,11 @@
 
-idée 1 
-# start
-# git status pour s'assurer que tous est communité 
-# commit si requis
-# demarrage de screen ou autre ...
-# modification des fichiers ... 
-# fin script commit modification + screen log
+# script pour commiter sur 2 ou plus repo
+* git remote -v 
+* git push 
+* fic configuration pour authentification
 
 
-idée 2
-# Réaliastion d'un graphique par date et numbre de commit réalisé 
-# Par personne avec des couleurs pour différencier 
+#  TimeSheet
+* avoir avec les logs de git un résultat de timesheet
+* utilisation de pre-commmit 
+https://gist.github.com/bartoszmajsak/1396344
