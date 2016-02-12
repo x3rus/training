@@ -2,3 +2,5 @@
 *.html
 # Ignore swap file from VIM
 *.swp
+# toc (generation de Table Of Content
+toc

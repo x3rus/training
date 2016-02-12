@@ -1,7 +1,27 @@
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
 
+# Index 
 
-# Introduction
+* [ Introduction](#Intro) 
+* [ Installation ](#Installation) 
+       * [ Démarrage et test après installation](#start_test) 
+* [ Configuration de Base](#basic_conf) 
+       * [ Fichier Principale ](#main_file) 
+       * [ Fichiers Incluent](#include_files) 
+* [ Virtual Host par défaut](#virt_host) 
+* [ Paramétrisation du serveur](#param_server) 
+       * [ Paramétrisation de la configuration Directory](#param_directory) 
+           * [ Changement du répertoire Racine ( DocumentRoot)](#param_docroot) 
+           * [ Autorisation d'accès par hostname ou ip ( Require )](#Auth_access) 
+           * [Utilisation du Virtual host par défaut (bonne pratique)](#virt_host_good) 
+       * [ Autorisation d'accès avec authentification local](#auth_local_access) 
+           * [ Création du fichier de mot de passe ( __htpasswd__ )](#htpasswd) 
+* [ Référence :](#Reference) 
+
+# <a name="Intro" /> Introduction
 
 
 Apache est apparu en avril 1995. Au début, il s'agissait d'une collection de correctifs et d'additions au serveur NCSA HTTPd 1.3, qui était dans le domaine public et le serveur HTTP alors le plus répandu. De cette origine, de nombreuses personnes affirment que le nom Apache vient de a patchy server, soit « un serveur rafistolé ». Par la suite, Apache a été complètement réécrit, de sorte que, dans la version 2, il ne reste pas de trace de NCSA HTTPd.
@@ -20,13 +40,13 @@ Part de marché d'Apache :
 La popularité de GNU/Linux doit beaucoup au serveur web apache et la monté en puissance de l'Internet. Il est indéniable que les organisation furent à la recherche d'une solution "gratuite" et performance afin de fournir les service Internet. 
 Parfois il faut pas grand chose pour que la popularité d'une application ou d'un système voit le jours ...
 
-Nous allons voir la structure du logiciel, Apache fonction avec un système de module permettant d'ajouter des fonctionnalités. La configuration d'Apache ce structure selon une hiérarchie de paramètre définie sous des __context__ nous permettant de définir des valeurs de manière granulaire.
+Nous allons voir la structure du logiciel, Apache fonction avec un système de module permettant d'ajouter des fonctionnalités. La configuration d'Apache ce structure selon une hiérarchie de paramètre définie sous des __context__ , nous permettant de définir des valeurs de manière granulaire.
 
-Bon fini l'intro on veut jouer un peu :D.
+Bon fini l'intro on va jouer un peu :D.
 
-# Installation 
+# <a name="Installation" /> Installation 
 
-S'il y a bien une application testé et valider dans une distribution c'est bien le logiciel Apache ! À ma connaissance toutes les distributions offre le logiciel. Bien entendu l'installation peut être différente selon votre distribution voici comment procéder pour __Ubuntu__ et __Redhat__.
+S'il y a bien une application testé et valider dans une distribution c'est bien le logiciel Apache ! À ma connaissance toutes les distributions offre le logiciel. Bien entendu l'installation peut être différente , voici comment procéder pour __Ubuntu__ et __Redhat__.
 
         # Pour Ubuntu 
         $ sudo apt-get install  apache2
@@ -60,7 +80,7 @@ Et maintenant pour Redhat :
         lrwxrwxrwx 1 root root   27 Nov 20 09:29 modules -> ../../usr/lib/httpd/modules
         lrwxrwxrwx 1 root root   19 Nov 20 09:29 run -> ../../var/run/httpd
 
-## Démarrage et test après installation
+## <a name="start_test" /> Démarrage et test après installation
 
 Démarrage du service Apache :
 
@@ -84,11 +104,11 @@ Pour valider que tout fonctionne bien vous pouvez aller à l'URL http://IP-du-se
 
 Nous allons maintenant allé un peu plus loin avec l'analyse de la configuration et mieux comprendre comment tous ceci fonctionne.
 
-# Configuration de Base
+# <a name="basic_conf" /> Configuration de Base
 
-L'ensemble de la rédaction du fichier de configuration est équivalant pour les 2 systèmes l'important est de savoir qu'elle est le premier fichier qui est lu lors du démarrage de d'Apache. Nous verrons à la lecture du fichier de configuration que le premier fichier fait des appel __Include__ pour charger ("loader") les autres fichiers de configuration.
+L'ensemble de la rédaction du fichier de configuration est équivalant pour les 2 systèmes, l'important est de savoir qu'elle est le premier fichier qui est lu lors du démarrage de d'Apache. Nous verrons à la lecture du fichier de configuration que le premier fichier fait des appel __Include__ pour charger ("loader") les autres fichiers de configuration.
 
-## Fichier Principale 
+## <a name="main_file" /> Fichier Principale 
 
 Le fichier principale est :
 
@@ -97,10 +117,9 @@ Le fichier principale est :
 
 **NOTE / Info** Afin de ne pas surcharger la formation en dupliquant les démonstrations de Ubuntu et Redhat nous nous concentrerons uniquement sur Ubuntu. Cependant l'ensemble est équivalent entre les 2 systèmes, car c'est le même logiciel, éventuellement si vous n'arrivez pas a faire la transposition, contacter moi je vous mettrai sur la piste .
 
-La configuration de Redhat est plus linéaire que celle d'Ubuntu, mais bon nous ne pouvons pas changer de système de référence à chaque fois juste parce que l'un est plus simple que l'autre ;-).
+La configuration de Redhat est plus linéaire que celle d'Ubuntu, mais bon nous ne pouvons pas changer de système de référence à chaque fois juste parce que l'un est plus simple que l'autre ;-). Nous avons choisi Ubuntu, nous continuons :D.
 
-
-Visualisation du fichier Principale , Pour ne pas surcharger la documentation je ne vais pas mettre le fichier au complet ici cependant il est disponible en cliquant sur le lien : /etc/apache2/apache2.conf (TODO: changer le fichier en lien )
+Visualisation du fichier Principale , Pour ne pas surcharger la documentation je ne vais pas mettre le fichier au complet ici cependant il est disponible en cliquant sur le lien : /etc/apache2/apache2.conf
 
 À la lecture du fichier nous constatons qu'il y a beaucoup de commentaire définie, comme beaucoup de fichier de configuration sous GNU/Linux le caractère # (dièse) est utilisé. Si nous supprimons l'ensemble des commentaires ainsi que les lignes vide ceci donne :
 
@@ -145,13 +164,13 @@ Visualisation du fichier Principale , Pour ne pas surcharger la documentation je
         IncludeOptional conf-enabled/*.conf
         IncludeOptional sites-enabled/*.conf
 
-39 Lignes à décortiquer, vu l'ampleur du travail que fait apache ce n'est pas grand chose :D, soyons positif. Nous allons aussi voir que pris ligne par ligne la configuration est bien simple ... Surtout quand ça fait 15 ans qu'on la consulte :P.
+39 Lignes à décortiquer, vu l'ampleur du travail que fait Apache ce n'est pas grand chose :D, soyons positif. Nous allons aussi voir que pris ligne par ligne la configuration est bien simple ... Surtout quand ça fait 15 ans qu'on la consulte :P.
 
 Nous allons aussi nous appuyer sur une documentation solide disponible sur le site d'Apache : 
 * Ubuntu 14.04 (apache version 2.4 ) : https://httpd.apache.org/docs/2.4/ 
 * Redhat 6 (apache version 2.2)  : https://httpd.apache.org/docs/2.2/.
 
-Nous voyons dans le fichier des variables désigné sous la forme __${Nom_variable}__ l'ensemble des valeurs sont disponible dans le fichier **/etc/apache2/envvars** dont voici le contenu
+Nous voyons dans le fichier des variables désigné sous la forme __${Nom\_variable}__ l'ensemble des valeurs sont disponible dans le fichier **/etc/apache2/envvars** dont voici le contenu
 
     export APACHE_RUN_USER=www-data
     export APACHE_RUN_GROUP=www-data
@@ -160,17 +179,16 @@ Nous voyons dans le fichier des variables désigné sous la forme __${Nom_variab
     export APACHE_LOCK_DIR=/var/lock/apache2$SUFFIX
     export APACHE_LOG_DIR=/var/log/apache2$SUFFIX
 
-TODO: voir pour peut-être faire un tableau  pour les valeurs de configuration
 
-L'ensemble des valeurs ne seront pas couverte pas que ce n'est pas intéressent, nous pourrons prendre le temps dans le future pour creusé plus en détail. L'objectif pour le moment est d'être en mesure de comprendre et configurer simplement Apache. L'optimisation et l'amélioration de configuration pourrons être traiter ultérieurement.
+L'ensemble des valeurs ne seront pas couverte pas que ce n'est pas intéressent, nous pourrons prendre le temps dans le future pour creusé plus en détail. L'objectif pour le moment est d'être en mesure de comprendre et configurer simplement Apache. L'optimisation et l'amélioration de configuration pourra être vu éventuellement dans le future, nous en reparlerons.
 
 * Configuration global
-    * [Timeout](https://httpd.apache.org/docs/2.4/fr/mod/core.html#timeout) 300 : Temps en seconde pendant lequel le serveur va attendre, que ce soit pour l'envoie, la réception d'instruction au client
+    * [Timeout](https://httpd.apache.org/docs/2.4/fr/mod/core.html#timeout) 300 : Temps en seconde pendant lequel le serveur va attendre  pour l'envoie ou la réception d'instruction au client
     * [KeepAlive](https://httpd.apache.org/docs/2.4/fr/mod/core.html#keepalive) On : Active la possibilité d'utiliser les connexions persistante telle que définie dans le protocole HTTP 1.1
-    * User __${APACHE_RUN_USER}__ : Définie sous quelle utilisateur le service apache va être exécuté, ceci permet d'éviter que le service soit exécuté comme administrateur du système. L'avantage est que si le service apache est compromis, l'attaquant n'obtient que les droits alloué à l'utilisateur __APACHE_RUN_USER__ . Sous Ubuntu l'utilisateur est **www-data**
-    * Group __${APACHE_RUN_GROUP}__ : Tout comme pour l'utilisateur ici nous définissons le groupe qui exécute l'application sous Ubuntu la valeur est : **www-data**
+    * User __${APACHE\_RUN\_USER}__ : Définie sous quelle utilisateur le service apache va être exécuté, ceci permet d'éviter que le service soit exécuté comme administrateur du système. L'avantage est que si le service apache est compromis, l'attaquant n'obtient que les droits alloué à l'utilisateur __APACHE\_RUN\_USER__ . Sous Ubuntu l'utilisateur est **www-data**
+    * Group __${APACHE\_RUN\_GROUP}__ : Tout comme pour l'utilisateur ici nous définissons le groupe qui exécute l'application sous Ubuntu la valeur est : **www-data**
     * [HostnameLookups](https://httpd.apache.org/docs/2.4/fr/mod/core.html#hostnamelookups) Off  : Lorsque la connexion est établie par un client il est possible de faire le reverse DNS sur l'adresse IP afin d'avoir le nom du client au lieu de l'ip. Généralement cette configuration est à OFF afin de ne pas surcharger le serveur de requête DNS inutile car ceci ralentie le temps de réponse du serveur apache.
-    * [ErrorLog](https://httpd.apache.org/docs/2.4/fr/mod/core.html#errorlog) ${APACHE_LOG_DIR}/error.log : **Important** définition du fichier de log contenant les erreurs :). Il est fort probable que nous serons amené à le consulter :).
+    * [ErrorLog](https://httpd.apache.org/docs/2.4/fr/mod/core.html#errorlog) ${APACHE\_LOG\_DIR}/error.log : **Important** définition du fichier de log contenant les erreurs :). Il est fort probable que nous serons amené à le consulter :).
     * [LogLevel](https://httpd.apache.org/docs/2.4/fr/mod/core.html#loglevel) warn : Ceci permet de définir le niveau de sévérité des alertes bien , il est très rare que je change cette valeurs .
 
 * Inclusion
@@ -200,7 +218,7 @@ Nous reviendrons bientôt sur les configurations et permission pour le moment co
         </Directory>
 
 * [LogFormat](https://httpd.apache.org/docs/2.4/fr/mod/mod_log_config.html#logformat)
-Définition du format des Log lors de l'accès des clients, ceci permet de collecter plus d'information telle que l'utilisateur (%u) la requête (%r) selon un ordre définie. Ceci est principalement utilisé quand votre système de gestion de statique désire avoir un format particulier. 99% du temps j'utilise __vhost_combined__ qui répond à mon besoin et à mon logiciel de statistique. Note : avec la version 2.4 il est aussi possible de modifier le [format du message d'erreur](https://httpd.apache.org/docs/2.4/fr/mod/core.html#errorlogformat).
+Définition du format des Log lors de l'accès des clients, ceci permet de collecter plus d'information telle que l'utilisateur (%u) la requête (%r) selon un ordre définie. Ceci est principalement utilisé quand votre système de gestion de statique désire avoir un format particulier. 99% du temps j'utilise __vhost\_combined__ qui répond à mon besoin et à mon logiciel de statistique. Note : avec la version 2.4 il est aussi possible de modifier le [format du message d'erreur](https://httpd.apache.org/docs/2.4/fr/mod/core.html#errorlogformat).
 
         LogFormat "%v:%p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" vhost_combined
         LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined
@@ -209,7 +227,7 @@ Définition du format des Log lors de l'accès des clients, ceci permet de colle
         LogFormat "%{User-agent}i" agent
 
 
-## Fichiers Incluent
+## <a name="include_files" /> Fichiers Incluent
 
 Debian / Ubuntu structure d'une manière particulière les fichiers d'Apache, on aime ou on n'aime pas je suis pas ici pour me prononcer, mais pour expliquer le concept.
 
@@ -276,13 +294,13 @@ L'exemple le plus claire est le chargements des modules apaches, regardons la li
     28
 
 
-Conclusion sur 129 fichiers uniquement sont réellement chargé par Apache. Nous ne retrouvons pas ce concept sous Redhat.
-Nous mettre de coté tous ces fichiers de configuration qui sont chargés pour visualiser la configuration du site web par défaut, dans un deuxième temps lors de la configuration de nos site web  nous reviendrons sur l'ajout de fonctionnalité et de modules. Bien entendu libre à vous de jeter un œil aux fichiers et de rechercher la document sur Internet.
+Conclusion sur 129 fichiers uniquement 28 sont réellement chargé par Apache. Nous ne retrouvons pas ce concept sous Redhat.
+Nous mettrons de coté tous ces fichiers de configuration qui sont chargés pour visualiser la configuration du site web par défaut, dans un deuxième temps lors de la configuration de nos site web  nous reviendrons sur l'ajout de fonctionnalité et de modules. Bien entendu libre à vous de jeter un œil aux fichiers et de rechercher la document sur Internet.
 
 
-# Virtual Host par défaut
+# <a name="virt_host" /> Virtual Host par défaut
 
-L'ensemble des sites sont donc chargé en lisant les fichiers contenu dans **/etc/apache2/sites-enabled/**. 
+L'ensemble des sites sont donc chargés en lisant les fichiers contenu dans **/etc/apache2/sites-enabled/**. 
 Le système met un fichier par défaut avec le nom **000-default.conf**. Voici le contenu (sans les commentaires):
 
     <VirtualHost *:80>
@@ -305,15 +323,15 @@ Nous avons l'instruction :
 Et voilà :) , c'est ceci qui nous a permit de mettre notre fichier **demo.html** et de visualiser le contenu.
 
 
-# Paramétrisation du serveur
+# <a name="param_server" /> Paramétrisation du serveur
 
 Maintenant que nous avons vu l'idée générale de la configuration c'est le temps de commencé à y mettre un peu d'ordre ou de désordre :).
 
-## Paramétrisation de la configuration **Directory**
+## <a name="param_directory" /> Paramétrisation de la configuration Directory
 
-### Changement du répertoire Racine ( [DocumentRoot](https://httpd.apache.org/docs/2.4/mod/core.html#documentroot) ) du serveur 
+### <a name="param_docroot" /> Changement du répertoire Racine ( DocumentRoot)
 
-Pour le plaisir nous allons fonctionné par un exemple claire, car bien souvent une démonstration qui aide à la compréhension. Changeons de place le site web de /var/www/html/ vers  /data/www/, peut importe la raison , peut-être plus d'espace disque dur , peut importe.
+Pour le plaisir nous allons fonctionné par un exemple claire, car bien souvent une démonstration aide à la compréhension. Changeons de place le site web de /var/www/html/ vers  /data/www/, peut importe la raison (espace disque dur, réorganisation du système , ...).
 
     # Création du répertoire et copie des fichiers
     $ sudo mkdir -p /data/www
@@ -328,7 +346,7 @@ Les fichiers sont donc maintenant dans le nouveau répertoire il reste à modifi
     # Pour la nouvelle valeur
     DocumentRoot /data/www
 
-Validons la configuration syntaxique du serveur, c'est toujours une bonne pratique de réaliser cette opération après vos modifications ceci permet de corrigé des problèmes avant même de recharger la configuration.
+Validons la configuration syntaxique du serveur, c'est toujours une bonne pratique de réaliser cette opération après vos modifications ceci permet de corriger des problèmes avant même de recharger la configuration.
 
     $  sudo apache2ctl configtest
     Syntax OK
@@ -337,8 +355,6 @@ Rechargez la configuration :
 
     $ sudo service apache2 reload
     * Reloading web server apache2
-    *
-
 
 Voici le résultat quand nous accédons à la page principale :  http://127.0.0.1 ou http://127.0.0.1/demo.html
 
@@ -370,8 +386,6 @@ Le mieux pour comprendre l'erreur reste toujours les logs visualisons donc ce qu
 
 
 Le message du serveur est explicite la configuration du serveur refuse d'offrir l'accès au fichier **/data/www/**. COOL !! Le problème est claire et identifier , il ne reste que LA solution :).
-
-### Autorisation d'accès par hostname ou ip ( [Require](https://httpd.apache.org/docs/2.4/mod/mod_authz_core.html#require) )
 
 L'autorisation des accès à l'arborescence du système est définie par les configurations **Directory**, nous avons cette définition dans le fichier **/etc/apache2/apache2.conf** 
 
@@ -433,6 +447,8 @@ Allons à l'URL : [http://127.0.0.1/demo.html](http://127.0.0.1/demo.html)
 
 Cette notion d'héritage des permissions est très important afin de comprendre l'impacte de permission trop permissive au niveau supérieur de la hiérarchie du système de fichier. 
 
+### <a name="Auth_access" /> Autorisation d'accès par hostname ou ip ( Require )
+
 Profitons de l'occasion pour limiter l'accès à un répertoire pour uniquement un segment réseau , car pour la démonstration ci-dessus nous avons simplement ouvert à TOUS l'accès si nous avions un répertoire __admin__ ou __private__ disponible pour le réseau interne mais qui ne devrais pas être disponible sur l'Internet publique.
 L'instruction [require](https://httpd.apache.org/docs/2.4/mod/mod_authz_core.html#require) nous permet de faire cette limitation . Nous verrons aussi qu'il est possible de mettre un système d'authentification avec nom d'utilisateur et mot de passe.
 
@@ -473,7 +489,7 @@ Voilà le bon message d'erreur :) :
 ![rep_admin_403.png](./imgs/rep_admin_403.png)
 
 
-### Utilisation du Virtual host par défaut (bonne pratique)
+### <a name="virt_host_good" />Utilisation du Virtual host par défaut (bonne pratique)
 
 Nous avons modifié la configuration du fichier **/etc/apache2/apache2.conf**, à moins que les configurations sont vraiment général pour l'ensemble du serveur je vous conseil de définir vos configurations dans le virtual host approprié. Ceci est pour la simple et bonne raison qu'il est plus facile de migré la configuration d'un site quand on a l'ensemble de ça définition dans un fichier plutôt qu'avoir des configurations éparpillé. 
 Plusieurs avantage :
@@ -511,11 +527,10 @@ Validation et relecture de la configuration :) :
 
 Donc à partir de maintenant nous manipulerons principalement les fichiers de vhost à moins que nous appliquions une modification global au système telle que l'ajout de module.
 
-* NOTE : __commit 5428ce0375006d6be9edf40614c78655409f370b__
 
-## Autorisation d'accès avec authentification local
+## <a name="auth_local_access" /> Autorisation d'accès avec authentification local
 
-Nous allons maintenant revoir notre configuration pour l'accès au répertoire admin , au lieu d'utiliser un système de limitation par adresse ip, nous allons mettre en place un authentification local. La limitation par adresse ip c'est bien malheureusement quand nous sommes en mouvement nous n'avons pas toujours la même adresse ip. Nous allons utiliser le module apache [mod_authn_core](https://httpd.apache.org/docs/2.4/mod/mod_authn_core.html#authtype). 
+Nous allons maintenant revoir notre configuration pour l'accès au répertoire admin , au lieu d'utiliser un système de limitation par adresse ip, nous allons mettre en place une authentification local. La limitation par adresse ip c'est bien, malheureusement quand nous sommes en mouvement nous n'avons pas toujours la même adresse ip. Nous allons utiliser le module apache [mod_authn_core](https://httpd.apache.org/docs/2.4/mod/mod_authn_core.html#authtype). 
 
 Commençons par valider que ce dernier est bien chargé :
 
@@ -534,7 +549,7 @@ Pour information voici le contenu :
     $ cat /etc/apache2/mods-enabled/authn_core.load 
     LoadModule authn_core_module /usr/lib/apache2/modules/mod_authn_core.so
 
-Apache charge un fichier **.so** qui est l'équivalent d'un **DLL** qui permet d'avoir une suite d'instruction en plus de disponible pour le service. Le module fut compilé pour la version spécifique d'Apache il n'est pas possible de prendre un module écrit pour la version 2.2 et le faire fonctionner sur la version 2.4 . Nous verrons plus en détail plus tard les modules apaches cependant il est bien d'avoir une compréhension, sommaire du fonctionnement.
+Apache charge un fichier **.so** qui est l'équivalent d'un **DLL** qui permet d'avoir une suite d'instruction en plus, disponible pour le service. Le module fut compilé pour la version spécifique d'Apache il n'est pas possible de prendre un module écrit pour la version 2.2 et le faire fonctionner sur la version 2.4 . Nous verrons plus en détail plus tard les modules apaches cependant il est bien d'avoir une compréhension, sommaire du fonctionnement.
 
 
 Procédons à la modification du fichier de configuration de notre site par défaut (**/etc/apache2/sites-available/000-default.conf**). Voici la configuration :
@@ -558,7 +573,7 @@ Analysons les paramètres :
     * [form](https://httpd.apache.org/docs/2.4/fr/mod/mod_auth_form.html)
 * [AuthName](https://httpd.apache.org/docs/2.4/fr/mod/mod_authn_core.html#authname) : message affiché à l'utilisateur afin qu'il entre les informations d'authentification requis .
 * [AuthUserFile](https://httpd.apache.org/docs/2.4/fr/mod/mod_authn_file.html#authuserfile) : Ficher local sur le serveur web contenant la liste des utilisateurs et mot de passe permettant de valider l'authentification des utilisateurs.
-* [Require](https://httpd.apache.org/docs/2.4/fr/mod/mod_authz_core.html#require) : Instruction spécifiant le critère d'autorisation, dans les démonstrations passé nous avions utilisé les adresses ip comme critère ici nous pourrons utiliser des noms d'utilisateur ou définir comme dans le cas présent n'importe quelle utilisateur s'authentifiant avec succès. 
+* [Require](https://httpd.apache.org/docs/2.4/fr/mod/mod_authz_core.html#require) : Instruction spécifiant le critère d'autorisation, dans les démonstrations passé nous avions utilisé les adresses ip comme critère ici nous pourrons utiliser des noms d'utilisateur ou définir comme dans le cas présent n'importe quelle utilisateur s authentifiant avec succès. 
 
 
 Validons qu'il n'y pas d'erreur syntaxique et rechargeons le fichier de configuration :
@@ -578,7 +593,7 @@ Par contre, comme nous n'avons jamais définie de nom d'usagé / mot de passe qu
     [Tue Dec 01 08:40:05.516453 2015] [authn_file:error] [pid 457:tid 2869857088] (2)No such file or directory: [client 172.17.42.1:52744] AH01620: Could not open password file: /data/private-www/.htpasswd-admin
 
 
-### Création du fichier de mot de passe ( __htpasswd__ )
+### <a name="htpasswd" /> Création du fichier de mot de passe ( __htpasswd__ )
 
 Pour réaliser la création du fichier contenant le nom d'utilisateur et le mot de passe nous avons besoin de l'application **htpasswd** , cette application est disponible dans le pacquage : **apache2-utils**
 
@@ -607,10 +622,9 @@ Visualisons le contenu du fichier, dans les 2 cas j'ai mis le même mot de passe
 Si nous retournons à l'URL nous devrions avoir une authentification avec succès avec l'un ou l'autre des utilisateurs. La page indiquant que nous sommes dans une "section prive" devrais s'afficher.
 
 
-* NOTE : commit __07560f93133c51e37afc39ad2833539a8f66bb8d__
 
 
-# Référence :
+# <a name="Reference" /> Référence :
 
 * [Documentation Apache 2.4](https://httpd.apache.org/docs/2.4/) : https://httpd.apache.org/docs/2.4/
 * [Liste des code d'état du protocole http](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes): https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
