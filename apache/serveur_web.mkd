@@ -573,7 +573,7 @@ Analysons les paramètres :
     * [form](https://httpd.apache.org/docs/2.4/fr/mod/mod_auth_form.html)
 * [AuthName](https://httpd.apache.org/docs/2.4/fr/mod/mod_authn_core.html#authname) : message affiché à l'utilisateur afin qu'il entre les informations d'authentification requis .
 * [AuthUserFile](https://httpd.apache.org/docs/2.4/fr/mod/mod_authn_file.html#authuserfile) : Ficher local sur le serveur web contenant la liste des utilisateurs et mot de passe permettant de valider l'authentification des utilisateurs.
-* [Require](https://httpd.apache.org/docs/2.4/fr/mod/mod_authz_core.html#require) : Instruction spécifiant le critère d'autorisation, dans les démonstrations passé nous avions utilisé les adresses ip comme critère ici nous pourrons utiliser des noms d'utilisateur ou définir comme dans le cas présent n'importe quelle utilisateur s authentifiant avec succès. 
+* [Require](https://httpd.apache.org/docs/2.4/fr/mod/mod_authz_core.html#require) : Instruction spécifiant le critère d'autorisation, dans les démonstrations passé nous avions utilisé les adresses ip comme critère ici nous pourrons utiliser des noms d'utilisateur ou définir comme dans le cas présent n'importe quelle utilisateur s'authentifiant avec succès. 
 
 
 Validons qu'il n'y pas d'erreur syntaxique et rechargeons le fichier de configuration :
