@@ -93,14 +93,15 @@ Démarrage du service Apache :
 
 
 Vous pouvez dès a présent valider l'installation en allant a l'URL http://IP-du-serveur ou http://127.0.0.1 si l'installation est réalisé directement sur votre poste. Voici le résultat pour Ubuntu :
-TODO: Ajouter une copie d'écran de la page par défaut d'Apache.
+
+![default_page_ubuntu.png](./imgs/default_page_ubuntu.png)
 
 Nous allons maintenant mettre une petite page web pour démontré que nous somme bien en mesure de modifier le contenu. Vous pouvez utiliser votre éditeur préféré pour créer le fichier **/var/www/html/demo.html**
 
         $ cat /var/www/html/demo.html
         Bonjour Ceci fonctionne bien
 
-Pour valider que tout fonctionne bien vous pouvez aller à l'URL http://IP-du-serveur/demo.html ou http://127.0.0.1/demo.html. Déjà à ce stade il est possible d'avoir son site web de disponible en installant l'ensemble de vos fichiers dans ce répertoire.
+Pour valider que tout fonctionne bien vous pouvez aller à l'URL __http://IP-du-serveur/demo.html__ ou __http://127.0.0.1/demo.html__. Déjà à ce stade il est possible d'avoir son site web de disponible en installant l'ensemble de vos fichiers dans ce répertoire.
 
 Nous allons maintenant allé un peu plus loin avec l'analyse de la configuration et mieux comprendre comment tous ceci fonctionne.
 
@@ -167,6 +168,7 @@ Visualisation du fichier Principale , Pour ne pas surcharger la documentation je
 39 Lignes à décortiquer, vu l'ampleur du travail que fait Apache ce n'est pas grand chose :D, soyons positif. Nous allons aussi voir que pris ligne par ligne la configuration est bien simple ... Surtout quand ça fait 15 ans qu'on la consulte :P.
 
 Nous allons aussi nous appuyer sur une documentation solide disponible sur le site d'Apache : 
+
 * Ubuntu 14.04 (apache version 2.4 ) : https://httpd.apache.org/docs/2.4/ 
 * Redhat 6 (apache version 2.2)  : https://httpd.apache.org/docs/2.2/.
 
@@ -331,7 +333,7 @@ Maintenant que nous avons vu l'idée générale de la configuration c'est le tem
 
 ### <a name="param_docroot" /> Changement du répertoire Racine ( DocumentRoot)
 
-Pour le plaisir nous allons fonctionné par un exemple claire, car bien souvent une démonstration aide à la compréhension. Changeons de place le site web de /var/www/html/ vers  /data/www/, peut importe la raison (espace disque dur, réorganisation du système , ...).
+Pour le plaisir nous allons fonctionné par un exemple claire, car bien souvent une démonstration aide à la compréhension. Changeons de place le site web de __/var/www/html/__ vers  __/data/www/__, peut importe la raison (espace disque dur, réorganisation du système , ...).
 
         # Création du répertoire et copie des fichiers
         $ sudo mkdir -p /data/www
@@ -358,7 +360,7 @@ Rechargez la configuration :
 
 Voici le résultat quand nous accédons à la page principale :  http://127.0.0.1 ou http://127.0.0.1/demo.html
 
-    TODO: AJOUT IMG de l'erreur Forbiden 
+![rep_demo-page_403.png](./imgs/rep_demo-page_403.png)
 
 Nous avons donc une erreur **403** qui est un refus d'accès au serveur. Ceci correspond à un refus d'accès vous pouvez avoir la liste des codes des états sur Wikipédia :  [Code 4xx Erreur Client](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#4xx_Client_Error) 
 
@@ -374,20 +376,20 @@ Le mieux pour comprendre l'erreur reste toujours les logs visualisons donc ce qu
 
 * Fichier d'accès **/var/log/apache2/access.log**:
 
-    $ sudo tail -f /var/log/apache2/access.log
-    172.17.42.1 - - [27/Nov/2015:08:20:52 -0500] "GET / HTTP/1.1" 403 494 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
-    172.17.42.1 - - [27/Nov/2015:08:21:27 -0500] "GET /demo.html HTTP/1.1" 403 503 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+        $ sudo tail -f /var/log/apache2/access.log
+        172.17.42.1 - - [27/Nov/2015:08:20:52 -0500] "GET / HTTP/1.1" 403 494 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+        172.17.42.1 - - [27/Nov/2015:08:21:27 -0500] "GET /demo.html HTTP/1.1" 403 503 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
 
 * Fichier d'erreur **/var/log/apache2/error.log**
 
-    $ sudo tail -f /var/log/apache2/error.log
-    [Fri Nov 27 08:20:52.199792 2015] [authz_core:error] [pid 133:tid 3046103872] [client 172.17.42.1:58878] AH01630: client denied by server configuration: /data/www/
-    [Fri Nov 27 08:21:27.097668 2015] [authz_core:error] [pid 132:tid 3029318464] [client 172.17.42.1:58882] AH01630: client denied by server configuration: /data/www/demo.html
+        $ sudo tail -f /var/log/apache2/error.log
+        [Fri Nov 27 08:20:52.199792 2015] [authz_core:error] [pid 133:tid 3046103872] [client 172.17.42.1:58878] AH01630: client denied by server configuration: /data/www/
+        [Fri Nov 27 08:21:27.097668 2015] [authz_core:error] [pid 132:tid 3029318464] [client 172.17.42.1:58882] AH01630: client denied by server configuration: /data/www/demo.html
 
 
 Le message du serveur est explicite la configuration du serveur refuse d'offrir l'accès au fichier **/data/www/**. COOL !! Le problème est claire et identifier , il ne reste que LA solution :).
 
-L'autorisation des accès à l'arborescence du système est définie par les configurations **Directory**, nous avons cette définition dans le fichier **/etc/apache2/apache2.conf** 
+L'autorisation des accès à l'arborescence du système est définie par les configurations [Directory](https://httpd.apache.org/docs/2.4/fr/mod/core.html#directory) ,nous avons cette définition dans le fichier **/etc/apache2/apache2.conf** 
 
         <Directory />
                 Options FollowSymLinks
