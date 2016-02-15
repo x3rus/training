@@ -34,7 +34,7 @@ Petit exercice sur le contrôleur de révision **GIT** .
 
 * Créez un fichier nommé **Atelier02.txt** avec le contenu suivant 
 
-        TODO ajouter le contenu du fichier
+        Une peu de text 
 
 * Ajoutez dans le dépôt le fichier **Aterlier02.txt** et valider (commit) le pour qu'il soit partie intégrante du dépôt. Lors de l'ajout utiliser le message suivant : __"L'atelier 02 est pas trop mal "__
 
@@ -97,6 +97,7 @@ Petit exercice sur le contrôleur de révision **GIT** .
 * Résolvez le conflit en conservant la valeur généré dans la branche **branche\_pas\_facile**
 
 ## <a name="utilisation_serveur"> Utilisation d'un serveur Git
+
 
 * Pour cette section vous aurez besoin d'un compte sur [GitHub](http://github.com), créez ce compte ceci est gratuit :D.
 
