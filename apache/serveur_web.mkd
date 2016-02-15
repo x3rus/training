@@ -316,7 +316,7 @@ Le système met un fichier par défaut avec le nom **000-default.conf**. Voici l
 
 Nous avons l'instruction :
 
-* [ VirtualHost *:80 ](https://httpd.apache.org/docs/2.4/mod/core.html#virtualhost): Cette instruction indique qu'il peut y avoir plusieurs site web sur le port 80 des Hôtes virtuel ... Heu merci pour la traduction ;-), nous y reviendrons quand nous couvrirons la possibilité d'avoir plusieurs site web .
+* [ VirtualHost *:80 ](https://httpd.apache.org/docs/2.4/mod/core.html#virtualhost): Cette instruction indique qu'il peut y avoir plusieurs site web sur le port 80 des Hôtes virtuel ... Heu merci pour la traduction ;-), nous y reviendrons quand nous couvrirons la possibilité d'avoir plusieurs site web . Pour les personnes trop pressé voici le lien avec la section [VirtualHot](#VirtualHost)
 * [ServerAdmin](https://httpd.apache.org/docs/2.4/mod/core.html#serveradmin) : URL de l'administrateur qui peut être afficher lors de messages d'erreur 
 * [DocumentRoot](https://httpd.apache.org/docs/2.4/mod/core.html#documentroot): Répertoire racine du site web.
 * [ErrorLog](https://httpd.apache.org/docs/2.4/mod/core.html#errorlog) : Chemin d'accès ou le fichier d'erreur PROPRE à ce site web sera écrit. On voudra avoir un fichier d'erreur par site web ceci facilite grandement l'identification des problèmes plutôt qu'avoir un gros fichier pour tout le monde. De plus nous serons en mesure de fournir le fichier au développeur pour qu'il analyse les problèmes. 
@@ -526,11 +526,38 @@ Validation et relecture de la configuration :) :
         Syntax OK
         * Reloading web server apache2
         * 
-    
+
 Donc à partir de maintenant nous manipulerons principalement les fichiers de vhost à moins que nous appliquions une modification global au système telle que l'ajout de module.
 
 
-## <a name="auth_local_access" /> Autorisation d'accès avec authentification local
+## <a name="context" /> Organisation de la configuration (context)
+
+Voyons les niveaux ou contexte d'organisation des configurations d'apache avant l'aller plus loin. Je vais utiliser la configuration du répertoire **/data/www** et **/data/www/admin** pour faire la démonstration. 
+Cette section est très importante, car elle permet de comprendre le système de configuration dans les détails, de nos jours mettre en place un service est assez simple, un copie/collé d'une configuration trouvé sur l'Internet suffit 90% du temps. Le défis survient lors des problèmes et / ou l'intégration de services, à ce moment il est important de comprendre le système.!
+
+Il existe 4 niveaux ou contexte :
+
+* **configuration du serveur** : Ensemble de configuration contenu dans les fichiers de configuration du serveur apache , telle que le fichier __httpd.conf__, cependant ceci ne comprend pas les instructions  à l'intérieur des balises __<VirtualHost>__ ou __<Directory>__. De même, elle n'est pas valide dans les fichiers __.htaccess__.
+* **serveur virtuel** : Ensemble des instructions comprise dans les balises __<VirtualHost>__.
+* **répertoire** : Ensemble des instructions contenues dans les balises __<Directory>, <Location>, <Files>, <If>, et <Proxy>__ .
+* **.htaccess** : Ensemble des instructions contenues dans un fichier __.htaccess__.
+
+
+Reprenons notre modification du répertoire __/data/www__, comme base de référence et ainsi visualiser les contextes que nous avons modifier.
+
+1. Nous avons modifier la directive [DocumentRoot](https://httpd.apache.org/docs/2.4/mod/core.html#documentroot), pour rappel ceci nous a permis de modifier la racine du site web. Si nous regardons documentation disponible pour cette instruction, voici la copie  d'écran :
+![DocumentRoot-screenshot-documentation.png](./imgs/DocumentRoot-screenshot-documentation.png)
+Comme vous pouvez le constater l'instruction **DocumentRoot** peut être utilisé dans 2 contexte __Server config__ et __Virtual host__. 
+2. Définition des permissions d'accès pour le répertoire __/data/www__ grâce à l'instruction [Directory](https://httpd.apache.org/docs/2.4/fr/mod/core.html#directory). 
+ 
+* Référence 
+    * [http://httpd.apache.org/docs/current/fr/mod/directive-dict.html#Context](http://httpd.apache.org/docs/current/fr/mod/directive-dict.html#Context)
+    * [http://httpd.apache.org/docs/current/fr/sections.html](http://httpd.apache.org/docs/current/fr/sections.html)
+
+
+## <a name="VirtualHost" /> VirtualHost
+
+# <a name="auth_local_access" /> Autorisation d'accès avec authentification local
 
 Nous allons maintenant revoir notre configuration pour l'accès au répertoire admin , au lieu d'utiliser un système de limitation par adresse ip, nous allons mettre en place une authentification local. La limitation par adresse ip c'est bien, malheureusement quand nous sommes en mouvement nous n'avons pas toujours la même adresse ip. Nous allons utiliser le module apache [mod_authn_core](https://httpd.apache.org/docs/2.4/mod/mod_authn_core.html#authtype). 
 
@@ -595,7 +622,7 @@ Par contre, comme nous n'avons jamais définie de nom d'usagé / mot de passe qu
         [Tue Dec 01 08:40:05.516453 2015] [authn_file:error] [pid 457:tid 2869857088] (2)No such file or directory: [client 172.17.42.1:52744] AH01620: Could not open password file: /data/private-www/.htpasswd-admin
 
 
-### <a name="htpasswd" /> Création du fichier de mot de passe ( __htpasswd__ )
+## <a name="htpasswd" /> Création du fichier de mot de passe ( __htpasswd__ )
 
 Pour réaliser la création du fichier contenant le nom d'utilisateur et le mot de passe nous avons besoin de l'application **htpasswd** , cette application est disponible dans le pacquage : **apache2-utils**
 
