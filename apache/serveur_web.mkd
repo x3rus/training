@@ -546,10 +546,14 @@ Il existe 4 niveaux ou contexte :
 Reprenons notre modification du répertoire __/data/www__, comme base de référence et ainsi visualiser les contextes que nous avons modifier.
 
 1. Nous avons modifier la directive [DocumentRoot](https://httpd.apache.org/docs/2.4/mod/core.html#documentroot), pour rappel ceci nous a permis de modifier la racine du site web. Si nous regardons documentation disponible pour cette instruction, voici la copie  d'écran :
-![DocumentRoot-screenshot-documentation.png](./imgs/DocumentRoot-screenshot-documentation.png)
-Comme vous pouvez le constater l'instruction **DocumentRoot** peut être utilisé dans 2 contexte __Server config__ et __Virtual host__. 
+
+    ![DocumentRoot-screenshot-documentation.png](./imgs/DocumentRoot-screenshot-documentation.png)
+
+    Comme vous pouvez le constater l'instruction **DocumentRoot** peut être utilisé dans 2 contexte __Server config__ et __Virtual host__. 
+
 2. Définition des permissions d'accès pour le répertoire __/data/www__ grâce à l'instruction [Directory](https://httpd.apache.org/docs/2.4/fr/mod/core.html#directory). 
  
+
 * Référence 
     * [http://httpd.apache.org/docs/current/fr/mod/directive-dict.html#Context](http://httpd.apache.org/docs/current/fr/mod/directive-dict.html#Context)
     * [http://httpd.apache.org/docs/current/fr/sections.html](http://httpd.apache.org/docs/current/fr/sections.html)
