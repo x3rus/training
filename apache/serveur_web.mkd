@@ -584,16 +584,65 @@ Reprenons notre modification du répertoire __/data/www__, comme base de référ
     Ceci est clairement un avantage d'avoir un message aussi claire ayant utilisé la commande , **apachectl configtest** j'ai eu l'information du problème SANS aucune interruption du service.
 
 
-Nous avons couvert 3 des 4 contexte décrit plus tôt , celui qui manque est le contexte **.htaccess**
-TODO : ICI !! 
+Nous avons vu 3 des 4 contexte décrit plus tôt , celui qui manque est le contexte **.htaccess**, donc afin de couvrir cette possibilité nous allons reprendre notre configuration et voir quelle instructions peut être déplacé dans le contexte **.htaccess**. Pour les personnes qui s'inquiète de la couverture légère réalisé jusqu'à présent du contexte __VirtualHost__ ne vous inquiétez pas nous couvrirons le sujets de manière approprié sous peu.
+
+Si nous regardons la seule instruction que nous pouvons utiliser dans le contexte __.htaccess__ est **Require**, nous allons donc procéder à la migration de l'instruction.
 
 * Référence 
     * [http://httpd.apache.org/docs/current/fr/mod/directive-dict.html#Context](http://httpd.apache.org/docs/current/fr/mod/directive-dict.html#Context)
     * [http://httpd.apache.org/docs/current/fr/sections.html](http://httpd.apache.org/docs/current/fr/sections.html)
 
-## <a name="context_htaccess" /> Organisation de la configuration (context)
+## <a name="context_htaccess" /> Surdéfinition de la configuration dans le fichier .htaccess
+
+L'objectif du fichier __.htaccess__ est de fournir la possibilité de modifier la configuration du serveur au niveau du répertoire. Le principal avantage de cette fonctionnalité est de pouvoir délégué la gestion d'un partie de la configuration au développeur, il est cependant conseillé de limité les champs d'action de cette fonctionnalité , surtout en production car ceci comprend aussi des risques de sécurité potentiel (nous y reviendrons).
+
+Le nom du fichier __.htaccess__est une convention ceci est définie par l'instruction [AccessFileName](https://httpd.apache.org/docs/current/fr/mod/core.html#accessfilename) 
+
+![Accessfilename-screenshot-documentation.png](./imgs/Accessfilename-screenshot-documentation.png)
+
+Comme nous pouvons le voir sur la copie d'écran de la configuration cette instruction peut être définie dans la configuration du serveur OU dans la configuration du __Virtual Host__.
+Je vous conseille de ne pas changer le nom du fichier, afin de faciliter la lecture par l'ensemble des intervenants sur votre système. Personnellement s'il y a un problème sur le site , je vais regarder, s'il y a surcharge (redéfinition) de la configuration avec un fichier __.htaccess__, mais si l'on change le nom du fichier il est peu probable que le considère.
+
+Procédons avec la migration de la configuration afin de valider le comportement, la configuration actuelle du __VirtualHost__ ressemble à ceci :
+
+                <VirtualHost *:80>
+
+                        ServerAdmin webmaster@localhost
+                        DocumentRoot /data/www
+
+                        <Directory /data/www/>
+                                Options Indexes FollowSymLinks
+                                AllowOverride None
+                                Require all granted
+                        </Directory>
+
+                        <Directory /data/www/admin >
+                                Options FollowSymLinks
+                                AllowOverride None
+                                Require ip 192.168.100 192.168.42.42
+                        </Directory>
+
+                        ErrorLog ${APACHE_LOG_DIR}/error.log
+                        CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+                </VirtualHost>
+
+Nous allons migré la directive **Require ip 192.168.100 192.168.42.42** dans le fichier __.htaccess__. 
+
+1. Je supprime la ligne définie dans la configuration du répertoire **<Directory /data/www/admin >**
+2. Je crée le fichier __/data/www/admin/.htaccess__ avec le contenu suivant 
+
+        $ sudo vim /data/www/admin/.htaccess
+        Require ip 192.168.100 192.168.42.42
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 reload
+
+3. J'ai du recharger la configuration d'apache afin que le fichier du __VirtualHost__ soit relue suite à la suppression de la définition **Require** 
+
+Validons le comportement , si je vais sur la page __http://Ip\_du\_server/admin/__
 
 ## <a name="VirtualHost" /> VirtualHost
+
+TODO : ajouter l'information 
 
 # <a name="auth_local_access" /> Autorisation d'accès avec authentification local
 
