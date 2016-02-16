@@ -3,6 +3,8 @@
 pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 </style>
 
+TODO : Corriger les \_
+
 # Index 
 
 * [ Introduction](#Intro) 
@@ -539,7 +541,7 @@ Il existe 4 niveaux ou contexte :
 
 * **configuration du serveur** : Ensemble de configuration contenu dans les fichiers de configuration du serveur apache , telle que le fichier __httpd.conf__, cependant ceci ne comprend pas les instructions  à l'intérieur des balises __<VirtualHost>__ ou __<Directory>__. De même, elle n'est pas valide dans les fichiers __.htaccess__.
 * **serveur virtuel** : Ensemble des instructions comprise dans les balises __<VirtualHost>__.
-* **répertoire** : Ensemble des instructions contenues dans les balises __<Directory>, <Location>, <Files>, <If>, et <Proxy>__ .
+* **répertoire** : Ensemble des instructions contenues dans les balises __<Directory>__, __<Location>__, __<Files>__, __<If>__, et __<Proxy>__ .
 * **.htaccess** : Ensemble des instructions contenues dans un fichier __.htaccess__.
 
 
@@ -549,21 +551,53 @@ Reprenons notre modification du répertoire __/data/www__, comme base de référ
 
     ![DocumentRoot-screenshot-documentation.png](./imgs/DocumentRoot-screenshot-documentation.png)
 
-    Comme vous pouvez le constater l'instruction **DocumentRoot** peut être utilisé dans 2 contexte __Server config__ et __Virtual host__. 
+    Comme vous pouvez le constater l'instruction **DocumentRoot** peut être utilisé dans 2 contexte **Server config**  et **Virtual host**. Dans notre configuration nous avons uniquement une définition du __DocumentRoot__ dans le __VirtualHost__  : **sites-available/000-default.conf** 
 
-2. Définition des permissions d'accès pour le répertoire __/data/www__ grâce à l'instruction [Directory](https://httpd.apache.org/docs/2.4/fr/mod/core.html#directory). 
- 
+2. Définition des permissions d'accès pour le répertoire __/data/www__ grâce à l'instruction [Directory](https://httpd.apache.org/docs/2.4/fr/mod/core.html#directory). Cette configuration est encore plus intéressante, car nous avons définie les permissions de ce répertoire dans 2 contexte. Commençons par visualiser la documentation
+
+    ![Directory-screenshot-documentation.png](./imgs/Directory-screenshot-documentation.png)
+
+    Comme vous pouvez le constater nous pouvons utiliser la directive __Directory__ dans le contexte **Server config** ET **Virtual Host**. Si nous nous rappelons l'opération de configuration nous avons définie notre configuration dans les 2 contexte.  Dans contexte **Server config** lors que la configuration été présente dans le fichier __/etc/apache2/apache2.conf__ et dans la configuration du **Virtual Host** lorsque nous avons rapatrié la configuration dans le __Host__ Virtuel.
+
+3. Définition de l'instruction [Require](https://httpd.apache.org/docs/2.4/mod/mod_authz_core.html#require) qui nous à permis de limité l'accès au répertoire __admin__ grâce à l'__IP__ de provenance . Nous avons mis la configuration dans le contexte du répertoire __<Directory /data/www/admin >__ étions nous obligé de le faire ?!?! Que dit la documentation :
+
+    ![Require-screenshot-documentation.png](./imgs/Require-screenshot-documentation.png)
+
+    Encore une fois nous avions 2 possibilités où disposer l'instruction dans contexte __Directory__ ou dans le contexte __.htaccess__ . À la lecture de cette information ceci veut donc dire que je ne peux pas définir un limitation par __IP__ pour l'ensemble d'un __Virtual Host__ ce doit être obligatoirement par répertoire, donc pour limite l'accès à l'ensemble je dois bloqué à dans la répertoire **racine**. 
+
+    Mais que ce passe t il si je ne suis pas les directives de positionnement de la configuration ? Voici un exemple de configuration erroné , j'ai définie l'instruction suivante directement dans le __VirtualHost__:
+
+        $ cat /etc/apache2/sites-available/000-default.conf | grep -C 2 Require
+           DocumentRoot /data/www
+
+           Require  ip 192.168.100 192.168.42.42
+
+           <Directory /data/www/>
+              Options Indexes FollowSymLinks
+
+        $ sudo apachectl configtest
+        AH00526: Syntax error on line 14 of /etc/apache2/sites-enabled/000-default.conf:
+        Require not allowed here
+        Action 'configtest' failed.
+        The Apache error log may have more information.
+
+    Ceci est clairement un avantage d'avoir un message aussi claire ayant utilisé la commande , **apachectl configtest** j'ai eu l'information du problème SANS aucune interruption du service.
+
+
+Nous avons couvert 3 des 4 contexte décrit plus tôt , celui qui manque est le contexte **.htaccess**
+TODO : ICI !! 
 
 * Référence 
     * [http://httpd.apache.org/docs/current/fr/mod/directive-dict.html#Context](http://httpd.apache.org/docs/current/fr/mod/directive-dict.html#Context)
     * [http://httpd.apache.org/docs/current/fr/sections.html](http://httpd.apache.org/docs/current/fr/sections.html)
 
+## <a name="context_htaccess" /> Organisation de la configuration (context)
 
 ## <a name="VirtualHost" /> VirtualHost
 
 # <a name="auth_local_access" /> Autorisation d'accès avec authentification local
 
-Nous allons maintenant revoir notre configuration pour l'accès au répertoire admin , au lieu d'utiliser un système de limitation par adresse ip, nous allons mettre en place une authentification local. La limitation par adresse ip c'est bien, malheureusement quand nous sommes en mouvement nous n'avons pas toujours la même adresse ip. Nous allons utiliser le module apache [mod_authn_core](https://httpd.apache.org/docs/2.4/mod/mod_authn_core.html#authtype). 
+Nous allons maintenant revoir notre configuration pour l'accès au répertoire admin , au lieu d'utiliser un système de limitation par adresse ip, nous allons mettre en place une authentification local. La limitation par adresse ip c'est bien, malheureusement quand nous sommes en mouvement nous n'avons pas toujours la même adresse ip. Nous allons utiliser le module apache [mod\_authn\_core](https://httpd.apache.org/docs/2.4/mod/mod_authn_core.html#authtype). 
 
 Commençons par valider que ce dernier est bien chargé :
 
