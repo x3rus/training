@@ -1,8 +1,6 @@
 #!/bin/bash
 #
-# Description : Fix layout pour moodle 
-# 
-#   
+# Description : Fix layout pour moodle pour l'affichage des section <code>
 # 
 # Auteur : Boutry Thomas <thomas.boutry@x3rus.com>
 # Date de création : 2016-01-11
