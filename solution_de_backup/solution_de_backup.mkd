@@ -4,6 +4,7 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 </style>
 
 # Index  
+
 * [Introduction ](#intro) 
 * [Stratégie de sauvegarde ](#strategie) 
        * [Formulaire par client](#form_client) 
@@ -48,13 +49,14 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
            * [ Utilisation de CloneZilla](#use_clonezilla) 
 * [Quelques points pour peaufiner la solution](#la_glue_autour) 
        * [Réalisation de la sauvegarde des équipements mobile](#Sauvegarde_des_mobiles) 
+           * Android
+           * Portable GNU/Linux
        * [Mise en place d'une stratégie de la validation de sauvegarde automatique.](#Validation) 
        * [ Sauvegarde de la PS4](#bk_ps4) 
 * [Autre Méthode pour des besoins precis.](#other_technique) 
        * [lvm export](#lvm_export) 
        * [Backup de sanpshot de VM](#backup_snapshot_vmware) 
 * [Référence ](#ref) 
-
 # <a name="intro" />Introduction 
 
 La sauvegarde de donnée ou __backup__ en anglais est une chose très importante de nos jours. Combien de donnée avez vous sur votre machine qu'il ne faut surtout pas perdre ?! Que nous parlions des photos de famille, des rapports d'impôt, ... Tous est numérisés, il est important de ne pas perdre les fichiers.
