@@ -638,7 +638,79 @@ Nous allons migré la directive **Require ip 192.168.100 192.168.42.42** dans le
 
 3. J'ai du recharger la configuration d'apache afin que le fichier du __VirtualHost__ soit relue suite à la suppression de la définition **Require** 
 
-Validons le comportement , si je vais sur la page __http://Ip\_du\_server/admin/__
+Validons le comportement , si je vais sur la page __http://Ip\_du\_server/admin/__ . Mon adresse __ip__ de provenance étant 172.17.42.1 l'accès à la section privé étant autorisé uniquement depuis 192.168.100.0/24 ET 192.168.42.42 , je vais avoir le message d'erreur m'indiquant que l'accès est refusé comme précédemment.
+
+![rep_admin_pas_erreur.png](./imgs/rep_admin_pas_erreur.png)
+
+**Oupsss** la section privé est accessible , mais mais mais ... 
+
+![dont_panic.jpg](./imgs/dont_panic.jpg)
+
+Procédons par validation :
+
+1. Re-validation de la configuration du serveur
+
+        $ sudo apachectl configtest                                    
+        Syntax OK
+
+2. Validation des logs 
+
+        $ sudo tail /var/log/apache2/access.log /var/log/apache2/error.log
+        ==> /var/log/apache2/access.log <==
+        [...  OUTPUT COUPÉ ...]
+        172.17.42.1 - - [17/Feb/2016:16:58:05 -0500] "GET /admin/ HTTP/1.1" 200 295 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+
+        ==> /var/log/apache2/error.log <==
+        [...  OUTPUT COUPÉ ...]
+        [Wed Feb 17 16:45:39.294669 2016] [mpm_event:notice] [pid 53:tid 3075459712] AH00489: Apache/2.4.7 (Ubuntu) configured -- resuming normal operations
+        [Wed Feb 17 16:45:39.295596 2016] [core:notice] [pid 53:tid 3075459712] AH00094: Command line: '/usr/sbin/apache2'
+
+Aucun message d'erreur donc il y a un **bug** dans le logiciel apache, ou il y a une configuration qui n'est pas compatible avec notre configuration . Nous allons voir la définition du répertoire **admin**
+
+Regardons la définition du répertoire contenu dans le __Virtual Host__ : **/etc/apache2/sites-available/000-default.conf**
+
+        <Directory /data/www/admin >
+            Options FollowSymLinks
+            AllowOverride None
+        </Directory>
+
+Heureusement la définition est courte nous pouvons voir "rapidement" l'erreur , l'instruction **AllowOverride** est définie à **None**, ceci indique que le système apache ne regarde PAS s'il y a un fichier __.htaccess__ dans le répertoire. 
+Nous allons corriger la configuration et passer au explication par la suite, nous allons changer **None** par **AuthConfig** . Voyons le résultat :
+
+1. Fichier **/etc/apache2/sites-available/000-default.conf** :
+        
+            <Directory /data/www/admin >
+                Options FollowSymLinks
+                AllowOverride AuthConfig
+            </Directory>
+
+2. Recharge de la configuration 
+
+            $ sudo apachectl configtest && sudo /etc/init.d/apache2 reload
+
+C'est le temps de valider si maintenant c'est OK !!
+
+![rep_admin_403.png](./imgs/rep_admin_403.png)
+
+**Woot** , l'accès est bloqué, nous pouvons aussi le constater dans les logs 
+
+        $ sudo tail /var/log/apache2/access.log /var/log/apache2/error.log
+        ==> /var/log/apache2/access.log <==
+        [ ... OUTPUT COUPÉ ... ]
+        172.17.42.1 - - [17/Feb/2016:17:14:05 -0500] "GET /admin/ HTTP/1.1" 403 499 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+        ==> /var/log/apache2/error.log <==
+        [ ... OUTPUT COUPÉ ... ]
+        [Wed Feb 17 17:13:49.432389 2016] [core:notice] [pid 173:tid 3075066496] AH00094: Command line: '/usr/sbin/apache2'
+        [Wed Feb 17 17:14:05.152280 2016] [authz_core:error] [pid 176:tid 2979945280] [client 172.17.42.1:60578] AH01630: client denied by server configuration: /data/www/admin/
+
+Voyons un peu ce que permet l'instruction [AllowOverride](http://httpd.apache.org/docs/2.4/fr/mod/core.html#allowoverride).
+
+### <a name="htaccess_allowoverride" /> Permission de redéfinition des configurations
+
+L'instruction [AllowOverride](http://httpd.apache.org/docs/2.4/fr/mod/core.html#allowoverride), permet 
+
+* Référence :
+    * [https://httpd.apache.org/docs/current/howto/htaccess.html](https://httpd.apache.org/docs/current/howto/htaccess.html) 
 
 ## <a name="VirtualHost" /> VirtualHost
 
