@@ -1000,6 +1000,7 @@ Je vais donc vous présenter une solution **libre** du nom de [CloneZilla](http:
 La principe du clone ou __ghost__ d'un système est simple , indépendamment du système d'exploitation en place le logiciel lis les partitions disponible et génère un fichier avec l'intégralité de l'information. Il n'y a pas de logiciel à installé sur le système, car afin de contourner tous les problèmes de verrouillage de fichiers , pour réalisé le clone il faut démarrer le système __cloneZilla__ depuis une __clé USB__.
 
 Le nombre de partition supporté par le logiciel est significatif :
+
 * __ext2, ext3, ext4, reiserfs, reiser4, xfs, jfs, btrfs and f2fs of GNU/Linux, (2) FAT12, FAT16, FAT32, NTFS of MS Windows, (3) HFS+ of Mac OS, (4) UFS of FreeBSD, NetBSD, and OpenBSD, (5) minix of Minix, and (6) VMFS3 and VMFS5 of VMWare ESX. Therefore you can clone GNU/Linux, MS windows, Intel-based Mac OS, FreeBSD, NetBSD, OpenBSD, Minix, VMWare ESX and Chrome OS/Chromium OS, no matter it's 32-bit (x86) or 64-bit (x86-64) OS__
 
 Pour l'ensemble des systèmes de fichier mentionné ci-dessus uniquement les bloques de données réellement utilisé sont sauvegardé, pour les systèmes de fichiers non supporter le logiciel utilise la méthode **dd** qui copie l'ensemble de bloques de donnée de la partition. Ceci est une solution de contournement car la conséquence est que si la partition fait 100 __Gig__ mais uniquement 30 __Gig__ est utilisé le résultat sera de 100.
