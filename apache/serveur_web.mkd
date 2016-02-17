@@ -707,7 +707,18 @@ Voyons un peu ce que permet l'instruction [AllowOverride](http://httpd.apache.or
 
 ### <a name="htaccess_allowoverride" /> Permission de redéfinition des configurations
 
-L'instruction [AllowOverride](http://httpd.apache.org/docs/2.4/fr/mod/core.html#allowoverride), permet 
+L'instruction [AllowOverride](http://httpd.apache.org/docs/2.4/fr/mod/core.html#allowoverride), permet d'indiquer au serveur Apache de lire dans le répertoire le fichier __.htaccess__ ( ou fichier autre selon la définition de la variable [AccessFilename](http://httpd.apache.org/docs/2.4/fr/mod/core.html#accessfilename).
+
+![AllowOverride-screenshot-documentation.png](./imgs/AllowOverride-screenshot-documentation.png)
+
+Les valeurs possibles à l'instruction sont :
+
+* **ALL** ( Tous ) : Avec cette configurations Apache regarde le répertoire et l'ensemble des sous répertoire s'il y a un fichier __.htaccess__ . Si un fichier est trouvé, ce dernier est lu et toutes instructions qui peut être définie dans le contexte __.htaccess__ seront interprétés. Résultat la configuration active sera cette définie dans le fichier __.htaccess__.
+* **None** ( Rien ) : Avec cette configuration Apache ne regarde même pas s'il y a un fichier __.htaccess__ dans le répertoire
+* **AuthConfig** : Permet l'utilisation des directives d'autorisation (__AuthDBMGroupFilex__, __AuthDBMUserFile__, __AuthGroupFile__, __AuthName__, __AuthType__, __AuthUserFile__, __Require__, etc...).
+* **FileInfo** : Permet l'utilisation des directives qui contrôlent les types de documents (directives __ErrorDocument__, __ForceType__, __LanguagePriority__, __SetHandler__, __SetInputFilter__, __SetOutputFilter__, et directives du module __mod\_mime__ __Add__\* et __Remove__\*), des métadonnées des documents (__Header__, __RequestHeader__, __SetEnvIf__, __SetEnvIfNoCase__, __BrowserMatch__, __CookieExpires__, __CookieDomain__, __CookieStyle__, __CookieTracking__, __CookieName__), des directives du module __mod\_rewrite__ directives (__RewriteEngine__, __RewriteOptions__, __RewriteBase__, __RewriteCond__, __RewriteRule__), des directives du module __mod\_alias__ directives (__Redirect__, __RedirectTemp__, __RedirectPermanent__, __RedirectMatch__), et de la directive Action du module __mod\_actions__. 
+
+TODO : ICI 
 
 * Référence :
     * [https://httpd.apache.org/docs/current/howto/htaccess.html](https://httpd.apache.org/docs/current/howto/htaccess.html) 
