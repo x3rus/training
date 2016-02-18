@@ -714,11 +714,23 @@ L'instruction [AllowOverride](http://httpd.apache.org/docs/2.4/fr/mod/core.html#
 Les valeurs possibles à l'instruction sont :
 
 * **ALL** ( Tous ) : Avec cette configurations Apache regarde le répertoire et l'ensemble des sous répertoire s'il y a un fichier __.htaccess__ . Si un fichier est trouvé, ce dernier est lu et toutes instructions qui peut être définie dans le contexte __.htaccess__ seront interprétés. Résultat la configuration active sera cette définie dans le fichier __.htaccess__.
+
 * **None** ( Rien ) : Avec cette configuration Apache ne regarde même pas s'il y a un fichier __.htaccess__ dans le répertoire
+
 * **AuthConfig** : Permet l'utilisation des directives d'autorisation (__AuthDBMGroupFilex__, __AuthDBMUserFile__, __AuthGroupFile__, __AuthName__, __AuthType__, __AuthUserFile__, __Require__, etc...).
+
 * **FileInfo** : Permet l'utilisation des directives qui contrôlent les types de documents (directives __ErrorDocument__, __ForceType__, __LanguagePriority__, __SetHandler__, __SetInputFilter__, __SetOutputFilter__, et directives du module __mod\_mime__ __Add__\* et __Remove__\*), des métadonnées des documents (__Header__, __RequestHeader__, __SetEnvIf__, __SetEnvIfNoCase__, __BrowserMatch__, __CookieExpires__, __CookieDomain__, __CookieStyle__, __CookieTracking__, __CookieName__), des directives du module __mod\_rewrite__ directives (__RewriteEngine__, __RewriteOptions__, __RewriteBase__, __RewriteCond__, __RewriteRule__), des directives du module __mod\_alias__ directives (__Redirect__, __RedirectTemp__, __RedirectPermanent__, __RedirectMatch__), et de la directive Action du module __mod\_actions__. 
 
-TODO : ICI 
+* **Indexes** : Permet l'utilisation des directives qui contrôlent l'indexation des répertoires (__AddDescription__, __AddIcon__, __AddIconByEncoding__, __AddIconByType__, __DefaultIcon__, __DirectoryIndex__, __FancyIndexing__, __HeaderName__, __IndexIgnore__, __IndexOptions__, __ReadmeName__, etc...)
+
+* **Limit** : Permet l'utilisation des directives contrôlant l'accès au serveur (__Allow__, __Deny__ et __Order__).
+
+* **Nonfatal=[Override|Unknown|All]** : Permet d'utiliser l'option __AllowOverride__ pour rendre les erreurs de syntaxe non fatales dans les fichiers __.htaccess__ : au lieu de causer une __Internal Server Error__, les directives non autorisées ou non reconnues seront ignorées et un avertissement enregistré dans le journal :
+    * __Nonfatal=Override__ rend les directives interdite par __AllowOverride__ non fatales.
+    * __Nonfatal=Unknown__ rend les directives inconnues non fatales. Sont concernées les erreurs de frappe et les directives implémentées par un module non chargé.
+    * __Nonfatal=All__ rend toutes les directives précédentes non fatales.
+    * **Notez qu'une erreur de syntaxe dans une directive valide causera toujours une internal server error.**
+
 
 * Référence :
     * [https://httpd.apache.org/docs/current/howto/htaccess.html](https://httpd.apache.org/docs/current/howto/htaccess.html) 
