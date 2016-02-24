@@ -739,10 +739,24 @@ Si nous reprenons notre exemple de limitation d'accès par adresse IP, nous avon
 Dans le cadre de la configuration __AuthConfig__ l'option disponible est relativement spécifique et regroupe peu d'instruction , cependant si nous regardons l'instruction __FileInfo__ le nombre de commande est plus significatif. 
 Si nous désirons offrir l'option au développeur d'avoir la main sur la configuration pour redéfinir par exemple les documents d'erreur, pour que le message d'erreur soit personnalisé avec une belle image et un jolie texte. Pour réaliser cette opération le développeur voudra modifier l'instruction  [ErrorDocument](https://httpd.apache.org/docs/2.4/fr/mod/core.html#errordocument), et nous devrons permettre la surdéfinition dans __AllowOverride__ avec l'instruction **FileInfo**. Le développeur aura donc beaucoup plus d'instruction disponible que __ErrorDocument__. 
 
-TODO : ICI ICI ICI
+Depuis la version **2.4** d'apache il est possible d'être plus spécifique sur les instructions utilisable dans le fichier __.htaccess__. Il fut introduit la directive [AllowOverrideList](http://httpd.apache.org/docs/2.4/fr/mod/core.html#allowoverridelist), elle permet de lister uniquement les instructions disponible dans le fichier __.htaccess__ . Si nous reprenons notre besoin de pouvoir surdéfinir l'option [ErrorDocument](https://httpd.apache.org/docs/2.4/fr/mod/core.html#errordocument), mais que nous désirons UNIQUEMENT cette instruction nous pourrions la définir comme suit :
 
+        AllowOverride None
+        AllowOverrideList ErrorDocument
 
-Avec la version **2.4** d'apache il est possible d'être plus spécifique sur les instructions utilisable dans le fichier
+Dans cette exemple , aucune configuration peut être redéfinit dans le fichier __.htaccess__, à l'exception de la directive __ErrorDocument__ .
+
+**Prendre note que AllowOverride ET AllowOverrideList sont combinatoire**.
+En d'autre mot si j'ai l'instruction suivante : 
+
+        AllowOverride AuthConfig
+        AllowOverrideList ErrorDocument
+ 
+Je serai en mesure d'utiliser les instructions : __ErrorDocument__ + __AuthDBMGroupFilex__, __AuthDBMUserFile__, __AuthGroupFile__, __AuthName__, __AuthType__, __AuthUserFile__, __Require__, etc...
+
+## <a name="utilisation_de_htaccess" /> Bonne pratique de l'utilisation du fichier .htaccess
+
+TODO : Prendre le texte ici https://httpd.apache.org/docs/current/fr/howto/htaccess.html
 
 * Référence :
     * [https://httpd.apache.org/docs/current/howto/htaccess.html](https://httpd.apache.org/docs/current/howto/htaccess.html) 
