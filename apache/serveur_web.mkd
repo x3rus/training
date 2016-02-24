@@ -731,6 +731,18 @@ Les valeurs possibles à l'instruction sont :
     * __Nonfatal=All__ rend toutes les directives précédentes non fatales.
     * **Notez qu'une erreur de syntaxe dans une directive valide causera toujours une internal server error.**
 
+* **Options[=Option,...]** : Permet l'utilisation des directives contrôlant les fonctionnalités spécifiques d'un répertoire (__Options__ et __XBitHack__). "Options" doit être suivi d'un signe "égal", puis d'une liste d'options séparées par des virgules (pas d'espaces) ; ces options doivent être définies à l'aide de la commande [Options](http://httpd.apache.org/docs/2.4/fr/mod/core.html#options). 
+
+
+Si nous reprenons notre exemple de limitation d'accès par adresse IP, nous avons définie dans le fichier __.htaccess__ l'instruction  [Require](https://httpd.apache.org/docs/2.4/mod/mod_authz_core.html#require). Afin que le fichier de sur définition des configuration soit interprété nous avons changer la valeur de l'instruction **AllowOverride** de __None__ (Rien) à __AuthConfig__ . Nous aurions aussi pu définit l'instruction à __ALL__ (Tous) dans cette situation nous serions en mesure de mettre non seulement des instructions de limitation d'authentification mais aussi des configurations général du système. Un peu plus tard je réaliserai une démonstration du risque de cette possibilité. 
+
+Dans le cadre de la configuration __AuthConfig__ l'option disponible est relativement spécifique et regroupe peu d'instruction , cependant si nous regardons l'instruction __FileInfo__ le nombre de commande est plus significatif. 
+Si nous désirons offrir l'option au développeur d'avoir la main sur la configuration pour redéfinir par exemple les documents d'erreur, pour que le message d'erreur soit personnalisé avec une belle image et un jolie texte. Pour réaliser cette opération le développeur voudra modifier l'instruction  [ErrorDocument](https://httpd.apache.org/docs/2.4/fr/mod/core.html#errordocument), et nous devrons permettre la surdéfinition dans __AllowOverride__ avec l'instruction **FileInfo**. Le développeur aura donc beaucoup plus d'instruction disponible que __ErrorDocument__. 
+
+TODO : ICI ICI ICI
+
+
+Avec la version **2.4** d'apache il est possible d'être plus spécifique sur les instructions utilisable dans le fichier
 
 * Référence :
     * [https://httpd.apache.org/docs/current/howto/htaccess.html](https://httpd.apache.org/docs/current/howto/htaccess.html) 
