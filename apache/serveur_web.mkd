@@ -869,7 +869,78 @@ Démonstration avec un nom comme alias :
 
 Maintenant que nous avons 2 adresses IP même 3 :P , nous allons pouvoir définir un serveur virtuel sur l'IP 172.17.0.1 ET 172.17.0.10 ou 172.17.0.5.
 
+**ATTENTION** : j'ai réalisé la configuration d'IP de manière éphémère , en effet lors du prochain redémarrage la machine n'aura plus que son IP principale . Pour réaliser cette configuration permanente valider avec la distribution que vous utilisez , pour Ubuntu voici un lien [Configuration IP alias](TODO : ajouter le lien).
 
+
+Nous allons précéder à la réalisation du premier __VitualHost__ pour l'IP 172.17.0.1 , nous l'appellerons le site A :P (l'inspiration n'est pas présent aujourd'hui :P). Suivant le principe d'Ubuntu / Debian , nous allons créer le fichier sous le répertoire **/etc/apache2/sites-available** , en utilisant un nom significatif.
+
+        $ cat /etc/apache2/sites-available/siteA.conf
+        <VirtualHost 172.17.0.1:80>
+                ServerAdmin webmaster@localhost
+                DocumentRoot /data/vhosts/siteA
+
+                <Directory /data/vhosts/siteA>
+                        Options Indexes FollowSymLinks
+                        AllowOverride None
+                        Require all granted
+                </Directory>
+        </VirtualHost>
+
+Nous gardons ça au plus simple , comme vous pouvez le constater , la première ligne contient l'adresse IP ET le port d'écoute.
+Je vais faire la même opération pour le site B .
+
+        $ cat /etc/apache2/sites-available/siteB.conf
+        <VirtualHost 172.17.0.10:80>
+                ServerAdmin webmaster@localhost
+                DocumentRoot /data/vhosts/siteB
+
+                <Directory /data/vhosts/siteB>
+                        Options Indexes FollowSymLinks
+                        AllowOverride None
+                        Require all granted
+                </Directory>
+        </VirtualHost>
+
+En gros nous retrouvons la même configuration avec 2 répertoire racine distincts
+
+* __/data/vhosts/siteA__
+* __/data/vhosts/siteB__
+
+Nous allons activer les fichiers de configuration , toujours en suivant le principe d'Ubuntu en réalisant un lien symbolique du répertoire **/etc/apache2/sites-enabled** vers les fichiers contenu dans le répertoire **/etc/apache2/sites-available**.
+
+        $ cd /etc/apache2/sites-enabled
+        $ sudo ln -s ../sites-available/siteA.conf .
+        $ sudo ln -s ../sites-available/siteB.conf .
+
+Réalisons une validation syntaxique des fichiers de configuration afin de s'assurer que nous n'avons pas fait d'erreur.
+
+        $ sudo apachectl configtest
+        AH00112: Warning: DocumentRoot [/data/vhosts/siteA] does not exist
+        AH00112: Warning: DocumentRoot [/data/vhosts/siteB] does not exist
+        
+        Syntax OK
+
+Je voulais profiter de l'occasion pour vous démontrer l'avantage d'utiliser le système de validation d'apache, il est en mesure de nous identifier des problèmes. Dans le cas présent les répertoires des sites web ne sont pas présent. Nous allons donc procéder à la réalisation des répertoires ainsi que la création d'un fichier d'index pour nous permettre d'identifier les 2 sites.
+
+        $ sudo mkdir -p /data/vhosts/siteA
+        $ sudo mkdir -p /data/vhosts/siteB
+
+        $ cat /data/vhosts/siteA/index.html
+        Le site A
+        $ cat /data/vhosts/siteB/index.html
+        Le site B
+
+Une petite validation syntaxique pour la route ...
+
+        $ sudo apachectl configtest
+        Syntax OK
+
+
+Nous pouvons démarrer le service :
+
+        $ sudo /etc/init.d/apache2 restart
+
+TODO : ICI ICI ICI
 ## <a name="Vhost_name_base"> Serveurs virtuels par Nom
 # <a name="performance" /> Performance et analyse d'apache
 
