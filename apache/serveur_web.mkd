@@ -781,5 +781,99 @@ Il y a deux raisons principales d'éviter l'utilisation des fichiers __.htaccess
 
 # <a name="VirtualHost" /> VirtualHost
 
+Le principe du [VirtualHost](http://httpd.apache.org/docs/2.4/fr/vhosts/) est de permettre sur la même instance apache d'offrir plusieurs site web . Apache a été le précurseur des serveurs proposant cette méthode de serveurs virtuels basés sur les adresses IP, ce qui a grandement aidé à ça popularité.
+
+Il existe 2 type de __VirtualHost__ :
+
+* **Basé sur l'IP** (IP Base) : Comme l'indique le terme par IP, le serveur doit disposer de différentes paires adresses IP/port pour chaque serveur virtuel par IP. La machine peut posséder plusieurs connexions physiques au réseau, ou utiliser des interfaces virtuelles qui sont supportées par la plupart des systèmes d'exploitation modernes (Consultez la documentation des systèmes d'exploitation pour plus de détails, notamment les "alias IP" et la commande "ifconfig" pour les activer), et/ou utiliser plusieurs numéros de port.
+Selon la terminologie du serveur HTTP Apache, l'utilisation d'une seule adresse IP avec plusieurs ports TCP s'apparente aussi à de l'hébergement virtuel basé sur IP.
+* **Basé sur le nom** (__Name__ Base) : Les serveurs virtuels par IP utilisent l'adresse IP de la connexion afin de déterminer quel serveur virtuel doit répondre. Par conséquent, vous devez disposer d'adresses IP différentes pour chaque serveur.
+Avec un hébergement virtuel par nom, le serveur s'appuie sur les informations transmises par le client dans les en-têtes HTTP de ses requêtes. La technique présentée ici vous permet de disposer de serveurs virtuels différents partagés sur une même adresse IP.
+
+Avec la pénurie d'adresse IP disponible sur internet l'utilisation des __virtual host__ IP base sont de moins en moins utilisées surtout pour les sites web (sans chiffrement __https__). 
+
+Voyons comment configurer les 2 types, vous allez constater que ceci est très similaire :).
+
+## <a name="Vhost_ip"> Serveurs virtuels par IP
+
+Pour pouvoir définir un __VirtualHost__ IP base il faut avoir plusieurs IP, sinon vous utiliser des serveurs virtuel basé sur le nom. Conceptuellement des __VirtualHost__ basé sur le port de connexion sont considéré comme des __VirtualHost__ IP base, j'en fait mention cependant dans le feu de l'action sur la configuration nous ne constatons pas la différence.
+
+Si vous utilisez le docker __x3rus/linux202__ par défaut :
+
+        $ sudo ifconfig
+          eth0      Link encap:Ethernet  HWaddr 02:42:ac:11:00:01  
+                    inet addr:172.17.0.1  Bcast:0.0.0.0  Mask:255.255.0.0
+                    inet6 addr: fe80::42:acff:fe11:1/64 Scope:Link
+                    UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+                    RX packets:547 errors:0 dropped:0 overruns:0 frame:0
+                    TX packets:322 errors:0 dropped:0 overruns:0 carrier:0
+                    collisions:0 txqueuelen:0 
+                    RX bytes:48132 (48.1 KB)  TX bytes:49572 (49.5 KB)
+
+          lo        Link encap:Local Loopback  
+                    inet addr:127.0.0.1  Mask:255.0.0.0
+                    inet6 addr: ::1/128 Scope:Host
+                    UP LOOPBACK RUNNING  MTU:65536  Metric:1
+                    RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+                    TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+                    collisions:0 txqueuelen:0 
+                    RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+Comme vous pouvez le constater il n'y a qu'une adresse IP de définie (172.17.0.1), nous allons ajouter l'IP 172.17.0.10.
+Nous allons ajouter cette IP, comme une IP alias sur la carte eth0, nous allons lui donner le nom **eth0:1**, c'est la méthode la plus commune. Pour information nous aurions très bien pu aussi définir l'alias avec un nom telle que **eth0:moodle**. Je vais faire la démonstration aussi.
+
+        $ sudo ifconfig eth0:1 172.17.0.10
+        $ sudo ifconfig 
+          eth0      Link encap:Ethernet  HWaddr 02:42:ac:11:00:01  
+                    inet addr:172.17.0.1  Bcast:0.0.0.0  Mask:255.255.0.0
+                    inet6 addr: fe80::42:acff:fe11:1/64 Scope:Link
+                    UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+                    RX packets:547 errors:0 dropped:0 overruns:0 frame:0
+                    TX packets:322 errors:0 dropped:0 overruns:0 carrier:0
+                    collisions:0 txqueuelen:0 
+                    RX bytes:48132 (48.1 KB)  TX bytes:49572 (49.5 KB)
+
+          eth0:1    Link encap:Ethernet  HWaddr 02:42:ac:11:00:01
+                    inet addr:172.17.0.10  Bcast:172.17.255.255  Mask:255.255.0.0
+                    UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+
+          lo        Link encap:Local Loopback  
+                    inet addr:127.0.0.1  Mask:255.0.0.0
+                    inet6 addr: ::1/128 Scope:Host
+                    UP LOOPBACK RUNNING  MTU:65536  Metric:1
+                    RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+                    TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+                    collisions:0 txqueuelen:0 
+                    RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+Démonstration avec un nom comme alias :
+
+        $ sudo ifconfig eth0:moodle 172.17.0.5
+          eth0      Link encap:Ethernet  HWaddr 02:42:ac:11:00:01  
+                    inet addr:172.17.0.1  Bcast:0.0.0.0  Mask:255.255.0.0
+                    inet6 addr: fe80::42:acff:fe11:1/64 Scope:Link
+                    UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+                    RX packets:547 errors:0 dropped:0 overruns:0 frame:0
+                    TX packets:322 errors:0 dropped:0 overruns:0 carrier:0
+                    collisions:0 txqueuelen:0 
+                    RX bytes:48132 (48.1 KB)  TX bytes:49572 (49.5 KB)
+
+          eth0:1    Link encap:Ethernet  HWaddr 02:42:ac:11:00:01
+                    inet addr:172.17.0.10  Bcast:172.17.255.255  Mask:255.255.0.0
+                    UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+
+          eth0:moodle Link encap:Ethernet  HWaddr 02:42:ac:11:00:01
+                    inet addr:172.17.0.5  Bcast:172.17.255.255  Mask:255.255.0.0
+                    UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+
+
+Maintenant que nous avons 2 adresses IP même 3 :P , nous allons pouvoir définir un serveur virtuel sur l'IP 172.17.0.1 ET 172.17.0.10 ou 172.17.0.5.
+
+
+## <a name="Vhost_name_base"> Serveurs virtuels par Nom
+# <a name="performance" /> Performance et analyse d'apache
+
+* serveur __status__
+
 TODO : ajouter l'information 
 
