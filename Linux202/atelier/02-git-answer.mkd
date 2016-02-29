@@ -1,0 +1,249 @@
+
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+# Index 
+
+# <a name="Desction" /> Description
+
+Petit exercice sur le contrôleur de révision **GIT** .
+
+## <a name="config_git" /> Configuration du client git
+
+* Définir votre nom et adresse courriel pour l'ensemble des projets **git** que votre utilisateur manipulera
+
+  * Réponse
+
+        ~$  git config --global user.name " Thomas Boutry "
+        ~$ git config --global user.email "mon_courriel@x3rus.com"
+        $ cat .gitconfig 
+        [user]
+                name = " Thomas Boutry "
+                email = mon_courriel@x3rus.com
+
+
+
+* Configurer **git** pour votre utilisateur afin qu'il utilise votre éditeur préféré (indice : votre éditeur préféré est **vim** , c'est une blague à votre convenance )
+
+  * Réponse
+
+        ~$ git config --global core.editor vim
+        $ cat .gitconfig 
+        [user]
+                name = " Thomas Boutry "
+                email = mon_courriel@x3rus.com
+        [core]
+                editor = vim
+
+## <a name="depot_public" /> Dépôt public 
+
+* Extraire depuis __github__ le dépôt suivant  : [https://github.com/x3rus/atelier_git](https://github.com/x3rus/atelier_git)
+    Note j'ai mis la page web de __github__ volontairement l'information pour cloner le dépôt est présent sur la page
+
+  * Réponse
+
+        $ git clone https://github.com/x3rus/atelier_git.git
+        Clonage dans 'atelier_git'...
+        remote: Counting objects: 50, done.
+        remote: Total 50 (delta 0), reused 0 (delta 0), pack-reused 50
+        Unpacking objects: 100% (50/50), done.
+        Vérification de la connectivité... fait.
+        $ ls atelier_git/
+        files  instruction_de_latelier.mkd  LICENSE  README.md  un_tutorial
+
+
+## <a name="work_with_repo" /> Manipulation du dépôt
+
+* Afficher l'historique des modifications (qui, quand et le message informatif) réalisé sur le dépôt . Voici un exemple du résultat , ceci n'est pas le résultat attendu mais un exemple , vous devriez avoir plusieurs lignes.
+
+        commit b7c6d7c50b4f0a79d1bd3a1a6ec33a1430792d41
+        Author: Robert Nesta (Bob) Marley <Bob@x3rus.com>
+        Date:   Tue Dec 22 17:01:16 2015 -0500
+
+        Je modifie C pour avoir un autre com
+
+
+
+  * Réponse
+          
+          /atelier_git$ git log
+
+* Créez un fichier nommé **Atelier02.txt** avec le contenu suivant 
+
+        Un peu de text 
+
+  * Réponse
+
+        $ echo "Un peu de text" > Atelier02.txt
+
+* Ajoutez dans le dépôt le fichier **Aterlier02.txt** et valider (commit) le pour qu'il soit partie intégrante du dépôt. Lors de l'ajout utiliser le message suivant : __"L'atelier 02 est pas trop mal "__
+
+
+    * Réponse 
+
+          $ git add Atelier02.txt
+          $ git status
+          Sur la branche master
+          Votre branche est à jour avec 'origin/master'.
+
+          Modifications qui seront validées :
+          (utilisez "git reset HEAD <fichier>..." pour désindexer)
+
+          nouveau fichier: Atelier02.txt
+
+          $ git commit -m " L'atelier 02 est pas trop mal "
+          [master 36c3184]  L'atelier 02 est pas trop mal
+          1 file changed, 1 insertion(+)
+          create mode 100644 Atelier02.txt
+
+* Une fois l'opération réalisée , modifier le fichier **Atelier02.txt** et amendé la dernière validation (commit) afin que ce ne soit que la nouvelle modification qui soit présent dans l'historique. Avec le message : __"L'atelier 02 est COOL :P "__
+
+    * Texte à ajouter dans Atelier02 :
+            
+            Amender un commit me permet de modifier le DERNIER commit en modifier un fichier ou le message du commit
+
+    * Réponse 
+        
+          $ git log -2
+          commit 36c318463ea7e9a894ab4a16df437a3020c1f5aa
+          Author: Thomas Boutry <mon_courriel@x3rus.com>
+          Date:   Mon Feb 29 12:54:36 2016 -0500
+
+               L'atelier 02 est pas trop mal
+
+          commit f52aa929bf9954228743e113955a4a5feaf89312
+          Author: Thomas Boutry <thomas.boutry@x3rus.com>
+          Date:   Thu Feb 11 08:56:46 2016 -0500
+
+               Fix typo dans le nom branche_pas_facile
+         $ echo "Amender un commit me permet de modifier le DERNIER commit en modifier un fichier ou le message du commit" > Atelier02.txt
+         $ git commit --amend 
+         $ git log -2
+         commit e9d1e0e18a1dd786ff4701ac9066c997056a43e7
+         Author: Thomas Boutry <mon_courriel@x3rus.com>
+         Date:   Mon Feb 29 12:54:36 2016 -0500
+
+             L'atelier 02 est COOL :P
+
+         commit f52aa929bf9954228743e113955a4a5feaf89312
+         Author: Thomas Boutry <thomas.boutry@x3rus.com>
+         Date:   Thu Feb 11 08:56:46 2016 -0500
+
+             Fix typo dans le nom branche_pas_facile
+
+## <a name="Rollback"/> Retour en arrière 
+
+* Visualiser le contenu du **commit** : b1c717f0384de9e9c7b386edcc38f5ff2c5c8071
+
+    * Réponse
+
+          $ git show b1c717f0384de9e9c7b386edcc38f5ff2c5c8071
+          commit b1c717f0384de9e9c7b386edcc38f5ff2c5c8071
+          Author: Thomas Boutry <thomas.boutry@x3rus.com>
+          Date:   Wed Feb 10 17:29:56 2016 -0500
+
+               Ajout du cover de Bob Marley & The Wailers - Babylon by Bus|:. (19-Oct-01)
+
+          diff --git a/files/ascii/Python.txt b/files/ascii/Python.txt
+          index a64a4ff..fa95f1f 100644
+          --- a/files/ascii/Python.txt
+          +++ b/files/ascii/Python.txt
+          @@ -13,3 +13,26 @@
+                  \__/      \ _ _ \|\
+                  
+                               
+                 _____________________________________________
+                 +   | B O B  M A R L E Y  &  T H E  W A I L E R S |
+                 +   | ,-------------------------------------------|
+                 +   | | .------------------. .------------------. |
+                 +   | | |                  | |   __  \ _ \ _    | |
+                 +   | | |    =\ ,~~.       | |  ( ,\  /_\ (_\   | |
+                 +   | | |     \\{_:\\      | |  _Y_/_ \_/_;_/_  | |
+                 +   | | |      \^ \V`      | | /   \ V//\(\// \ | |
+                 +   | | '------------------' '------------------' |
+                 +   | |,----------.--------,-,)-------.----------.|
+                 +   | |    |__|   | .=======_=======. |   |__|    |
+                 +   | |      ___  | |===,`. .-,`.===| |  ___      |
+                 +   | |  _  ||||| | |=='`. `;-'  `==| | |||||  _  |
+                 +   | | [_] ||||| | |==| ( (__.  |==| | ||||| [_] |
+                 +   | |,----------| |==.' __   \ ,==| |----------.|
+                 +   | |.---------.| |===`:__\__,'===| |.---------.|
+                 +   | ||(  ) (  )||_'==============='_||(  ) (  )||
+                 +   | |'---------'  \_______________/  '---------'|
+                 +   |_|___________________________________________|
+                 +   |   //:     B A B Y L O N  B Y  B U S    :\\  |
+                 +   |--+'-------.----------..----------.-------'+-|
+                 +   '--'========'---SSt---'--'---------'========'-'
+                 +
+                 
+
+* Faire un **revert** de cette modification qui ne devrait pas être présent et valider que le contenu du commit est bien supprimé 
+
+
+    * Réponse 
+    
+        $ git revert b1c717f0384de9e9c7b386edcc38f5ff2c5c8071
+        [master c99db3c] Revert " Ajout du cover de Bob Marley & The Wailers - Babylon by Bus|:. (19-Oct-01)"
+         1 file changed, 15 insertions(+), 38 deletions(-)
+          rewrite files/ascii/Python.txt (71%)
+        $ cat files/ascii/Python.txt
+
+
+## <a name="Gestion_de_branche"/> Gestion de branche 
+
+* Créez une Branche nommée **atelier02** et basculer sur cette branche
+
+* Sous cette branche faire la créer le fichier : **fichier\_from\_atelier02.sh**
+
+        #!/bin/bash
+        #
+        ##########
+        ## MAIN ##
+
+        #une commande 
+        echo "Thomas " | showkey -a 2>/dev/null | grep -v "^Press" | grep -v ^$
+
+        #une commande similaire
+        echo "Thomas" |  od -A n -t x1 |sed 's/ /\\x/g'
+
+* Ajouter et commité le fichier avec le message : " fichier qui donne de l'hexa :D "
+
+* Revenir dans la Branche **master** et commiter , normalement ce devrais être direct comme commit !
+
+* Sous la Branche master créer le fichier : __30\_caractere\_random.txt__ avec le contenu :
+
+        Voici 30 caractère random !!  : 
+        ci-dessous 
+
+* Ajouter les 30 caractère random à l'aide de la commande : 
+
+        $ strings /dev/urandom | grep -o '[[:alnum:]]' | head -n 30 | tr -d '\n' >> 30_caractere_random.txt
+
+* ajouter et commiter le fichier dans la branche **master** 
+
+* Créez une Branche nommée **branche\_pas\_facile** et basculer sur cette branche
+
+* Editer le fichier et supprimer la ligne générer des 30 caractère avec votre editeur préféré. tous en conservant le texte entré à la main.
+
+* Réutiliser la commande pour générer les chiffres random :
+
+        $ strings /dev/urandom | grep -o '[[:alnum:]]' | head -n 30 | tr -d '\n' >> 30_caractere_random.txt
+ 
+* Commiter dans votre branche **branche\_pas\_facile**
+
+* Retourner dans la branche **master** et merger les modifications depuis la branche **branche\_pas\_facile** , vous devriez avoir un conflit sur le fichier __30\_caractere\_random.txt__ .
+
+* Résolvez le conflit en conservant la valeur généré dans la branche **branche\_pas\_facile**
+
+## <a name="utilisation_serveur"> Utilisation d'un serveur Git
+
+
+* Pour cette section vous aurez besoin d'un compte sur [GitHub](http://github.com), créez ce compte ceci est gratuit :D.
+
+* Créer un dépôt sur __GitHub__ , ce dernier contiendra votre dépôt de l'atelier. Créer le dépôt public afin de ne pas avoir de frais , je vous invite à créer le dépôt **VIDE** (__empty__) afin déviter des conflits lors de la synchronisation.
+
+* Configurer votre dépôt local pour qu'il utilise votre dépôt __Github__ comme serveur remote 
+
+* Pousser votre dépôt sur Github.
