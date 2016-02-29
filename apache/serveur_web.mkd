@@ -940,8 +940,60 @@ Nous pouvons démarrer le service :
 
         $ sudo /etc/init.d/apache2 restart
 
-TODO : ICI ICI ICI
+
+Voilà si nous utilisons notre fureteur nous verrons pour les URL : http://172.17.0.1 et http://172.17.0.10 les sites web :
+
+![vhost-ip-siteA.png](./imgs/vhost-ip-siteA.png)
+![vhost-ip-siteB.png](./imgs/vhost-ip-siteB.png)
+
+Il est donc à ce point possible d'avoir N site pour chaque adresse IP disponible sur le système, car lors de la réception d'une requête HTTP apache la traitera en utilisant le fichier de configuration ayant l'IP  spécifique.
+
+Comme vous pouvez le constater alors que nous visualisions originalement la page par défaut de Ubuntu/Debian à présent nous ne voyons que le site A lorsque nous accédons à l'URL http://172.17.0.1 . Même si nous n'avons pas désactivé la configuration par défaut contenu dans le fichier **/etc/apache2/sites-enabled/000-default.conf**. Prenons un instant pour voir le contenu du fichiers : 
+
+
+        <VirtualHost *:80>
+                ServerAdmin webmaster@localhost
+                DocumentRoot /data/www
+                <Directory /data/www/>
+                    Options Indexes FollowSymLinks
+                    AllowOverride None
+                    Require all granted
+                </Directory>
+                <Directory /data/www/admin >
+                    Options FollowSymLinks
+                    AllowOverride AuthConfig
+                </Directory>
+                ErrorLog ${APACHE_LOG_DIR}/error.log
+                CustomLog ${APACHE_LOG_DIR}/access.log combined
+        </VirtualHost>
+
+L'instruction __VirtualHost__ est composé avec une astérisque et le port (*:80) ce qui indique que ce serveur virtuel est valide pour toute les adresses IP sur le port 80. Comme nous avons été plus spécifique en indiquant les __VirtualHost__ avec des IP ces derniers ont priorités.
+
+
 ## <a name="Vhost_name_base"> Serveurs virtuels par Nom
+
+Telle que mentionné dans l'introduction malheureusement avec le nombre d'adresse IP (IPv4) restreint disponible sur internet il est compliqué d'avoir une adresse IP par site. 
+Avec un hébergement virtuel par nom, le serveur s'appuie sur les informations transmises par le client dans les en-têtes HTTP de ses requêtes. La technique présentée ici vous permet de disposer de serveurs virtuels différents partagés sur une même adresse IP.
+
+L'hébergement virtuel par nom est habituellement plus simple, car il vous suffit de configurer votre serveur __DNS__ pour que chaque domaine pointe sur l'adresse IP dont vous disposez, et de configurer votre serveur Apache HTTP afin qu'il reconnaisse ces domaines. Il réduit aussi la pénurie en adresses IP. Par conséquent, vous devriez utiliser l'hébergement virtuel par nom, sauf dans le cas où vous utiliseriez des équipements qui nécessitent un hébergement basé sur IP. Les raisons historiques de l'hébergement basé sur IP dans un but de support de certains clients ne s'appliquent plus à un serveur web d'usage général.
+
+**Processus de traitement des requêtes**
+
+Il est important de savoir que la première étape de la résolution de serveur virtuel basée sur le nom est une résolution basée sur IP. La résolution de serveur virtuel basée sur le nom ne fait que choisir le serveur virtuel basé sur le nom le plus approprié, en se limitant aux candidats qui conviennent le mieux du point de vue IP. La résolution basée sur IP est sans objet si l'on utilise un caractère générique (*) pour l'adresse IP dans toutes les directives __VirtualHost__.
+
+A l'arrivée d'une requête, le serveur va rechercher l'argument de section __<VirtualHost>__ présentant la meilleure (la plus exacte) correspondance avec la paire adresse IP/port utilisée dans la requête. Si plusieurs serveurs virtuels possèdent cette même paire adresse IP/port, Apache va ensuite comparer les valeurs des directives __ServerName__ et __ServerAlias__ avec le nom de serveur présent dans la requête.
+
+Si vous ne définissez pas de directive __ServerName__ pour un serveur virtuel à base de nom, le serveur utilisera par défaut le nom de domaine entièrement qualifié (__FQDN__) déduit du nom d'hôte système. Cette configuration sans nom de serveur explicite peut conduire à des erreurs de choix du serveur virtuel à utiliser et est déconseillée.
+
+Bon c'est la partie théorique avec une grande explication directement de la [documentation du site d'Apache](http://httpd.apache.org/docs/2.4/fr/vhosts/name-based.html)
+
+**Note version antérieure :** Avant la version 2.4 vous devez spécifier les adresses IP qui vont être utilisé avec des serveurs virtuel basé sur le nom avec l'instruction [NameVirtualHost](http://httpd.apache.org/docs/2.2/mod/core.html#namevirtualhost)
+
+
+
+* Référence : http://httpd.apache.org/docs/2.4/fr/vhosts/name-based.html
+
+# <a name="organisation" /> Organisation des sites web
 # <a name="performance" /> Performance et analyse d'apache
 
 * serveur __status__
