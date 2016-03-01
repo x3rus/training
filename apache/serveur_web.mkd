@@ -947,7 +947,7 @@ Voilà si nous utilisons notre fureteur nous verrons pour les URL : http://172.1
 ![vhost-ip-siteB.png](./imgs/vhost-ip-siteB.png)
 
 Il est donc à ce point possible d'avoir N site pour chaque adresse IP disponible sur le système, car lors de la réception d'une requête HTTP apache la traitera en utilisant le fichier de configuration ayant l'IP  spécifique.
-
+G
 Comme vous pouvez le constater alors que nous visualisions originalement la page par défaut de Ubuntu/Debian à présent nous ne voyons que le site A lorsque nous accédons à l'URL http://172.17.0.1 . Même si nous n'avons pas désactivé la configuration par défaut contenu dans le fichier **/etc/apache2/sites-enabled/000-default.conf**. Prenons un instant pour voir le contenu du fichiers : 
 
 
@@ -990,6 +990,59 @@ L'hébergement virtuel par nom est habituellement plus simple, car il vous suffi
 * Maintenant ma version :P , à vous de choisir la plus claire.
     Lorsque le client utilisant son fureteur réalise une requête vers le site web , la première étape est la résolution __DNS__, si nous prenons le site __www.x3rus.com__ la résolution donnera l'IP : 198.100.146.119 . Le serveur apache doit avoir un serveur Virtuel configurer sur cette adresse IP. Ce peut être avec l'IP spécifier telle que __<VirtualHost 198.100.146.119:80>__ou une configuration plus général à l'aide d'un __wildcard__ __<VirtualHost *:80>__. 
     Si le serveur apache reçoit une requête pour le __VirtualHost__ avec l'adresse IP et constater qu'il y a plusieurs définition pour ce même __VirtualHost__ comme le système ne sait pas pour quelle site la requête est destiné il regarde l'entête de la requête . En effet quand le fureteur a transmis la requête sur internet en plus d'utiliser l'IP pour rejoindre le serveur il a aussi demande __www.x3rus.com__. Apache va donc lire les fichiers de configuration des __VirtualHost__  à la recherche du nom du site. Il va chercher 2 variable [ServerName](http://httpd.apache.org/docs/2.4/fr/mod/core.html#servername) qui est unique et [ServerAlias](http://httpd.apache.org/docs/2.4/fr/mod/core.html#serveralias) cette entré permet de définir plusieurs nom au serveur virtuel. Le système fournis le site le plus spécifique , s'il ne trouve pas le nom du site dans l'ensemble des fichiers de configuration concordant à l'IP il fournira un des serveurs virtuel selon le chargement des fichiers.
+
+Réalisons un petit exemple pour avoir un peu de pratique.
+
+Nous allons créer des serveurs virtuel basé sur le nom pour l'adresse IP __172.17.0.1__ , nous réaliserons quelques testes avec l'autre adresse IP pour démontrer la différence de traitement.
+
+Commençons par associer un nom de serveur virtuel au site A, j'édite donc le fichier **/etc/apache2/sites-available/siteA.conf**
+
+        $ cat  siteA.conf
+        <VirtualHost 172.17.0.1:80>
+            ServerAdmin webmaster@localhost
+
+            ServerName www.linux202-siteA.com
+            ServerAlias linux202-siteA.com
+            ServerAlias toto.linux202-siteA.com
+
+            DocumentRoot /data/vhosts/siteA
+
+            <Directory /data/vhosts/siteA>
+                Options Indexes FollowSymLinks
+                AllowOverride None
+                Require all granted
+            </Directory>
+        </VirtualHost>
+
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+
+Si nous utilisons un fureteur pour voir le site web nous aurons une erreur car il n'y a pas de __DNS__ associé a ce nom , nous allons donc modifier notre fichier **/etc/hosts** pour "simuler" la résolution de nom . Ce changement  est doit être réaliser sur la machine **cliente** qui à le fureteur pour consulter les pages web. Et ceci est uniquement une solution de contournement car malheureusement je n'ai pas gagné au loto je n'ai acheter des nom de domaines pour la formation ;-).
+
+Donc avant le changement du fichier **/etc/hosts** :
+
+        client $ ping www.linux202-siteA.com
+        ping: unknown host www.linux202-siteA.com
+        client $ vim /etc/hosts
+        client $ cat /etc/hosts
+        $ cat /etc/hosts
+        #
+        # /etc/hosts: static lookup table for host names
+        #
+
+        #<ip-address>   <hostname.domain.org>   <hostname>
+        127.0.0.1       localhost.localdomain   localhost
+        ::1             localhost.localdomain   localhost
+
+        172.17.0.1      www.linux202-siteA.com linux202-siteA.com toto.linux202-siteA.com
+        client $ ping www.linux202-siteA.com
+        PING www.linux202-siteA.com (172.17.0.1) 56(84) bytes of data.
+        64 bytes from www.linux202-siteA.com (172.17.0.1): icmp_seq=1 ttl=64 time=0.102 ms
+
+
+Suite à ce petit changement si nous retentons une connexion avec le fureteur nous aurons la __page siteA__ de disponible
+
+![vhost-ip-siteA-avec_nom.png](./imgs/vhost-ip-siteA-avec_nom.png)
+
 
 **Note version antérieure :** Avant la version 2.4 vous devez spécifier les adresses IP qui vont être utilisé avec des serveurs virtuel basé sur le nom avec l'instruction [NameVirtualHost](http://httpd.apache.org/docs/2.2/mod/core.html#namevirtualhost)
 
