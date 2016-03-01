@@ -1043,10 +1043,113 @@ Suite à ce petit changement si nous retentons une connexion avec le fureteur no
 
 ![vhost-ip-siteA-avec_nom.png](./imgs/vhost-ip-siteA-avec_nom.png)
 
+Jusqu'ici tout va bien le système fonctionne comme prévus , cependant telle que mentionné plus tôt nous ne somme en serveur virtuelle basé sur nom uniquement s'il y a plusieurs définition du même __VirtualHost__ avec la même IP. Dans notre cas nous n'avons que le __siteA__ avec la définition de l'IP 172.17.0.1 . Nous allons donc procéder à la création du __siteC__, commençons par le fichier de configuration **/etc/apache2/sites-available/siteC.conf**.
+
+        $ cat siteC.conf
+        <VirtualHost 172.17.0.1:80>
+                ServerAdmin webmaster@localhost
+
+                ServerName www.siteC.com
+                ServerAlias siteC.com
+
+                DocumentRoot /data/vhosts/siteC
+
+                <Directory /data/vhosts/siteC>
+                    Options Indexes FollowSymLinks
+                    AllowOverride None
+                    Require all granted
+                </Directory>
+        </VirtualHost>
+
+Nous allons procéder à la création du répertoire du site et la petite page d'index pour visualisé le site.
+
+        $ sudo mkdir /data/vhosts/siteC
+        $ cat /data/vhosts/siteC/index.html
+        Le site C
+
+Activation de la configuration , validation de cette dernière et rechargement de la configuration d'apache.
+
+        $ cd /etc/apache2/sites-enabled
+        $ sudo ln -s ../sites-available/siteC.conf .
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+
+Ceci été pour la partie serveur , nous allons modifier le fichier **/etc/hosts** de notre machine client afin de simuler la résolution __DNS__.
+
+        $ sudo vim /etc/hosts
+        $ cat /etc/hosts
+        #
+        # /etc/hosts: static lookup table for host names
+        #
+
+        #<ip-address>   <hostname.domain.org>   <hostname>
+        127.0.0.1       localhost.localdomain   localhost
+        ::1             localhost.localdomain   localhost
+
+        172.17.0.1      www.linux202-siteA.com linux202-siteA.com toto.linux202-siteA.com
+        172.17.0.1      www.siteC.com siteC.com 
+        $ ping siteC.com
+        PING www.siteC.com (172.17.0.1) 56(84) bytes of data.
+        64 bytes from www.linux202-siteA.com (172.17.0.1): icmp_seq=1 ttl=64 time=0.102 ms
+
+Validons à présent avec un navigateur ....
+
+![vhost-ip-siteC-avec_nom.png](./imgs/vhost-ip-siteC-avec_nom.png)
+
+**Woww** magie !!
+
+Rappel rapide du processus, de sélection de configuration 
+
+1. Le client via le fureteur à demandé la site __www.siteC.com__ 
+2. Le fureteur à réaliser une résolution __DNS__ afin de pouvoir communiquer sur Internet et transmettre le paquet vers le bon serveur web.
+3. Le serveur apache à reçu la requête sur l'adresse IP 172.17.0.1 
+4. Il a constater qu'il y avait 2 configuration pour cette même adresse IP contenue dans le fichier **/etc/apache2/sites-enabled/siteA.conf** et **/etc/apache2/sites-enabled/siteC.conf**.
+5. Le système apache à donc analyser le contenu de la requête client afin d'identifier dans l'entête des paquets HTTP (conformément au protocole __http__) quelle nom de site fut demandé.
+6. Avec cette information apache à tenté de trouvé ce nom de domaine dans la définition des serveurs virtuels en interrogeant les directives __ServerName__ et __ServeurAlias__ dans les fichiers **/etc/apache2/sites-enabled/siteA.conf** et **/etc/apache2/sites-enabled/siteC.conf**.
+7. Apache a trouvé dans le fichier  **/etc/apache2/sites-enabled/siteC.conf** la définition dans l'instruction __ServerName www.siteC.com__ 
+8. Apache à donc consulter les fichier du site définie dans le __DocumentRoot__ soit __/data/vhosts/siteC__, trouvé le fichier __index.html__ et transmis au fureteur.
+
+Super ça , mais s'il avait pas trouvé d'entré __ServerName__ et __ServerAlias__ ?!?! 
+
+Réalisons le teste, car ceci est important c'est une erreur commune :P .
+
+Je vais éditer le fichier __/etc/hosts__ pour simulé une autre résolution __DNS__ pour le nom __site-noname.com__
+
+        $ sudo vim /etc/hosts
+        $ cat /etc/hosts
+        #
+        # /etc/hosts: static lookup table for host names
+        #
+
+        #<ip-address>   <hostname.domain.org>   <hostname>
+        127.0.0.1       localhost.localdomain   localhost
+        ::1             localhost.localdomain   localhost
+
+        172.17.0.1      www.linux202-siteA.com linux202-siteA.com toto.linux202-siteA.com
+        172.17.0.1      www.siteC.com siteC.com 
+        172.17.0.1      www.site-noname.com site-noname.com #
+        # /etc/hosts: static lookup table for host names
+        #
+
+        #<ip-address>   <hostname.domain.org>   <hostname>
+        127.0.0.1       localhost.localdomain   localhost
+        ::1             localhost.localdomain   localhost
+
+        172.17.0.1      www.linux202-siteA.com linux202-siteA.com toto.linux202-siteA.com
+        172.17.0.1      www.siteC.com siteC.com 
+        172.17.0.1      www.site-noname.com site-noname.com 
+        $ ping site-noname.com
+        PING www.site-noname.com (172.17.0.1) 56(84) bytes of data.
+
+
+Utilisons le fureteur à présent 
+
+![vhost-ip-site-noname-avec_nom.png](./imgs/vhost-ip-site-noname-avec_nom.png)
+
+Le système à choisie le premier serveur virtuel qu'il a trouvé ! Attention avec ce comportement vous pouvez avoir des surprise.
 
 **Note version antérieure :** Avant la version 2.4 vous devez spécifier les adresses IP qui vont être utilisé avec des serveurs virtuel basé sur le nom avec l'instruction [NameVirtualHost](http://httpd.apache.org/docs/2.2/mod/core.html#namevirtualhost)
 
-
+Ceci couvre la démonstration d'un serveur virtuel basé sur le nom en HTTP, nous pouvons toujours consulter le site sur l'IP 172.17.0.10 sans problème. Il est possible d'avoir une configuration mixe sur la même serveur !
 
 * Référence : http://httpd.apache.org/docs/2.4/fr/vhosts/name-based.html
 
