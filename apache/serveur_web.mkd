@@ -1154,6 +1154,165 @@ Ceci couvre la démonstration d'un serveur virtuel basé sur le nom en HTTP, nou
 * Référence : http://httpd.apache.org/docs/2.4/fr/vhosts/name-based.html
 
 # <a name="organisation" /> Organisation des sites web
+
+Maintenant que nous avons la possibilité de mettre plusieurs site web, il faut faire attention que ça ne devienne pas rapidement un gros problème de gestion. Je vais vous faire une suggestion d'organisation de structure, ceci est le fruit d'expérience de plusieurs année. J'ai rencontré des contraintes et des demandes d'utilisateurs qui m'ont amenés à mettre en place cette organisation, comme toujours libre à vous de l'adapter pour vos besoins. Je vais en profité pour couvrir d'autre configuration avec des explications pourquoi j'ai opté pour cette configuration.
+
+## <a name="organisation_rep_vhosts"/> Organisation des répertoires des serveurs virtuelle
+
+Commençons par la structure des répertoires qui hébergerons les site web. 
+Voici une représentation de la structure du répertoire :
+
+            /data/
+                 /vhost/
+                       /siteA/
+                             /docroot/
+                             /logs/
+                             /privates/
+                             /uploads/
+                       /siteB/
+                       /siteC/
+
+Prenons maintenant quelques minutes pour lire la structure , j'aime avoir l'ensemble des __VirtualHost__ sous un même répertoire. Parce que ceci me permet de définir des permissions avec l'instruction [Directory](https://httpd.apache.org/docs/2.4/fr/mod/core.html#directory) depuis la racine et ceci ce répercute sur l'ensemble des répertoires enfants. Ceci me permet d'être plus restrictif et par la suite permettre plus d'option selon le répertoire.
+
+Chaque site on la même structure encore une fois ceci simplifie la gestion par la suite :
+
+* **docroot** : Contient le site web c'est le répertoire qui sera associé à la configuration [DocumentRoot](https://httpd.apache.org/docs/2.4/mod/core.html#documentroot). Ce sera donc le répertoire racine du site.
+* **logs** : Avec le temps j'ai constaté que les développeurs web aime avoir accès au logs , que ce soit pour analyser les erreurs ou simplement voir l'activité en temps réel. Nous nous assurerons des permissions sur ce répertoire pour que ce ne soit qu'en lecture, par  mesure de précaution.
+* **privates** : Ce répertoire n'est pas accessible depuis Internet, ce répertoire peut être utilisé par le développeur pour stocké des fichiers à usage interne au serveur uniquement. Nous pourrions retrouvé par exemple un fichier de configuration pour établir une connexion à la BD. Nous ne désirons pas qu'une personne puisse récupérer ce fichier via un fureteur car il devine le nom. Je vous laisse le soin de faire un testes sur vos serveur :P . Si vous avez un fichier __config.conf__ par exemple dans le répertoire __inc__ sous la définition du __DocumentRoot__, vous constaterez que tout le monde peut l'avoir :-/. Bien entendu ce répertoire est totalement inutile si l'administrateur du site ne l'utilise pas :-/.
+* **uploads** : Ce répertoire a les permissions d'écriture à apache et permet l'écriture par l'applicatif web. Il n'est pas toujours possible de l'utiliser, car certaine applications désire l'avoir sous le __docroot__ donc faut voir selon vos applications. Je le met en place, car ceci permet tous de suite au développeur d'avoir un répertoire disponible sans prendre contact avec moi pour un changement de permission.
+
+
+Voici un petit script pour faire la création des répertoires, attention ceci est vraiment un point de départ, je vous invite à le modifier afin de rajouter la définition des permissions pour le répertoire docroot, ... Ce que je veut surtout souligner avec la création d'un script est qu'il faut tout faire pour automatiser les opérations manuel. Car si vous réalisez souvent cette opération, parfois vous ferez une erreur dans le nom du répertoire, une erreur de permissions , ...
+2 possibilités s'offre à vous , réaliser des scripts ou utiliser un système de gestion de configuration telle que [ansible](http://www.ansible.com) ou [puppet](http://puppetlabs.com), nous verrons plus tard ces systèmes ! 
+
+        #!/bin/bash
+        #
+        ##############################################
+        
+        # Vars
+        VHOSTS_BASE=/data/vhosts
+        APACHE_GROUP=www-data
+        LST_REPS_VHOSTS="docroot logs privates uploads"
+        
+        # Arguments passer sur la ligne de commande.
+        VHOST_TO_CREATE=$@
+        
+        if [ "$VHOST_TO_CREATE" == "" ]; then
+                echo "ERROR: Il n'y a pas d'argument avec un ou plusieurs site a creer "
+                echo "$0 siteA " 
+                echo "$0 siteA siteB siteC"
+                exit 1
+        fi
+        
+        for site in $VHOST_TO_CREATE
+        do
+                echo "sudo mkdir -p $VHOSTS_BASE/$site"
+                for rep in $LST_REPS_VHOSTS
+                do
+                        echo "sudo mkdir $VHOSTS_BASE/$site/$rep"
+                        if [ "$rep" == "uploads" ] ; then
+                                echo "sudo chmod g=rwX $VHOSTS_BASE/$site/$rep" 
+                                echo "sudo chown :$APACHE_GROUP $VHOSTS_BASE/$site/$rep"        
+                        fi # if uploads
+                done #for rep
+        done # for vhosts
+
+## <a name="organisation_config_vhosts"/> Configuration Apache pour les serveurs virtuels
+
+Nous avons maintenant la structure des répertoires, nous allons mettre en place la configuration apache approprié.
+
+Nous allons définir une configuration par défaut qui sera hérité par l'ensemble des sites virtuel. 
+Toujours en suivant la structure de Ubuntu/Debian nous allons définir le fichier **/etc/apache2/conf-available/vhosts_base.conf**. Nous allons y définir la configuration pour le répertoire **/data/vhosts/**.
+
+Voici le contenu du fichier : **/etc/apache2/conf-available/vhosts_base.conf**
+
+        # Configuration par default qui sera appliquer par default a l'ensemble des vhosts
+
+        <Directory /data/vhosts>
+                Options None
+                AllowOverride None
+                Require all denied
+        </Directory>
+
+Dans le cas présent je désactive l'ensemble des options , nous y reviendrons lors de la configuration d'un serveur virtuel et je désactive la possibilité d'utiliser les fichiers __.htaccess__. Ceci pour une question de performance ET de sécurité. De plus je bloque l'accès aux répertoire avec l'instruction **Require all denied** . Je réalise cette opération afin que l'on soit obligé de définir spécifiquement les répertoires accessible depuis internet .
+
+Nous activons la configuration en réalisant un lien symbolique et on valide la configuration pour être certain !
+
+        $ cd /etc/apache2/conf-enabled
+        $ sudo ln -s ../conf-available/vhosts_base.conf .
+        $ sudo apachectl configtest
+        Syntax OK
+
+Tout semble bon, nous pouvons procéder à la configuration du serveur virtuel. Toujours selon la structure d'Ubuntu nous allons faire la création du fichier **/etc/apache2/sites-available/siteA.conf**, en fait nous allons modifier le fichier déjà existant .
+
+Voici le fichier pour le __siteA__ et le __siteC__
+
+        <VirtualHost 172.17.0.1:80>
+                ServerAdmin webmaster@localhost
+
+                ServerName www.linux202-siteA.com
+                ServerAlias linux202-siteA.com
+                ServerAlias toto.linux202-siteA.com
+
+                DocumentRoot /data/vhosts/siteA/docroot/
+
+                <Directory /data/vhosts/siteA/docroot/>
+                    Options none
+                    AllowOverride None
+                    Require all granted
+                </Directory>
+
+                <Directory /data/vhosts/siteA/uploads/>
+                    Options none
+                    AllowOverride None
+                    Require all granted
+                </Directory>
+
+                # Configuration des logs
+                ErrorLog /data/vhosts/siteA/logs/error.log
+                CustomLog /data/vhosts/siteA/logs/access.log combined
+        </VirtualHost>
+
+        <VirtualHost 172.17.0.1:80>
+                ServerAdmin webmaster@localhost
+
+                ServerName www.siteC.com
+                ServerAlias siteC.com
+
+                DocumentRoot /data/vhosts/siteC/docroot/
+
+                <Directory /data/vhosts/siteC/docroot/>
+                    Options none
+                    AllowOverride None
+                    Require all granted
+                </Directory>
+
+                <Directory /data/vhosts/siteC/uploads/>
+                    Options none
+                    AllowOverride None
+                    Require all granted
+                </Directory>
+
+                # Configuration des logs
+                ErrorLog /data/vhosts/siteC/logs/error.log
+                CustomLog /data/vhosts/siteC/logs/access.log combined
+         </VirtualHost>
+
+
+Comme d'habitude avant d'aller plus loin, une validation de configuration est une bonne chose . 
+
+        $ sudo apachectl configtest
+        Syntax OK
+
+J'autorise spécifiquement les répertoires __docroot__ et __uploads__, le répertoire __uploads__ est susceptible de contenir des images ou autre document diffusé au publique donc l'autorisation est donnée. Les répertoires __privates__ et __logs__ n'étant destiné qu'a usage interne ne sont pas permis.
+
+
+* Fichier de logs / rotation des logs
+* Répertoire privers 
+* Utilisation du fichier htaccess 
+* Permission Directory 
+* Access au répertoire ecriture via Git :P / access au fichier scp , ssh , ...
+
 # <a name="performance" /> Performance et analyse d'apache
 
 * serveur __status__
