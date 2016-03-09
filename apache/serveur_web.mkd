@@ -1378,7 +1378,71 @@ Grâce à ces 2 instructions maintenant vous offrez à vos "clients" / "utilisat
 
 **ATTENTION** ce n'est pas fini , si nous laissons en l'état la configuration les fichiers __error.log__ et __access.log__ pour les serveurs virtuelles vont grossir de manière infinie. Résultat après 6 mois ou 1 an le fichier d'erreur ou d'accès fera plusieurs Gigs résultat ce sera dure à traiter. Il est important de mettre un système de rotation des logs avec une conservation de temps définie. 
 
-* Fichier de logs / rotation des logs
+GNU/Linux a le système __Logrotate__ de disponible qui est parfait pour notre besoin , il est possible de définir une règle pour la rotation de vos logs. L'ensemble des distributions offre se mécanisme de rotation , si nous prenons notre machine il y a déjà la méthode de rotation de mise en place pour les fichiers d'Apache par défaut soit **/var/log/apache2/error.log** et **/var/log/apache2/access.log**. Regardons le fichier déjà en place disponible : **/etc/logrotate.d/apache2**
+
+        $ cat /etc/logrotate.d/apache2
+        /var/log/apache2/*.log {
+                weekly
+                missingok
+                rotate 52
+                compress
+                delaycompress
+                notifempty
+                create 640 root adm
+                sharedscripts
+                postrotate
+                    if /etc/init.d/apache2 status > /dev/null ; then \
+                    /etc/init.d/apache2 reload > /dev/null; \
+                    fi;
+                endscript
+                prerotate
+                    if [ -d /etc/logrotate.d/httpd-prerotate ]; then \
+                    run-parts /etc/logrotate.d/httpd-prerotate; \
+                    fi; \
+                endscript
+         }
+
+Prenons quelques minutes pour analyser ce fichier, car  il est composé par des personnes d'expérience et c'est une bonne source de référence nous pourrons nous en inspirer pour notre besoin.
+
+* **/var/log/apache2/\*.log** : Ceci défini les fichiers qui seront traités, il est important de ne pas définir **/var/log/apache2/\*** sinon les fichiers qui auront été traités dans le passé seront traité à nouveau et ceci en boucle !
+* **weekly** : La rotation ici est exécutée une fois par semaine , il est bien entendu possible de mettre une configuration journalière (**daily**) ou par mois selon les besoins.
+* **missingok** : Le système de rotation ne va pas générer une erreur s'il n'y a pas de fichier
+* **rotate 52** : Le système va conserver les fichiers traité pendant 52 fois , comme nous avons définie une rotation hebdomadaire ceci indique que les fichiers de logs d'apache seront conservé pendant 1 an.
+* **compress** : Une fois le fichier de logs traiter ce dernier sera compressé par défaut avec __gzip__ , ceci permet d'économiser de l'espace disque , car le texte ce compresse très bien 
+* **delaycompress** : Le traitement de compression peut être long surtout si les fichiers sont volumineux. L'objectif de mettre en place un délai pour la compression est de s'assurer que l'ensemble des fichiers sont traité relativement en même temps et que par la suite ils sont compressé. Résultat si le fichier de logs d'accès est traité en premier puis le fichier d'erreur ils seront fait en même temps, ce sera plus facile de faire une corrélation des accès / erreur que si l'information est dans des fichier distinct traiter dans un temps différent.
+* **notifyempty** : Si le fichier est présent mais vide un courriel sera transmis au __root__.
+* **create 640 root adm** : Les fichiers créé par le système de rotation auront les permissions Utilisateur __root__ et groupe __adm__ avec les permissions en octal 640.
+* **sharedscripts** : Ceci indique qu'il est y a des scripts qui doivent être exécuté lors de la rotation , dans notre cas __postrotate__ et __prerotate__.
+* **postrotate** : Ceci définie une instruction qui doit être exécuter **APRÈS** la rotation de tous les fichiers . Lisons la configuration le script valide que apache est en exécution __/etc/init.d/apache2 status__ s'il est en exécution il recharge la configuration apache __/etc/init.d/apache2 reload__. Mais pourquoi ?!?! Quand apache démarre il ouvre un __File Descripteur__ sur le fichier, ceci est un pointeur vers le fichier, lors de la rotation le système __logrotate__ réalise un **move** du fichier. Si nous nous ne rechargeons pas la configuration d'Apache ceci aurait pour conséquence qu'apache continuerait d'écrire dans le fichier original donc celui traité par __logrotate__. Le processus de recharge de la configuration force apache a refaire la connexion au fichier donc prendre en charge le nouveau fichier créé par __logrotate__.
+* **prerotate** : Ceci définie une instruction qui doit être exécuter **AVANT** la rotation des fichiers, généralement nous utilisons ce mécanisme pour faire le traitement des fichiers d'accès et d'erreur avec un script fournit par notre logiciel de traitement des statistiques. Comme nos fichiers de logs sont compressé une fois la rotation réalisé il est plus facile de lire le fichier avant lors compression :D. Dans le cas présent le script valide la présence du répertoire __/etc/logrotate.d/httpd-prerotate__ et exécute l'ensemble des scripts présent dans le répertoire __run-parts /etc/logrotate.d/httpd-prerotate__.
+
+Comme nous pouvons le voir ceci donne un très bon point de départ pour débuter. Réalisons maintenant notre configuration en nous en inspirant. Nous allons créer le fichier **/etc/logrotate.d/vhosts\_apache**
+
+
+        /data/vhosts/*/logs/*.conf {
+                daily
+                missingok
+                rotate 365
+                compress
+                delaycompress
+                create 644 root adm
+                sharedscripts
+                postrotate
+                    if /etc/init.d/apache2 status > /dev/null ; then \
+                    /etc/init.d/apache2 reload > /dev/null; \
+                    fi;
+                endscript
+        }
+
+Je ne vais souligner que les changements réalisés sur les configurations, comparativement au fichier __apache2__ d'origine.
+
+* **/data/vhosts/\*/logs/\*.conf** : J'utilise un __wildcard__ (\*) afin de couvrir l'ensemble des sites web sous le répertoire **/data/vhosts** , ceci me permet de mettre en place la rotation peut importe le nombre de site présent et ainsi je suis certain de ne pas oublier la configuration. Tout comme pour la configuration par défaut je prend en considération dans la rotation que les fichiers \*.conf.
+* **daily** : Personnellement je préfère une rotation journalière surtout si vous avez un trafic important.
+* **rotate 365**: ça fait beaucoup de fichier j'ai voulu conservé les logs 1 an , libre à vous de juger de la pertinence de l'opération.
+* **notifyempty** : J'ai désactivé cette fonctionnalité, car je veux pas le savoir :P .
+* **create 644 root adm** : Ici j'ai modifier les permissions des fichiers afin de permettre à TOUS de lire le contenu, cependant UNIQUEMENT **root** peut écrire / effacer le contenu. C'est important car je veux offrir l'accès au personne pour consulter l'information , mais je ne veux surtout pas que quelqu'un puisse enlever de l'information. 
+* **prerotate** : À ce stade du déploiement je n'ai pas mis en place de traitement des fichiers donc je l'ai désactivé , si vous désirez mettre en place un logiciel de statistique il y a bien entendu __google analytic__ , mais de la monde du libre vous avez [piwigo](http://www.piwigo.com) de disponible qui est très bien.
+
 * Répertoire privers 
 * Utilisation du fichier htaccess 
 * Permission Directory 
