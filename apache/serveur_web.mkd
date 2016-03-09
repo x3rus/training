@@ -1305,7 +1305,78 @@ Comme d'habitude avant d'aller plus loin, une validation de configuration est un
         Syntax OK
 
 J'autorise spécifiquement les répertoires __docroot__ et __uploads__, le répertoire __uploads__ est susceptible de contenir des images ou autre document diffusé au publique donc l'autorisation est donnée. Les répertoires __privates__ et __logs__ n'étant destiné qu'a usage interne ne sont pas permis.
+Comme vous pouvez le constater nous avons ajouter 2 instructions : **ErrorLog** et **CustomLog** prenons quelques minutes pour les analyser.
 
+## <a name="organisation_logs_vhosts"/> Configuration des logs pour les serveurs virtuels
+
+Pour faire la gestion des logs qui est un point SUPER important si vous voulez être en mesure d'analyser le trafic d'un site web ou de visualiser les erreurs survenu sur le site.
+
+Nous avons déjà une configuration présente comme configuration par défaut :
+
+        $ grep -n ErrorLog /etc/apache2/apache2.conf 
+        122:# ErrorLog: The location of the error log file.
+        123:# If you do not specify an ErrorLog directive within a <VirtualHost>
+        128:ErrorLog ${APACHE_LOG_DIR}/error.log
+        $ egrep 'APACHE_LOG_DIR' -n /etc/apache2/envvars 
+        23:export APACHE_LOG_DIR=/var/log/apache2$SUFFIX
+
+L'instruction [ErrorLog](https://httpd.apache.org/docs/2.4/fr/mod/core.html#errorlog) permet de définir le fichier qui sera utilisé pour contenir les logs d'erreur par défaut , donc ce fichier contiendra l'ensemble des erreurs de démarrage et les logs d'erreurs des serveurs virtuel SI vous n'avez pas redéfinie cette instruction.
+
+![ErrorLog-screenshot-documentation.png](./imgs/ErrorLog-screenshot-documentation.png)
+
+Comme vous pouvez le constater cette instruction ne peut être utilisé que dans la configuration global du serveur ET / OU dans un __VirtualHost__.
+
+En le redéfinissant dans le __VirtualHost__, le fichier d'erreur de logs contiendra **uniquement** les erreurs relatif au __VirtualHost__ vous n'aurez pas les erreurs global du serveur. Vous aurez dans le fichier les erreurs telle que les 404 , les erreur 500 (problème d'exécution), les erreurs de PHP si vous utilisez ce langage , ... Ceci est très très intéressant afin d'ajuster votre site en cas de problème.
+
+Ceci étant dit j'ai définie une autre instruction qui est [CustomLog](http://httpd.apache.org/docs/current/fr/mod/mod_log_config.html#customlog), cette instruction permet de définir le fichier de log qui contiendra l'information d'accès au site , donc SANS les erreurs.
+
+![CustomLog-screenshot-documentation.png](./imgs/CustomLog-screenshot-documentation.png)
+
+Tout comme pour l'instruction d'erreur cette instruction peut être définie dans le fichier Global ou dans un __VirtualHost__.
+Si nous regardons l'instruction dans le fichier ceci est composé de 2 partie le nom du fichier et le format .
+
+        CustomLog /data/vhosts/siteA/logs/access.log combined
+
+Donc nous écrivons le fichier __/data/vhosts/siteA/logs/access.log__ avec le format **combined**. Parlons donc un peu format , 98% (c'est vraiment sortie de mon chapeau, j'ai pas de statistique réelle :P ) vous utiliserai le formant **combined**. 
+Les formats disponible sont décrit par l'instruction [Logformat](http://httpd.apache.org/docs/current/fr/mod/mod_log_config.html#logformat), regardons les formats de log pré définie sur le serveur .
+
+        $ grep "LogFormat" -n -R /etc/apache2/apache2.conf
+        207:LogFormat "%v:%p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" vhost_combined
+        208:LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined
+        209:LogFormat "%h %l %u %t \"%r\" %>s %O" common
+        210:LogFormat "%{Referer}i -> %U" referer
+        211:LogFormat "%{User-agent}i" agent
+
+Nous avons donc les formats :
+
+* vhost_combined
+* combined
+* common
+
+Si nous regardons rapidement l'instruction [Logformat](http://httpd.apache.org/docs/current/fr/mod/mod_log_config.html#logformat) pour **combined** nous avons le format :
+
+* %h : Serveur distant. Contiendra l'adresse IP si la directive HostnameLookups est définie à Off
+* %l : Le nom de connexion distant , Affiche un tiret, sauf si mod_ident est présent
+* %u : L'utilisateur distant (en provenance d'auth ; peut être faux si le statut de retour (%s) est 401).
+* %t : Date à laquelle la requête a été reçue
+* %r : La première ligne de la requête
+* %>s : Statut. Pour les requêtes redirigées en interne, il s'agit du statut de la requête *originale* --- %>s pour la dernière.
+* %O : Nombre d'octets envoyés, y compris les en-têtes. Peut être nul dans les rares cas où une requête est avortée avant que la réponse ne soit envoyée. Nécessite l'activation de mod_logio.
+* %Referer : Référence de la provenance de la requête
+* %User-Agent : Le type de client établissant la connexion  (Firefox , Chrome, windows, Linux , ...)
+
+Voici un exemple de contenu dans les logs en format __combined__:
+
+        172.17.42.1 - - [26/Feb/2016:08:43:17 -0500] "GET / HTTP/1.1" 200 3594 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+        172.17.42.1 - - [26/Feb/2016:08:43:17 -0500] "GET /icons/ubuntu-logo.png HTTP/1.1" 200 3688 "http://172.17.0.10/" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+
+Quand avez vous besoin de définir un format de log ?!?! En fait c'est très rare, généralement le besoin ce fait sentir si vous avez une informations spécifique à récupérer qui n'est pas déjà contenu dans le format __combined__. L'autre situation plus probable est quand votre logiciel de traitement des logs et de générateur de statistiques vous demande un format spécifique, ceci est cependant rare. 
+
+Grâce à ces 2 instructions maintenant vous offrez à vos "clients" / "utilisateurs" la possibilité d'avoir accès à LEUR logs !
+
+### <a name="organisation_rotation_logs_vhosts"/> Rotation des logs pour les serveurs virtuels
+
+**ATTENTION** ce n'est pas fini , si nous laissons en l'état la configuration les fichiers __error.log__ et __access.log__ pour les serveurs virtuelles vont grossir de manière infinie. Résultat après 6 mois ou 1 an le fichier d'erreur ou d'accès fera plusieurs Gigs résultat ce sera dure à traiter. Il est important de mettre un système de rotation des logs avec une conservation de temps définie. 
 
 * Fichier de logs / rotation des logs
 * Répertoire privers 
