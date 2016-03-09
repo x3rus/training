@@ -1441,7 +1441,7 @@ Je ne vais souligner que les changements réalisés sur les configurations, comp
 * **rotate 365**: ça fait beaucoup de fichier j'ai voulu conservé les logs 1 an , libre à vous de juger de la pertinence de l'opération.
 * **notifyempty** : J'ai désactivé cette fonctionnalité, car je veux pas le savoir :P .
 * **create 644 root adm** : Ici j'ai modifier les permissions des fichiers afin de permettre à TOUS de lire le contenu, cependant UNIQUEMENT **root** peut écrire / effacer le contenu. C'est important car je veux offrir l'accès au personne pour consulter l'information , mais je ne veux surtout pas que quelqu'un puisse enlever de l'information. 
-* **prerotate** : À ce stade du déploiement je n'ai pas mis en place de traitement des fichiers donc je l'ai désactivé , si vous désirez mettre en place un logiciel de statistique il y a bien entendu __google analytic__ , mais de la monde du libre vous avez [piwigo](http://www.piwigo.com) de disponible qui est très bien.
+* **prerotate** : À ce stade du déploiement je n'ai pas mis en place de traitement des fichiers donc je l'ai désactivé , si vous désirez mettre en place un logiciel de statistique il y a bien entendu __google analytic__ , mais de la monde du libre vous avez [piwik](http://www.piwik.org) de disponible qui est très bien.
 
 * Répertoire privers 
 * Utilisation du fichier htaccess 
