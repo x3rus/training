@@ -1443,6 +1443,87 @@ Je ne vais souligner que les changements réalisés sur les configurations, comp
 * **create 644 root adm** : Ici j'ai modifier les permissions des fichiers afin de permettre à TOUS de lire le contenu, cependant UNIQUEMENT **root** peut écrire / effacer le contenu. C'est important car je veux offrir l'accès au personne pour consulter l'information , mais je ne veux surtout pas que quelqu'un puisse enlever de l'information. 
 * **prerotate** : À ce stade du déploiement je n'ai pas mis en place de traitement des fichiers donc je l'ai désactivé , si vous désirez mettre en place un logiciel de statistique il y a bien entendu __google analytic__ , mais de la monde du libre vous avez [piwik](http://www.piwik.org) de disponible qui est très bien.
 
+Nous avons donc maintenant une solution de logs pérenne !
+
+## <a name="organisation_repertoire_private"/> Utilisation du répertoire privé
+
+Ceci sort un peu du cadre de la formation, ceci est plus orienté sur l'organisation du site web et de ça programmation, cependant avec l'importance de la sécurité de nos jours il est important de couvrir rapidement ce point. Même si nous avons le rôle d'offrir uniquement le serveur apache, dans la réalité nous agissons souvent comme conseillé sur les systèmes.
+
+Nous allons maintenant voir l'utilisation du répertoire __private__, comment écrire notre site web afin de profiter de ce répertoire non accessible depuis internet. Pour la démonstration je vais utilisé le langage de programmation __php__, loin d'être un expert dans ce langage , cependant de par la simplicité du langage la démonstration sera facile.
+
+Nous allons donc installer __php__ et valider son installation 
+
+        $ sudo apt-get update && sudo apt-get install php5
+        $ sudo vim /data/vhosts/siteA/docroot/info.php
+        $ cat /data/vhosts/siteA/docroot/info.php
+        <?php
+
+        // Show all information, defaults to INFO_ALL
+        phpinfo();
+
+        ?>
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+         * Restarting web server apache2
+         *    ...done.
+
+Si nous accédons au site via l'URL : http://linux202-sitea.com/info.php nous aurons l'information sur le __php__ installé.
+
+![phpinfo.png](./imgs/phpinfo.png)
+
+Donc __php__ fonctionne , nous allons pouvoir poursuivre ...avec le vrai objectif. Je vais commencé par montrer la méthode "classique" soit inclure un fichier de configuration directement dans l'application , je vais créer 2 fichier **app.php** et **config.conf** . Le premier va charger le second , pour les développeurs __php__ je sais ce n'est pas très beau mais c'est pas un cours __php__ ;-).
+
+        $ sudo vim /data/vhosts/siteA/docroot/app.php
+        $ cat /data/vhosts/siteA/docroot/app.php
+        <?php
+
+        include('./config.conf');
+
+        ?>
+        $ sudo vim /data/vhosts/siteA/docroot/config.conf
+        $ cat /data/vhosts/siteA/docroot/config.conf
+        toto=blabla
+        titi=encore
+
+Bon avec cette configuration si vous allez avec votre fureteur sur l'URL de l'application vous aurez ceci : 
+
+* http://linux202-sitea.com/app.php
+
+![siteA-app-config-classic.png](./imgs/siteA-app-config-classic.png)
+
+Donc la configuration fut bien chargé , nous voyons le contenu de la configuration :D, mais heu ... Si j'essaye ceci 
+
+* http://linux202-sitea.com/config.conf
+
+![siteA-config-conf.png](./imgs/siteA-config-conf.png)
+
+**oupss** , __Yep__ tout le monde peux voir ce fichier de configuration :P, faut juste connaître l'URL , puis **config.conf** ou **db.conf** c'est pas très dur à deviner et surtout à scripter pour récupérer de l'information d'un site. Nous verrons probablement plus tard comment bloqué l'accès à des extensions de fichier, il existe des mécanismes dans apache . Mais Si nous sortons le fichier du **DocumentRoot** donc de la racine c'est garantie que personne pourra avoir accès au fichier. 
+Voyons l'autre méthode avec l'utilisation du répertoire **private**.
+
+        $ sudo vim /data/vhosts/siteA/docroot/app_w_priv.php
+        $ cat /data/vhosts/siteA/docroot/app_w_priv.php
+        <?php
+
+        include('../privates/config.conf');
+
+        ?>
+        $ sudo vim /data/vhosts/siteA/privates/config.conf
+        $ cat /data/vhosts/siteA/privates/config.conf
+        private=info
+        super=priv
+
+Donc cette fois __l'include__ est réalisé en remontant d'un cran (..) et on va dans le répertoire __privates__. 
+
+Le résultat : http://linux202-sitea.com/app_w_priv.php
+
+![siteA-app-config-private.png](./imgs/siteA-app-config-private.png) 
+
+**woot** ça marche toujours :D. Maintenant je vais tenté d'accéder au fichier de configuration , si je reprend la configuration ceci devrait être bon : http://linux202-sitea.com/../privates/config.conf, je monte d'un répertoire et je vais dans __privates__.
+
+![siteA-privates-config-conf.png](./imgs/siteA-privates-config-conf.png)
+
+**NOPE** impossible , car on ne peut pas remonté avant le **DocumentRoot** :D , c'est pas beau ça :)
+
+
 * Répertoire privers 
 * Utilisation du fichier htaccess 
 * Permission Directory 
