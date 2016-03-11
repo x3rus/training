@@ -1524,8 +1524,93 @@ Le résultat : http://linux202-sitea.com/app_w_priv.php
 **NOPE** impossible , car on ne peut pas remonté avant le **DocumentRoot** :D , c'est pas beau ça :)
 
 
-* Répertoire privers 
-* Utilisation du fichier htaccess 
+## <a name="organisation_utilisation_htaccess"/> Utilisation de la surcharge de configuration (htaccess)
+
+Je vais revenir rapidement sur le système de surcharge de configuration, nous avons déjà abordé l'aspect son utilisation. Nous avons parlé des coût en terme de performance et "rapidement" de la sécurité. Par contre nous n'avons pas eu d'exemple claire des risques de la surcharge de la configuration , donc c'est partie pour une petite démonstration. 
+La majorité des hébergeur publique vous permet de redéfinir l'ensemble des configurations via le système __htaccess__. Nous allons voir le risque possible . 
+
+Je vais premièrement modifier la configuration du __siteA__ afin de permettre la surcharge :
+
+        $ sudo vim /etc/apache2/sites-available/siteA.conf
+        [ ... OUTPUT COUPÉ ...]
+        <Directory /data/vhosts/siteA/docroot/>
+            Options none
+            AllowOverride ALL
+            Require all granted
+        </Directory>
+        [ ... OUTPUT COUPÉ ...]
+
+Si nous lisons la définition du répertoire du __DocumentRoot__ j'ai modifier l'entrée pour l'instruction de **AllowOverride** de **NONE** à **ALL** , pour garder ça simple .
+
+On valide la configuration et recharge cette dernière...
+
+À ce stade nous pouvons redéfinir l'ensemble des configurations d'apache sous le répertoire du __DocumentRoot__ , nous allons profiter de cette occasion pour présenter l'instruction [Options](https://httpd.apache.org/docs/2.4/fr/mod/core.html#options).
+
+![Options-screenshot-documentation.png](./imgs/Options-screenshot-documentation.png)
+
+Bon [Options](https://httpd.apache.org/docs/2.4/fr/mod/core.html#options) c'est quoi ça nous permet de définir les fonctionnalités d'un répertoire ... Désolé c'est la descriptions directement du site d'apache :P. En gros ça nous permet de définir le comportement du traitement des requêtes , par exemple si il y a un lien symbolique est-ce qu'il le suit ? S'il n'y a pas de fichier d'index que faire ? ... Regardons les Argument disponible ceci va éclaircir les possibilités.
+
+* **ExecCGI** : Permet l'appel de scripts externe telle que des scripts écrit en python , __perl__ , même en C . Apache exécute le fichier ou binaire.
+* **FollowSymLinks** : Le serveur va suivre les liens symboliques dans le répertoire concerné.
+* **Indexes** : Si une URL requise correspond au répertoire concerné, et si aucun DirectoryIndex (par exemple index.html) n'est défini pour ce répertoire, le module mod_autoindex va renvoyer un listing formaté du répertoire.
+* **MultiViews** : Les vues multiples ("multiviews") à contenu négocié à l'aide du module mod_negotiation sont autorisées. 
+* **SymLinksIfOwnerMatch** : Le serveur ne suivra que les liens symboliques qui renvoient vers un fichier ou un répertoire dont le propriétaire est le même que celui du lien.
+* **ALL** / **NONE** : respectivement toute les options cité plus haut ou aucune options :D.
+
+Bon Cool pour le moment on vois pas le problème ou si peut-être :P , bon allez on y va avec la démonstration. Si vous regardez mes configurations précédente je définie toujours l'[Options](https://httpd.apache.org/docs/2.4/fr/mod/core.html#options) à **None** . Vous allez comprendre pourquoi...
+
+Je vais éditer le fichier __.htaccess__  dans le répertoire __DocumentRoot__ du __SiteA__ .
+
+        $ sudo vim /data/vhosts/siteA/docroot/.htaccess
+        $ cat /data/vhosts/siteA/docroot/.htaccess
+        Options FollowSymLinks
+
+On va juste mettre **FollowSymLinks** , on va créer un petit lien symbolique qui va bien avec :).
+
+        $ cd /data/vhosts/siteA/docroot
+        $ sudo ln -s /etc/passwd lst_users
+        $ ls -l lst_users 
+        lrwxrwxrwx 1 root root 11 Mar 11 17:24 lst_users -> /etc/passwd
+
+Maintenant allons sur l'URL qui va bien :D : http://linux202-sitea.com/lst_users
+
+![siteA-lst-users.png](./imgs/siteA-lst-users.png)
+
+**Oupss** ou **YEahh** selon le besoin :P, yep **FollowSymLinks** c'est __evil__ :P. Bon mais ça m'ennuie de faire un lien symbolique pour chaque fichier que je veux consulter non ?!?!. 
+On va changer le fichier __htaccess__ un peu , pour avoir encore plus de plaisir.
+
+        $ sudo vim /data/vhosts/siteA/docroot/.htaccess
+        $ cat /data/vhosts/siteA/docroot/.htaccess
+        Options FollowSymLinks Indexes
+
+Pas besoin de recharger apache , on va juste faire un autre lien symbolique .
+
+        $ cd /data/vhosts/siteA/docroot
+        $ sudo ln -s /etc sys
+        $ ls -l sys
+        lrwxrwxrwx 1 root root 4 Mar 11 17:31 sys -> /etc
+
+C'est partie avec L'URL :D , que du plaisir : http://linux202-sitea.com/sys/
+
+![siteA-sys.png](./imgs/siteA-sys.png)
+
+**Woot** , maintenant je peux choisir quelle fichier je veux lire dans le répertoire **/etc** , beaucoup plus facile :). Bien entendu nous sommes limité par les permissions de l'utilisateur Apache. En effet le processus **httpd** qui fait la lecture des fichier est exécuté sous l'utilisateur **www-data** nous sommes donc limité par les permissions des fichiers.
+Exemple :
+
+* **/etc/passwd** : est lisible par tout le monde , donc __www-data__  peut le consulter 
+
+                $ ls -l /etc/passwd 
+                -rw-r--r-- 1 root root 1001 Dec  9 14:09 /etc/passwd
+
+* **/etc/shadow** : Ce dernier contient les mot de passe des utilisateurs présent sur le système n'est lisible que par **root** et le groupe **shadow** comme __www-data__ n'est pas membre du groupe , ni __root__ la lecture est impossible.
+            
+                $ ls -l /etc/shadow
+                -rw-r----- 1 root shadow 652 Dec  9 14:09 /etc/shadow
+
+![siteA-sys-shadow.png](./imgs/siteA-sys-shadow.png)
+
+Je ne poursuivrai pas plus en détail , la démonstration du risque de la surcharge des configurations, cependant pour des environnement de production il faut prendre en considération les risques que ceci implique .
+
 * Permission Directory 
 * Access au répertoire ecriture via Git :P / access au fichier scp , ssh , ...
 
