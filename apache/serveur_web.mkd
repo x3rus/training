@@ -19,9 +19,26 @@ TODO : Corriger les \_
            * [ Changement du répertoire Racine ( DocumentRoot)](#param_docroot) 
            * [ Autorisation d'accès par hostname ou ip ( Require )](#Auth_access) 
            * [Utilisation du Virtual host par défaut (bonne pratique)](#virt_host_good) 
-       * [ Autorisation d'accès avec authentification local](#auth_local_access) 
-           * [ Création du fichier de mot de passe ( __htpasswd__ )](#htpasswd) 
-* [ Référence :](#Reference) 
+       * [ Organisation de la configuration (context)](#context) 
+       * [ Surdéfinition de la configuration dans le fichier .htaccess](#context_htaccess) 
+           * [ Permission de redéfinition des configurations](#htaccess_allowoverride) 
+       * [ Bonne pratique de l'utilisation du fichier .htaccess](#utilisation_de_htaccess) 
+* [ VirtualHost](#VirtualHost) 
+       *<a name="Vhost_ip"> Serveurs virtuels par IP
+       *<a name="Vhost_name_base"> Serveurs virtuels par Nom
+* [ Organisation des sites web](#organisation) 
+       * [ Organisation des répertoires des serveurs virtuelle](#organisation_rep_vhosts) 
+       * [ Configuration Apache pour les serveurs virtuels](#organisation_config_vhosts) 
+       * [ Configuration des logs pour les serveurs virtuels](#organisation_logs_vhosts) 
+           * [ Rotation des logs pour les serveurs virtuels](#organisation_rotation_logs_vhosts) 
+       * [ Utilisation du répertoire privé](#organisation_repertoire_private) 
+       * [ Utilisation de la surcharge de configuration (htaccess)](#organisation_utilisation_htaccess) 
+       * [ Mutualisation de contenu  / service ](#organisation_alias) 
+       * [ Permissions des répertoires](#organisation_premission_dir) 
+* [ Utilisation des modules apache](#module) 
+       * [ Compilation d'un modules apache](#compilation_module) 
+* [ Performance et analyse d'apache](#performance) 
+* [ Mod_rewrite pour réécrire les URL](#mod_rewrite) 
 
 # <a name="Intro" /> Introduction
 
@@ -794,7 +811,7 @@ Avec la pénurie d'adresse IP disponible sur internet l'utilisation des __virtua
 
 Voyons comment configurer les 2 types, vous allez constater que ceci est très similaire :).
 
-## <a name="Vhost_ip"> Serveurs virtuels par IP
+## <a name="Vhost_ip" /> Serveurs virtuels par IP
 
 Pour pouvoir définir un __VirtualHost__ IP base il faut avoir plusieurs IP, sinon vous utiliser des serveurs virtuel basé sur le nom. Conceptuellement des __VirtualHost__ basé sur le port de connexion sont considéré comme des __VirtualHost__ IP base, j'en fait mention cependant dans le feu de l'action sur la configuration nous ne constatons pas la différence.
 
@@ -970,7 +987,7 @@ Comme vous pouvez le constater alors que nous visualisions originalement la page
 L'instruction __VirtualHost__ est composé avec une astérisque et le port (*:80) ce qui indique que ce serveur virtuel est valide pour toute les adresses IP sur le port 80. Comme nous avons été plus spécifique en indiquant les __VirtualHost__ avec des IP ces derniers ont priorités.
 
 
-## <a name="Vhost_name_base"> Serveurs virtuels par Nom
+## <a name="Vhost_name_base" /> Serveurs virtuels par Nom
 
 Telle que mentionné dans l'introduction malheureusement avec le nombre d'adresse IP (IPv4) restreint disponible sur internet il est compliqué d'avoir une adresse IP par site. 
 Avec un hébergement virtuel par nom, le serveur s'appuie sur les informations transmises par le client dans les en-têtes HTTP de ses requêtes. La technique présentée ici vous permet de disposer de serveurs virtuels différents partagés sur une même adresse IP.
@@ -1611,12 +1628,111 @@ Exemple :
 
 Je ne poursuivrai pas plus en détail , la démonstration du risque de la surcharge des configurations, cependant pour des environnement de production il faut prendre en considération les risques que ceci implique .
 
-* Permission Directory 
+
+## <a name="organisation_alias"/> Mutualisation de contenu  / service (Alias)
+
+Il est fort probable que les sites web que vous hébergez est du contenu équivalent que nous parlions d'images ou de contenu d'information. Si nous prenons l'exemple de sites corporatif , nous pouvons penser au logo de la compagnie , il peut être intéressant que tous les sites utilise les même fichiers . L'avantage est que si le logo de l'entreprise change nous n'avons qu'un fichier à changer au lieu de visiter tous les sites et finalement constater que nous avons fait un oublie.
+Si vous réalisé de l'hébergement publique votre réalité peut être différente en terme de contenu mutualisé cependant nous retrouvons un besoin similaire. Si vous offrez un service complet avec un service de courriel vous désirez peut-être offrir un __webmail__ au client. Si vous installez un __webmail__ ou un __phpmyadmin__ pour chaque client quand une mise à jour sera à réalisé vous maudirez le développeur d'avoir sortie cette nouvelle version !! De plus nous voulons éviter que chaque client installe leurs propre application, ceci principalement pour des questions de sécurité, car il est peu probable que ce dernier soit conscientisé au risque :P.
+
+Nous retrouvons l'option d'utiliser les Alias , ceci permet de définir un chemin qui sera utilisable et pointera vers un répertoire disponible pour tous. Ce répertoire peut être en dehors du répertoire __DocumentRoot__ du site web.
+
+Pour faire une utilisation simple, nous allons mettre en place un répertoire mutualisé pour les images de la compagnie.
+Commençons par la structure des répertoires, personnellement je réalise un répertoire __common__ sous le répertoire __vhost__ , ce qui donne :
+
+            /data/
+                 /vhost/
+                       /siteA/
+                       /siteB/
+                       /siteC/
+                       /common/
+                              webmail/
+                              phpmyadmin/
+                              images/
+
+Dans la structure ci-dessus, j'ai créé les répertoires pour accueillir le logiciel de __webmail__ et __phpmyadmin__, pour le moment nous nous occuperons uniquement d'images. Cependant le concept reste le même .
+
+Mise en place de la configuration , création du répertoire et mise en place d'une images :
+
+            $ sudo mkdir /data/vhosts/common/
+            $ sudo mkdir /data/vhosts/common/images /data/vhosts/common/webmail /data/vhosts/common/phpmyadmin
+            $ sudo cp ~/post-it.jpg /data/vhosts/common/images/
+
+Donc sous __/data/vhosts/common/images/__ nous avons une images disponible, nous allons procéder à la modification de la configuration du site __siteA__ afin qu'il puisse utiliser cette configuration.
+Édition du fichier **/etc/apache2/sites-available/siteA.conf**
+
+            [ ... OUTPUT COUPÉ ... ] 
+            DocumentRoot /data/vhosts/siteA/docroot/
+
+            Alias "/cm-images" ""/data/vhosts/common/images"
+
+            <Directory /data/vhosts/siteA/docroot/>
+                Options none
+                AllowOverride ALL
+                Require all granted
+            </Directory>
+            [ ... OUTPUT COUPÉ ... ] 
+
+J'ai réalisé l'ajout de l'instruction [Alias](https://httpd.apache.org/docs/2.4/mod/mod_alias.html#alias). TODO ICI
+
+## <a name="organisation_premission_dir"/> Permissions des répertoires
+
+J'aurais peut-être dû commencé par ça , mais comme les méthodes d'accès au serveur sont très variées je ne l'ai pas privilégié . Lorsque je par d'accès au serveur vous pouvez fournir un accès __ftp__, __scp/ssh__ , __webdav__, partage __NFS__ , ...
+
+
+TODO : Ajouter l'info ici p-e avec un scp chrooté ça serait cool !!
+
 * Access au répertoire ecriture via Git :P / access au fichier scp , ssh , ...
+
+# <a name="module" /> Utilisation des modules apache
+
+Telle que mentionné lors de l'introduction apache est un logiciel modulaire, nous allons donc voir quelle sont les modules disponible avec l'installation par défaut sous __Ubuntu__ ainsi que quelques explication pour les utiliser.
+
+La structure des fichiers / répertoires sous __Debian__ / __Ubuntu__ bien que contraignante offre au moins l'avantage d'être claire. Nous retrouvons donc la liste des modules disponible dans le répertoire **/etc/apache2/mods-available**.
+
+        $ ls /etc/apache2/mods-available/*.load
+        access_compat.load    authz_user.load     ext_filter.load           mpm_worker.load      sed.load
+        actions.load          autoindex.load      file_cache.load           negotiation.load     session.load
+        alias.load            buffer.load         filter.load               php5.load            session_cookie.load
+        allowmethods.load     cache.load          headers.load              proxy.load           session_crypto.load
+        asis.load             cache_disk.load     heartbeat.load            proxy_ajp.load       session_dbd.load
+        auth_basic.load       cache_socache.load  heartmonitor.load         proxy_balancer.load  setenvif.load
+        auth_digest.load      cgi.load            include.load              proxy_connect.load   slotmem_plain.load
+        auth_form.load        cgid.load           info.load                 proxy_express.load   slotmem_shm.load
+        authn_anon.load       charset_lite.load   lbmethod_bybusyness.load  proxy_fcgi.load      socache_dbm.load
+        authn_core.load       data.load           lbmethod_byrequests.load  proxy_fdpass.load    socache_memcache.load
+        authn_dbd.load        dav.load            lbmethod_bytraffic.load   proxy_ftp.load       socache_shmcb.load
+        authn_dbm.load        dav_fs.load         lbmethod_heartbeat.load   proxy_html.load      speling.load
+        authn_file.load       dav_lock.load       ldap.load                 proxy_http.load      ssl.load
+        authn_socache.load    dbd.load            log_debug.load            proxy_scgi.load      status.load
+        authnz_ldap.load      deflate.load        log_forensic.load         proxy_wstunnel.load  substitute.load
+        authz_core.load       dialup.load         lua.load                  ratelimit.load       suexec.load
+        authz_dbd.load        dir.load            macro.load                reflector.load       unique_id.load
+        authz_dbm.load        dump_io.load        mime.load                 remoteip.load        userdir.load
+        authz_groupfile.load  echo.load           mime_magic.load           reqtimeout.load      usertrack.load
+        authz_host.load       env.load            mpm_event.load            request.load         vhost_alias.load
+        authz_owner.load      expires.load        mpm_prefork.load          rewrite.load         xml2enc.load
+
+Comme nous pouvons le voir la liste est significatif, la liste des modules activé par défaut est moins volumineuse :
+
+        $ ls /etc/apache2/mods-enabled/*.load
+        access_compat.load  authn_core.load  authz_host.load  deflate.load  filter.load       negotiation.load  status.load
+        alias.load          authn_file.load  authz_user.load  dir.load      mime.load         php5.load
+        auth_basic.load     authz_core.load  autoindex.load   env.load      mpm_prefork.load  setenvif.load
+
+
+Il est bien entendu conseiller de ne pas charger les modules non utilisés, car en plus d'augmenter l'emprunte mémoire d'apache lors de son exécution, ceci augmente les possibilités de faille de sécurité.
+Je ne prendrai pas le temps de nommé l'ensemble des modules disponible, je vous laisserai le plaisir de faire les recherches , je vais en sélectionner quelque un . 
+
+* **auth\*** : Module relatif au système d'authentification, la validation utilisateur / mot de passe , peut être réalisé avec un fichier plat (comme nous l'avons vu) ou avec des services externe telle que **ldap**.
+* **php** : Permet de faire l'interprétation des fichiers de type __php__.
+* **status** : nous aurons l'occasion de le voir dans la section [Performance et analys](#performance) , nous permet de visualiser l'utilisation du serveur par __VirtualHost__. Ce module est très intéressant pour comprendre l'utilisation du système.
+* **alias** : Permet de réalisé des alias de répertoire sur le système.
+
+## <a name="compilation_module" /> Compilation d'un modules apache
 
 # <a name="performance" /> Performance et analyse d'apache
 
-* serveur __status__
 
-TODO : ajouter l'information 
+
+# <a name="mod_rewrite" /> Mod_rewrite pour réécrire les URL
 
