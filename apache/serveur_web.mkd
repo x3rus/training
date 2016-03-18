@@ -1663,7 +1663,7 @@ Donc sous __/data/vhosts/common/images/__ nous avons une images disponible, nous
             [ ... OUTPUT COUPÉ ... ] 
             DocumentRoot /data/vhosts/siteA/docroot/
 
-            Alias "/cm-images" ""/data/vhosts/common/images"
+            Alias "/cm-images" "/data/vhosts/common/images"
 
             <Directory /data/vhosts/siteA/docroot/>
                 Options none
@@ -1672,7 +1672,43 @@ Donc sous __/data/vhosts/common/images/__ nous avons une images disponible, nous
             </Directory>
             [ ... OUTPUT COUPÉ ... ] 
 
-J'ai réalisé l'ajout de l'instruction [Alias](https://httpd.apache.org/docs/2.4/mod/mod_alias.html#alias). TODO ICI
+J'ai réalisé l'ajout de l'instruction [Alias](https://httpd.apache.org/docs/2.4/mod/mod_alias.html#alias).
+
+![Alias-screenshot-documentation.png](./imgs/Alias-screenshot-documentation.png)
+
+Comme l'on peut voir la configuration d'un alias est disponible pour :
+
+* La configuration globale du serveur
+* La configuration d'un serveur Virtuel (__VirtualHost__)
+* Un répertoire.
+
+On valide et recharge la configuration
+
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 reload 
+        Syntax OK
+        * Reloading web server apache2
+        *
+
+Accédons au site 
+
+* http://linux202-sitea.com/  : OK ,pas de problème le site est toujours disponible :) c'est un bon début.
+* http://linux202-sitea.com/cm-images/post-it.jpg : KO , **Forbidden** __You don't have permission to access__.
+
+Pourquoi pensez vous que le problème survient ?
+
+Un petit truc d'analyse, c'est peut-être subtile , mais étant confortables avec apache ceci me fournit de l'information. Premièrement comme nous avons l'erreur **Forbidden** , moi j'en déduis que mon instructions est bien interprété. En effet si je fait une erreur dans l'URL et que j'écris : http://linux202-sitea.com/ko-images/post-it.jpg , je n'ai pas un **Forbidden** mais **Not found** , donc clairement mon instruction est interprété :D.
+
+Maintenant regardons les logs :D , comme les logs sont maintenant généré dans le répertoire de serveur virtuel nous ne devons plus consulter __/var/log/apache2/error.log__ mais __/data/vhosts/siteA/logs/error.log__.
+
+        $ tail /data/vhosts/siteA/logs/error.log
+        [Fri Mar 18 08:49:23.999085 2016] [authz_core:error] [pid 98] [client 172.17.42.1:50796] AH01630: client denied by server configuration: /data/vhosts/common/images/
+        [Fri Mar 18 08:50:18.929006 2016] [authz_core:error] [pid 99] [client 172.17.42.1:50806] AH01630: client denied by server configuration: /data/vhosts/common/images/post-it.jpg
+
+
+Suite à ses indices une idée ?
+
+TODO ici.
+Pourquoi l'avoir mis dans le __VirtualHost__ au lieu du fichier commun ?
 
 ## <a name="organisation_premission_dir"/> Permissions des répertoires
 
