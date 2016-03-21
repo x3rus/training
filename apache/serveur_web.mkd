@@ -1707,8 +1707,61 @@ Maintenant regardons les logs :D , comme les logs sont maintenant généré dans
 
 Suite à ses indices une idée ?
 
-TODO ici.
-Pourquoi l'avoir mis dans le __VirtualHost__ au lieu du fichier commun ?
+Le problème est au niveau de la permission du répertoire , je ne parle pas des permissions du système de fichier mais des permissions dans Apache qui bloque l'accès au répertoire .
+Si nous reprenons la configuration du répertoire **/** , contenu dans le fichier : **/etc/apache2/apache2.conf**
+
+        <Directory />
+            Options FollowSymLinks
+            AllowOverride None
+            Require all denied
+        </Directory>
+
+L'ensemble des répertoires non définie son refusé, nous devons donc permettre l'accès au répertoire __common__ afin d'autoriser les accès à ce dernier. Pour ce faire nous allons modifier le fichier **/etc/apache2/conf-available/vhosts_base.conf** afin de lui définir le nouveau répertoire : 
+
+        <Directory /data/vhosts/common >
+            Options None
+            AllowOverride None
+            Require all granted
+        </Directory>
+
+Nous procédons à la validation de la configuration et la recharge de la configuration :
+
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 reload
+
+
+C'est repartie [http://linux202-sitea.com/cm-images/post-it.jpg](http://linux202-sitea.com/cm-images/post-it.jpg). Normalement vous devriez voir un __Mario Bross__ en post-it. Si ce n'est pas le cas , valider votre fichier image , et lisez les logs du serveur :).
+
+Pourquoi avoir définie l'alias dans le __VirtualHost__ au lieu du fichier commun ?
+
+J'ai tendance à générer mes fichiers de configuration, surtout pour les configurations similaire que ce soit par scripte ou via des outils de configuration (__puppet__, __ansible__,...) , je ne vois donc pas de problème à définir des instructions supplémentaire. De plus lors de la définition d'un alias ce derniers sur définir les répertoires locaux du **DocumentRoot** , en d'autre mot le __siteA__ ne peux plus utiliser la répertoire. Un petit exemple juste pour bien comprendre .
+
+Créons le répertoire **cm-images** sous le **DocumentRoot** du __siteA__ et un fichier __html__.
+
+        $ sudo mkdir /data/vhosts/siteA/docroot/cm-images
+        $ sudo vim /data/vhosts/siteA/docroot/cm-images/toto.html
+        $ cat /data/vhosts/siteA/docroot/cm-images/toto.html
+        Toto sous cm-images du site A ... 
+
+        AAaaa :P
+
+Si nous accédons au site : [http://linux202-sitea.com/cm-images/toto.html](http://linux202-sitea.com/cm-images/toto.html), nous avons un **404 Not Found**. Si nous regardons dans les logs nous aurons confirmation :
+
+![Alias-404-not-found-siteA.png](./imgs/Alias-404-not-found-siteA.png)
+
+        $ tail /data/vhosts/siteA/logs/access.log
+        172.17.42.1 - - [21/Mar/2016:08:46:04 -0400] "GET /cm-images/toto.html HTTP/1.1" 404 516 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+
+Pour le plaisir allons créer le fichier toto sous **/data/vhosts/common/images** :
+
+        $ sudo vim /data/vhosts/common/images/toto.html
+        $ cat /data/vhosts/common/images/toto.html
+        Fichier TOTO sous le common images
+
+Retournons à l'URL : [http://linux202-sitea.com/cm-images/toto.html](http://linux202-sitea.com/cm-images/toto.html)
+
+![Alias-200-toto.png](./imgs/Alias-200-toto.png)
+
+Comme vous pouvez le constater l'alias à priorité sur les répertoires locaux du site web. Pour revenir à la question original pourquoi je ne l'ai pas mis dans la configuration global justement pour avoir une configuration plus granulaire. Permettre l'activation par serveur virtuel. Ceci m'amène aussi à souligner l'importance du choix du nom de l'alias , il est serait  non désirer de mettre en place un alias **images** par exemple , voilà pourquoi j'avais opté pour **cm-images** pour limiter les risques de conflit avec le répertoire local du site.
 
 ## <a name="organisation_premission_dir"/> Permissions des répertoires
 
