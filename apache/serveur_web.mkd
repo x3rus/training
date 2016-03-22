@@ -1812,10 +1812,29 @@ Comme nous pouvons le voir la liste est significatif, la liste des modules activ
 Il est bien entendu conseiller de ne pas charger les modules non utilisés, car en plus d'augmenter l'emprunte mémoire d'apache lors de son exécution, ceci augmente les possibilités de faille de sécurité.
 Je ne prendrai pas le temps de nommé l'ensemble des modules disponible, je vous laisserai le plaisir de faire les recherches , je vais en sélectionner quelque un . 
 
+* **alias** : Permet de réalisé des alias de répertoire sur le système, nous l'avons vu dans la section [Mutualisation de contenu  / service](#organisation_alias).
 * **auth\*** : Module relatif au système d'authentification, la validation utilisateur / mot de passe , peut être réalisé avec un fichier plat (comme nous l'avons vu) ou avec des services externe telle que **ldap**.
+* **dir** : Permet de charger un fichier définie d'un répertoire sans être obligé de le nommée. Le cas classique est l'utilisation du fichier index.html qui est chargé automatiquement lorsque l'on va dans un répertoire.
 * **php** : Permet de faire l'interprétation des fichiers de type __php__.
-* **status** : nous aurons l'occasion de le voir dans la section [Performance et analys](#performance) , nous permet de visualiser l'utilisation du serveur par __VirtualHost__. Ce module est très intéressant pour comprendre l'utilisation du système.
-* **alias** : Permet de réalisé des alias de répertoire sur le système.
+* **status** : nous aurons l'occasion de le voir dans la section [Performance et analyse](#performance) , nous permet de visualiser l'utilisation du serveur par __VirtualHost__. Ce module est très intéressant pour comprendre l'utilisation du système.
+
+
+La nomenclature de __Ubuntu/Debian__ utilise 2 fichiers **.conf** et **.load** ceci est purement une convention , ce n'est pas obligatoire, sous __CentOs/RedHat__ l'ensemble est dans le même fichier.
+Je vais prendre comme exemple le module **dir** , simple et permet de bien comprendre le fonctionnement .
+
+* **dir.load** 
+
+                LoadModule dir_module /usr/lib/apache2/modules/mod_dir.so
+
+* **dir.conf** 
+
+                <IfModule mod_dir.c>
+                        DirectoryIndex index.html index.cgi index.pl index.php index.xhtml index.htm
+                </IfModule>
+
+Comme vous pouvez le constater le fichier __load__ , charge un fichier **.so** contenu dans le répertoire **/usr/lib/apache2/modules/** . Il est possible de rajouter des modules à apache, cependant il est important que le module fut créer pour la bonne version qui est en place !
+
+Le fichier **.conf** , contient la configuration pour le module , comme vous pouvez voir il y a l'instruction **<IfModule ...**, ceci permet de valider la présence d'un module est de charger la configuration uniquement si le module est présent. Ceci est encore plus pratique quand on a un gros fichier de configuration et que l'on active ou non les modules au début. Car si je prend le cas présent si l'instruction **DirectoryIndex** est définie dans le fichier mais que le module n'est pas présent Apache ne va pas démarrer.
 
 ## <a name="compilation_module" /> Compilation d'un modules apache
 
