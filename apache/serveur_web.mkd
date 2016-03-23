@@ -1763,6 +1763,8 @@ Retournons à l'URL : [http://linux202-sitea.com/cm-images/toto.html](http://lin
 
 Comme vous pouvez le constater l'alias à priorité sur les répertoires locaux du site web. Pour revenir à la question original pourquoi je ne l'ai pas mis dans la configuration global justement pour avoir une configuration plus granulaire. Permettre l'activation par serveur virtuel. Ceci m'amène aussi à souligner l'importance du choix du nom de l'alias , il est serait  non désirer de mettre en place un alias **images** par exemple , voilà pourquoi j'avais opté pour **cm-images** pour limiter les risques de conflit avec le répertoire local du site.
 
+Il existe aussi [AliasMatch](https://httpd.apache.org/docs/2.4/mod/mod_alias.html#aliasmatch) qui nous permet comme Alias de réaliser une association d'un répertoire à l'extérieur du __DocumentRoot__, l'avantage de **AliasMatch** est de permettre d'y inclure une expression régulière comme critère. 
+
 ## <a name="organisation_premission_dir"/> Permissions des répertoires
 
 J'aurais peut-être dû commencé par ça , mais comme les méthodes d'accès au serveur sont très variées je ne l'ai pas privilégié . Lorsque je par d'accès au serveur vous pouvez fournir un accès __ftp__, __scp/ssh__ , __webdav__, partage __NFS__ , ...
@@ -1836,11 +1838,23 @@ Comme vous pouvez le constater le fichier __load__ , charge un fichier **.so** c
 
 Le fichier **.conf** , contient la configuration pour le module , comme vous pouvez voir il y a l'instruction **<IfModule ...**, ceci permet de valider la présence d'un module est de charger la configuration uniquement si le module est présent. Ceci est encore plus pratique quand on a un gros fichier de configuration et que l'on active ou non les modules au début. Car si je prend le cas présent si l'instruction **DirectoryIndex** est définie dans le fichier mais que le module n'est pas présent Apache ne va pas démarrer.
 
+Vous pouvez utiliser **apachectl** afin de connaître les modules actuellement charger par apache. Il est possible de les inclure directement dans le binaire **apache2**, ceci est fait lors de la compilation du programme. 
+
+* **/usr/sbin/apachectl -l** : liste les modules apache compilé dans apache.
+* **/usr/sbin/apachectl -M** : liste les modules qui sont chargé au démarrage.
+
+Je vous dirai que l'ensemble 99% du temps les modules offert par le système de pacquage répond au besoin. Sous __Debian / Ubuntu__ vous pouvez avoir la liste des modules apaches disponible avec le système grâce à la commande : **apt-cache search libapache2** Pour les personnes qui désire voir comment compiler un modules amusons nous ... :D
+
+
 ## <a name="compilation_module" /> Compilation d'un modules apache
+
+https://httpd.apache.org/docs/2.4/developer/modguide.html
+
+# <a name="mod_rewrite" /> Mod_rewrite pour réécrire les URL
+# <a name="mod_rewrite" /> Mod_proxy pour rediriger les requêtes
+# <a name="mod_rewrite" /> Mod_webdav pour avoir un lieu de stockage de fichiers
 
 # <a name="performance" /> Performance et analyse d'apache
 
 
-
-# <a name="mod_rewrite" /> Mod_rewrite pour réécrire les URL
 
