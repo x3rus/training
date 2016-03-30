@@ -1856,6 +1856,65 @@ https://httpd.apache.org/docs/2.4/developer/modguide.html
 
 La sécurisation des communication est plus que critique de nos jours, nous désirons que les informations non publique ne soit lisible que par les personnes autorisées. Le protocole **HTTP** est un protocole non sécurisé , l'ensemble des paquets réseaux sont lisible (non chiffré) , si un personne est sur votre réseau et peut intercepté les communications il peut lire l'ensemble du trafic. Le protocole **httpS** règle le problème en chiffrant les communications entre le client (fureteur) et le serveur (apache) , résultat le trafic ne peut pas être lu.
 
+Sous __Ubuntu__ le module **ssl** est inclut lors de l'installation du pacquage **apache2**, sous __RedHat/CentOS__ vous devez installer le module **mod_ssl** spécifiquement. Nous allons procéder à la mise en place d'un site web avec chiffrement, nous prendrons aussi le temps d'expliquer le fonctionnement du système de certificat. D'expérience j'ai constaté que pour beaucoup le concept de certificat __SSL__ est floue alors que l'ensemble de nos communications sont sécurisé par ce principe !
+
+## <a name="setup_ssl_website" /> Configuration simple d'un site web avec mod_ssl
+
+Nous allons précéder à la mise en place d'une configuration très simpliste , ceci nous permettra avec l'ensemble des options de couvrir la théorie autour. 
+
+Pour commencer nous allons activer le module **ssl** dans apache :
+
+        $ cd /etc/apache2/mods-enabled
+        $ sudo ln -s ../mods-available/ssl.load .
+        $ sudo ln -s ../mods-available/socache_shmcb.load .
+        $ sudo ln -s ../mods-available/ssl.conf .
+        $ cat ssl.load  
+        # Depends: setenvif mime socache_shmcb
+        LoadModule ssl_module /usr/lib/apache2/modules/mod_ssl.so
+
+Le fichier __ssl.conf__ contient des configurations par défaut, je vous laisse le plaisir de regarder le contenu , nous verrons certaines instruction par la suite.
+
+Nous allons prendre le temps de réaliser la validation de la configuration suite à l'ajout des modules :
+
+        $ sudo apachectl configtest
+        Syntax OK
+
+Si vous avez l'erreur suivante : 
+
+        AH00526: Syntax error on line 43 of /etc/apache2/mods-enabled/ssl.conf:
+        SSLSessionCache: 'shmcb' session cache not supported (known names: ). Maybe you need to load the appropriate socache module (mod_socache_shmcb?).
+
+Ceci indique que vous n'avez pas créer le liens symbolique pour **socache_shmcb.load** ce module est requis par **mod_ssl** si vous lisez le fichier **ssl.load** c'est clairement indiqué :P.
+
+
+Nous allons maintenant faire la création du site web pour __www.linux202-siteA.com__ aka __siteA__. Mais avant j'aimerai que l'on prenne une seconde pour voir le fichier **ports.conf**
+
+        $ cat /etc/apache2/ports.conf
+        Listen 80
+
+        <IfModule ssl_module>
+            Listen 443
+        </IfModule>
+
+        <IfModule mod_gnutls.c>
+            Listen 443
+        </IfModule>
+
+Comme vous le savez peut-être et sinon je vais vous le dire , les communications en __http__ sont réalisées sur le port 80 alors que les communications chiffré sont réalisé sur le port 443. Si vous regardez le fichier __ports.conf__ nous pouvons voir que le port 443 sera ouvert si le module **ssl_module** est charger sinon il n'ouvre pas le port .
+
+Ceci étant clarifier , pas de mystère nous pouvons procéder à la mise en place de la configuration pour le __siteA__ en **ssl**.
+
+        $ sudo vim /etc/apache2/sites-available/siteA-ssl.conf
+        $ cat /etc/apache2/sites-available/siteA-ssl.conf
+
+TODO: ICI ICI ICI 
+
+Lien : 
+    * https://fr.wikipedia.org/wiki/Certificat_%C3%A9lectronique
+    * https://en.wikipedia.org/wiki/Public_key_infrastructure + EN
+
+* Référence : https://httpd.apache.org/docs/2.4/fr/ssl/ssl_howto.html
+
 # <a name="redirect" /> Redirection d'URL
 
 La manipulation des __URL__ est maintenant une pratique très courante dans l'industrie , les raisons sont multiple :
