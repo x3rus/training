@@ -1856,7 +1856,45 @@ https://httpd.apache.org/docs/2.4/developer/modguide.html
 
 La sécurisation des communication est plus que critique de nos jours, nous désirons que les informations non publique ne soit lisible que par les personnes autorisées. Le protocole **HTTP** est un protocole non sécurisé , l'ensemble des paquets réseaux sont lisible (non chiffré) , si un personne est sur votre réseau et peut intercepté les communications il peut lire l'ensemble du trafic. Le protocole **httpS** règle le problème en chiffrant les communications entre le client (fureteur) et le serveur (apache) , résultat le trafic ne peut pas être lu.
 
-Sous __Ubuntu__ le module **ssl** est inclut lors de l'installation du pacquage **apache2**, sous __RedHat/CentOS__ vous devez installer le module **mod_ssl** spécifiquement. Nous allons procéder à la mise en place d'un site web avec chiffrement, nous prendrons aussi le temps d'expliquer le fonctionnement du système de certificat. D'expérience j'ai constaté que pour beaucoup le concept de certificat __SSL__ est floue alors que l'ensemble de nos communications sont sécurisé par ce principe !
+Sous __Ubuntu__ le module **ssl** est inclut lors de l'installation du pacquage **apache2**, sous __RedHat/CentOS__ vous devez installer le module **mod_ssl** spécifiquement. Nous allons prendre quelques minutes pour voir la théorie autour du système de certificat __SSL/TLS__ , car d'expérience j'ai constaté que pour beaucoup le concept de certificat __SSL__ est floue alors que l'ensemble de nos communications sont assurées par ce système. Par la suite nous mettrons en place la configuration dans apache.
+
+## <a name="concept_certificat_ssl" /> Théorie du fonctionnement des certificats 
+
+Nous allons donc voir comment tous ceci fonctionne, je vais essayer d'y allé en détail mais tranquillement ! Je crois qu'il est important de comprendre ce fonctionnement. Comprendre le fonctionnement des certificats permet de mieux diagnostiquer les problèmes comme administrateur mais aussi comme utilisateur.
+
+### <a name="c_quoi_le_certificat" /> C'est quoi un Certificat ?
+
+Lors de la mise en place d'un site web **https** , nous déclarer une pair de clé , le **certificat** et **la clé privé** , ceci suit le principe de [cryptographie asymétrique](https://fr.wikipedia.org/wiki/Cryptographie_asym%C3%A9trique). La cryptographique asymétrique est utilisé dans bien des cas (clé __ssh__ , ...) , le système **HTTPS** s'appuie sur ce principe , nous allons voir les détails.
+
+Le principe du système de chiffrement asymétrique est basé sur une pair de clé : 
+
+* Une clé publique qui est distribué à tous 
+* Une clé privé , l'ensemble de la sécurité réside dans cette clé il est primordiale de la conserver dans un lieu sécuritaire. Non lisible par tous
+
+![250px-Public-key-crypto_svg.png](./imgs/250px-Public-key-crypto_svg.png)
+
+**ATTENTION** : lors de la génération des clés leur association est **unique**, en d'autre terme si vous perdez une des deux clé il est **impossible** de régénéré l'une d'elle !!
+
+Le système de pair de clé ( [cryptographie asymétrique](https://fr.wikipedia.org/wiki/Cryptographie_asym%C3%A9trique) ) est en contraste avec le système de chiffrement à une clé ( [cryptographie_symétrique](https://fr.wikipedia.org/wiki/Certificat_%C3%A9lectronique#Rappels_sur_le_chiffrement) ) où l'ensemble des utilisateurs connaisse la clé. 
+Voici une représentation des mécanismes de chiffrement : 
+
+* Chiffrement Symétrique :
+
+![Cles_symetriques.png](./imgs/Cles_symetriques.png)
+
+Comme nous pouvons le constater Anne et Bob (aka Robert) ont tous les deux la clé de chiffrement donc peuvent chiffrer et déchiffrer les messages.
+
+* Chiffrement Asymétrique :
+
+![Assymetrie_-_signature_vs_chiffrement.png](./imgs/Assymetrie_-_signature_vs_chiffrement.png)
+
+Dans l'image ci-dessus nous constatons que Anne est la seule à avoir la **clé Privé**, les autres intervenant n'ont en leur possession que la clé publique d'Anne. Deux opération sont réalisées dans le diagramme la première la signature de message , Anne envoie un message signé avec ça clé privé , grâce à la clé publique Bob et Dylan peuvent garantir que le message provient d'Anne. 
+
+* Référence :
+
+    * https://fr.wikipedia.org/wiki/Certificat_%C3%A9lectronique
+
+### <a name="handshake_https" /> Détail de la communication httpS
 
 ## <a name="setup_ssl_website" /> Configuration simple d'un site web avec mod_ssl
 
