@@ -1862,9 +1862,17 @@ Sous __Ubuntu__ le module **ssl** est inclut lors de l'installation du pacquage 
 
 Nous allons donc voir comment tous ceci fonctionne, je vais essayer d'y allé en détail mais tranquillement ! Je crois qu'il est important de comprendre ce fonctionnement. Comprendre le fonctionnement des certificats permet de mieux diagnostiquer les problèmes comme administrateur mais aussi comme utilisateur.
 
+Ces certificats permettent d'effectuer des opérations cryptographiques, comme le chiffrement et la signature numérique qui offrent les garanties suivantes lors des transactions électroniques :
+
+* **Confidentialité** : elle garantit que seul le destinataire (ou le possesseur) légitime d'un bloc de données ou d'un message peut en avoir une vision intelligible ;
+* **authentification** : elle garantit à tout destinataire d'un bloc de données ou d'un message ou à tout système auquel tente de se connecter un utilisateur l'identité de l'expéditeur ou de l'utilisateur en question ;
+* **intégrité** : elle garantit qu'un bloc de données ou qu'un message n'a pas été altéré, accidentellement ou intentionnellement ;
+* **non-répudiation** : elle garantit à quiconque que l'auteur d'un bloc de données ou d'un message ne peut renier son œuvre, c'est-à-dire prétendre ne pas en être l'auteur.
+
+
 ### <a name="c_quoi_le_certificat" /> C'est quoi un Certificat ?
 
-Lors de la mise en place d'un site web **https** , nous déclarer une pair de clé , le **certificat** et **la clé privé** , ceci suit le principe de [cryptographie asymétrique](https://fr.wikipedia.org/wiki/Cryptographie_asym%C3%A9trique). La cryptographique asymétrique est utilisé dans bien des cas (clé __ssh__ , ...) , le système **HTTPS** s'appuie sur ce principe , nous allons voir les détails.
+Lors de la mise en place d'un site web **https** , nous déclarons une pair de clé , le **certificat** et **la clé privé** , ceci suit le principe de [cryptographie asymétrique](https://fr.wikipedia.org/wiki/Cryptographie_asym%C3%A9trique). La cryptographique asymétrique est utilisé dans bien des cas (clé __ssh__ , ...) , le système **HTTPS** s'appuie sur ce principe , nous allons voir les détails.
 
 Le principe du système de chiffrement asymétrique est basé sur une pair de clé : 
 
@@ -1888,11 +1896,87 @@ Comme nous pouvons le constater Anne et Bob (aka Robert) ont tous les deux la cl
 
 ![Assymetrie_-_signature_vs_chiffrement.png](./imgs/Assymetrie_-_signature_vs_chiffrement.png)
 
-Dans l'image ci-dessus nous constatons que Anne est la seule à avoir la **clé Privé**, les autres intervenant n'ont en leur possession que la clé publique d'Anne. Deux opération sont réalisées dans le diagramme la première la signature de message , Anne envoie un message signé avec ça clé privé , grâce à la clé publique Bob et Dylan peuvent garantir que le message provient d'Anne. 
+Dans l'image ci-dessus nous constatons que Anne est la seule à avoir la **clé Privé**, les autres intervenant n'ont en leur possession que la clé publique d'Anne. Deux opération sont réalisées dans le diagramme la première la signature de message , Anne envoie un message signé avec ça clé privé , grâce à la clé publique Bob et Dylan peuvent garantir que le message provient d'Anne. Le déchiffrement de la signature n'est possible qu'avec la pair associé à la clé publique donc la clé privé dont Anne est la seule propriétaire.
+L'autre opération est le chiffrement d'information que Bob transmet à Anne , ce dernier chiffre l'information avec la clé publique d'Anne résultat uniquement la clé privé d'Anne est en mesure de déchiffrer le contenu. 
+
+**ATTENTION** : prendre note que lors du chiffrement de message avec la clé privé tous le monde peut déchiffrer avec la clé publique distribué sur le net ! Donc si Anne désire transmettre un message chiffré à Bob, elle doit être avoir la clé publique de ce dernier.
+
+Si nous revenons sur notre sujet, le système de certificat pour le site web , nous retrouvons cette pair de clé :
+
+* Clé publique == Certificat 
+* Clé privé == Clé privé installé sur le serveur
+
+
+La clé n'est qu'une partie du Certificat, ce dernier est composé de plusieurs partie, il existe plusieurs type de certificat pour différent usage ( Certificat de courriel, d'authentification de machine , ... ). Dans le cadre de la configuration d'un serveur web nous utilisons les certificat [X.509](https://fr.wikipedia.org/wiki/X.509). 
+
+Voici le contenu de la structure d'un certificat :
+
+* Version
+* Numéro de série
+* Algorithme de signature du certificat
+* DN (Distinguished Name) du délivreur (autorité de certification)
+* Validité (dates limite)
+*   Pas avant
+*   Pas après
+* DN de l'objet du certificat
+* Informations sur la clé publique :
+*   Algorithme de la clé publique
+*   Clé publique proprement dite
+* Identifiant unique du signataire (optionnel, X.509v2)
+* Identifiant unique du détenteur du certificat (optionnel, X.509v2)
+* Extensions (optionnel, à partir de X.509v3)
+*   Liste des extensions
+* Signature des informations ci-dessus par l'autorité de certification
+
+À ce stade des explications je ne vais pas faire mention du **CA** (l'autorité de certification) gardons notre environnement autonome, mais pas de panique nous allons en parler :D.
+
+Afin d'avoir un peu de concret je vous propose de faire la création d'un certificat **autonome**, donc un certificat (clé publique) et une clé privé.
+
+        $ openssl req -x509 -newkey rsa:2048 -nodes -keyout server.key -out server.crt -days 365
+        Generating a 2048 bit RSA private key
+        ................+++
+        ....................................................................................+++
+        writing new private key to 'server.key'
+        -----
+        You are about to be asked to enter information that will be incorporated
+        into your certificate request.
+        What you are about to enter is what is called a Distinguished Name or a DN.
+        There are quite a few fields but you can leave some blank
+        For some fields there will be a default value,
+        If you enter '.', the field will be left blank.
+        -----
+        Country Name (2 letter code) [AU]:CA
+        State or Province Name (full name) [Some-State]:Quebec
+        Locality Name (eg, city) []:Montreal
+        Organization Name (eg, company) [Internet Widgits Pty Ltd]:X3rus
+        Organizational Unit Name (eg, section) []:Formation
+        Common Name (e.g. server FQDN or YOUR name) []:www.x3rus.com
+        Email Address []:
+
+        $ ls
+        server.crt  server.key
+
+        $ head -5 server.key server.crt 
+        ==> server.key <==
+        -----BEGIN PRIVATE KEY-----
+        MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDJsYXLGDBE8Zlh
+        4++b6bI0zDxonvPvuS/BI9M1wF7G2JPAhXHmBT7TpVfp3ekR7SuFIJVKEOn7xQiV
+        4kJwtnLexZDx3MaEJnBVsOcmz8dvyJ2eYif3p2WkGxbcyRRAV+KTXHSZgHdY6LfB
+        H08nBasY5nqJ5v27W2O/gC1RavsjAuHIPW7khcP2ksJEdbTsW1ihxp03NkA8xRX/
+
+        ==> server.crt <==
+        -----BEGIN CERTIFICATE-----
+        MIIDrTCCApWgAwIBAgIJAIM6pAb71wACMA0GCSqGSIb3DQEBCwUAMG0xCzAJBgNV
+        BAYTAkNBMQ8wDQYDVQQIDAZRdWViZWMxETAPBgNVBAcMCE1vbnRyZWFsMQ4wDAYD
+        VQQKDAVYM3J1czESMBAGA1UECwwJRm9ybWF0aW9uMRYwFAYDVQQDDA13d3cueDNy
+        dXMuY29tMB4XDTE2MDQwNTEyNDgyM1oXDTE3MDQwNTEyNDgyM1owbTELMAkGA1UE
+
+Donc un peu d'explication pour bien saisir nous avons utilisé la commande **openssl** pour faire la génération d'un nouveau d'un certificat / clé privé de type **rsa** d'une taille de **2048 bits** le fichier de la clé privé est stocké dans le fichier __server.key__ alors que le certificat est contenu dans le fichier __server.crt__. Telle que mentionné dans la structure du certificat ce dernier doit avoir une date de validité , ici j'indique une validité de 365 jours à partir d'aujourd'hui **-days 365** 
 
 * Référence :
 
     * https://fr.wikipedia.org/wiki/Certificat_%C3%A9lectronique
+    * https://fr.wikipedia.org/wiki/Infrastructure_%C3%A0_cl%C3%A9s_publiques
 
 ### <a name="handshake_https" /> Détail de la communication httpS
 
