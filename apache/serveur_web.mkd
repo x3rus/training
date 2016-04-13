@@ -1971,7 +1971,91 @@ Afin d'avoir un peu de concret je vous propose de faire la création d'un certif
         VQQKDAVYM3J1czESMBAGA1UECwwJRm9ybWF0aW9uMRYwFAYDVQQDDA13d3cueDNy
         dXMuY29tMB4XDTE2MDQwNTEyNDgyM1oXDTE3MDQwNTEyNDgyM1owbTELMAkGA1UE
 
-Donc un peu d'explication pour bien saisir nous avons utilisé la commande **openssl** pour faire la génération d'un nouveau d'un certificat / clé privé de type **rsa** d'une taille de **2048 bits** le fichier de la clé privé est stocké dans le fichier __server.key__ alors que le certificat est contenu dans le fichier __server.crt__. Telle que mentionné dans la structure du certificat ce dernier doit avoir une date de validité , ici j'indique une validité de 365 jours à partir d'aujourd'hui **-days 365** 
+Donc un peu d'explication pour bien saisir nous avons utilisé la commande **openssl** pour faire la génération d'un nouveau d'un certificat / clé privé de type **rsa** d'une taille de **2048 bits** le fichier de la clé privé est stocké dans le fichier __server.key__ alors que le certificat est contenu dans le fichier __server.crt__. Telle que mentionné dans la structure du certificat ce dernier doit avoir une date de validité , ici j'indique une validité de 365 jours à partir d'aujourd'hui **-days 365** .
+
+Quand nous visualisons le fichier **server.crt** ce n'est pas très lisible , nous pouvons utilisons la commande **openssl** aussi pour afficher le contenu du certificat :
+
+        $ openssl x509 -in server.crt -text
+        Certificate:
+            Data:
+                Version: 3 (0x2)
+                Serial Number:
+                    83:3a:a4:06:fb:d7:00:02
+            Signature Algorithm: sha256WithRSAEncryption
+                 Issuer: C=CA, ST=Quebec, L=Montreal, O=X3rus, OU=Formation, CN=www.x3rus.com
+                 Validity
+                    Not Before: Apr  5 12:48:23 2016 GMT
+                    Not After : Apr  5 12:48:23 2017 GMT
+                 Subject: C=CA, ST=Quebec, L=Montreal, O=X3rus, OU=Formation, CN=www.x3rus.com
+                 Subject Public Key Info:
+                    Public Key Algorithm: rsaEncryption
+                        Public-Key: (2048 bit)
+                        Modulus:
+                            00:c9:b1:85:cb:18:30:44:f1:99:61:e3:ef:9b:e9:
+                            b2:34:cc:3c:68:9e:f3:ef:b9:2f:c1:23:d3:35:c0:
+                            5e:c6:d8:93:c0:85:71:e6:05:3e:d3:a5:57:e9:dd:
+                            e9:11:ed:2b:85:20:95:4a:10:e9:fb:c5:08:95:e2:
+                            42:70:b6:72:de:c5:90:f1:dc:c6:84:26:70:55:b0:
+           [ ... OUTPUT COUPÉ ... ]
+             X509v3 extensions:
+                X509v3 Subject Key Identifier:
+                    0A:F2:CE:D0:5B:C1:84:F1:8F:AC:3B:73:FC:37:56:54:31:1F:C5:8F
+                X509v3 Authority Key Identifier:
+                    keyid:0A:F2:CE:D0:5B:C1:84:F1:8F:AC:3B:73:FC:37:56:54:31:1F:C5:8F
+                X509v3 Basic Constraints:
+                    CA:TRUE
+                Signature Algorithm: sha256WithRSAEncryption
+                    c5:08:1c:e0:d5:99:a4:44:e2:f0:41:ab:40:38:6b:fa:b9:00:
+                    f9:6f:74:be:14:bc:4f:7f:c9:27:88:76:31:00:28:57:be:17:
+           [ ... OUTPUT COUPÉ ... ]
+
+Comme vous pouvez le constater à la lecture ci-dessus nous avons l'information sur du site web , nom du domaine , organisation , ... Ceci à la ligne **Subject:**, de plus nous avons la durée de validité du certificat disponible **Validity:**.
+
+Un certificat n'est valide que pour un **FQDN** (__Fully Qualified domain name__) en d'autre mot que pour un nom de domaine complet le certificat ici présent est valide pour le domaine __www.x3rus.com__ mais n'est pas valide pour le domaine __x3rus.com__ . Il est possible de faire l'achat de certificat **wildcard** donc qui couvre l'ensemble des sous domaine d'un domaine (__\*.x3rus.com__) cependant le prix est significativement plus élevé.
+
+Si nous mettons en place ce certificat, votre fureteur vous donnera une erreur lors de l'accès au site web mentionnant que ce dernier est auto signé. Ce qui veut dire que les communications seront chiffré, car il y a une clé publique (certificat) et une clé privé qui est disponible cependant l'authenticité du site web ne peut être validé.
+
+Le système **httpS** offre aussi une garantie d'authenticité du site web avec qui nous communiquons. Pour permettre cette validation nous avons besoin d'un tierce qui va effectué cette validation, c'est à ce moment qu'arrive le **Certificat Authority** (__CA__) . C'est pour ce service que vous avez besoin d'acheter un certificat depuis un fournisseur, c'est uniquement pour que votre site soit certifié comme étant bien celui pour lequel il se présente. 
+
+Vous vous demandez alors, mais alors qu'elle est la différence entre le certificat auto signé (__self Sign__) et celui fournit par un __CA__. Il n'y a qu'un légère différence , le système de clé publique et clé privé ne change pas , car le fournisseur de service ne doit JAMAIS avoir votre clé privé , il va uniquement apposer ça signature sur votre certificat.
+Voici une représentation du certificat :
+
+![representation_certificat.png](./imgs/representation_certificat.png)
+
+La première partie correspond à la requête de certificat qui est transmise à l'autorité de certification ( __CA__ ), ceci comprend la clé public en relation avec la clé privé ainsi que l'information sur l'organisation. Ce n'est pas un certificat complet car il ne contient pas de date d'expiration ni d'émetteur (__issuer__). 
+Quand l'on transmet la requête de certificat ce dernier ajouter les parties manquante , et signe le tous pour l'authentifier. 
+
+Pour faire la création de la requête vous pouvez utiliser la commande :
+
+        $ openssl req -new -newkey rsa:2048 -nodes -keyout server.key -out server.csr
+        Generating a 2048 bit RSA private key
+        .......................+++
+        ......................................................+++
+        writing new private key to 'server.key'
+        -----
+        You are about to be asked to enter information that will be incorporated
+        into your certificate request.
+        What you are about to enter is what is called a Distinguished Name or a DN.
+        There are quite a few fields but you can leave some blank
+        For some fields there will be a default value,
+        If you enter '.', the field will be left blank.
+        -----
+        Country Name (2 letter code) [AU]:CA
+        State or Province Name (full name) [Some-State]:Quebec
+        Locality Name (eg, city) []:Montreal
+        Organization Name (eg, company) [Internet Widgits Pty Ltd]:X3rus
+        Organizational Unit Name (eg, section) []:formation
+        Common Name (e.g. server FQDN or YOUR name) []:www.x3rus.com
+        Email Address []:
+
+        Please enter the following 'extra' attributes
+        to be sent with your certificate request
+        A challenge password []:
+        An optional company name []:
+
+
+Comme vous pouvez le constater quand nous avons créé un certificat auto signée et pour la requête nous avons fournit les mêmes informations. Une fois la requête crée généralement l'autorité de certification à un formulaire pour transmettre la requête puis vous recevez le certificat complet. La requête de certificat ne contenant pas de date peut être réutilisé lors de chaque renouvellement , CEPENDANT il est important de comprendre que la requête de certificat est aussi la clé publique donc vous devez conserver la même clé privé.
+
 
 * Référence :
 
@@ -1979,6 +2063,23 @@ Donc un peu d'explication pour bien saisir nous avons utilisé la commande **ope
     * https://fr.wikipedia.org/wiki/Infrastructure_%C3%A0_cl%C3%A9s_publiques
 
 ### <a name="handshake_https" /> Détail de la communication httpS
+
+Maintenant que nous avons une meilleur compréhension du certificat nous allons voir le processus de communications lorsque le fureteur établie la connexion. Ceci nous permettra aussi de comprendre comment le certificat est valider avec l'autorité de certification. 
+
+Une image vaut mille mot , voici donc 2 graphiques représentant la communication du processus de communication _SSL__. 
+
+![SSLHandshake-v1.png](./imgs/SSLHandshake-v1.png)
+![SSLHandshake-v2.gif](./imgs/SSLHandshake-v2.gif)
+
+
+
+#### <a name="processus_de_validation" /> Processus de validation du certificat
+
+#### <a name="extra_protocol_ssl_img" /> Représentation graphique détaillé du protocole SSL
+
+Une représentation plus détaillé du protocole __SSL__ avec l'ensemble des clés et de nombre aléatoire généré.
+
+![SSLHandshake-v3-two-way-auth.png](./imgs/SSLHandshake-v3-two-way-auth.png)
 
 ## <a name="setup_ssl_website" /> Configuration simple d'un site web avec mod_ssl
 
