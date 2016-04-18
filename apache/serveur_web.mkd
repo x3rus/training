@@ -1836,7 +1836,7 @@ Je vais prendre comme exemple le module **dir** , simple et permet de bien compr
 
 Comme vous pouvez le constater le fichier __load__ , charge un fichier **.so** contenu dans le répertoire **/usr/lib/apache2/modules/** . Il est possible de rajouter des modules à apache, cependant il est important que le module fut créer pour la bonne version qui est en place !
 
-Le fichier **.conf** , contient la configuration pour le module , comme vous pouvez voir il y a l'instruction **<IfModule ...**, ceci permet de valider la présence d'un module est de charger la configuration uniquement si le module est présent. Ceci est encore plus pratique quand on a un gros fichier de configuration et que l'on active ou non les modules au début. Car si je prend le cas présent si l'instruction **DirectoryIndex** est définie dans le fichier mais que le module n'est pas présent Apache ne va pas démarrer.
+Le fichier **.conf** , contient la configuration pour le module , comme vous pouvez voir il y a l'instruction **IfModule...**, ceci permet de valider la présence d'un module est de charger la configuration uniquement si le module est présent. Ceci est encore plus pratique quand on a un gros fichier de configuration et que l'on active ou non les modules au début. Car si je prend le cas présent si l'instruction **DirectoryIndex** est définie dans le fichier mais que le module n'est pas présent Apache ne va pas démarrer.
 
 Vous pouvez utiliser **apachectl** afin de connaître les modules actuellement charger par apache. Il est possible de les inclure directement dans le binaire **apache2**, ceci est fait lors de la compilation du programme. 
 
@@ -2066,14 +2066,39 @@ Comme vous pouvez le constater quand nous avons créé un certificat auto signé
 
 Maintenant que nous avons une meilleur compréhension du certificat nous allons voir le processus de communications lorsque le fureteur établie la connexion. Ceci nous permettra aussi de comprendre comment le certificat est valider avec l'autorité de certification. 
 
-Une image vaut mille mot , voici donc 2 graphiques représentant la communication du processus de communication _SSL__. 
+Une image vaut mille mot , voici donc 2 graphiques représentant la communication du processus de communication __SSL__. 
 
 ![SSLHandshake-v1.png](./imgs/SSLHandshake-v1.png)
 ![SSLHandshake-v2.gif](./imgs/SSLHandshake-v2.gif)
 
 
+Si nous prenons la première image.
+
+1. **TCP/IP** : Les flèches en bleu représente la connexion __TCP/IP__ la poignée de main ( __3 hand shake__ ) ceci représenté par les paquets (__SYN__, __SYN/ACK__, __ACK__). 
+
+#### <a name="negotiation_des_algo" /> Processsus de négotiation des protocols supporté
+
+
+1. **Client hello** : Le client transmet au serveur les protocoles __SSL/TLS__ qu'il supporte et désire utiliser pour la communication , de plus il fournit une liste de chiffrement supporté (__cipher suites__) pour la clé symétrique qui sera utilisé par la suite nous y reviendrons. Il y a aussi une numéro de session (session __ID__), ceci est un numéro aléatoire qui sera utilisé pour la génération des clés. Il peut y avoir d'autre information transmis.
+2. **Server hello** : Le serveur reçoit la réponse du client et analyse s'il y a un match entre les protocoles __SSL/TLS__ supporté par le client et ceux qu'il supporte et en choisie un. Il réalise la même opération pour les chiffrements supportés (__cipher suites__). Lors de la réponse le serveur transmet sont certificats __SSL__ . Il y a aussi une numéro de session (session __ID__), ceci est un numéro aléatoire qui sera utilisé pour la génération des clés. Il peut y avoir d'autre information transmis.
 
 #### <a name="processus_de_validation" /> Processus de validation du certificat
+
+Lors de la réception du certificat le client valide ce dernier :
+
+1. Validation de la date de validité , est-ce que le certificat est encore valide ? Ceci est réalisé récupérant l'information  : __Validity Not Before__ et __Validity Not After__
+2. Par la suite le système valide que le certificat fut bien émis pour le site web indiqué, que l'URL concorde avec l'entrée __CN__ du certificat (__Subject: C=CA, ST=Quebec, L=Montreal, O=X3rus, OU=Formation, CN=www.x3rus.com__)
+3. La client valide que le certificat fut signé / validé par une autorité de certificat (__verysign__,__godaddy__, __digicert__, ...) Pour ce faire il utilise les certificats (clé publique) présent sur le système ou dans le fureteur pour déchiffrer la signature réalisé par la clé privé du certificat d'autorité (__CA__). Lors de la description du certificat j'avais fait mention du processus de signature avec un certificat je vous invite a relire [cette section](#c_quoi_le_certificat). Vous pouvez voir dans votre fureteur la liste des certificats des __CA__ disponible :
+
+![firefox_list_certificats.png](./imgs/firefox_list_certificats.png) 
+
+4. Une fois que le certificat fut confirmé comme valide et émis par un fournisseur de certification, le système valide au près de cette autorité si le certificat présent ne fut pas révoqué. Il communique avec la __Certification Revocation List__ **CRL**, cette dernière est disponible comme information dans le certificat du __CA__
+
+![firefox_digicert_crl.png](./imgs/firefox_digicert_crl.png)
+
+Il existe aussi un autre protocole __OCSP__ qui permet d'avoir les certificats révoqué. L'objectif de ce mécanisme est que si pour une raison X votre système est compromis et quelqu'un vous vole la clé privé , vous êtes en mesure d'invalider le certificat pour que personne puisse l'utiliser.
+
+#### <a name="echange_de_cle_symetric" /> Échange d'une clé symétrique
 
 #### <a name="extra_protocol_ssl_img" /> Représentation graphique détaillé du protocole SSL
 
