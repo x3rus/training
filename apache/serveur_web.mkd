@@ -2163,8 +2163,93 @@ Ceci étant clarifier , pas de mystère nous pouvons procéder à la mise en pla
 
         $ sudo vim /etc/apache2/sites-available/siteA-ssl.conf
         $ cat /etc/apache2/sites-available/siteA-ssl.conf
+        <VirtualHost 172.17.0.1:443>
+            ServerAdmin webmaster@localhost
+            ServerName www.linux202-siteA.com
+            ServerAlias linux202-siteA.com
+            ServerAlias toto.linux202-siteA.com
+            
+            DocumentRoot /data/vhosts/siteA/docroot/
+            Alias "/cm-images" "/data/vhosts/common/images"
 
-TODO: ICI ICI ICI 
+            <Directory /data/vhosts/siteA/docroot/>
+                Options none
+                AllowOverride ALL
+                Require all granted
+            </Directory>
+            
+            <Directory /data/vhosts/siteA/uploads/>
+                Options none
+                AllowOverride None
+                Require all granted
+            </Directory>
+            
+            # Configuration des logs
+            ErrorLog /data/vhosts/siteA/logs/ssl_error.log
+            CustomLog /data/vhosts/siteA/logs/ssl_access.log combined
+            
+            ## SSL section 
+            SSLEngine on
+            SSLCertificateFile "/etc/apache2/ssl/www_linux202-siteA_com.crt"
+            SSLCertificateKeyFile "/etc/apache2/ssl/www_linux202-siteA_com.key"
+        </VirtualHost>
+
+
+Génération du certificat __SSL__ auto-signé , j'ai pas d'argent pour acheter un certificat pour la formation ;-), cependant bien que le certificat ne soit PAS valide le protocole __SSL__ est tous de même respecté. Le client utilisera le certificat pour transmettre les données chiffré au serveur pour la négotiation de la clé symétrique.
+
+        $ cd ~
+        $ mkdir ssl && cd ssl
+        $ openssl req -x509 -newkey rsa:2048 -nodes -keyout www_linux202-siteA_com.key -out www_linux202-siteA_com.crt -days 365
+        Generating a 2048 bit RSA private key
+        ..............................................................................................................+++
+        .................+++
+        writing new private key to 'www_linux202-siteA_com.key'
+        -----
+        You are about to be asked to enter information that will be incorporated
+        into your certificate request.
+        What you are about to enter is what is called a Distinguished Name or a DN.
+        There are quite a few fields but you can leave some blank
+        For some fields there will be a default value,
+        If you enter '.', the field will be left blank.
+        -----
+        Country Name (2 letter code) [AU]:CA
+        State or Province Name (full name) [Some-State]:Quebec
+        Locality Name (eg, city) []:Montreal
+        Organization Name (eg, company) [Internet Widgits Pty Ltd]:X3rus
+        Organizational Unit Name (eg, section) []:training
+        Common Name (e.g. server FQDN or YOUR name) []: www.linux202-sitea.com
+        Email Address []:
+        $ sudo mkdir /etc/apache2/ssl
+        $ sudo cp * /etc/apache2/ssl
+
+
+Telle que mentionné plus tôt votre clé privé de chiffrement ET très très importante , car l'ensemble de la sécurité réside sur ce fichier. Il est très important de s'assurer de sécurisé ce dernier.
+
+        $  ls -l /etc/apache2/ssl
+        total 8
+        -rw-r--r-- 1 root root 1334 Apr 20 08:36 www_linux202-siteA_com.crt
+        -rw-r--r-- 1 root root 1704 Apr 20 08:36 www_linux202-siteA_com.key
+        $ sudo chmod o-r /etc/apache2/ssl/www_linux202-siteA_com.key
+
+
+Activation du serveur virtuel, validation de la configuration et redémarrage du service.
+
+        $ cd /etc/apache/sites-enabled
+        $ sudo ln -s ../sites-available/siteA-ssl.conf
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+        Syntax OK
+         * Restarting web server apache2
+         ...done.
+
+Nous pouvons à présent accéder au site web __SSL__ avec notre fureteur: [https://www.linux202-sitea.com](https://www.linux202-sitea.com)
+
+![sitea-ssl_untrusted_certificat.png](./imgs/sitea-ssl_untrusted_certificat.png)
+
+Bien entendu comme nous n'avons pas un certificat signé par une autorité de certificat, nous avons ce message. **ATTENTION** il est important de bien prendre en considération se message et de ne pas accepter le certificat sans revalidé l'URL. Ce message ne devrais jamais s'affiché si vous communiquez avec un site "officiel".
+
+Un fois le certificat accepté , le site nous est présenté :
+
+![sitea-ssl.png](./imgs/sitea-ssl.png)
 
 Lien : 
     * https://fr.wikipedia.org/wiki/Certificat_%C3%A9lectronique
