@@ -2096,9 +2096,18 @@ Lors de la réception du certificat le client valide ce dernier :
 
 ![firefox_digicert_crl.png](./imgs/firefox_digicert_crl.png)
 
-Il existe aussi un autre protocole __OCSP__ qui permet d'avoir les certificats révoqué. L'objectif de ce mécanisme est que si pour une raison X votre système est compromis et quelqu'un vous vole la clé privé , vous êtes en mesure d'invalider le certificat pour que personne puisse l'utiliser.
+Il existe aussi un autre protocole __OCSP__ qui permet d'avoir les certificats révoqué. L'objectif de ce mécanisme est que si pour une raison X votre système est compromis et quelqu'un vous vole la clé privé , vous êtes en mesure d'invalider le certificat pour que personne puisse l'utiliser. Cette opération doit être réalisé au près de votre autorité de certificat.
 
 #### <a name="echange_de_cle_symetric" /> Échange d'une clé symétrique
+
+Telle que mentionné plus tôt le système de clé asymétrique ne permet le chiffrement qu'avec le système de pair de clé, nous avons le certificat __SSL__ du serveur (clé publique) donc le client peut chiffrer les données qui ne seront décrypté que par le serveur. Le "problème" est que par défaut le client n'a PAS de certificat (ce est possible aussi certaine organisation utilise des certificats pour identifier les clients, cependant je conserve la cas classique telle que les communications avec une institue bancaire grand publique). De plus si le client avez un certificat afin d'assurer l'identité de ce dernier nous serions obligé de le renouveler régulièrement au près d'un __CA__.
+Autre aspect négatif de l'utilisation d'un système de chiffrement par clé asymétrique telle que les certificats __SSL__ est le coût __CPU__ / mémoire requise pour chiffré et déchiffrer les communications. Ce système est beaucoup plus gourmand  en ressource. 
+
+Donc pour contourner le problème de l'absence de certificat du client et pour améliorer les performances des communications __SSL__ un échange de clé symétrique est réalisé entre le client et le serveur. Le client génère un numéro aléatoire appelé **PRE-master key secret** qui est transmis au serveur. Afin d'assurer la confidentialité de cette clé , cette dernière est chiffré avec le certificat (clé public ) du serveur, ceci assure que uniquement le serveur sera en mesure de le lire.
+
+Ceci est appelé **pre-master key** car le client ET le serveur réalise un calcule algorithmique afin de générer la clé de chiffrement final. Ce calcule génère la clé de chiffrement symétrique qui sera utilisé lors des communications entre le client et le serveur. La clé final n'est donc JAMAIS transmise sur le réseaux. 
+
+Le client et le serveur transmette un message de fin de la négociation , validant ainsi le chiffrement , par la suite l'ensemble des communications sont chiffré avec la clé symétrique.
 
 #### <a name="extra_protocol_ssl_img" /> Représentation graphique détaillé du protocole SSL
 
