@@ -7,12 +7,6 @@ TODO : Corriger les \_
 
 # Index 
 
-## <a name="compilation_module" /> Compilation d'un modules apache (a valider)
-
-TODO : a analyser 
-
-https://httpd.apache.org/docs/2.4/developer/modguide.html
-
 
 # <a name="redirect" /> Redirection d'URL
 
@@ -36,7 +30,37 @@ Avant de parler de [mod_rewrite](https://httpd.apache.org/docs/2.4/fr/mod/mod_re
 
 ### <a name="html_redirect" /> Redirection avec un fichier html
 
-Je sort un peu du cadre d'apache, cependant j'aime bien cette méthode ... TODO : http://webmaster.iu.edu/tools-and-guides/maintenance/redirect-meta-refresh.phtml
+Je sort un peu du cadre d'apache, cependant j'aime bien cette méthode, car elle est simple et n'oblige pas d'avoir un accès à la configuration apache. Il suffit de créer un fichier __index.html__ dans le répertoire désiré , par exemple la racine du site et de mettre le code de redirection .
+
+Si nous prenons le __siteC__ que nous avons préalablement créé , si nous accédons au site site actuellement nous avons simplement le message : "Le site C ". Nous allons réaliser une redirection vers le site __google__ quand on accède au site.
+
+Pour ce faire je vais modifier le fichier __index.html__ avec l'instruction suivant :
+
+        <html>
+          <head>
+              <title>HTML redirect</title>
+              <META http-equiv="refresh" content="5;URL=http://www.google.com">
+          </head>
+          <body bgcolor="#ffffff">
+            <center>
+                Vous allez etre redirigé dans 5 seconde vers google.com
+            </center>
+          </body>
+        </html>
+
+
+Ceci fonctionne très bien cependant ça ne fonctionne que si nous accédons à la racine du site web , en effet si on crée un fichier __info.html__ dans le __DocumentRoot__ et que l'on y accède directement nous ne serons pas redirigé . Démonstration !
+
+
+        $ sudo vim info.html
+        $ cat info.html
+        un peu de texte pour fournir de l'information
+
+Si vous accédez à http://www.sitec.com/info.html , telle que mentionné vous aurez le contenu du fichier sans aucune redirection. Il est possible que ceci soit ce que vous désirez, chaque problème à ça solution !
+
+Référence :
+
+* http://webmaster.iu.edu/tools-and-guides/maintenance/redirect-meta-refresh.phtml
 
 
 ## <a name="mod_rewrite" /> Mod_rewrite pour réécrire les URL
@@ -149,4 +173,10 @@ Si nous retournons à l'URL nous devrions avoir une authentification avec succè
 * [Liste des code d'état du protocole http](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes): https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
 
 
-TODO: demontration du symlink vers /etc/passwd == sudo ln -s /etc/ /var/www/html/sys
+## <a name="compilation_module" /> Compilation d'un modules apache (a valider)
+
+TODO : a analyser 
+
+https://httpd.apache.org/docs/2.4/developer/modguide.html
+
+ODO: demontration du symlink vers /etc/passwd == sudo ln -s /etc/ /var/www/html/sys

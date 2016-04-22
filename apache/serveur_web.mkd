@@ -1772,8 +1772,9 @@ Il existe aussi [AliasMatch](https://httpd.apache.org/docs/2.4/mod/mod_alias.htm
 
 ## <a name="organisation_premission_dir"/> Permissions des répertoires
 
-J'aurais peut-être dû commencé par ça , mais comme les méthodes d'accès au serveur sont très variées je ne l'ai pas privilégié . Lorsque je par d'accès au serveur vous pouvez fournir un accès __ftp__, __scp/ssh__ , __webdav__, partage __NFS__ , ...
+J'aurais peut-être dû commencé par ça , mais comme les méthodes d'accès au serveur sont très variées je ne l'ai pas privilégié . Lorsque je parle d'accès au serveur vous pouvez fournir un accès __ftp__, __scp/ssh__ , __webdav__, partage __NFS__ , ...
 
+http://askubuntu.com/questions/134425/how-can-i-chroot-sftp-only-ssh-users-into-their-homes
 
 TODO : Ajouter l'info ici p-e avec un scp chrooté ça serait cool !!
 
