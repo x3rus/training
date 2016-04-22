@@ -3,7 +3,6 @@
 pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 </style>
 
-TODO : Corriger les \_
 
 # Index 
 
@@ -24,8 +23,8 @@ TODO : Corriger les \_
            * [ Permission de redéfinition des configurations](#htaccess_allowoverride) 
        * [ Bonne pratique de l'utilisation du fichier .htaccess](#utilisation_de_htaccess) 
 * [ VirtualHost](#VirtualHost) 
-       *<a name="Vhost_ip"> Serveurs virtuels par IP
-       *<a name="Vhost_name_base"> Serveurs virtuels par Nom
+       * [ Serveurs virtuels par IP](#Vhost_ip) 
+       * [ Serveurs virtuels par Nom](#Vhost_name_base) 
 * [ Organisation des sites web](#organisation) 
        * [ Organisation des répertoires des serveurs virtuelle](#organisation_rep_vhosts) 
        * [ Configuration Apache pour les serveurs virtuels](#organisation_config_vhosts) 
@@ -33,12 +32,18 @@ TODO : Corriger les \_
            * [ Rotation des logs pour les serveurs virtuels](#organisation_rotation_logs_vhosts) 
        * [ Utilisation du répertoire privé](#organisation_repertoire_private) 
        * [ Utilisation de la surcharge de configuration (htaccess)](#organisation_utilisation_htaccess) 
-       * [ Mutualisation de contenu  / service ](#organisation_alias) 
+       * [ Mutualisation de contenu  / service (Alias)](#organisation_alias) 
        * [ Permissions des répertoires](#organisation_premission_dir) 
 * [ Utilisation des modules apache](#module) 
-       * [ Compilation d'un modules apache](#compilation_module) 
-* [ Performance et analyse d'apache](#performance) 
-* [ Mod_rewrite pour réécrire les URL](#mod_rewrite) 
+* [ Mise en place d'un site en httpS](#http_ssl) 
+       * [ Théorie du fonctionnement des certificats ](#concept_certificat_ssl) 
+           * [ C'est quoi un Certificat ?](#c_quoi_le_certificat) 
+           * [ Détail de la communication httpS](#handshake_https) 
+               * [ Processsus de négotiation des protocols supporté](#negotiation_des_algo) 
+               * [ Processus de validation du certificat](#processus_de_validation) 
+               * [ Échange d'une clé symétrique](#echange_de_cle_symetric) 
+               * [ Représentation graphique détaillé du protocole SSL](#extra_protocol_ssl_img) 
+       * [ Configuration simple d'un site web avec mod_ssl](#setup_ssl_website) 
 
 # <a name="Intro" /> Introduction
 
@@ -1239,9 +1244,9 @@ Voici un petit script pour faire la création des répertoires, attention ceci e
 Nous avons maintenant la structure des répertoires, nous allons mettre en place la configuration apache approprié.
 
 Nous allons définir une configuration par défaut qui sera hérité par l'ensemble des sites virtuel. 
-Toujours en suivant la structure de Ubuntu/Debian nous allons définir le fichier **/etc/apache2/conf-available/vhosts_base.conf**. Nous allons y définir la configuration pour le répertoire **/data/vhosts/**.
+Toujours en suivant la structure de Ubuntu/Debian nous allons définir le fichier **/etc/apache2/conf-available/vhosts\_base.conf**. Nous allons y définir la configuration pour le répertoire **/data/vhosts/**.
 
-Voici le contenu du fichier : **/etc/apache2/conf-available/vhosts_base.conf**
+Voici le contenu du fichier : **/etc/apache2/conf-available/vhosts\_base.conf**
 
         # Configuration par default qui sera appliquer par default a l'ensemble des vhosts
 
@@ -1373,12 +1378,12 @@ Nous avons donc les formats :
 Si nous regardons rapidement l'instruction [Logformat](http://httpd.apache.org/docs/current/fr/mod/mod_log_config.html#logformat) pour **combined** nous avons le format :
 
 * %h : Serveur distant. Contiendra l'adresse IP si la directive HostnameLookups est définie à Off
-* %l : Le nom de connexion distant , Affiche un tiret, sauf si mod_ident est présent
+* %l : Le nom de connexion distant , Affiche un tiret, sauf si mod\_ident est présent
 * %u : L'utilisateur distant (en provenance d'auth ; peut être faux si le statut de retour (%s) est 401).
 * %t : Date à laquelle la requête a été reçue
 * %r : La première ligne de la requête
 * %>s : Statut. Pour les requêtes redirigées en interne, il s'agit du statut de la requête *originale* --- %>s pour la dernière.
-* %O : Nombre d'octets envoyés, y compris les en-têtes. Peut être nul dans les rares cas où une requête est avortée avant que la réponse ne soit envoyée. Nécessite l'activation de mod_logio.
+* %O : Nombre d'octets envoyés, y compris les en-têtes. Peut être nul dans les rares cas où une requête est avortée avant que la réponse ne soit envoyée. Nécessite l'activation de mod\_logio.
 * %Referer : Référence de la provenance de la requête
 * %User-Agent : Le type de client établissant la connexion  (Firefox , Chrome, windows, Linux , ...)
 
@@ -1569,8 +1574,8 @@ Bon [Options](https://httpd.apache.org/docs/2.4/fr/mod/core.html#options) c'est 
 
 * **ExecCGI** : Permet l'appel de scripts externe telle que des scripts écrit en python , __perl__ , même en C . Apache exécute le fichier ou binaire.
 * **FollowSymLinks** : Le serveur va suivre les liens symboliques dans le répertoire concerné.
-* **Indexes** : Si une URL requise correspond au répertoire concerné, et si aucun DirectoryIndex (par exemple index.html) n'est défini pour ce répertoire, le module mod_autoindex va renvoyer un listing formaté du répertoire.
-* **MultiViews** : Les vues multiples ("multiviews") à contenu négocié à l'aide du module mod_negotiation sont autorisées. 
+* **Indexes** : Si une URL requise correspond au répertoire concerné, et si aucun DirectoryIndex (par exemple index.html) n'est défini pour ce répertoire, le module mod\_autoindex va renvoyer un listing formaté du répertoire.
+* **MultiViews** : Les vues multiples ("multiviews") à contenu négocié à l'aide du module mod\_negotiation sont autorisées. 
 * **SymLinksIfOwnerMatch** : Le serveur ne suivra que les liens symboliques qui renvoient vers un fichier ou un répertoire dont le propriétaire est le même que celui du lien.
 * **ALL** / **NONE** : respectivement toute les options cité plus haut ou aucune options :D.
 
@@ -1716,7 +1721,7 @@ Si nous reprenons la configuration du répertoire **/** , contenu dans le fichie
             Require all denied
         </Directory>
 
-L'ensemble des répertoires non définie son refusé, nous devons donc permettre l'accès au répertoire __common__ afin d'autoriser les accès à ce dernier. Pour ce faire nous allons modifier le fichier **/etc/apache2/conf-available/vhosts_base.conf** afin de lui définir le nouveau répertoire : 
+L'ensemble des répertoires non définie son refusé, nous devons donc permettre l'accès au répertoire __common__ afin d'autoriser les accès à ce dernier. Pour ce faire nous allons modifier le fichier **/etc/apache2/conf-available/vhosts\_base.conf** afin de lui définir le nouveau répertoire : 
 
         <Directory /data/vhosts/common >
             Options None
@@ -1845,12 +1850,6 @@ Vous pouvez utiliser **apachectl** afin de connaître les modules actuellement c
 
 Je vous dirai que l'ensemble 99% du temps les modules offert par le système de pacquage répond au besoin. Sous __Debian / Ubuntu__ vous pouvez avoir la liste des modules apaches disponible avec le système grâce à la commande : **apt-cache search libapache2** Pour les personnes qui désire voir comment compiler un modules amusons nous ... :D
 
-
-## <a name="compilation_module" /> Compilation d'un modules apache (a valider)
-
-TODO : a analyser 
-
-https://httpd.apache.org/docs/2.4/developer/modguide.html
 
 # <a name="http_ssl" /> Mise en place d'un site en httpS
 
@@ -2141,7 +2140,7 @@ Si vous avez l'erreur suivante :
         AH00526: Syntax error on line 43 of /etc/apache2/mods-enabled/ssl.conf:
         SSLSessionCache: 'shmcb' session cache not supported (known names: ). Maybe you need to load the appropriate socache module (mod_socache_shmcb?).
 
-Ceci indique que vous n'avez pas créer le liens symbolique pour **socache_shmcb.load** ce module est requis par **mod_ssl** si vous lisez le fichier **ssl.load** c'est clairement indiqué :P.
+Ceci indique que vous n'avez pas créer le liens symbolique pour **socache\_shmcb.load** ce module est requis par **mod\_ssl** si vous lisez le fichier **ssl.load** c'est clairement indiqué :P.
 
 
 Nous allons maintenant faire la création du site web pour __www.linux202-siteA.com__ aka __siteA__. Mais avant j'aimerai que l'on prenne une seconde pour voir le fichier **ports.conf**
@@ -2256,38 +2255,4 @@ Lien :
     * https://en.wikipedia.org/wiki/Public_key_infrastructure + EN
 
 * Référence : https://httpd.apache.org/docs/2.4/fr/ssl/ssl_howto.html
-
-# <a name="redirect" /> Redirection d'URL
-
-La manipulation des __URL__ est maintenant une pratique très courante dans l'industrie , les raisons sont multiple :
-
-* Cacher la structure réelle des fichiers sur le système 
-* Rediriger l'ensemble des requêtes vers un fichier principale (__.php__, ...)
-* Rediriger les erreurs vers une page , plus jolie que l'erreur par défaut d'apache
-* Migré un site web tout en conservant la structure original, afin de satisfaire les exigences client et les __référenceurs__ (__google__, __yahoo__, __altavista__ :P, ...)
-* Rediriger les requêtes d'accès au site non chiffré (__http__) pour la version chiffré (**https**)
-* Rediriger les requêtes des clients mobile vers un site plus adapté à l'équipement, voir bloquer les OS impures :P (c'est un blague)
-* Traiter les arguments transmis dans l'URL pour un comportement particulier.
-* ...
-
-Nous allons voir quelques méthodes de mise en place de redirection , certaines configuration sont simple à mettre en place d'autre complexe. Nous verrons le système **mod_rewrite** qui permet de réaliser des configurations très complexe , je vous conseille d'avoir un environnement de teste avant d'essayer d'effectuer, les configurations directement en production. Une mauvaise configuration peut rendre votre site web inaccessible.
-
-## <a name="simple_redirect" /> Redirection Simple
-
-Avant de parler de [mod_rewrite](https://httpd.apache.org/docs/2.4/fr/mod/mod_rewrite.html) nous allons voir d'autre méthode de redirection. Bien que **mod_rewrite** peut répondre à l'ensemble des exemples couvert ci-dessous, il est plus simple d'utiliser des méthodes avec lesquelles nous sommes plus confortable, car plus simple. Libre à vous par la suite :P.
-
-
-### <a name="html_redirect" /> Redirection avec un fichier html
-
-Je sort un peu du cadre d'apache, cependant j'aime bien cette méthode ... TODO : http://webmaster.iu.edu/tools-and-guides/maintenance/redirect-meta-refresh.phtml
-
-
-## <a name="mod_rewrite" /> Mod_rewrite pour réécrire les URL
-
-# <a name="mod_proxy" /> Mod_proxy pour rediriger les requêtes
-# <a name="mod_rewrite" /> Mod_webdav pour avoir un lieu de stockage de fichiers
-
-# <a name="performance" /> Performance et analyse d'apache
-
-
 

@@ -7,6 +7,47 @@ TODO : Corriger les \_
 
 # Index 
 
+## <a name="compilation_module" /> Compilation d'un modules apache (a valider)
+
+TODO : a analyser 
+
+https://httpd.apache.org/docs/2.4/developer/modguide.html
+
+
+# <a name="redirect" /> Redirection d'URL
+
+La manipulation des __URL__ est maintenant une pratique très courante dans l'industrie , les raisons sont multiple :
+
+* Cacher la structure réelle des fichiers sur le système 
+* Rediriger l'ensemble des requêtes vers un fichier principale (__.php__, ...)
+* Rediriger les erreurs vers une page , plus jolie que l'erreur par défaut d'apache
+* Migré un site web tout en conservant la structure original, afin de satisfaire les exigences client et les __référenceurs__ (__google__, __yahoo__, __altavista__ :P, ...)
+* Rediriger les requêtes d'accès au site non chiffré (__http__) pour la version chiffré (**https**)
+* Rediriger les requêtes des clients mobile vers un site plus adapté à l'équipement, voir bloquer les OS impures :P (c'est un blague)
+* Traiter les arguments transmis dans l'URL pour un comportement particulier.
+* ...
+
+Nous allons voir quelques méthodes de mise en place de redirection , certaines configuration sont simple à mettre en place d'autre complexe. Nous verrons le système **mod_rewrite** qui permet de réaliser des configurations très complexe , je vous conseille d'avoir un environnement de teste avant d'essayer d'effectuer, les configurations directement en production. Une mauvaise configuration peut rendre votre site web inaccessible.
+
+## <a name="simple_redirect" /> Redirection Simple
+
+Avant de parler de [mod_rewrite](https://httpd.apache.org/docs/2.4/fr/mod/mod_rewrite.html) nous allons voir d'autre méthode de redirection. Bien que **mod_rewrite** peut répondre à l'ensemble des exemples couvert ci-dessous, il est plus simple d'utiliser des méthodes avec lesquelles nous sommes plus confortable, car plus simple. Libre à vous par la suite :P.
+
+
+### <a name="html_redirect" /> Redirection avec un fichier html
+
+Je sort un peu du cadre d'apache, cependant j'aime bien cette méthode ... TODO : http://webmaster.iu.edu/tools-and-guides/maintenance/redirect-meta-refresh.phtml
+
+
+## <a name="mod_rewrite" /> Mod_rewrite pour réécrire les URL
+
+# <a name="mod_proxy" /> Mod_proxy pour rediriger les requêtes
+# <a name="mod_rewrite" /> Mod_webdav pour avoir un lieu de stockage de fichiers
+
+# <a name="performance" /> Performance et analyse d'apache
+
+
+
 
 # <a name="auth_local_access" /> Autorisation d'accès avec authentification local
 
