@@ -1774,11 +1774,69 @@ Il existe aussi [AliasMatch](https://httpd.apache.org/docs/2.4/mod/mod_alias.htm
 
 J'aurais peut-être dû commencé par ça , mais comme les méthodes d'accès au serveur sont très variées je ne l'ai pas privilégié . Lorsque je parle d'accès au serveur vous pouvez fournir un accès __ftp__, __scp/ssh__ , __webdav__, partage __NFS__ , ...
 
-http://askubuntu.com/questions/134425/how-can-i-chroot-sftp-only-ssh-users-into-their-homes
+Nous allons mettre en place un système __Chrooté__ avec __ssh__ pour l'utilisation de __sftp__.
+Nous allons débuter par la création d'un groupe pour les utilisateurs des serveurs virtuels.
 
-TODO : Ajouter l'info ici p-e avec un scp chrooté ça serait cool !!
+        $ sudo addgroup vhosts
+        Adding group `vhosts' (GID 1001) ...
+        Done.
 
-* Access au répertoire ecriture via Git :P / access au fichier scp , ssh , ...
+Création de l'utilisateur pour le __siteC__ :
+
+        $ sudo adduser --ingroup vhosts --no-create-home --shell /bin/false --home /data/vhosts/siteC/ usr_sitec 
+        Adding user `usr_sitec' ...
+        Adding new user `usr_sitec' (1001) with group `vhosts' ...
+        Not creating home directory `/data/vhosts/siteC/'.
+        Enter new UNIX password: 
+        Retype new UNIX password: 
+        passwd: password updated successfully
+        Changing the user information for usr_sitec
+        Enter the new value, or press ENTER for the default
+                Full Name []: Utilisateur site C
+                Room Number []: 
+                Work Phone []: 
+                Home Phone []: 
+                Other []: 
+                Is the information correct? [Y/n] y
+        $ id usr_sitec
+        uid=1001(usr_sitec) gid=1001(vhosts) groups=1001(vhosts)
+        $ cd /data/vhosts/siteC
+        $ sudo chown usr_sitec -R docroot/ privates/
+
+Nous allons modifier la configuration de __SSH__ serveur donc du fichier **/etc/ssh/sshd_config**
+
+Nous ajoutons à la fin du fichier la configuration suivante et nous redémarrons le service __ssh__: 
+
+        $ sudo cat /etc/ssh/sshd_config
+        [... OUTPUT coupé ...]
+        Match Group vhosts
+                ChrootDirectory %h
+                ForceCommand internal-sftp
+                AllowTcpForwarding no
+        $ sudo /etc/init.d/ssh restart
+
+C'est le temps de valider le tous :D . Je vais mettre le fichier __toto__ dans le répertoire __docroot__ :
+
+        $ sftp usr_sitec@172.17.0.1
+        usr_sitec@172.17.0.1's password:
+        Connected to 172.17.0.1.
+        sftp> ls
+        docroot   logs      privates  uploads
+        sftp> cd docroot/
+        sftp> ls
+        index.html  info.html
+        sftp> put toto
+        Uploading toto to /docroot/toto
+        toto                                                   100%   20     0.0KB/s   00:00
+        sftp> ls
+        index.html  info.html   toto
+        sftp>
+
+
+
+Référence : 
+
+* http://askubuntu.com/questions/134425/how-can-i-chroot-sftp-only-ssh-users-into-their-homes
 
 # <a name="module" /> Utilisation des modules apache
 
