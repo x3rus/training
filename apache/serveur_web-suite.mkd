@@ -62,11 +62,84 @@ Référence :
 
 * http://webmaster.iu.edu/tools-and-guides/maintenance/redirect-meta-refresh.phtml
 
+### <a name="redirect_instruction" /> Redirection avec l'instruction redirect
+
+Avant de voir le module **mod_rewrite** nous allons voir l'instruction [redirect](https://httpd.apache.org/docs/current/fr/mod/mod_alias.html#redirect) cette dernière fait partie du module **mod_alias**.
+
+![redirect_screenshot-documentation.png](./imgs/redirect_screenshot-documentation.png)
+
+Comme vous pouvez le voir dans la documentation l'instruction peut être utilisé dans plusieurs contexte de configuration :
+
+* Configuration globale du serveur
+* Un serveur virtuel (__Virtual host__)
+* Un répertoire
+* Un fichier __.htaccess__
+
+Voici un exemple simple est très très classique de l'utilisation de l'instruction **redirect**, renvoyer l'ensemble des communications du site __http__ vers le mode __ssl__ __http__**S**.
+
+Nous allons donc modifier la configuration du serveur virtuel __siteA__ afin que lors de la réception de requête sur le canal non chiffré l'ensemble soit redirigé vers le site en __SSL__.
+
+Nous allons éditer le fichier **/etc/apache2/sites-available/siteA.conf** :
+
+        $ sudo vim /etc/apache2/sites-available/siteA.conf
+        $ cat siteA.conf
+
+        <VirtualHost 172.17.0.1:80>
+                ServerAdmin webmaster@localhost
+
+                ServerName www.linux202-siteA.com
+                ServerAlias linux202-siteA.com
+                ServerAlias toto.linux202-siteA.com
+                
+                DocumentRoot /data/vhosts/siteA/docroot/
+                
+                Redirect / https://www.linux202-siteA.com/
+
+               # Configuration des logs
+               ErrorLog /data/vhosts/siteA/logs/error.log
+               CustomLog /data/vhosts/siteA/logs/access.log combined
+         </VirtualHost>
+
+Si vous regardez le fichier original de configuration vous constaterez que j'ai supprimer l'ensemble des instructions en lien avec les permissions des répertoires. En effet j'ai enlever l'ensemble des instructions pour simplifier le fichier au maximum car de toute manière l'ensemble des instructions seront redirigé vers la configuration **SSL**.
+
+Si vous réalisez quelques tests 
+
+* http://www.linux202-sitea.com/ : Redirige effectivement vers le site en https://www.linux202-sitea.com/
+* http://www.linux202-sitea.com/info.php : Redirige aussi vers le site en __https__ tous en conservant le fichier de référence.
+
+Il est aussi possible de réaliser une redirection d'une section uniquement vers un site externe. Dans l'exemple suivant la section __/search__ redirigera vers le site **duckduckgo.com**.
+
+        $ cat /etc/apache2/sites-available/siteA.conf
+        [ ... OUTPUT COUPÉ ... ]
+             DocumentRoot /data/vhosts/siteA/docroot/
+              
+             Redirect /search https://www.duckduckgo.com
+             Redirect / https://www.linux202-siteA.com/
+        [ ... OUTPUT COUPÉ ... ]
+
+
+Ceci peut être très utile lorsque qu'il y a du mouvement dans l'organisation du site web. L'image corporative étant très importante de nos jours et le site web de service ou la compagnie est la vitrine de notre aptitude à gérer les changements. Un autre exemple d'expérience que j'ai eu est le changement de serveur pour fournir du contenu multimédia . Originalement l'ensemble du matériel était sur le serveur fournissant le service mais avec le temps l'espace ou la performance du serveur n'était plus au rendez-vous. Nous avons donc modifier le serveur afin que le répertoires __imgs__ soit redirigés vers http://img.corposite.com.
+
+Autre exemple de situation la conversion de fichier __gif__ ou __bmp__ :P vers un format de fichier __png__ ou __jpg__. Nous avons l'instruction [RedirectMatch](https://httpd.apache.org/docs/current/fr/mod/mod_alias.html#redirectmatch), qui fonctionne comme l'instruction __Redirect__ mais nous permet d'utiliser des expressions régulière et des variables . Voici un exemple d'utilisation pour convertir les fichiers __gif__ vers __jpg__ .
+
+        RedirectMatch "(.*)\.gif$" "http://autre.example.com$1.jpg"
+
+ICI ICI 
+
+Référence :
+
+* https://httpd.apache.org/docs/current/fr/mod/mod_alias.html#redirect
 
 ## <a name="mod_rewrite" /> Mod_rewrite pour réécrire les URL
 
+
+
+Référence :
+
+* https://httpd.apache.org/docs/2.4/fr/rewrite/remapping.html
+
 # <a name="mod_proxy" /> Mod_proxy pour rediriger les requêtes
-# <a name="mod_rewrite" /> Mod_webdav pour avoir un lieu de stockage de fichiers
+# <a name="mod_webdav" /> Mod_webdav pour avoir un lieu de stockage de fichiers
 
 # <a name="performance" /> Performance et analyse d'apache
 
