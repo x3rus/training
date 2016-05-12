@@ -120,15 +120,92 @@ Il est aussi possible de réaliser une redirection d'une section uniquement vers
 
 Ceci peut être très utile lorsque qu'il y a du mouvement dans l'organisation du site web. L'image corporative étant très importante de nos jours et le site web de service ou la compagnie est la vitrine de notre aptitude à gérer les changements. Un autre exemple d'expérience que j'ai eu est le changement de serveur pour fournir du contenu multimédia . Originalement l'ensemble du matériel était sur le serveur fournissant le service mais avec le temps l'espace ou la performance du serveur n'était plus au rendez-vous. Nous avons donc modifier le serveur afin que le répertoires __imgs__ soit redirigés vers http://img.corposite.com.
 
-Autre exemple de situation la conversion de fichier __gif__ ou __bmp__ :P vers un format de fichier __png__ ou __jpg__. Nous avons l'instruction [RedirectMatch](https://httpd.apache.org/docs/current/fr/mod/mod_alias.html#redirectmatch), qui fonctionne comme l'instruction __Redirect__ mais nous permet d'utiliser des expressions régulière et des variables . Voici un exemple d'utilisation pour convertir les fichiers __gif__ vers __jpg__ .
+Autre exemple de situation la conversion de fichier __gif__ ou __bmp__ :P vers un format de fichier __png__ ou __jpg__. Nous avons l'instruction [RedirectMatch](https://httpd.apache.org/docs/current/fr/mod/mod_alias.html#redirectmatch), qui fonctionne comme l'instruction __Redirect__ mais nous permet d'utiliser des expressions régulière et des variables . Voici un exemple d'utilisation pour convertir les fichiers __gif__ vers __png__ .
 
-        RedirectMatch "(.*)\.gif$" "http://autre.example.com$1.jpg"
+        RedirectMatch "(.*)\.gif$" "https://www.linux202-sitea.com$1.png"
 
-ICI ICI 
+Mettons en place cette configuration :
+
+        $ cat /etc/apache2/sites-enabled/siteA-ssl.conf
+
+        <VirtualHost 172.17.0.1:443>
+                ServerAdmin webmaster@localhost
+
+                ServerName www.linux202-siteA.com
+                ServerAlias linux202-siteA.com
+                ServerAlias toto.linux202-siteA.com
+
+                DocumentRoot /data/vhosts/siteA/docroot/
+
+                Alias "/cm-images" "/data/vhosts/common/images"
+
+                <Directory /data/vhosts/siteA/docroot/>
+                    Options none
+                    AllowOverride ALL
+                    Require all granted
+                </Directory>
+                                                                                                                                              <Directory /data/vhosts/siteA/uploads/>
+                    Options none
+                    AllowOverride None
+                    Require all granted
+                </Directory>
+                
+                RedirectMatch "(.*)\.gif$" "https://www.linux202-sitea.com$1.png"
+                [ ... OUTPUT COUPÉ ... ] 
+
+
+Nous allons donc rediriger les requêtes dirigées vers les fichier **gif** vers les fichiers **png** . Avant d'activer cette configuration nous allons mettre un fichier __.gif__  et accéder à la page pour le visualiser voici le logo de la **FSF** .
+
+* Version Gif 
+    * ![Free_Software_Foundation_logo.gif](./imgs/Free_Software_Foundation_logo.gif)
+* Version Png 
+    * ![Free_Software_Foundation_logo.png](./imgs/Free_Software_Foundation_logo.png)
+
+Copiez le dans le **DocumentRoot** du site et accédez à l'URL , dans mon cas :
+
+        $ sudo cp Free_Software_Foundation_logo.gif /data/vhosts/siteA/docroot/
+        $ sudo cp Free_Software_Foundation_logo.png /data/vhosts/siteA/docroot/
+
+URL : https://www.linux202-sitea.com/Free_Software_Foundation_logo.gif
+
+Activons maintenant la configuration de la redirection :
+
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+
+URL : https://www.linux202-sitea.com/Free_Software_Foundation_logo.png
+
+Donc comme vous pouvez le constater nous voyons la redirection selon la configuration suivante la redirection aura lieu peut importe le répertoire où ce trouve le fichier. Si nous créons le répertoire **toto/blabla/** et mettons le fichier __png__ lors de l'accès la redirection aura lieu aussi , démonstration.
+
+        $ sudo mkdir -p /data/vhosts/siteA/docroot/toto/blabal/
+        $ sudo cp Free_Software_Foundation_logo.png /data/vhosts/siteA/docroot/toto/blabal/
+
+URL : https://www.linux202-sitea.com/toto/blabla/Free_Software_Foundation_logo.png
+
+Si nous regardons les logs nous voyons bien la redirection :
+
+        $ tail /data/vhosts/siteA//logs/ssl_access.log
+        172.17.42.1 - - [12/May/2016:08:38:01 -0400] "GET /toto/blabla/Free_Software_Foundation_logo.gif HTTP/1.1" 302 2373 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+        172.17.42.1 - - [12/May/2016:08:38:01 -0400] "GET /toto/blabla/Free_Software_Foundation_logo.png HTTP/1.1" 304 209 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+
+Revenons sur la ligne qui réalise cette magie :P , et prenons quelques minutes pour la comprendre :
+        
+        RedirectMatch "(.*)\.gif$" "https://www.linux202-sitea.com$1.png"
+
+* **RedirectMatch** : Instruction contenu dans le module alias 
+* **"(.*)\.gif$"**  : Ceci est certainement moins claire , ceci est une [expression régulière](https://fr.wikipedia.org/wiki/Expression_rationnelle) qui va traiter les requêtes et voir s'il y a action à apporter sur cette dernière c'est la condition . Les expressions régulière sont très importante car ceci vous permet de traiter des chaînes de caractères de manière conditionnel. Analysons donc ce que ceci veut dire, je reviendrais sur les parenthèses :
+    * **.** == N'importe quelle caractère ceci peut être un espace , un chiffre, une lettre , ...
+    * **\*** == l'étoile est un opérateur ceci correspond à ce qui le précède, répété zéro fois ou plusieurs fois. Donc si nous regardons l'ensemble ceci veut dire ( **.\***) n'importe quelle caractère zéro fois ou plusieurs fois .
+    * **\\.** == Comme nous l'avons vu le point  (**.**) représente n'importe quelle caractère donc si nous désirons spécifier explicitement le caractère **.** nous devons le précéder d'un **\\** . 
+    * **gif** == l'expression régulière s'attend donc a voir les caractères **gif**
+    * **$** == Ce prédicat ne correspond à aucun caractère mais fixe une condition nécessaire permettant de trouver un accord sur ce qui le précède en indiquant que ce doit être à la fin d’une ligne (donc être à la fin du texte d’entrée ou juste avant un saut de ligne). 
+    * **Résumé** : Quand l'URL est traitée , le système regarde tous les caractères qu'il soit présent 0 ou plusieurs fois (**.\***) , de plus il valide que l'URL traitée fini par **.gif**. L'utilisation des **()** permet de regroupé un ensemble de texte pour les réutiliser par la suite via les variables $1 , $2, $3 selon le nombre de parenthèse utilisées. Nous allons voir sont utilisation dans la prochaine instruction. 
+* **"https://www.linux202-sitea.com$1.png"** :
 
 Référence :
 
 * https://httpd.apache.org/docs/current/fr/mod/mod_alias.html#redirect
+* https://fr.wikipedia.org/wiki/Graphics_Interchange_Format
+* https://fr.wikipedia.org/wiki/Portable_Network_Graphics
 
 ## <a name="mod_rewrite" /> Mod_rewrite pour réécrire les URL
 
