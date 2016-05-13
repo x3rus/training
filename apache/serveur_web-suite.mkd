@@ -199,7 +199,49 @@ Revenons sur la ligne qui réalise cette magie :P , et prenons quelques minutes 
     * **gif** == l'expression régulière s'attend donc a voir les caractères **gif**
     * **$** == Ce prédicat ne correspond à aucun caractère mais fixe une condition nécessaire permettant de trouver un accord sur ce qui le précède en indiquant que ce doit être à la fin d’une ligne (donc être à la fin du texte d’entrée ou juste avant un saut de ligne). 
     * **Résumé** : Quand l'URL est traitée , le système regarde tous les caractères qu'il soit présent 0 ou plusieurs fois (**.\***) , de plus il valide que l'URL traitée fini par **.gif**. L'utilisation des **()** permet de regroupé un ensemble de texte pour les réutiliser par la suite via les variables $1 , $2, $3 selon le nombre de parenthèse utilisées. Nous allons voir sont utilisation dans la prochaine instruction. 
-* **"https://www.linux202-sitea.com$1.png"** :
+* **"https://www.linux202-sitea.com$1.png"** : Dernier argument le lien où sera réalisé la redirection, telle que mentionné ci-dessus l'information contenu entre les parenthèses sera substitué au lieu de $1. Comme vous l'avez probablement constaté l'extension __.gif__ n'est pas contenu dans les parenthèses voilà pourquoi non réalisons le changement d'extension lors de la redirection avec le __.png__
+
+Maintenant que nous avons traiter chaque argument voyons un peu d'exemple ceci simplifiera surement la compréhension .
+
+Si nous prenons la requête : https://www.linux202-sitea.com/Free_Software_Foundation_logo.gif
+Regardons l'entrée dans les logs
+
+        172.17.42.1 - - [12/May/2016:08:27:36 -0400] "GET /Free_Software_Foundation_logo.gif HTTP/1.1" 302 681 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+
+
+Du point de vu d'apache lors du traitement de l'instruction **RedirectMatch** ce dernier reçoit : **/Free_Software_Foundation_logo.gif** . 
+
+0. Apache Reçoit dans le __VirtualHost__ : **/Free_Software_Foundation_logo.gif** 
+1. Traitement de la règle de redirection :
+
+        RedirectMatch "(.*)\.gif$" "https://www.linux202-sitea.com$1.png"
+2. La requête __Match__  le critère si nous reprenons la __regex__  : **(.\*)\.gif$** ceci donne :
+
+    * (.\*) == /Free_Software_Foundation_logo
+    * \.gif$ == .gif
+
+3. Réalisation de la redirection en substituant la variable $1 par le contenu de la variable :
+
+    * "https://www.linux202-sitea.com$1.png" == "https://www.linux202-sitea.com/Free_Software_Foundation_logo.png"
+
+Nous pouvons donc constaté que la formule fonctionne aussi bien si le fichier est dans un répertoire et non à la racine du site :
+
+Si nous accédons à l'URL : https://www.linux202-sitea.com//toto/blabla/Free_Software_Foundation_logo.gif
+
+        172.17.42.1 - - [12/May/2016:08:28:58 -0400] "GET /toto/blabla/Free_Software_Foundation_logo.gif HTTP/1.1" 302 705 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+
+Du point de vu d'apache lors du traitement de l'instruction **RedirectMatch** ce dernier reçoit : **/toto/blabla/Free_Software_Foundation_logo.gif** . 
+
+1. Décortiquons la __regex__ : **(.\*)\.gif$**
+
+    * (.\*) == /toto/blabla/Free_Software_Foundation_logo
+    * \.gif$ == .gif
+
+2. Réalisation de la redirection en substituant la variable $1 par le contenu de la variable :
+
+    * "https://www.linux202-sitea.com$1.png" == "https://www.linux202-sitea.com/toto/blabla/Free_Software_Foundation_logo.png"
+
+Bien entendu, les opérations disponibles sont multiple avec les __regex__ ceci est uniquement un exemple , à vous de voir vos besoin.
 
 Référence :
 
