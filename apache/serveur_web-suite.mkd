@@ -120,6 +120,8 @@ Il est aussi possible de réaliser une redirection d'une section uniquement vers
 
 Ceci peut être très utile lorsque qu'il y a du mouvement dans l'organisation du site web. L'image corporative étant très importante de nos jours et le site web de service ou la compagnie est la vitrine de notre aptitude à gérer les changements. Un autre exemple d'expérience que j'ai eu est le changement de serveur pour fournir du contenu multimédia . Originalement l'ensemble du matériel était sur le serveur fournissant le service mais avec le temps l'espace ou la performance du serveur n'était plus au rendez-vous. Nous avons donc modifier le serveur afin que le répertoires __imgs__ soit redirigés vers http://img.corposite.com.
 
+### <a name="redirectMatch_instruction" /> Redirection avec l'instruction RedirectMatch
+
 Autre exemple de situation la conversion de fichier __gif__ ou __bmp__ :P vers un format de fichier __png__ ou __jpg__. Nous avons l'instruction [RedirectMatch](https://httpd.apache.org/docs/current/fr/mod/mod_alias.html#redirectmatch), qui fonctionne comme l'instruction __Redirect__ mais nous permet d'utiliser des expressions régulière et des variables . Voici un exemple d'utilisation pour convertir les fichiers __gif__ vers __png__ .
 
         RedirectMatch "(.*)\.gif$" "https://www.linux202-sitea.com$1.png"
@@ -251,11 +253,81 @@ Référence :
 
 ## <a name="mod_rewrite" /> Mod_rewrite pour réécrire les URL
 
+Après avoir couvert l'instruction [Redirect](https://httpd.apache.org/docs/current/fr/mod/mod_alias.html#redirect) et __RedirectMatch__ , vous êtes en mesure de réaliser beaucoup de chose. Avec L'utilisation de __mod\_rewrite__ vos possibilités décuple, cependant un niveau de complexité aussi sera significativement augmenté. 
 
+Le module __mod\_rewrite__ utilise un moteur de réécriture à base de règles, basé sur un interpréteur d'expressions rationnelles **PCRE**, pour réécrire les URLs à la volée. Par défaut, __mod\_rewrite__ met en correspondance une URL avec le système de fichiers. Cependant, on peut aussi l'utiliser pour rediriger une URL vers une autre URL, ou pour invoquer une requête interne à destination du mandataire.
+
+__mod\_rewrite__ fournit une méthode souple et puissante pour manipuler les URLs en utilisant un nombre illimité de règles. Chaque règle peut être associée à un nombre illimité de conditions, afin de vous permettre de réécrire les URLs en fonction de variables du serveur, de variables d'environnement, d'en-têtes HTTP, ou de repères temporels.
+
+__mod\_rewrite__ agit sur la totalité de l'URL, y compris la partie chemin. Une règle de réécriture peut être invoquée dans __httpd.conf__ ou dans un fichier __.htaccess__. Le chemin généré par une règle de réécriture peut inclure une chaîne de paramètres, ou peut renvoyer vers un traitement secondaire interne, une redirection vers une requête externe ou vers le mandataire interne.
+
+Vous trouverez d'avantage de détails, discussions et exemples dans la [documentation détaillée sur mod_rewrite](https://httpd.apache.org/docs/2.4/fr/rewrite/).
+
+### <a name="mod_rewrite-RewriteImgs" /> Réécriture des images gif vers png
+
+Nous avons vu l'instruction __RedirectMatch__ qui fait partie du module __mod_alias__ pour faire la redirection de fichier originalement en format __.gif__ vers __.png__ . Comme nous avons déjà compris le fonctionnement nous allons refaire la même configuration avec __mod\_rewrite__ uniquement pour ce familiarisé avec la syntaxe. 
+
+Premièrement nous devons activer le module **mod\_rewrite** , afin de pouvoir utiliser les instructions du module.
+
+        $ cd /etc/apache2/mods-enabled
+        $ sudo ln -s ../mods-available/rewrite.load .
+
+Si vous ne réalisez pas cette opération lors de la validation syntaxique de la configuration (**sudo apachectl configtest**) vous aurez le message suivant : 
+
+        AH00526: Syntax error on line 26 of /etc/apache2/sites-enabled/siteA-ssl.conf:
+        Invalid command 'RewriteEngine', perhaps misspelled or defined by a module not included in the server configuration
+        Action 'configtest' failed.
+        The Apache error log may have more information.
+
+Pour rappel la configuration original :
+
+        RedirectMatch "(.*)\.gif$" "https://www.linux202-sitea.com$1.png"
+
+Voici l'instruction avec [RewriteRule](https://httpd.apache.org/docs/2.4/fr/mod/mod_rewrite.html#rewriterule) :
+
+        RewriteEngine  on
+        RewriteRule    "(.*)\.gif$" "$1.png" [R,L]
+
+On valide et recharge la configuration :
+
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+        Syntax OK
+        * Restarting web server apache2
+        ...done.
+        *
+
+Accédons à présent aux l'URL de l'image : 
+
+* https://www.linux202-sitea.com/toto/blabla/Free_Software_Foundation_logo.gif
+* https://www.linux202-sitea.com/Free_Software_Foundation_logo.gif
+
+
+Dans les deux cas la redirection est réalisé vers le fichier **png** et l'URL reécrite dans la barre de votre fureteur:
+
+* https://www.linux202-sitea.com/toto/blabla/Free_Software_Foundation_logo.png
+* https://www.linux202-sitea.com/Free_Software_Foundation_logo.png
+
+Analysons un peut les instructions :
+
+1. Activation du module __mod\_rewrite__ pour le __VirtualHost__
+
+        RewriteEngine  on
+
+2. Réalisation de la règle de redirection :
+
+        RewriteRule    "(.*)\.gif$" "$1.png" [R,L]
+
+* Nous constatons que l'instruction au lieu de __RedirectMatch__ c'est __RewriteRule__ .
+* L'expression régulière est équivalente je sauterai donc l'explication de cette dernière . Relire l'explication dans la section __RedirectMatch__.
+* Nous avons en plus des **flag** , ces derniers permettent de définir le comportement réalisé ICI ICI ICI
+
+        [R,L]
 
 Référence :
 
+* https://httpd.apache.org/docs/2.4/fr/rewrite/
 * https://httpd.apache.org/docs/2.4/fr/rewrite/remapping.html
+* https://httpd.apache.org/docs/2.4/fr/rewrite/avoid.html
 
 # <a name="mod_proxy" /> Mod_proxy pour rediriger les requêtes
 # <a name="mod_webdav" /> Mod_webdav pour avoir un lieu de stockage de fichiers
