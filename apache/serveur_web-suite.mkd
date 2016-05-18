@@ -317,17 +317,52 @@ Analysons un peut les instructions :
 
         RewriteRule    "(.*)\.gif$" "$1.png" [R,L]
 
-* Nous constatons que l'instruction au lieu de __RedirectMatch__ c'est __RewriteRule__ .
-* L'expression régulière est équivalente je sauterai donc l'explication de cette dernière . Relire l'explication dans la section __RedirectMatch__.
-* Nous avons en plus des **flag** , ces derniers permettent de définir le comportement réalisé ICI ICI ICI
+3. Nous constatons que l'instruction au lieu de __RedirectMatch__ c'est __RewriteRule__ .
+4. L'expression régulière est équivalente je sauterai donc l'explication de cette dernière . Relire l'explication dans la section __RedirectMatch__.
+5. Nous avons en plus des **flag** , ces derniers permettent de définir le comportement de la redirection , vous avec la liste des [drapeaux disponible sur la documentation](https://httpd.apache.org/docs/2.4/fr/mod/mod_rewrite.html#rewriterule) 
 
         [R,L]
+
+    * **R** : L'utilisation du [drapeau \[R\]](https://httpd.apache.org/docs/2.4/fr/rewrite/flags.html#flag_r) provoque l'envoi d'une redirection au navigateur. Si une URL pleinement qualifiée (FQDN - fully qualified domain name) est spécifiée (c'est à dire incluant http://nom-du-serveur/), une redirection sera effectuée vers cette adresse. Dans le cas contraire, le protocole courant, le nom du serveur et le numéro de port seront utilisés pour générer l'URL envoyée avec la redirection. 
+    * **L** : Lorsque le [drapeau \[L\]](https://httpd.apache.org/docs/2.4/fr/rewrite/flags.html#flag_l) est présent, mod_rewrite arrête le traitement du jeu de règles. Cela signifie dans la plupart des situations que si la règle s'applique, aucune autre règle ne sera traitée. Ce drapeau correspond à la commande Perl last, ou à la commande break en C. Utilisez ce drapeau pour indiquer que la règle courante doit être appliquée immédiatement, sans tenir compte des règles ultérieures.
+
+
+Si nous réalisons un changement au niveau des **flags** , supprimons l'option **R** pour ne pas avoir une redirection mais simplement une réécriture de règle. **ATTENTION** ceci ne fonctionne que si la redirection est réalisé **localement**, en d'autre mot vers une page ou une référence interne au serveur. Voici la nouvelles configuration :
+
+        RewriteEngine  on
+        Rewriterule "(.*)\.gif$" "$1.png"  [L]
+
+Seule différence au niveau de la configuration nous avons supprimé le drapeau **R**, si vous accédez à l'URL : https://www.linux202-sitea.com/Free_Software_Foundation_logo.gif , ça fonctionne toujours et vous voyez bien le fichier **png** car il y a la ligne noir présente. Soyez attentif maintenant à l'URL dans la bar, l'URL est toujours **GIF** et non **PNG**, donc l'écriture c'est réalisé mais n'est pas présenté à l'utilisateur :D.
+
+Telle que mentionné ceci ne fonctionne que lorsque le serveur gère l'ensemble , soit la source et la destination , si vous définissez une URL externe par exemple l'URL du logo de google, le comportement sera une redirection :
+
+        RewriteEngine  on
+        Rewriterule "(.*)\.gif$" "https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png"
+
+### <a name="mod_rewrite-RewriteCond" /> Mise en place de condition de réécriture 
+
+Le vraie avantage de __mod\_rewrite__ est la mise en place de la gestion de condition multiple, choses impossible avec le système de redirection, avec le module **mod_alias**.
+[RewriteRule](https://httpd.apache.org/docs/2.4/fr/mod/mod_rewrite.html#rewriterule) permet de définir une condition dans l'exemple ci-dessus nous avons définie uniquement le fait que la requête soit pour les fichiers avec l'extension __gif__.
+Avec l'instruction [RewriteCond](https://httpd.apache.org/docs/2.4/fr/mod/mod_rewrite.html#rewritecond) il est possible de définir plus de condition, pas uniquement sur l'URL fournit mais aussi sur le client réalisant la requête. 
+
+Petite démonstration pour bien comprendre la concept , nous allons réaliser une règle de redirection afin de fournir une page pour les fureteurs **Chrome**, car **Chrome** ce n'est pas un logiciel libre faut informer les gens :-). 
+
+Nous allons donc mettre une règle afin d'intercepter les connexions des fureteurs de type **Chrome**, pour ce faire nous allons utiliser l'identifiant **USER-AGENT** .Quand un internaute visite une page Web, une chaîne de type texte est généralement envoyée au serveur pour identifier l'agent utilisateur. Elle est incluse dans la requête HTTP par l'en-tête « User-Agent » et elle donne des informations comme : le nom de l'application, la version, le système d'exploitation, la langue, etc.).
+
+Je vais revenir dans quelques minutes avec une liste des variables de validation disponible une fois la démonstration réalisé.
+Voici donc l'instruction :
+
+        RewriteCond "%{HTTP_USER_AGENT}"  "(Chrome)"
+        RewriteRule "(.*)"  "/chrome-info.php?link=$1"
+
+
 
 Référence :
 
 * https://httpd.apache.org/docs/2.4/fr/rewrite/
 * https://httpd.apache.org/docs/2.4/fr/rewrite/remapping.html
 * https://httpd.apache.org/docs/2.4/fr/rewrite/avoid.html
+* http://www.useragentstring.com/pages/useragentstring.php
 
 # <a name="mod_proxy" /> Mod_proxy pour rediriger les requêtes
 # <a name="mod_webdav" /> Mod_webdav pour avoir un lieu de stockage de fichiers
