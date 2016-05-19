@@ -355,6 +355,80 @@ Voici donc l'instruction :
         RewriteCond "%{HTTP_USER_AGENT}"  "(Chrome)"
         RewriteRule "(.*)"  "/chrome-info.php?link=$1"
 
+Donc nous prenons l'information du fureteur , si ce dernier est **Chrome** alors nous réalisons une redirection vers le fichier __chrome-info.php__ en passant en argument à __PHP__ l'URL original. L'objectif est d'afficher un message à l'utilisateur et le rediriger vers la page original mais nous allons y allé par étape :P .
+
+Réalisons le fichier __chrome-info.php__ : **/data/vhosts/siteA/docroot/chrome-info.php**
+
+        <?php
+        $url=$_GET['link'];
+        ?>
+
+        Votre Fureteur est pas libre ... Chrome est privatif, je vous suggere Chromium : https://www.chromium.org/ !! <br>
+        <br>
+        Ceci est uniquement pour vous informer ! <b>vous serez redirige vers la bonne page dans 5 secondes vers l'URL</b>
+        <br>
+
+        <?php
+        print $url;
+        print "<br> time : ";
+        print time();
+
+        ?>
+
+Nous validons la configuration et redémarrons le service apache, puis nous accédons à l'URL , par exemple __info.php__ .
+
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+
+Donc si nous accédons à : https://www.linux202-sitea.com/info.php , vous aurez ceci à l'écran :
+
+![mod_rewrite_chrome-loop.png](./imgs/mod_rewrite_chrome-loop.png)
+
+Le message est claire , il y a une boucle dans la redirection ... Vous pouvez facilement le confirmer en consultant les logs , faites un **tail -f** sur le fichier d'accès vous pourrez le voir clairement. 
+
+        $ tail -f /data/vhosts/siteA/logs/ssl_access.log
+        172.17.42.1 - - [19/May/2016:08:35:35 -0400] "GET /info.php HTTP/1.1" 302 813 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.86 Safari/537.36"
+        172.17.42.1 - - [19/May/2016:08:35:35 -0400] "GET /chrome-info.php?link=/info.php HTTP/1.1" 302 689 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.86 Safari/537.36"
+        172.17.42.1 - - [19/May/2016:08:35:35 -0400] "GET /chrome-info.php?link=/chrome-info.php HTTP/1.1" 302 689 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.86 Safari/537.36"
+        172.17.42.1 - - [19/May/2016:08:35:35 -0400] "GET /chrome-info.php?link=/chrome-info.php HTTP/1.1" 302 689 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.86 Safari/537.36"
+        ....
+        ....
+
+Donc Si nous regardons les logs :
+
+1. **"GET /info.php HTTP/1.1" 302 813 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/** : Nous voyons la première requête à l'URL **info.php** et nous constatons que l'agent contient bien le mot **Chrome**.
+2. **"GET /chrome-info.php?link=/info.php HTTP/1.1" 302 689 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome** : Nous avons bien la redirection vers le fichier **chrome-info.php** avec l'argument en paramètre de la page original **?link=/info.php** . Jusqu'ici tous va bien , de plus nous avons toujours l'agent contenant **Chrome**
+3. **"GET /chrome-info.php?link=/chrome-info.php HTTP/1.1" 302 689 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome** : Oupss, ça commence à partir en vrille , en effet lorsque le client demande d'accéder à la page **chrome.php** la condition **RewriteCond** s'applique encore :P , il y a toujours l'agent **Chrome** il réalise donc la redirection en passant en argument l'URL d'origine **?link=/chrome-info.php** 
+4. **"GET /chrome-info.php?link=/chrome-info.php HTTP/1.1" 302 689 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome** : Nous sommes dans la boucle ...
+
+Ceci est un cas **classique** lorsque vous travaillerez avec le système de redirection d'URL voilà pourquoi il est compliqué de travailler avec **mod_rewrite** et que je suggère toujours d'avoir un environnement de test pour valider vos configurations.
+
+Comment corriger ce problème ??
+
+Nous allons rajouter une condition, nous allons indiquer que nous ne voulons pas que la redirection s'applique si le fureteur demande la page **chrome-info.php** . Voici donc la configuration avec le correctif pour ne pas tomber dans une boucle infinie :
+
+                RewriteCond "%{HTTP_USER_AGENT}"  "(Chrome)"
+                RewriteCond "%{REQUEST_URI}" !/chrome-info.php
+                RewriteRule "(.*)"  "/chrome-info.php?link=$1" [R,L]
+
+Nous avons ajouter la validation sur l'URL demandé  (**REQUEST_URI**), j'ai définie une condition négative , en effet j'ai spécifier que pour que la reécriture s'applique il ne fait PAS (!) que l'URL demandé soit **/chrome-info.php**. Avec l'utilisation du point d'exclamation (!) ceci nous permet de définir une condition négative.
+
+Suite au changement redémarrer le service apache et regardons les logs lorsque nous demandons la page **info.php**: 
+
+        172.17.42.1 - - [19/May/2016:08:49:45 -0400] "GET /info.php HTTP/1.1" 302 2343 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.86 Safari/537.36"
+        172.17.42.1 - - [19/May/2016:08:49:45 -0400] "GET /chrome-info.php?link=/info.php HTTP/1.1" 200 575 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.86 Safari/537.36"
+        172.17.42.1 - - [19/May/2016:08:49:45 -0400] "GET /favicon.ico HTTP/1.1" 302 681 "https://www.linux202-sitea.com/chrome-info.php?link=/info.php" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.86 Safari/537.36"
+        172.17.42.1 - - [19/May/2016:08:49:45 -0400] "GET /chrome-info.php?link=/favicon.ico HTTP/1.1" 200 575 "https://www.linux202-sitea.com/chrome-info.php?link=/info.php" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.86 Safari/537.36"
+
+1. **GET /info.php HTTP/1.1" 302 2343 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome** : Bon pas de changement ici la première requête pour **info.php**  et toujours l'agent **Chrome**.
+2. **GET /chrome-info.php?link=/info.php HTTP/1.1" 200 575 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome** : Jusqu'ici tous va bien nous avons la redirection vers la page **chrome-info.php** avec l'URL d'origine en argument.
+3. **GET /favicon.ico** et **GET /chrome-info.php?link=/favicon.ico** : Le fureteur essaye  d'avoir l'icône de la page , nous voyons que le système de redirection fonctionne même pour ça :P , il y aurait moyen d amélioré la règle mais restons en là pour le moment :D.
+4. Voilà PAS d'autre requête , plus de boucle , car lors de l'appel de la page **chrome-info.php** les règles **RewriteCond** ne sont plus valide.
+
+Donc vous devriez voir la page : 
+
+![mod_rewrite_chrome-ok-sans-redirection.png](/imgs/mod_rewrite_chrome-ok-sans-redirection.png)
+
+C'est bon il nous reste à réaliser la redirection :D et c'est fini ... Heu heu , en fait on va avoir une autre problème :). Mais bon un problème à la fois :) , mettons en place la redirection :D.
 
 
 Référence :
