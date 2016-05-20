@@ -345,6 +345,8 @@ Le vraie avantage de __mod\_rewrite__ est la mise en place de la gestion de cond
 [RewriteRule](https://httpd.apache.org/docs/2.4/fr/mod/mod_rewrite.html#rewriterule) permet de définir une condition dans l'exemple ci-dessus nous avons définie uniquement le fait que la requête soit pour les fichiers avec l'extension __gif__.
 Avec l'instruction [RewriteCond](https://httpd.apache.org/docs/2.4/fr/mod/mod_rewrite.html#rewritecond) il est possible de définir plus de condition, pas uniquement sur l'URL fournit mais aussi sur le client réalisant la requête. 
 
+#### <a name="mod_rewrite-RewriteCond_browser" /> Mise en place de condition de réécriture selon le fureteur
+
 Petite démonstration pour bien comprendre la concept , nous allons réaliser une règle de redirection afin de fournir une page pour les fureteurs **Chrome**, car **Chrome** ce n'est pas un logiciel libre faut informer les gens :-). 
 
 Nous allons donc mettre une règle afin d'intercepter les connexions des fureteurs de type **Chrome**, pour ce faire nous allons utiliser l'identifiant **USER-AGENT** .Quand un internaute visite une page Web, une chaîne de type texte est généralement envoyée au serveur pour identifier l'agent utilisateur. Elle est incluse dans la requête HTTP par l'en-tête « User-Agent » et elle donne des informations comme : le nom de l'application, la version, le système d'exploitation, la langue, etc.).
@@ -429,6 +431,64 @@ Donc vous devriez voir la page :
 ![mod_rewrite_chrome-ok-sans-redirection.png](/imgs/mod_rewrite_chrome-ok-sans-redirection.png)
 
 C'est bon il nous reste à réaliser la redirection :D et c'est fini ... Heu heu , en fait on va avoir une autre problème :). Mais bon un problème à la fois :) , mettons en place la redirection :D.
+
+Pour ce faire je vais modifier le fichier __chrome-info.php__  voici la nouvelle version :
+
+        <?php
+        $url=$_GET['link'];
+        header( "refresh:5;url=$url" );
+        ?>
+
+        Votre Fureteur est pas libre ... Chrome est privatif, je vous suggere Chromium : https://www.chromium.org/ !! <br>
+        <br>
+        Ceci est uniquement pour vous informer ! <b>vous serez redirige vers la bonne page dans 5 secondes vers l'URL</b>
+        <br>
+
+        <?php
+        print $url;
+        print "<br> time : ";
+        print time();
+
+        ?>
+
+La seule chose en plus est la ligne **header** qui permet de définir la redirection de type **html**. Malheureusement si vous accéder à l'URL : https://www.linux202-sitea.com/info.php , il y a bien la redirection vers https://www.linux202-sitea.com/chrome-info.php?link=/info.php. 
+Cependant lorsque le client est redirigé vers __info.php__, il se fait redirigé encore une fois vers __chrome-info.php__ et ceci de manière perpétuelle. Vous pouvez le constater, en regardant l'information **time : 1463746918**. Dans les logs nous le voyons clairement (pour information j'ai supprimé l'information du __favicon.ico__ afin de simplifier la visualisation ) :
+
+        172.17.42.1 - - [20/May/2016:08:19:17 -0400] "GET /info.php HTTP/1.1" 302 675 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.80 Safari/537.36"
+        172.17.42.1 - - [20/May/2016:08:19:17 -0400] "GET /chrome-info.php?link=/info.php HTTP/1.1" 200 600 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.80 Safari/537.36"
+        172.17.42.1 - - [20/May/2016:08:19:22 -0400] "GET /info.php HTTP/1.1" 302 675 "https://www.linux202-sitea.com/chrome-info.php?link=/info.php" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.80 Safari/537.36"
+        172.17.42.1 - - [20/May/2016:08:19:22 -0400] "GET /chrome-info.php?link=/info.php HTTP/1.1" 200 600 "https://www.linux202-sitea.com/chrome-info.php?link=/info.php" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.80 Safari/537.36"
+
+
+Nous nous retrouvons donc encore dans une boucle, mais une boucle applicative et non plus une boucle de configuration dans __mod\_rewrite__.
+
+Comment solutionné ce problème, car nous voulons informer le client , mais pas le bloquer , bon peut-être s'il est sur internet explorer :P , mais pas Chrome :P. Il y a plusieurs solution, mais une simple est la mise en place d'un **cookie**, je choisie aussi cette solution pour démontrer l'utilisation d'un **cookie** avec __mod\_rewrite__. Je pense que ceci est très pertinent !
+Donc nous allons modifier le fichier __php__ afin de définir le __cookie__ lorsque le client accède à la page :
+
+        <?php
+        print $url;
+        print "<br> time : ";
+        print time();
+
+        $date_of_expiry = time() + 60 ; // 60 secondes
+        setcookie( "bad_browser", "chrome", $date_of_expiry );
+        ?>
+
+Ici je définie un __cookie__ nommé **bad_browser** et je lui définie une chaine de caractère avec le nom du fureteur __chrome__ de plus je définie une date d'expiration au __cookie__ de 60 secondes. L'expiration est trop courte pour une utilisation en production car le client sera redirigé à la page après 1 minutes de consultation du site , mais pour les testes c'est très pratique :P. Plus d'information disponible sur la page de documentation de __php__ : [setcookie](http://php.net/manual/en/function.setcookie.php). 
+
+Maintenant que le __cookie__ est définie dans l'application je vais modifier la règles de __mod\_rewrite__ afin que la règle de redirection ne s'applique pas si le __cookie__ nommé **bad_browser** est définie.
+
+        RewriteCond "%{HTTP_USER_AGENT}"  "(Chrome)"
+        RewriteCond "%{REQUEST_URI}" !/chrome-info.php
+        RewriteCond "%{HTTP_COOKIE}"   !(bad_browser)
+        RewriteRule "(.*)"  "/chrome-info.php?link=$1" [R,L]
+
+#### <a name="mod_rewrite-RewriteCond_refferrer" /> Mise en place de condition de réécriture selon l'origine
+
+
+ HTTP_REFERER
+
+ ICI ICI ICI
 
 
 Référence :
