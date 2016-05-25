@@ -485,10 +485,96 @@ Maintenant que le __cookie__ est définie dans l'application je vais modifier la
 
 #### <a name="mod_rewrite-RewriteCond_refferrer" /> Mise en place de condition de réécriture selon l'origine
 
+Voyons un autre exemple à présent de manipulation de réécriture afin de voir une méthode , je ne prendrais pas le temps de traiter l'ensemble des variables disponibles car il y en a beaucoup :
 
- HTTP_REFERER
+![variable_mod_rewrite.png](./imgs/variable_mod_rewrite.png)
 
- ICI ICI ICI
+* https://httpd.apache.org/docs/2.4/fr/mod/mod_rewrite.html#rewritecond
+
+
+Nous allons donc voir la méthode pour "protéger" nos images sur le site web, quand je dis protégé je veux dire que nous allons bloqué l'inclusion de vos images sur un site web distant.
+
+Nous allons modifier le contenu de la page **index.html** du site web du __siteA__ afin de joindre une images :
+
+        $ cat /data/vhosts/siteA/docroot/index.html
+        <html>
+        <body>
+
+        <h3> Le site A</h3>
+
+        <img src=./Free_Software_Foundation_logo.png />
+        </body>
+        </html>
+
+Si vous accédez à l'URL : https://www.linux202-sitea.com/ vous aurez l'images de la __Free software Fondation__: 
+
+![index_html-siteA.png](./imgs/index_html-siteA.png)
+
+
+Regardons les logs qui sont généré lors de l'accès au site :
+
+        $ tail -f /data/vhosts/siteA/logs/ssl_access.log
+        172.17.42.1 - - [25/May/2016:08:30:07 -0400] "GET / HTTP/1.1" 200 668 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+        172.17.42.1 - - [25/May/2016:08:30:07 -0400] "GET /Free_Software_Foundation_logo.png HTTP/1.1" 200 38268 "https://www.linux202-sitea.com/" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+
+
+Comme vous pouvez le constater l'inclusion de l'images à comme référence la provenance : __200 38268__ **"https://www.linux202-sitea.com/"** __"Mozilla/5.0__.
+
+Maintenant nous allons modifier la configuration du **siteC** afin que la page d'index inclus l'image disponible sur le **siteA**
+
+        $ cat /data/vhosts/siteC/docroot/index.html
+        <html>
+        <body>
+
+        <h3> Le site C</h3>
+
+        <img src=https://www.linux202-sitea.com/Free_Software_Foundation_logo.png />
+        </body>
+        </html>
+
+Accédons au **siteC** afin de voir la page ainsi que les logs : http://sitec.com/
+
+        $ tail -f /data/vhosts/siteA/logs/ssl_access.log
+        172.17.42.1 - - [25/May/2016:08:36:23 -0400] "GET /Free_Software_Foundation_logo.png HTTP/1.1" 200 38406 "http://sitec.com/" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+
+Comme nous pouvons le constater comme j'interroge les logs du **siteA** je ne vois pas l'accès à l'index du __siteC__ cependant je vois l'accès à l'image avec l'identifiant de la référence : __200 38406__ **"http://sitec.com/"** __"Mozilla/5.0__.
+
+Maintenant que l'on voit le déroulement du processus d'inclusion d'une image par un autre site nous allons pouvoir commencer la manipulation avec **mod\_rewrite**. Nous allons faire en sorte que lors qu'une personne inclue une images de notre site ce dernier ne reçoit pas l'image original mais un autre fichier :D.
+
+![access-denied.jpg](./imgs/access-denied.jpg)
+
+J'ai mis le fichier dans le __DocumentRoot__ du __siteA__ .
+
+Passons à la réécriture de l'URL , donc s'il y a accès aux fichiers de type __png__ depuis l'extérieur du site nous fournirons l'images des __Lego__.
+Pour ce faire nous allons éditer la configuration d'apache pour **siteA** :
+
+        $ cat /etc/apache2/sites-enabled/siteA-ssl.conf
+        [ ... OUTPUT COUPÉ ... ]
+                RewriteCond "%{HTTP_REFERER}" !https:\/\/www.linux202-sitea.com\/
+                RewriteRule "(.*)\.png$"  "/access-denied.jpg" [R,L]
+        [ ... OUTPUT COUPÉ ... ]
+
+Nous suivons le même concept avec une condition négatif à l'aide du symbole **!** , rechargeons la configuration apache et regardons les logs :
+
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+        Syntax OK
+         Restarting web server apache2
+         *    ...done.
+        $ tail -f /data/vhosts/siteA/logs/ssl_access.log  /data/vhosts/siteC/logs/access.log
+        ==> /data/vhosts/siteA/logs/ssl_access.log <==
+        172.17.42.1 - - [25/May/2016:08:57:58 -0400] "GET / HTTP/1.1" 200 2198 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+        172.17.42.1 - - [25/May/2016:08:57:59 -0400] "GET /Free_Software_Foundation_logo.png HTTP/1.1" 200 38268 "https://www.linux202-sitea.com/" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+
+
+        ==> /data/vhosts/siteC/logs/access.log <==
+        172.17.42.1 - - [25/May/2016:08:58:41 -0400] "GET / HTTP/1.1" 200 470 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+
+        ==> /data/vhosts/siteA/logs/ssl_access.log <==
+        172.17.42.1 - - [25/May/2016:08:58:41 -0400] "GET /Free_Software_Foundation_logo.png HTTP/1.1" 302 787 "http://sitec.com/" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+        172.17.42.1 - - [25/May/2016:08:58:41 -0400] "GET /access-denied.jpg HTTP/1.1" 200 354733 "http://sitec.com/" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
+
+
+Nous le voyons clairement des les logs la redirections car la source de l'accès n'est PAS le sitea.
 
 
 Référence :
