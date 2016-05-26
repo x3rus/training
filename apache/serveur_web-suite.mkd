@@ -574,8 +574,57 @@ Nous suivons le même concept avec une condition négatif à l'aide du symbole *
         172.17.42.1 - - [25/May/2016:08:58:41 -0400] "GET /access-denied.jpg HTTP/1.1" 200 354733 "http://sitec.com/" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
 
 
-Nous le voyons clairement des les logs la redirections car la source de l'accès n'est PAS le sitea.
+Nous le voyons clairement dans les logs la redirections car la source de l'accès n'est PAS le sitea.
 
+#### <a name="mod_rewrite-RewriteCond_path" /> Mise en place de redirection sur le PATH de l'URL
+
+Pour terminer, voyons la redirection d'un URL basé sur le chemin, si votre site web utilise un langage telle que __php__, __python__ , __ruby__ , ... Il est fort probable que vous avez une base de données en arrière pour le stockage du contenu. Nous nous retrouvons souvent avec des URL contenant des paramètres exemple : 
+
+* https://www.linux202-sitea.com/articles.php?year=2016&title=le_super_article
+
+Ceci n'est en soit pas critique cependant en dehors de l'aspect esthétique, ceci à un coût sur l'indexation dans __google__, en effet une URL à plus de valeur qu'un argument ... De plus l'utilisateur préfère avoir une URL "dur" ceci est plus simple à retenir et évite les erreurs d'argument avec les caractères : **&** , **?**, **=**,...
+
+Une fois notre redirection mise en place voici l'URL que nous aurons :
+
+* https://www.linux202-sitea.com/articles/2016/le_super_article
+
+C'est tous de même plus jolie ... Pour les besoins de la démonstration je vais définir le fichier __articles.php__ afin que vous puissiez avoir un point de référence pour vos testes :
+
+        $ cat /data/vhosts/siteA/docroot/articles.php 
+        <?php
+        $year=$_GET['year'];
+        $titre=$_GET['title'];
+        ?>
+
+        <?php
+        print " <h3> Article du $year </h3> ";
+        print " <p> Le titre : $titre ";
+        ?>
+
+        <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed elementum, lacus sed egestas faucibus, justo magna placerat ante, quis feugiat diam dui eu metus. Nam sit amet turpis arcu. Curabitur vel lobortis dui, ac consectetur lacus. Donec felis lectus, malesuada nec convallis in, hendrerit ut nisi. Phasellus sagittis, est sit amet dignissim iaculis, eros ex viverra nunc, vel porta neque dolor et justo. Etiam dignissim lacinia sollicitudin. Sed eget erat quam. Maecenas non molestie dui, quis dictum felis. Phasellus vel facilisis sapien. Curabitur non mollis leo, vel auctor nisi. Fusce pretium arcu dui, et efficitur mauris vulputate eget.
+        </p>
+
+        <br> <br>
+        <?php
+        print " Debug info : select article_text from article where year=$year and title=$titre ";
+        ?>
+
+
+ICI ICI ICI
+
+        [ ... OUTPUT COUPÉ ... ] 
+        RewriteEngine  on
+
+        RewriteRule "/articles/([^/]*)/([^/]*)" "/articles.php?year=$1&title=$2" [PT]
+
+        Rewriterule "(.*)\.gif$" "$1.png"  [L]
+
+        RewriteCond "%{HTTP_USER_AGENT}"  "(Chrome)"
+        RewriteCond "%{REQUEST_URI}" !/chrome-info.php
+        RewriteCond "%{HTTP_COOKIE}"   !(bad_browser)
+        RewriteRule "(.*)"  "/chrome-info.php?link=$1" [R,L]
+        [ ... OUTPUT COUPÉ ... ] 
 
 Référence :
 
