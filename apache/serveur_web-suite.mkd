@@ -611,12 +611,19 @@ C'est tous de même plus jolie ... Pour les besoins de la démonstration je vais
         ?>
 
 
-ICI ICI ICI
+Avant de mettre en place la redirection validons que le fichier __php__ fonctionne comme attendu .
+Accédons à l'URL : https://www.linux202-sitea.com/articles.php?year=2016&title=le_super_article
+
+![article_php_with_args.png](./imgs/article_php_with_args.png)
+
+Donc nous voyons bien l'information de l'année ainsi que le titre passé en paramètre, en bas (non présent sur la copie d'écran) nous voyons aussi la requête __SQL__ qui serait utilisée. 
+
+Mettons en place la redirection d'URL à présent : __/etc/apache2/sites-enabled/siteA-ssl.conf__
 
         [ ... OUTPUT COUPÉ ... ] 
         RewriteEngine  on
 
-        RewriteRule "/articles/([^/]*)/([^/]*)" "/articles.php?year=$1&title=$2" [PT]
+        RewriteRule "^/articles/([^/]*)/([^/]*)" "/articles.php?year=$1&title=$2" [PT]
 
         Rewriterule "(.*)\.gif$" "$1.png"  [L]
 
@@ -626,19 +633,45 @@ ICI ICI ICI
         RewriteRule "(.*)"  "/chrome-info.php?link=$1" [R,L]
         [ ... OUTPUT COUPÉ ... ] 
 
+Analysons la règles : **RewriteRule "^/articles/([^/]*)/([^/]*)" "/articles.php?year=$1&title=$2" [PT]**
+
+* **^/articles/([^/]\*)/([^/]\*)** : L'URL sera traitée si ceci commence par /articles , par la suite je regroupes le premier "répertoire" dans la variable $1 ainsi que la deuxième "répertoire" dans la variable $2.
+* **/articles.php?year=$1&title=$2** :  Je passe l'information extraite préalablement $1 et $2 avec le bon nom de variables
+* **[PT]** : Nous avons principalement utilisé les **flag** : **R** et **L** . Par défaut, la cible (ou chaîne de substitution) d'une règle RewriteRule est sensée être un chemin de fichier. Avec le drapeau [PT], par contre, elle est traitée comme un URI. Autrement dit, avec le drapeau [PT], le résultat de la règle RewriteRule est passé à nouveau au système de mise en correspondance des URLs avec le système de fichiers, de façon à ce que les systèmes de mise en correspondance basés sur les chemins de fichiers, comme la directive Alias, Redirect, ou ScriptAlias, par exemple, puissent avoir une chance d'accomplir leur tâche. 
+
+Ajoutons une autre donnée, j'essaye de répondre à quelques cas de figure **classique** que nous rencontrons , donc imaginons que vous avez déjà des articles présent , qui ne sont pas contenu dans le système de base de donnée. Par exemple si nous avons la structure suivante :
+
+        $ cat /data/vhosts/siteA/docroot/articles/1999/le_vieux_articles.html 
+        Un super Vieux Articles mais toujours super pertinents
+
+Donc nous avons un articles de 1999 contenu dans le répertoire __articles__ le problème est qu'avec la règle de redirection en place vous n'avez plus accès à ce fichier. La règle de redirection intercepte la requête au fichier, nous allons donc rajouter une condition afin que si le fichier demandé existe **réellement** sur le système de fichier la redirection ne s'applique pas.
+
+                RewriteEngine  on
+                
+                RewriteCond "%{DOCUMENT_ROOT}/%{REQUEST_FILENAME}" !-f
+                RewriteRule "^/articles/([^/]*)/([^/]*)" "/articles.php?year=$1&title=$2" [PT]
+
+
+* **%{DOCUMENT\_ROOT}** :  Définie la racine du site web , l'utilisation d'une variable permet d'avoir une solution applicable peut importe le site
+* **%{REQUEST\_FILENAME}** : Définie le chemin d'accès dans l'URL qui est demandé
+* **!-f** : Permet de définir la condition si ce n'est PAS (**!**) un fichier
+
+#### <a name="mod_rewrite-avoid" /> Quand ne pas utiliser mod_rewrite
+
+Je vous invite à consulter la page : https://httpd.apache.org/docs/2.4/fr/rewrite/avoid.html , afin de comprendre quand il n'est pas conseillé d'utiliser mod\_rewrite.
+
 Référence :
 
 * https://httpd.apache.org/docs/2.4/fr/rewrite/
 * https://httpd.apache.org/docs/2.4/fr/rewrite/remapping.html
 * https://httpd.apache.org/docs/2.4/fr/rewrite/avoid.html
+* https://httpd.apache.org/docs/current/fr/rewrite/flags.html
 * http://www.useragentstring.com/pages/useragentstring.php
 
 # <a name="mod_proxy" /> Mod_proxy pour rediriger les requêtes
 # <a name="mod_webdav" /> Mod_webdav pour avoir un lieu de stockage de fichiers
 
 # <a name="performance" /> Performance et analyse d'apache
-
-
 
 
 # <a name="auth_local_access" /> Autorisation d'accès avec authentification local
