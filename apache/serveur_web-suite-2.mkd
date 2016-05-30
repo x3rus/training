@@ -1,3 +1,12 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+TODO corriger les \_
+
+# Index 
+
 
 
 # <a name="auth_local_access" /> Autorisation d'accès avec authentification local
@@ -109,13 +118,109 @@ Ceci est bien mais si vous avez travailler un peu avec ce mode de définition l'
 
 Nous allons donc définir des groupes qui pourrons être éditer éventuellement par un tiers ou être réutilisé dans un autre contexte. Nous allons créer un fichier texte avec la définition des groupes. 
 
+        $ cat  /data/vhosts/siteA/privates/htgroupe 
+        admins: admin robert 
+        superAdmins: admin thomas
+        noobs: robert
 
+Nous allons définir ce fichier de groupe et définir quelle groupe peut accéder au dossier , voici donc la nouvelle configuration :
+
+        <Directory /data/vhosts/siteA/docroot/admin/ >
+            Options none
+            AllowOverride None
+            #  Section d'authentification
+            AuthType Basic
+            AuthName "Authentication Required"
+            AuthUserFile "/data/vhosts/siteA/privates/.htpasswd-admin"
+            AuthGroupFile "/data/vhosts/siteA/privates/htgroupe"
+            Require group admins
+        </Directory>
+
+
+Donc nous voyons 2 changements :
+
+* **AuthGroupFile** : ceci permet de définir le fichier groupe qui sera lut avec l'information des membres
+* **Require group admins** : contenant le ou les groupes qui sont autorisé 
+
+
+Réalisons maintenant la validation syntaxique et redémarrons apache : 
+
+        $  sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+        AH00526: Syntax error on line 33 of /etc/apache2/sites-enabled/siteA-ssl.conf:
+        Invalid command 'AuthGroupFile', perhaps misspelled or defined by a module not included in the server configuration
+        Action 'configtest' failed.
+        The Apache error log may have more information.
+
+**OUPSS** une erreur :D , bon 2 possibilité :
+
+* l'option **AuthGroupFile** est mal écrite ou n'existe pas
+* Il manque un module ...
+
+Je vais profité de l'occasion pour remontré l'importance et la qualité de la documentation du site d'apache. 
+
+TODO : ajouter le screen shot pour le module 
+
+Effectivement si nous listons les modules actifs et les modules disponible il nous manque le module pour la gestion du fichier de groupe :
+
+        $ ls /etc/apache2/mods-enabled/*group* /etc/apache2/mods-available/*group*
+        ls: cannot access /etc/apache2/mods-enabled/*group*: No such file or directory
+        /etc/apache2/mods-available/authz_groupfile.load
+
+Activons se dernier et nous allons confirmer que ceci fonctionne à présent :
+
+        $ cd /etc/apache2/mods-enabled
+        $ sudo ln -s ../mods-available/authz_groupfile.load .
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+        Syntax OK
+         * Restarting web server apache2
+            ...done.
+
+Nous pouvons maintenant valider l'accès : https://www.linux202-sitea.com/admin/
+
+
+## <a name="Auth_methode" /> Utilisation de système d'authentification externe
+
+### Mysql
+
+Documentation : https://blog.froese.org/2014/06/13/authn-dbd-mysql-ubuntu-trusty/
+
+### Ldap 
+
+Documentation : https://httpd.apache.org/docs/2.4/mod/mod_authnz_ldap.html
+
+
+## <a name="htpasswd_file-et-externe" /> Combinaison d'une authentification externe et local
+
+Bien que nous n'ayons pas traiter l'utilisation d'une authentification externe j'aimerai glisser un mot sur la possibilité de combiner interne et externe. 
+
+Voici un exemple de configuration d'authentification utilisant une authentification **ldap**  et une authentification par fichier :
+
+        <Directory "/www/docs/private">
+
+            AuthName "Private"
+            AuthType Basic
+            AuthBasicProvider file ldap
+            AuthUserFile "/usr/local/apache/passwd/passwords"
+            AuthLDAPURL ldap://ldaphost/o=yourorg
+            Require valid-user
+
+         </Directory>
+
+Dans le cas présent si l'authentification avec __LDAP__ ou depuis le fichier de mot de passe est réussie avec une utilisateur ce dernier aura accès.
 
 Référence :
 
 * http://httpd.apache.org/docs/current/fr/howto/auth.html
 
-# <a name="mod_webdav" /> Mod_webdav pour avoir un lieu de stockage de fichiers
+# <a name="mod_webdav" /> Webdav pour avoir un lieu de stockage de fichiers
+
+Lors de la formation sur __rsnapshot__ j'avais fait mention de l'utilisation d'une serveur **webdav** pour faire le transfert de fichier . Malheureusement nous n'étions pas encore rendu à la mise en place d'apache nous n'avions donc pas pu couvrir cette fonctionnalité. Je n'avais pas pour objectif primaire de faire la démonstration puis suite à des demandes de participants voici une exemple de configuration. Après tous la formation elle est pour **VOUS** :D !!
+
+
+
+* Référence :
+
+    * https://httpd.apache.org/docs/2.4/fr/mod/mod\_dav.html
 
 # <a name="performance" /> Performance et analyse d'apache
 
