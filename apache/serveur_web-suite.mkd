@@ -3,10 +3,20 @@
 pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 </style>
 
-TODO : Corriger les \_
-
 # Index 
 
+* [ Redirection d'URL](#redirect) 
+       * [ Redirection Simple](#simple_redirect) 
+           * [ Redirection avec un fichier html](#html_redirect) 
+           * [ Redirection avec l'instruction redirect](#redirect_instruction) 
+           * [ Redirection avec l'instruction RedirectMatch](#redirectMatch_instruction) 
+       * [ Mod\_rewrite pour réécrire les URL](#mod_rewrite) 
+           * [ Réécriture des images gif vers png](#mod_rewrite-RewriteImgs) 
+           * [ Mise en place de condition de réécriture ](#mod_rewrite-RewriteCond) 
+               * [ Mise en place de condition de réécriture selon le fureteur](#mod_rewrite-RewriteCond_browser) 
+               * [ Mise en place de condition de réécriture selon l'origine](#mod_rewrite-RewriteCond_refferrer) 
+               * [ Mise en place de redirection sur le PATH de l'URL](#mod_rewrite-RewriteCond_path) 
+               * [ Quand ne pas utiliser mod\_rewrite](#mod_rewrite-avoid) 
 
 # <a name="redirect" /> Redirection d'URL
 
@@ -21,11 +31,11 @@ La manipulation des __URL__ est maintenant une pratique très courante dans l'in
 * Traiter les arguments transmis dans l'URL pour un comportement particulier.
 * ...
 
-Nous allons voir quelques méthodes de mise en place de redirection , certaines configuration sont simple à mettre en place d'autre complexe. Nous verrons le système **mod_rewrite** qui permet de réaliser des configurations très complexe , je vous conseille d'avoir un environnement de teste avant d'essayer d'effectuer, les configurations directement en production. Une mauvaise configuration peut rendre votre site web inaccessible.
+Nous allons voir quelques méthodes de mise en place de redirection , certaines configuration sont simple à mettre en place d'autre complexe. Nous verrons le système **mod\_rewrite** qui permet de réaliser des configurations très complexe , je vous conseille d'avoir un environnement de teste avant d'essayer d'effectuer, les configurations directement en production. Une mauvaise configuration peut rendre votre site web inaccessible.
 
 ## <a name="simple_redirect" /> Redirection Simple
 
-Avant de parler de [mod_rewrite](https://httpd.apache.org/docs/2.4/fr/mod/mod_rewrite.html) nous allons voir d'autre méthode de redirection. Bien que **mod_rewrite** peut répondre à l'ensemble des exemples couvert ci-dessous, il est plus simple d'utiliser des méthodes avec lesquelles nous sommes plus confortable, car plus simple. Libre à vous par la suite :P.
+Avant de parler de [mod\_rewrite](https://httpd.apache.org/docs/2.4/fr/mod/mod_rewrite.html) nous allons voir d'autre méthode de redirection. Bien que **mod\_rewrite** peut répondre à l'ensemble des exemples couvert ci-dessous, il est plus simple d'utiliser des méthodes avec lesquelles nous sommes plus confortable, car plus simple. Libre à vous par la suite :P.
 
 
 ### <a name="html_redirect" /> Redirection avec un fichier html
@@ -64,7 +74,7 @@ Référence :
 
 ### <a name="redirect_instruction" /> Redirection avec l'instruction redirect
 
-Avant de voir le module **mod_rewrite** nous allons voir l'instruction [redirect](https://httpd.apache.org/docs/current/fr/mod/mod_alias.html#redirect) cette dernière fait partie du module **mod_alias**.
+Avant de voir le module **mod\_rewrite** nous allons voir l'instruction [redirect](https://httpd.apache.org/docs/current/fr/mod/mod_alias.html#redirect) cette dernière fait partie du module **mod\_alias**.
 
 ![redirect_screenshot-documentation.png](./imgs/redirect_screenshot-documentation.png)
 
@@ -168,20 +178,20 @@ Copiez le dans le **DocumentRoot** du site et accédez à l'URL , dans mon cas :
         $ sudo cp Free_Software_Foundation_logo.gif /data/vhosts/siteA/docroot/
         $ sudo cp Free_Software_Foundation_logo.png /data/vhosts/siteA/docroot/
 
-URL : https://www.linux202-sitea.com/Free_Software_Foundation_logo.gif
+URL : https://www.linux202-sitea.com/Free_Software_Foundation\_logo.gif
 
 Activons maintenant la configuration de la redirection :
 
         $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
 
-URL : https://www.linux202-sitea.com/Free_Software_Foundation_logo.png
+URL : https://www.linux202-sitea.com/Free_Software_Foundation\_logo.png
 
 Donc comme vous pouvez le constater nous voyons la redirection selon la configuration suivante la redirection aura lieu peut importe le répertoire où ce trouve le fichier. Si nous créons le répertoire **toto/blabla/** et mettons le fichier __png__ lors de l'accès la redirection aura lieu aussi , démonstration.
 
         $ sudo mkdir -p /data/vhosts/siteA/docroot/toto/blabal/
         $ sudo cp Free_Software_Foundation_logo.png /data/vhosts/siteA/docroot/toto/blabal/
 
-URL : https://www.linux202-sitea.com/toto/blabla/Free_Software_Foundation_logo.png
+URL : https://www.linux202-sitea.com/toto/blabla/Free_Software_Foundation\_logo.png
 
 Si nous regardons les logs nous voyons bien la redirection :
 
@@ -205,53 +215,53 @@ Revenons sur la ligne qui réalise cette magie :P , et prenons quelques minutes 
 
 Maintenant que nous avons traiter chaque argument voyons un peu d'exemple ceci simplifiera surement la compréhension .
 
-Si nous prenons la requête : https://www.linux202-sitea.com/Free_Software_Foundation_logo.gif
+Si nous prenons la requête : https://www.linux202-sitea.com/Free_Software_Foundation\_logo.gif
 Regardons l'entrée dans les logs
 
         172.17.42.1 - - [12/May/2016:08:27:36 -0400] "GET /Free_Software_Foundation_logo.gif HTTP/1.1" 302 681 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
 
 
-Du point de vu d'apache lors du traitement de l'instruction **RedirectMatch** ce dernier reçoit : **/Free_Software_Foundation_logo.gif** . 
+Du point de vu d'apache lors du traitement de l'instruction **RedirectMatch** ce dernier reçoit : **/Free_Software_Foundation\_logo.gif** . 
 
-0. Apache Reçoit dans le __VirtualHost__ : **/Free_Software_Foundation_logo.gif** 
+0. Apache Reçoit dans le __VirtualHost__ : **/Free_Software_Foundation\_logo.gif** 
 1. Traitement de la règle de redirection :
 
         RedirectMatch "(.*)\.gif$" "https://www.linux202-sitea.com$1.png"
 2. La requête __Match__  le critère si nous reprenons la __regex__  : **(.\*)\.gif$** ceci donne :
 
-    * (.\*) == /Free_Software_Foundation_logo
+    * (.\*) == /Free_Software_Foundation\_logo
     * \.gif$ == .gif
 
 3. Réalisation de la redirection en substituant la variable $1 par le contenu de la variable :
 
-    * "https://www.linux202-sitea.com$1.png" == "https://www.linux202-sitea.com/Free_Software_Foundation_logo.png"
+    * "https://www.linux202-sitea.com$1.png" == "https://www.linux202-sitea.com/Free_Software_Foundation\_logo.png"
 
 Nous pouvons donc constaté que la formule fonctionne aussi bien si le fichier est dans un répertoire et non à la racine du site :
 
-Si nous accédons à l'URL : https://www.linux202-sitea.com//toto/blabla/Free_Software_Foundation_logo.gif
+Si nous accédons à l'URL : https://www.linux202-sitea.com//toto/blabla/Free_Software_Foundation\_logo.gif
 
         172.17.42.1 - - [12/May/2016:08:28:58 -0400] "GET /toto/blabla/Free_Software_Foundation_logo.gif HTTP/1.1" 302 705 "-" "Mozilla/5.0 (X11; Linux i686; rv:42.0) Gecko/20100101 Firefox/42.0"
 
-Du point de vu d'apache lors du traitement de l'instruction **RedirectMatch** ce dernier reçoit : **/toto/blabla/Free_Software_Foundation_logo.gif** . 
+Du point de vu d'apache lors du traitement de l'instruction **RedirectMatch** ce dernier reçoit : **/toto/blabla/Free_Software_Foundation\_logo.gif** . 
 
 1. Décortiquons la __regex__ : **(.\*)\.gif$**
 
-    * (.\*) == /toto/blabla/Free_Software_Foundation_logo
+    * (.\*) == /toto/blabla/Free_Software_Foundation\_logo
     * \.gif$ == .gif
 
 2. Réalisation de la redirection en substituant la variable $1 par le contenu de la variable :
 
-    * "https://www.linux202-sitea.com$1.png" == "https://www.linux202-sitea.com/toto/blabla/Free_Software_Foundation_logo.png"
+    * "https://www.linux202-sitea.com$1.png" == "https://www.linux202-sitea.com/toto/blabla/Free_Software_Foundation\_logo.png"
 
 Bien entendu, les opérations disponibles sont multiple avec les __regex__ ceci est uniquement un exemple , à vous de voir vos besoin.
 
 Référence :
 
-* https://httpd.apache.org/docs/current/fr/mod/mod_alias.html#redirect
+* https://httpd.apache.org/docs/current/fr/mod/mod\_alias.html#redirect
 * https://fr.wikipedia.org/wiki/Graphics_Interchange_Format
 * https://fr.wikipedia.org/wiki/Portable_Network_Graphics
 
-## <a name="mod_rewrite" /> Mod_rewrite pour réécrire les URL
+## <a name="mod_rewrite" /> Mod\_rewrite pour réécrire les URL
 
 Après avoir couvert l'instruction [Redirect](https://httpd.apache.org/docs/current/fr/mod/mod_alias.html#redirect) et __RedirectMatch__ , vous êtes en mesure de réaliser beaucoup de chose. Avec L'utilisation de __mod\_rewrite__ vos possibilités décuple, cependant un niveau de complexité aussi sera significativement augmenté. 
 
@@ -261,11 +271,11 @@ __mod\_rewrite__ fournit une méthode souple et puissante pour manipuler les URL
 
 __mod\_rewrite__ agit sur la totalité de l'URL, y compris la partie chemin. Une règle de réécriture peut être invoquée dans __httpd.conf__ ou dans un fichier __.htaccess__. Le chemin généré par une règle de réécriture peut inclure une chaîne de paramètres, ou peut renvoyer vers un traitement secondaire interne, une redirection vers une requête externe ou vers le mandataire interne.
 
-Vous trouverez d'avantage de détails, discussions et exemples dans la [documentation détaillée sur mod_rewrite](https://httpd.apache.org/docs/2.4/fr/rewrite/).
+Vous trouverez d'avantage de détails, discussions et exemples dans la [documentation détaillée sur mod\_rewrite](https://httpd.apache.org/docs/2.4/fr/rewrite/).
 
 ### <a name="mod_rewrite-RewriteImgs" /> Réécriture des images gif vers png
 
-Nous avons vu l'instruction __RedirectMatch__ qui fait partie du module __mod_alias__ pour faire la redirection de fichier originalement en format __.gif__ vers __.png__ . Comme nous avons déjà compris le fonctionnement nous allons refaire la même configuration avec __mod\_rewrite__ uniquement pour ce familiarisé avec la syntaxe. 
+Nous avons vu l'instruction __RedirectMatch__ qui fait partie du module __mod\_alias__ pour faire la redirection de fichier originalement en format __.gif__ vers __.png__ . Comme nous avons déjà compris le fonctionnement nous allons refaire la même configuration avec __mod\_rewrite__ uniquement pour ce familiarisé avec la syntaxe. 
 
 Premièrement nous devons activer le module **mod\_rewrite** , afin de pouvoir utiliser les instructions du module.
 
@@ -298,14 +308,14 @@ On valide et recharge la configuration :
 
 Accédons à présent aux l'URL de l'image : 
 
-* https://www.linux202-sitea.com/toto/blabla/Free_Software_Foundation_logo.gif
-* https://www.linux202-sitea.com/Free_Software_Foundation_logo.gif
+* https://www.linux202-sitea.com/toto/blabla/Free_Software_Foundation\_logo.gif
+* https://www.linux202-sitea.com/Free_Software_Foundation\_logo.gif
 
 
 Dans les deux cas la redirection est réalisé vers le fichier **png** et l'URL reécrite dans la barre de votre fureteur:
 
-* https://www.linux202-sitea.com/toto/blabla/Free_Software_Foundation_logo.png
-* https://www.linux202-sitea.com/Free_Software_Foundation_logo.png
+* https://www.linux202-sitea.com/toto/blabla/Free_Software_Foundation\_logo.png
+* https://www.linux202-sitea.com/Free_Software_Foundation\_logo.png
 
 Analysons un peut les instructions :
 
@@ -324,7 +334,7 @@ Analysons un peut les instructions :
         [R,L]
 
     * **R** : L'utilisation du [drapeau \[R\]](https://httpd.apache.org/docs/2.4/fr/rewrite/flags.html#flag_r) provoque l'envoi d'une redirection au navigateur. Si une URL pleinement qualifiée (FQDN - fully qualified domain name) est spécifiée (c'est à dire incluant http://nom-du-serveur/), une redirection sera effectuée vers cette adresse. Dans le cas contraire, le protocole courant, le nom du serveur et le numéro de port seront utilisés pour générer l'URL envoyée avec la redirection. 
-    * **L** : Lorsque le [drapeau \[L\]](https://httpd.apache.org/docs/2.4/fr/rewrite/flags.html#flag_l) est présent, mod_rewrite arrête le traitement du jeu de règles. Cela signifie dans la plupart des situations que si la règle s'applique, aucune autre règle ne sera traitée. Ce drapeau correspond à la commande Perl last, ou à la commande break en C. Utilisez ce drapeau pour indiquer que la règle courante doit être appliquée immédiatement, sans tenir compte des règles ultérieures.
+    * **L** : Lorsque le [drapeau \[L\]](https://httpd.apache.org/docs/2.4/fr/rewrite/flags.html#flag_l) est présent, mod\_rewrite arrête le traitement du jeu de règles. Cela signifie dans la plupart des situations que si la règle s'applique, aucune autre règle ne sera traitée. Ce drapeau correspond à la commande Perl last, ou à la commande break en C. Utilisez ce drapeau pour indiquer que la règle courante doit être appliquée immédiatement, sans tenir compte des règles ultérieures.
 
 
 Si nous réalisons un changement au niveau des **flags** , supprimons l'option **R** pour ne pas avoir une redirection mais simplement une réécriture de règle. **ATTENTION** ceci ne fonctionne que si la redirection est réalisé **localement**, en d'autre mot vers une page ou une référence interne au serveur. Voici la nouvelles configuration :
@@ -332,7 +342,7 @@ Si nous réalisons un changement au niveau des **flags** , supprimons l'option *
         RewriteEngine  on
         Rewriterule "(.*)\.gif$" "$1.png"  [L]
 
-Seule différence au niveau de la configuration nous avons supprimé le drapeau **R**, si vous accédez à l'URL : https://www.linux202-sitea.com/Free_Software_Foundation_logo.gif , ça fonctionne toujours et vous voyez bien le fichier **png** car il y a la ligne noir présente. Soyez attentif maintenant à l'URL dans la bar, l'URL est toujours **GIF** et non **PNG**, donc l'écriture c'est réalisé mais n'est pas présenté à l'utilisateur :D.
+Seule différence au niveau de la configuration nous avons supprimé le drapeau **R**, si vous accédez à l'URL : https://www.linux202-sitea.com/Free_Software_Foundation\_logo.gif , ça fonctionne toujours et vous voyez bien le fichier **png** car il y a la ligne noir présente. Soyez attentif maintenant à l'URL dans la bar, l'URL est toujours **GIF** et non **PNG**, donc l'écriture c'est réalisé mais n'est pas présenté à l'utilisateur :D.
 
 Telle que mentionné ceci ne fonctionne que lorsque le serveur gère l'ensemble , soit la source et la destination , si vous définissez une URL externe par exemple l'URL du logo de google, le comportement sera une redirection :
 
@@ -341,7 +351,7 @@ Telle que mentionné ceci ne fonctionne que lorsque le serveur gère l'ensemble 
 
 ### <a name="mod_rewrite-RewriteCond" /> Mise en place de condition de réécriture 
 
-Le vraie avantage de __mod\_rewrite__ est la mise en place de la gestion de condition multiple, choses impossible avec le système de redirection, avec le module **mod_alias**.
+Le vraie avantage de __mod\_rewrite__ est la mise en place de la gestion de condition multiple, choses impossible avec le système de redirection, avec le module **mod\_alias**.
 [RewriteRule](https://httpd.apache.org/docs/2.4/fr/mod/mod_rewrite.html#rewriterule) permet de définir une condition dans l'exemple ci-dessus nous avons définie uniquement le fait que la requête soit pour les fichiers avec l'extension __gif__.
 Avec l'instruction [RewriteCond](https://httpd.apache.org/docs/2.4/fr/mod/mod_rewrite.html#rewritecond) il est possible de définir plus de condition, pas uniquement sur l'URL fournit mais aussi sur le client réalisant la requête. 
 
@@ -402,7 +412,7 @@ Donc Si nous regardons les logs :
 3. **"GET /chrome-info.php?link=/chrome-info.php HTTP/1.1" 302 689 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome** : Oupss, ça commence à partir en vrille , en effet lorsque le client demande d'accéder à la page **chrome.php** la condition **RewriteCond** s'applique encore :P , il y a toujours l'agent **Chrome** il réalise donc la redirection en passant en argument l'URL d'origine **?link=/chrome-info.php** 
 4. **"GET /chrome-info.php?link=/chrome-info.php HTTP/1.1" 302 689 "-" "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome** : Nous sommes dans la boucle ...
 
-Ceci est un cas **classique** lorsque vous travaillerez avec le système de redirection d'URL voilà pourquoi il est compliqué de travailler avec **mod_rewrite** et que je suggère toujours d'avoir un environnement de test pour valider vos configurations.
+Ceci est un cas **classique** lorsque vous travaillerez avec le système de redirection d'URL voilà pourquoi il est compliqué de travailler avec **mod\_rewrite** et que je suggère toujours d'avoir un environnement de test pour valider vos configurations.
 
 Comment corriger ce problème ??
 
@@ -474,9 +484,9 @@ Donc nous allons modifier le fichier __php__ afin de définir le __cookie__ lors
         setcookie( "bad_browser", "chrome", $date_of_expiry );
         ?>
 
-Ici je définie un __cookie__ nommé **bad_browser** et je lui définie une chaine de caractère avec le nom du fureteur __chrome__ de plus je définie une date d'expiration au __cookie__ de 60 secondes. L'expiration est trop courte pour une utilisation en production car le client sera redirigé à la page après 1 minutes de consultation du site , mais pour les testes c'est très pratique :P. Plus d'information disponible sur la page de documentation de __php__ : [setcookie](http://php.net/manual/en/function.setcookie.php). 
+Ici je définie un __cookie__ nommé **bad\_browser** et je lui définie une chaine de caractère avec le nom du fureteur __chrome__ de plus je définie une date d'expiration au __cookie__ de 60 secondes. L'expiration est trop courte pour une utilisation en production car le client sera redirigé à la page après 1 minutes de consultation du site , mais pour les testes c'est très pratique :P. Plus d'information disponible sur la page de documentation de __php__ : [setcookie](http://php.net/manual/en/function.setcookie.php). 
 
-Maintenant que le __cookie__ est définie dans l'application je vais modifier la règles de __mod\_rewrite__ afin que la règle de redirection ne s'applique pas si le __cookie__ nommé **bad_browser** est définie.
+Maintenant que le __cookie__ est définie dans l'application je vais modifier la règles de __mod\_rewrite__ afin que la règle de redirection ne s'applique pas si le __cookie__ nommé **bad\_browser** est définie.
 
         RewriteCond "%{HTTP_USER_AGENT}"  "(Chrome)"
         RewriteCond "%{REQUEST_URI}" !/chrome-info.php
@@ -489,7 +499,7 @@ Voyons un autre exemple à présent de manipulation de réécriture afin de voir
 
 ![variable_mod_rewrite.png](./imgs/variable_mod_rewrite.png)
 
-* https://httpd.apache.org/docs/2.4/fr/mod/mod_rewrite.html#rewritecond
+* https://httpd.apache.org/docs/2.4/fr/mod/mod\_rewrite.html#rewritecond
 
 
 Nous allons donc voir la méthode pour "protéger" nos images sur le site web, quand je dis protégé je veux dire que nous allons bloqué l'inclusion de vos images sur un site web distant.
@@ -580,13 +590,13 @@ Nous le voyons clairement dans les logs la redirections car la source de l'accè
 
 Pour terminer, voyons la redirection d'un URL basé sur le chemin, si votre site web utilise un langage telle que __php__, __python__ , __ruby__ , ... Il est fort probable que vous avez une base de données en arrière pour le stockage du contenu. Nous nous retrouvons souvent avec des URL contenant des paramètres exemple : 
 
-* https://www.linux202-sitea.com/articles.php?year=2016&title=le_super_article
+* https://www.linux202-sitea.com/articles.php?year=2016&title=le\_super\_article
 
 Ceci n'est en soit pas critique cependant en dehors de l'aspect esthétique, ceci à un coût sur l'indexation dans __google__, en effet une URL à plus de valeur qu'un argument ... De plus l'utilisateur préfère avoir une URL "dur" ceci est plus simple à retenir et évite les erreurs d'argument avec les caractères : **&** , **?**, **=**,...
 
 Une fois notre redirection mise en place voici l'URL que nous aurons :
 
-* https://www.linux202-sitea.com/articles/2016/le_super_article
+* https://www.linux202-sitea.com/articles/2016/le\_super\_article
 
 C'est tous de même plus jolie ... Pour les besoins de la démonstration je vais définir le fichier __articles.php__ afin que vous puissiez avoir un point de référence pour vos testes :
 
@@ -612,7 +622,7 @@ C'est tous de même plus jolie ... Pour les besoins de la démonstration je vais
 
 
 Avant de mettre en place la redirection validons que le fichier __php__ fonctionne comme attendu .
-Accédons à l'URL : https://www.linux202-sitea.com/articles.php?year=2016&title=le_super_article
+Accédons à l'URL : https://www.linux202-sitea.com/articles.php?year=2016&title=le\_super\_article
 
 ![article_php_with_args.png](./imgs/article_php_with_args.png)
 
@@ -656,7 +666,7 @@ Donc nous avons un articles de 1999 contenu dans le répertoire __articles__ le 
 * **%{REQUEST\_FILENAME}** : Définie le chemin d'accès dans l'URL qui est demandé
 * **!-f** : Permet de définir la condition si ce n'est PAS (**!**) un fichier
 
-#### <a name="mod_rewrite-avoid" /> Quand ne pas utiliser mod_rewrite
+#### <a name="mod_rewrite-avoid" /> Quand ne pas utiliser mod\_rewrite
 
 Je vous invite à consulter la page : https://httpd.apache.org/docs/2.4/fr/rewrite/avoid.html , afin de comprendre quand il n'est pas conseillé d'utiliser mod\_rewrite.
 
@@ -667,137 +677,5 @@ Référence :
 * https://httpd.apache.org/docs/2.4/fr/rewrite/avoid.html
 * https://httpd.apache.org/docs/current/fr/rewrite/flags.html
 * http://www.useragentstring.com/pages/useragentstring.php
-
-
-
-# <a name="auth_local_access" /> Autorisation d'accès avec authentification local
-
-Nous allons maintenant revoir notre configuration pour l'accès au répertoire admin , au lieu d'utiliser un système de limitation par adresse ip, nous allons mettre en place une authentification local. La limitation par adresse ip c'est bien, malheureusement quand nous sommes en mouvement nous n'avons pas toujours la même adresse ip. Nous allons utiliser le module apache [mod\_authn\_core](https://httpd.apache.org/docs/2.4/mod/mod_authn_core.html#authtype). 
-
-Commençons par valider que ce dernier est bien chargé :
-
-        $ ls -l /etc/apache2/mods-enabled/*auth*
-        lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/auth_basic.load -> ../mods-available/auth_basic.load
-        lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authn_core.load -> ../mods-available/authn_core.load
-        lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authn_file.load -> ../mods-available/authn_file.load
-        lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authz_core.load -> ../mods-available/authz_core.load
-        lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authz_host.load -> ../mods-available/authz_host.load
-        lrwxrwxrwx 1 root root 33 Nov 25 08:20 /etc/apache2/mods-enabled/authz_user.load -> ../mods-available/authz_user.load
-
-Comme nous pouvons le constater plusieurs module d'authentification sont chargé par défaut incluant [mod_authn_core](https://httpd.apache.org/docs/2.4/mod/mod_authn_core.html#authtype) (ligne 2 :P )
-
-Pour information voici le contenu :
-
-        $ cat /etc/apache2/mods-enabled/authn_core.load 
-        LoadModule authn_core_module /usr/lib/apache2/modules/mod_authn_core.so
-
-Apache charge un fichier **.so** qui est l'équivalent d'un **DLL** qui permet d'avoir une suite d'instruction en plus, disponible pour le service. Le module fut compilé pour la version spécifique d'Apache il n'est pas possible de prendre un module écrit pour la version 2.2 et le faire fonctionner sur la version 2.4 . Nous verrons plus en détail plus tard les modules apaches cependant il est bien d'avoir une compréhension, sommaire du fonctionnement.
-
-
-Procédons à la modification du fichier de configuration de notre site par défaut (**/etc/apache2/sites-enabled/siteA-ssl.conf**). Voici la configuration :
-
-        <Directory /data/vhosts/siteA/docroot/admin/ >
-            Options none
-            AllowOverride None
-            #  Section d'authentification
-            AuthType Basic
-            AuthName "Authentication Required"
-            AuthUserFile "/data/vhosts/siteA/privates/.htpasswd-admin"
-            Require valid-user
-        </Directory>
-
-Analysons les paramètres :
-
-* [AuthType](https://httpd.apache.org/docs/2.4/fr/mod/mod_authn_core.html#authtype) : Définie le type de module d'authentification , nous avions vu que plusieurs module été disponible dans le cas présent nous utiliserons le mode __Basic__. Il est important de souligné que dans le mode de communication actuelle le transfert du mot de passe est transmis en claire . Afin d'augmenter le niveau de sécurité nous devrions activer le support __SSL__ nous y reviendrons. Voici les type disponibles :
-    * [Basic](https://httpd.apache.org/docs/2.4/fr/mod/mod_auth_basic.html) 
-    * [Digest](https://httpd.apache.org/docs/2.4/fr/mod/mod_auth_digest.html)
-    * [form](https://httpd.apache.org/docs/2.4/fr/mod/mod_auth_form.html)
-* [AuthName](https://httpd.apache.org/docs/2.4/fr/mod/mod_authn_core.html#authname) : message affiché à l'utilisateur afin qu'il entre les informations d'authentification requis .
-* [AuthUserFile](https://httpd.apache.org/docs/2.4/fr/mod/mod_authn_file.html#authuserfile) : Ficher local sur le serveur web contenant la liste des utilisateurs et mot de passe permettant de valider l'authentification des utilisateurs.
-* [Require](https://httpd.apache.org/docs/2.4/fr/mod/mod_authz_core.html#require) : Instruction spécifiant le critère d'autorisation, dans les démonstrations passé nous avions utilisé les adresses ip comme critère ici nous pourrons utiliser des noms d'utilisateur ou définir comme dans le cas présent n'importe quelle utilisateur s'authentifiant avec succès. 
-
-
-Validons qu'il n'y pas d'erreur syntaxique et rechargeons le fichier de configuration :
-
-        $ sudo apache2ctl configtest && sudo service apache2 restart
-        Syntax OK
-        * Restarting web server apache2
-        *    ...done.
-
-Donc si nous allons à l'URL nous avons bien le message demandant le nom d'utilisateur et mot de passe :
-
-![imgs/auth_admin-request.png](imgs/auth_admin-request.png)
-
-Par contre, comme nous n'avons jamais définie de nom d'usagé / mot de passe quand on rentre n'importe quoi nous avons une [erreur 500](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#5xx_Server_Error) indiquant un problème sur le serveur. Le message d'erreur sur le serveur est très claire :
-
-        $ sudo tail /var/log/apache2/error.log
-        [Tue Dec 01 08:40:05.516453 2015] [authn_file:error] [pid 457:tid 2869857088] (2)No such file or directory: [client 172.17.42.1:52744] AH01620: Could not open password file: /data/vhosts/siteA/privates/.htpasswd-admin
-
-
-## <a name="htpasswd" /> Création du fichier de mot de passe ( __htpasswd__ )
-
-Pour réaliser la création du fichier contenant le nom d'utilisateur et le mot de passe nous avons besoin de l'application **htpasswd** , cette application est disponible dans le pacquage : **apache2-utils**
-
-        $ sudo apt-get install apache2-utils
-
-Nous allons faire la création du fichier :
-
-        $ sudo htpasswd -c /data/vhosts/siteA/privates/.htpasswd-admin admin
-        New password:
-        Re-type new password:
-        Adding password for user admin
-        $ sudo htpasswd  /data/vhosts/siteA/privates/.htpasswd-admin robert
-        New password: 
-        Re-type new password: 
-        Adding password for user robert
-
-**IMPORTANT** : entre le 2 commandes il y a une différence, pour réaliser la création du fichier j'ai utilisé l'option **-c** par la suite je ne l'utilise pas . En fait il faut surtout pas que je l'utilise sinon ça vide le fichier pour créer un nouveau fichier , nous perdons donc l'information :-/ . Ouin c'est dangereux, heureusement que vous savez ce que vous faites :D, sinon il y a les backups ...
-
-Visualisons le contenu du fichier, dans les 2 cas j'ai mis le même mot de passe (toto) :
-
-        $ cat /data/vhosts/siteA/privates/.htpasswd-admin
-        admin:$apr1$6gHZyTty$lxisZ66JPD7yK6K8fcXlU.
-        robert:$apr1$fUI6se3h$40k/ftJPUtVOrptHlMiYB0
-
-Si nous retournons à l'URL nous devrions avoir une authentification avec succès avec l'un ou l'autre des utilisateurs. La page indiquant que nous sommes dans une "section prive" devrais s'afficher.
-
-
-## <a name="htpasswd_group" /> Gestion d'accès des utilisateurs et par groupe
-
-L'exemple ci-dessus est vraiment la méthode la plus simple vous avec un fichier de mot de passe peut importe l'utilisateur s'il réussie à établir une connexion ce dernier à accès. Par contre si vous avez plusieurs section qui oblige l'utilisation d'une authentification vous aimeriez probablement utilisé 1 fichier de mot de passe et définir qui à accès dans le fichier de configuration apache.
-
-Si vous connaissez le nom des utilisateurs vous pouvez changé la ligne suivante avec la liste des nom : 
-
-            Require valid-user
-
-Voici la version avec les nom spécifiques :
-
-            Require user admin thomas robert
-
-
-Ceci est bien mais si vous avez travailler un peu avec ce mode de définition l'ajout et la suppression d'un utilisateur est ennuyeuse comme ceci est définie dans la configuration apache ou son extension via le fichier **.htaccess** ce ne peut pas être délégué .
-
-Nous allons donc définir des groupes qui pourrons être éditer éventuellement par un tiers ou être réutilisé dans un autre contexte. Nous allons créer un fichier texte avec la définition des groupes. 
-
-
-
-Référence :
-
-* http://httpd.apache.org/docs/current/fr/howto/auth.html
-
-# <a name="mod_webdav" /> Mod_webdav pour avoir un lieu de stockage de fichiers
-
-# <a name="performance" /> Performance et analyse d'apache
-
-# <a name="compilation_module" /> Compilation d'un modules apache (a valider)
-
-https://httpd.apache.org/docs/2.4/developer/modguide.html
-
-# <a name="Reference" /> Référence :
-
-* [Documentation Apache 2.4](https://httpd.apache.org/docs/2.4/) : https://httpd.apache.org/docs/2.4/
-* [Liste des code d'état du protocole http](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes): https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
-* http://httpd.apache.org/docs/current/fr/howto/auth.html
-
 
 
