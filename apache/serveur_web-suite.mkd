@@ -668,10 +668,6 @@ Référence :
 * https://httpd.apache.org/docs/current/fr/rewrite/flags.html
 * http://www.useragentstring.com/pages/useragentstring.php
 
-# <a name="mod_proxy" /> Mod_proxy pour rediriger les requêtes
-# <a name="mod_webdav" /> Mod_webdav pour avoir un lieu de stockage de fichiers
-
-# <a name="performance" /> Performance et analyse d'apache
 
 
 # <a name="auth_local_access" /> Autorisation d'accès avec authentification local
@@ -698,16 +694,15 @@ Pour information voici le contenu :
 Apache charge un fichier **.so** qui est l'équivalent d'un **DLL** qui permet d'avoir une suite d'instruction en plus, disponible pour le service. Le module fut compilé pour la version spécifique d'Apache il n'est pas possible de prendre un module écrit pour la version 2.2 et le faire fonctionner sur la version 2.4 . Nous verrons plus en détail plus tard les modules apaches cependant il est bien d'avoir une compréhension, sommaire du fonctionnement.
 
 
-Procédons à la modification du fichier de configuration de notre site par défaut (**/etc/apache2/sites-available/000-default.conf**). Voici la configuration :
+Procédons à la modification du fichier de configuration de notre site par défaut (**/etc/apache2/sites-enabled/siteA-ssl.conf**). Voici la configuration :
 
-        <Directory /data/www/admin >
-            Options FollowSymLinks
+        <Directory /data/vhosts/siteA/docroot/admin/ >
+            Options none
             AllowOverride None
-    
             #  Section d'authentification
             AuthType Basic
             AuthName "Authentication Required"
-            AuthUserFile "/data/private-www/.htpasswd-admin"
+            AuthUserFile "/data/vhosts/siteA/privates/.htpasswd-admin"
             Require valid-user
         </Directory>
 
@@ -736,7 +731,7 @@ Donc si nous allons à l'URL nous avons bien le message demandant le nom d'utili
 Par contre, comme nous n'avons jamais définie de nom d'usagé / mot de passe quand on rentre n'importe quoi nous avons une [erreur 500](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#5xx_Server_Error) indiquant un problème sur le serveur. Le message d'erreur sur le serveur est très claire :
 
         $ sudo tail /var/log/apache2/error.log
-        [Tue Dec 01 08:40:05.516453 2015] [authn_file:error] [pid 457:tid 2869857088] (2)No such file or directory: [client 172.17.42.1:52744] AH01620: Could not open password file: /data/private-www/.htpasswd-admin
+        [Tue Dec 01 08:40:05.516453 2015] [authn_file:error] [pid 457:tid 2869857088] (2)No such file or directory: [client 172.17.42.1:52744] AH01620: Could not open password file: /data/vhosts/siteA/privates/.htpasswd-admin
 
 
 ## <a name="htpasswd" /> Création du fichier de mot de passe ( __htpasswd__ )
@@ -747,12 +742,11 @@ Pour réaliser la création du fichier contenant le nom d'utilisateur et le mot 
 
 Nous allons faire la création du fichier :
 
-        $ sudo mkdir /data/private-www/
-        $ sudo htpasswd -c /data/private-www/.htpasswd-admin admin
+        $ sudo htpasswd -c /data/vhosts/siteA/privates/.htpasswd-admin admin
         New password:
         Re-type new password:
         Adding password for user admin
-        $ sudo htpasswd  /data/private-www/.htpasswd-admin robert
+        $ sudo htpasswd  /data/vhosts/siteA/privates/.htpasswd-admin robert
         New password: 
         Re-type new password: 
         Adding password for user robert
@@ -761,23 +755,49 @@ Nous allons faire la création du fichier :
 
 Visualisons le contenu du fichier, dans les 2 cas j'ai mis le même mot de passe (toto) :
 
-        $ cat /data/private-www/.htpasswd-admin
+        $ cat /data/vhosts/siteA/privates/.htpasswd-admin
         admin:$apr1$6gHZyTty$lxisZ66JPD7yK6K8fcXlU.
         robert:$apr1$fUI6se3h$40k/ftJPUtVOrptHlMiYB0
 
 Si nous retournons à l'URL nous devrions avoir une authentification avec succès avec l'un ou l'autre des utilisateurs. La page indiquant que nous sommes dans une "section prive" devrais s'afficher.
 
 
+## <a name="htpasswd_group" /> Gestion d'accès des utilisateurs et par groupe
+
+L'exemple ci-dessus est vraiment la méthode la plus simple vous avec un fichier de mot de passe peut importe l'utilisateur s'il réussie à établir une connexion ce dernier à accès. Par contre si vous avez plusieurs section qui oblige l'utilisation d'une authentification vous aimeriez probablement utilisé 1 fichier de mot de passe et définir qui à accès dans le fichier de configuration apache.
+
+Si vous connaissez le nom des utilisateurs vous pouvez changé la ligne suivante avec la liste des nom : 
+
+            Require valid-user
+
+Voici la version avec les nom spécifiques :
+
+            Require user admin thomas robert
+
+
+Ceci est bien mais si vous avez travailler un peu avec ce mode de définition l'ajout et la suppression d'un utilisateur est ennuyeuse comme ceci est définie dans la configuration apache ou son extension via le fichier **.htaccess** ce ne peut pas être délégué .
+
+Nous allons donc définir des groupes qui pourrons être éditer éventuellement par un tiers ou être réutilisé dans un autre contexte. Nous allons créer un fichier texte avec la définition des groupes. 
+
+
+
+Référence :
+
+* http://httpd.apache.org/docs/current/fr/howto/auth.html
+
+# <a name="mod_webdav" /> Mod_webdav pour avoir un lieu de stockage de fichiers
+
+# <a name="performance" /> Performance et analyse d'apache
+
+# <a name="compilation_module" /> Compilation d'un modules apache (a valider)
+
+https://httpd.apache.org/docs/2.4/developer/modguide.html
+
 # <a name="Reference" /> Référence :
 
 * [Documentation Apache 2.4](https://httpd.apache.org/docs/2.4/) : https://httpd.apache.org/docs/2.4/
 * [Liste des code d'état du protocole http](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes): https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+* http://httpd.apache.org/docs/current/fr/howto/auth.html
 
 
-## <a name="compilation_module" /> Compilation d'un modules apache (a valider)
 
-TODO : a analyser 
-
-https://httpd.apache.org/docs/2.4/developer/modguide.html
-
-ODO: demontration du symlink vers /etc/passwd == sudo ln -s /etc/ /var/www/html/sys
