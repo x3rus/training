@@ -216,6 +216,38 @@ Référence :
 
 Lors de la formation sur __rsnapshot__ j'avais fait mention de l'utilisation d'une serveur **webdav** pour faire le transfert de fichier . Malheureusement nous n'étions pas encore rendu à la mise en place d'apache nous n'avions donc pas pu couvrir cette fonctionnalité. Je n'avais pas pour objectif primaire de faire la démonstration puis suite à des demandes de participants voici une exemple de configuration. Après tous la formation elle est pour **VOUS** :D !!
 
+Le protocole [webdav](http://www.webdav.org/) permet de réaliser du transfert de fichier, il existe plusieurs client pour toutes les plateformes , nous verrons la possibilité de __mounté__ le système de fichier sous Linux. Mettons en place la configuration puis nous analyserons ensemble la configuration . 
+
+Nous allons activer 2 modules **mod\_dav** et **mod\_dav\_fs** , 2 méthodes pour réaliser l'opération la réalisation des liens symbolique manuellement ou l'utilisation de la commande **a2enmod**.
+
+        $ sudo a2enmod dav
+          Enabling module dav.
+          To activate the new configuration, you need to run:
+            service apache2 restart
+        $ sudo a2enmod dav_fs
+        Considering dependency dav for dav_fs:
+          Module dav already enabled
+          Enabling module dav_fs.
+          To activate the new configuration, you need to run:
+            service apache2 restart
+
+Maintenant nous allons modifier la configuration du __siteA__ afin de pouvoir utiliser le répertoire __/webdav__ comme répertoire de stockage . Voici le contenu à ajouter :
+
+        <Directory /data/vhosts/siteA/docroot/webdav/>
+            Dav On
+        </Directory>
+
+**WOwww** magie :D, validons tous de même peut-être que je vous ment :P, ça semble trop facile ... Créons un fichier dans le répertoire __/data/vhosts/siteA/docroot/webdav/__
+
+        $ cat /data/vhosts/siteA/docroot/webdav/toto
+        super fichier dans webdav
+
+Si vous accédez à l'URL : https://www.linux202-sitea.com/webdav/ , vous aurez quelques chose qui ressemble à ceci , vous pouvez cliquez sur le fichier __toto__ et voir son contenu :
+
+![webdav_simple-step1.png](./imgs/webdav_simple-step1.png)
+
+
+
 
 
 * Référence :
