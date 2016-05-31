@@ -246,8 +246,122 @@ Si vous accédez à l'URL : https://www.linux202-sitea.com/webdav/ , vous aurez 
 
 ![webdav_simple-step1.png](./imgs/webdav_simple-step1.png)
 
+Ceci est bien pratique pour offrir du contenu mais pourquoi mettre en place un __webdav__ alors que l'on peut aussi afficher le contenu avec apache sans avoir la couche **webdav** . L'intérêt réside principalement lors de la manipulation de fichier d'écriture et modification , ou la synchronisation de contenu. Voyons le tous avec un client pour nous permettre l'écriture... 
 
 
+## <a name="mod_webdav-client" /> Client webdav sous GNU/Linux
+
+Il existe plusieurs client sur internet, ici je ne couvrirais que ceux qui sont libre bien entendu :P, commençons par celui que j'utilise principalement soit l'accès avec un point de montage . L'avantage principale de cette solution est de me permettre d'avoir accès au fichier comme si c'était des fichiers locaux. 
+
+Nous avons besoin du logiciel **davfs2** , sous __Ubuntu__ :
+
+        $ sudo apt-get install davfs2
+
+Par la suite nous montons le __webdav__ comme si c'était un périphérique :
+
+        $ sudo mkdir /mnt/dav
+        $  sudo mount.davfs https://www.linux202-sitea.com/webdav/ /mnt/dav/
+        [sudo] password for xerus:
+        Please enter the username to authenticate with server
+        https://www.linux202-sitea.com/webdav/ or hit enter for none.
+          Username:
+        Please enter the password to authenticate user  with server
+        https://www.linux202-sitea.com/webdav/ or hit enter for none.
+          Password:
+        mount.davfs: the server certificate is not trusted
+        issuer:      training, X3rus, Montreal, Quebec, CA
+        subject:     training, X3rus, Montreal, Quebec, CA
+        identity:    www.linux202-sitea.com
+        fingerprint: e5:5c:6b:4f:c3:0b:62:9a:55:49:6d:ab:4b:5d:54:c7:16:2b:bd:5d
+        You only should accept this certificate, if you can
+        verify the fingerprint! The server might be faked
+        or there might be a man-in-the-middle-attack.
+        Accept certificate for this session? [y,N] y
+
+
+Nous pouvons à présent lister le contenu du répertoire et voir le fichier __toto__ :
+
+        $ ls -ld /mnt/dav/
+        drwxr-xr-x 3 root root 104 May 31 17:19 /mnt/dav/
+        $ ls -l /mnt/dav/
+        total 1
+        drwx------ 2 root root  0 May 31 17:08 lost+found
+        -rw-r--r-- 1 root root 26 May 31 08:46 toto
+        $ cat /mnt/dav/toto
+        super fichier dans webdav
+
+Réalisons une écriture d'un fichier !!! 
+
+        $ touch /mnt/dav/titi
+        touch: cannot touch ‘/mnt/dav/titi’: Permission denied
+        $ mkdir /mnt/dav/rep
+        mkdir: cannot create directory ‘/mnt/dav/rep’: Permission denied
+
+Une idée de la source du problème ?? 
+Si nous regardons les permissions assigné au répertoire **/mnt/dav** il n'est pas possible d'écrire dans le répertoire localement car ce dernier est propriété de __root__ . Nous allons modifier la configuration afin de permettre au groupe __users__d'écrire dans ce dernier, groupe dont je fait partie.
+
+        $ ls -ld /mnt/dav/
+        drwxr-xr-x 3 root root 104 May 31 17:19 /mnt/dav/
+        $ sudo chown :users /mnt/dav
+        $ sudo chmod g+w /mnt/dav
+        $ ls -ld /mnt/dav
+        drwxrwxr-x 3 root users 104 May 31 17:19 /mnt/dav/
+
+Recommençons à présent !
+
+        $ touch /mnt/dav/titi
+        touch: cannot touch ‘/mnt/dav/titi’: Input/output error
+
+**COOL** , vous me direz pourquoi cool ?!? Car nous n'avons pas le même message nous avançons donc vers la solution :D, le chemin vers la solution est rarement direct ;-).
+
+Je propose de regarder les logs sur le serveur et de refaire la même opération :
+
+        $ tail -f /data/vhosts/siteA/logs/ssl_error.log
+        [ ... OUTPUT COUPÉ ... ]
+        [Tue May 31 17:26:19.965651 2016] [dav:error] [pid 62] [client 172.17.42.1:47400] Could not save .locknull file.  [500, #0]
+        [Tue May 31 17:26:19.965726 2016] [dav:error] [pid 62] (2)No such file or directory: [client 172.17.42.1:47400] Error opening /data/vhosts/siteA/docroot/webdav/.DAV/.locknull for writing  [500, #0]
+
+
+Nous voyons bien des erreurs qui provienne du modules **dav** , le message indique qu'il n'a pas pu écrire le fichier de verrou (__lock__) dans le répertoire : __/data/vhosts/siteA/docroot/webdav/.DAV/__. Regardons les permissions du répertoires :
+
+        $  ls -ld /data/vhosts/siteA/docroot/webdav/.DAV/
+        ls: cannot access /data/vhosts/siteA/docroot/webdav/.DAV/: No such file or directory
+        $ ls -ld /data/vhosts/siteA/docroot/webdav/
+        drwxr-xr-x 2 root root 4096 May 31 17:19 /data/vhosts/siteA/docroot/webdav/
+
+Donc le répertoire **.DAV** n'est pas présent si nous regardons un niveau plus haut le répertoire **webdav** uniquement l'utilisateur __root__ peut écrire dans le répertoire. Lorsque nous communiquons avec le système de __webdav__ l'ensemble des communication transige par le service apache. Telle que mentionné dans des cours précédent le processus d'apache n'est pas exécuté sous l'usager __root__ afin de limité les opérations possible par le site web , surtout si ce dernier est compromit. Validons l'utilisateur qui exécute le service apache.
+
+        $ $ ps aux | grep apach
+        root        55  0.0  0.9  90412 19440 ?        Ss   17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    60  0.0  0.5  90652 10956 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    61  0.0  0.4  90544  9400 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    62  0.0  0.5  90652 11108 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    63  0.0  0.5  90660 11376 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    64  0.0  0.5  90652 11424 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    78  0.0  0.4  90544  9400 ?        S    17:05   0:00 /usr/sbin/apache2 -k start
+        www-data    90  0.0  0.2  90444  5472 ?        S    17:09   0:00 /usr/sbin/apache2 -k start
+
+Dans notre cas l'utilisateur est **www-data**, je vais donc ajuster la configuration afin de permettre à ce dernier d'écrire dans le répertoire. 
+
+        $ sudo chown www-data /data/vhosts/siteA/docroot/webdav/
+        $ ls -ld /data/vhosts/siteA/docroot/webdav/
+        drwxr-xr-x 2 www-data root 4096 May 31 17:19 /data/vhosts/siteA/docroot/webdav/
+
+C'est l'occasion de refaire un teste :
+
+        $ touch /mnt/dav/titi
+        $ ls -l /mnt/dav/titi
+        -rw-r--r-- 1 xerus xerus  0 May 31 17:36 titi
+
+**Cool** regardons le résultat sur le serveur 
+
+        $ ls -l /data/vhosts/siteA/docroot/webdav
+        total 4
+        -rw-r--r-- 1 www-data www-data  0 May 31 17:37 titi
+        -rw-r--r-- 1 root     root     26 May 31 08:46 toto
+
+
+Nous voyons les permissions sur le serveur appartienne à l'utilisateur qui à écrit le fichier donc le processus **apache** .
 
 
 * Référence :
