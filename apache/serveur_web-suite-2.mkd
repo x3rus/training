@@ -361,7 +361,56 @@ C'est l'occasion de refaire un teste :
         -rw-r--r-- 1 root     root     26 May 31 08:46 toto
 
 
-Nous voyons les permissions sur le serveur appartienne à l'utilisateur qui à écrit le fichier donc le processus **apache** .
+Nous voyons les permissions sur le serveur appartienne à l'utilisateur qui à écrit le fichier donc le processus **apache** soit l'utilisateur **www-data** dans notre cas.
+
+TODO : Voir avec nautilus !!
+
+## <a name="mod_webdav-securisation" /> Sécuriser son webdav 
+
+Ceci est vraiment intéressant, mais je doute que vous désirez mettre en place un lieu de stockage sur internet libre à tous le monde de transférer des données. Vous désirez fort probablement pouvoir protéger vos données et ceux de vos collaborateur. J'en profite pour souligner l'importance de réaliser la configuration avec une communication **httpS** afin que lors de l'échange du nom d'utilisateur / mot de passe ces derniers soit chiffrés.
+
+
+Afin de réaliser la démonstration de la mise en place de la sécurisation je vais faire la création de répertoire et fichier sous le répertoire **webdav** :
+
+        $ cd /data/vhosts/siteA/docroot/webdav
+        $ sudo mkdir -p commun   devs   marketing   marketing/campagne_GPL   marketing/campagne_FSF   finance   finance/super_secret
+        $ sudo touch commun/activites_pour_nowel   commun/le_footgolf   devs/pourquoi_les_licences_c_important   devs/les_bases_de_python   marketing/campagne_GPL/copyleft_est_un_copyright   marketing/campagne_GPL/la_licence_c_important   marketing/campagne_FSF/Le_libre_pour_tous   marketing/campagne_FSF/Le_libre_c_pour_TOI   marketing/campagne_FSF/Le_libre_c_mieux   marketing/campagne_future_a_planifier   finance/benefice   finance/client_prospect   finance/client   finance/super_secret/lettre_de_recouvrement_de_la_banque   finance/super_secret/compte_au_panama
+
+Ce qui donne ceci :
+
+        $ ls -1R
+        ./commun:
+        activites_pour_nowel
+        le_footgolf
+
+        ./devs:
+        les_bases_de_python
+        pourquoi_les_licences_c_important
+
+        ./finance:
+        benefice
+        client
+        client_prospect
+        super_secret
+
+        ./finance/super_secret:
+        compte_au_panama
+        lettre_de_recouvrement_de_la_banque
+
+        ./marketing:
+        campagne_FSF
+        campagne_GPL
+        campagne_future_a_planifier
+
+        ./marketing/campagne_FSF:
+        Le_libre_c_mieux
+        Le_libre_c_pour_TOI
+        Le_libre_pour_tous
+
+        ./marketing/campagne_GPL:
+        copyleft_est_un_copyright
+        la_licence_c_important
+
 
 
 * Référence :
