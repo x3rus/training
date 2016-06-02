@@ -412,6 +412,87 @@ Ce qui donne ceci :
         la_licence_c_important
 
 
+Nous allons réutiliser ce que nous avons appris plus tôt avec la limitation avec authentification et la gestion d'accès par groupe. Avant de mettre en place la limitation nous allons définir notre stratégie par groupe :
+
+* toutes personnes authentifier peut accéder à la section **commun**
+* le groupe DEVS peut accéder à la section **devs**
+* le groupe FINANCE peut accéder à la section **finance** mais pas le répertoire **super\_secret**
+* le groupe FINANCE\_CA peut accéder à la section **finance** ainsi que le répertoire **super\_secret**
+* le groupe MARKETING peut accéder à la section **marketing**
+
+Nous allons donc faire la création des groupes et utilisateurs :
+
+
+        $ cat /data/vhosts/siteA/privates/.htpasswd-admin
+        admin:$apr1$U8mylBZo$3aAVkmX.CkWpuwsx7/HT80
+
+        $ cat /data/vhosts/siteA/privates/htgroupe
+        [ ... OUTPUT COUPÉ ... ]
+        DEVS: bob robert bonny
+        FINANCE: lee peter perry nesta
+        FINANCE_CA: perry nesta
+        MARKETING: dj-foot wailers
+
+        $ LST_USERS=$(cat /data/vhosts/siteA/privates/htgroupe | grep ^[A-Z] | cut -d ":" -f 2 | tr -s " " "\n" | sort | uniq )
+        $ for user in $LST_USERS ; do echo "le_mot_de_passe" | sudo htpasswd -i /data/vhosts/siteA/privates/.htpasswd-admin  $user ; done
+        Adding password for user bob
+        Adding password for user bonny
+        Adding password for user dj-foot
+        Adding password for user lee
+        Adding password for user nesta
+        Adding password for user perry
+        Adding password for user peter
+        Adding password for user robert
+        Adding password for user wailers 
+        $ cat .htpasswd-admin 
+        admin:$apr1$U8mylBZo$3aAVkmX.CkWpuwsx7/HT80
+        bob:$apr1$W.1roeGD$aLq8NNfz.XEpbrtZ.LEdu.
+        bonny:$apr1$4BxK5D3a$ludP1cVjXYyJ5WN/5cyQa0
+        dj-foot:$apr1$BmNukD9R$mYXNIPMNgYHV2IwnRr/lO0
+        lee:$apr1$IobzpSiP$QAk5sntB/I/o5ebasxNBE.
+        nesta:$apr1$WBLpPKWv$wu8AXh9xo4xNWUkkzzWHe0
+        perry:$apr1$DoWpviXH$Mt3iVvf/4/huSdumjnsqx0
+        peter:$apr1$SkCasVdW$4IgS2L3TvHPxdN4NUJICS1
+        robert:$apr1$YS.v9LIw$z/Uc4cA/REfZ1QqWUZlLI.
+        wailers:$apr1$ZuDB1LPB$DYcrun7qhjyxY6mX326Fq/
+
+
+Voilà nous avons donc maintenant l'ensemble de nos groupes de créés ainsi que nos utilisateurs avec le même mot de passe mais pour les besoins de la démonstration pas besoin de plus . Ceci ma aussi permet de montrer comment automatiser via un script la création / assignation de mot de passe avec la commande **htpasswd**.
+
+
+Mettons en place la nouvelle configuration pour le site web et nous allons réaliser quelque essaye :
+
+        $  cat /etc/apache2/sites-enabled/siteA-ssl.conf
+        [ ... OUTPUT COUPÉ ... ]
+        ################
+        # Setup WEBDAV #
+        ################
+        <Directory /data/vhosts/siteA/docroot/webdav/>
+            Dav On
+
+            #  Section d'authentification
+            AuthType Basic
+            AuthName "Authentication Required"
+            AuthUserFile "/data/vhosts/siteA/privates/.htpasswd-admin"
+            AuthGroupFile "/data/vhosts/siteA/privates/htgroupe"
+            Require valid-user
+         </Directory>
+                                                                                                                                       <Directory /data/vhosts/siteA/docroot/webdav/devs>
+            Require group DEVS
+         </Directory>
+         <Directory /data/vhosts/siteA/docroot/webdav/finance>
+            Require group FINANCES
+         </Directory>
+         <Directory /data/vhosts/siteA/docroot/webdav/finance/super_secret>
+            Require group FINANCES_CA
+         </Directory>
+         <Directory /data/vhosts/siteA/docroot/webdav/marketing/>
+            Require group MARKETING
+         </Directory>
+        [ ... OUTPUT COUPÉ ... ]
+
+
+
 
 * Référence :
 
