@@ -429,8 +429,8 @@ Nous allons donc faire la création des groupes et utilisateurs :
         $ cat /data/vhosts/siteA/privates/htgroupe
         [ ... OUTPUT COUPÉ ... ]
         DEVS: bob robert bonny
-        FINANCE: lee peter perry nesta
-        FINANCE_CA: perry nesta
+        FINANCES: lee peter perry nesta
+        FINANCES_CA: perry nesta
         MARKETING: dj-foot wailers
 
         $ LST_USERS=$(cat /data/vhosts/siteA/privates/htgroupe | grep ^[A-Z] | cut -d ":" -f 2 | tr -s " " "\n" | sort | uniq )
@@ -492,7 +492,67 @@ Mettons en place la nouvelle configuration pour le site web et nous allons réal
         [ ... OUTPUT COUPÉ ... ]
 
 
+C'est le temps d'expliquer un peu le contenu , pour la racine du **webdav** je définie l'authentification avec le fichier de mot de passe et celui contenant la liste des membres des groupes. Dans cette section je définie que tous le monde peu avoir accès grâce  à l'instruction **Require valid-user**. Avec cette configuration toute personne authentifier aura accès aux fichiers à la racine du __webdav__ ainsi que **tous** les sous répertoires !!
+Par la suite je définie des limitations par répertoire , que ce soit pour les **devs** , les **finances** , etc. Chaque répertoire est limité par groupe, l'avantage de cette méthode est qu'il n'y a pas répétition des instructions d'authentification ceci aide la visibilité et la gestion dans le temps :D.
 
+Voyons maintenant le résultat de cette configuration , je vais établir une connexion avec l'utilisateur : **bob** ce dernier n'est membre que du groupe **DEVS** . Accédons à l'URL : https://www.linux202-sitea.com/webdav/
+
+Voici ce que l'on voit : 
+
+![webdav_auth_multi-group.png](./imgs/webdav_auth_multi-group.png)
+
+Suite à l'authentification avec succès nous voyons bien les fichier __titi__ et __toto__ à la racine  ainsi que le répertoire **commun**. Comme l'utilisateur est membre du groupe **DEVS** il voit aussi le répertoire **devs** mais PAS les autres répertoires dont il n'a pas les autorisations ! 
+
+Si je réalise la même opérations avec un point de montage **GNU/Linux**, la vue est un peu différente
+
+        $ sudo mount.davfs https://www.linux202-sitea.com/webdav/ /mnt/dav/
+        Please enter the username to authenticate with server
+        https://www.linux202-sitea.com/webdav/ or hit enter for none.
+          Username: bob 
+        Please enter the password to authenticate user bob with server
+        https://www.linux202-sitea.com/webdav/ or hit enter for none.
+          Password:  
+
+        $ ls -l /mnt/dav/
+        total 2
+        drwxr-xr-x 2 root  root   0 Jun  1 08:54 commun
+        drwxr-xr-x 2 root  root   0 Jun  1 08:53 devs
+        drwxr-xr-x 2 root  root  64 Jun  1 08:52 finance
+        drwx------ 2 root  root   0 May 31 17:08 lost+found
+        drwxr-xr-x 2 root  root  64 Jun  1 08:51 marketing
+        -rw-r--r-- 1 xerus xerus  0 May 31 17:37 titi
+        -rw-r--r-- 1 root  root  26 May 31 08:46 toto
+
+        $ ls -l /mnt/dav/finance/
+        total 0
+        $ ls -l /mnt/dav/devs/
+        total 0
+        -rw-r--r-- 1 root root 0 Jun  1 08:53 les_bases_de_python
+        -rw-r--r-- 1 root root 0 Jun  1 08:53 pourquoi_les_licences_c_important
+        $ ls -l /mnt/dav/marketing/
+        total 0
+
+Donc lors de l'accès avec un point de montage les répertoires à la racine sont visible mais le contenu est vide ! Ceci est vraiment un détail mais ce doit être pris en considération selon la situation. 
+Vous pourrez faire les testes avec les autres utilisateurs ... :D.
+
+## <a name="mod_webdav-securisation_granulaire" /> Sécuriser son webdav pour chaque opération
+
+Il est possible d'y allé de manière plus granulaire, bien entendu plus nous y allons de manière granulaire plus la gestion peut devenir compliqué. C'est à vous de faire le bon choix et d'être en mesure de changé d'avis si vous constater que la première option n'était pas la bonne :D.
+
+Dans l'exemple ci-dessus nous limitons l'accès par répertoire, cependant une fois que la personne à accès au répertoire il peut réalisé l'ensemble des opérations ( Écrire, Supprimer , Copier , Lire , ... ). Comme l'ensemble des opérations sous réalisé à travers le processus Apache il n'est pas possible de limité les accès via le système de fichier. Alors comment faire pour offrir un accès en lecture seul et ne permettre que certain type d'opération.
+
+TODO: changer les liens pour les avoir en Francais 
+
+C'est l'occasion de voir une autre instruction [Limit](https://httpd.apache.org/docs/2.4/mod/core.html#limit) et [LimitExcept](https://httpd.apache.org/docs/2.4/mod/core.html#limitexcept)
+
+### <a name="mod_webdav-securisation_limitation" /> Limiter l'utilisation du service webdav 
+
+TODO : 
+http://www.webdav.org/mod_dav/install.html
+
+ mod_dav will parse XML request bodies into memory. It would be a very effective "Denial of Service" attach to send a large request body at a mod_dav server. Apache defines a directive named LimitRequestBody which will limit all methods' request bodies. Unfortunately, this is not an effective mechanism for a mod_dav server since large PUT operations should be allowed.
+
+ To limit just the methods that have an XML request body, mod_dav defines the LimitXMLRequestBody directive. The default for this value is a compile-time constant, which is set to one million (1000000) bytes in the standard distribution. Setting the value to zero (0) will disable the size limit. 
 
 * Référence :
 
