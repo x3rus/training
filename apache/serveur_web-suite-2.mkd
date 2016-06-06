@@ -547,10 +547,36 @@ C'est l'occasion de voir une autre instruction [Limit](https://httpd.apache.org/
 
 ### <a name="mod_webdav-securisation_limitation" /> Limiter l'utilisation du service webdav 
 
+Nous allons pouvoir réaliser une limitation sur les requêtes HTTP suivante : 
+
+* Méthode générale du [protocole HTTP](https://en.wikipedia.org/wiki/Atomic_commit) :
+    * __GET__ : C'est la méthode la plus courante pour demander une ressource. Une requête GET est sans effet sur la ressource, il doit être possible de répéter la requête sans effet.
+    * __POST__ : Cette méthode est utilisée pour transmettre des données en vue d'un traitement à une ressource (le plus souvent depuis un formulaire HTML). L'URI fourni est l'URI d'une ressource à laquelle s'appliqueront les données envoyées. Le résultat peut être la création de nouvelles ressources ou la modification de ressources existantes. À cause de la mauvaise implémentation des méthodes HTTP (pour Ajax) par certains navigateurs (et la norme HTML qui ne supporte que les méthodes GET et POST pour les formulaires), cette méthode est souvent utilisée en remplacement de la requête PUT, qui devrait être utilisée pour la mise à jour de ressources.
+    * __PUT__ : Cette méthode permet de remplacer ou d'ajouter une ressource sur le serveur. L'URI fourni est celui de la ressource en question.
+    * __DELETE__ : Cette méthode permet de supprimer une ressource du serveur.
+    * __CONNECT__ : Cette méthode permet d'utiliser un proxy comme un tunnel de communication
+    * __OPTIONS__ : Cette méthode permet d'obtenir les options de communication d'une ressource ou du serveur en général.
+    * __PATCH__ : Cette méthode permet, contrairement à PUT, permet de faire une modification partielle d'une ressource
+* Méthode spécifique au [protocole __webdav__](https://en.wikipedia.org/wiki/WebDAV):
+    * __PROPFIND__ : Cette méthode permet la récupération de propriété, en format __XML__, depuis une ressource du serveur. Cette méthode permet aussi d'extraire un groupe de structure (aussi nommé répertoire hiérarchique ) depuis le serveur. 
+    * __PROPPATCH__ : Cette méthode permet de modifier et supprimer plusieurs propriété d'une ressource avec une action de type [Atomic act](https://en.wikipedia.org/wiki/Atomic_commit).
+    * __MKCOL__ : Cette méthode permet la création de répertoire.
+    * __COPY__ : Cette méthode permet de copier une ressource depuis une URI vers une autre
+    * __MOVE__ : Cette méthode permet de déplacer une ressource depuis une URI vers une autre
+    * __LOCK__ : Cette méthode permet de verrouiller une ressource, __Webdav__ permet le verrouillage exclusif ou partagé.
+    * __UNLOCK__ : Cette méthode permet de retirer le verrouillage d'une ressource.
+
+
+Donc nous pouvons y allé de manière granulaire sur les autorisations, 2 instructions est disponibles :
+
+* [Limit](https://httpd.apache.org/docs/2.4/fr/mod/core.html#limit) : Nous permet de lister les méthodes permises par un utilisateur ou un groupe.
+* [LimitExcept](https://httpd.apache.org/docs/2.4/fr/mod/core.html#limitexcept) : Nous permet de définir les méthodes **NON**  permises donc par défaut ceci est autorisé.
+
+
 TODO : 
 http://www.webdav.org/mod_dav/install.html
 
- mod_dav will parse XML request bodies into memory. It would be a very effective "Denial of Service" attach to send a large request body at a mod_dav server. Apache defines a directive named LimitRequestBody which will limit all methods' request bodies. Unfortunately, this is not an effective mechanism for a mod_dav server since large PUT operations should be allowed.
+ mod\_dav will parse XML request bodies into memory. It would be a very effective "Denial of Service" attach to send a large request body at a mod_dav server. Apache defines a directive named LimitRequestBody which will limit all methods' request bodies. Unfortunately, this is not an effective mechanism for a mod_dav server since large PUT operations should be allowed.
 
  To limit just the methods that have an XML request body, mod_dav defines the LimitXMLRequestBody directive. The default for this value is a compile-time constant, which is set to one million (1000000) bytes in the standard distribution. Setting the value to zero (0) will disable the size limit. 
 
