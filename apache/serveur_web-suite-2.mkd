@@ -572,6 +572,65 @@ Donc nous pouvons y allé de manière granulaire sur les autorisations, 2 instru
 * [Limit](https://httpd.apache.org/docs/2.4/fr/mod/core.html#limit) : Nous permet de lister les méthodes permises par un utilisateur ou un groupe.
 * [LimitExcept](https://httpd.apache.org/docs/2.4/fr/mod/core.html#limitexcept) : Nous permet de définir les méthodes **NON**  permises donc par défaut ceci est autorisé.
 
+Afin d'avoir le contexte dans lequel cette instruction peut être utilisé :
+
+![limit_screenshot-doc.png](./imgs/limit_screenshot-doc.png)
+
+Résultat si nous désirions avoir un accès en Lecture seule et un accès complet pour la section __dev__ par exemple ceci donnera : 
+
+        $ cat /data/vhosts/siteA/privates/htgroupe
+        [ ... OUTPUT COUPÉ ... ]
+        DEVS: bob robert bonny
+        DEVS_RO : nesta
+        FINANCES: lee peter perry nesta
+        [ ... OUTPUT COUPÉ ... ]
+
+Je réalise l'ajout du groupe __DEVS\_RO__ avec comme membre __nesta__.
+
+Configuration du serveur virtuel :
+
+        [ ... OUTPUT COUPÉ ... ]
+        <Directory /data/vhosts/siteA/docroot/webdav/devs>
+            <Limit POST PUT DELETE PROPFIND PROPPATCH MKCOL COPY MOVE LOCK UNLOCK>
+                Require group DEVS
+            </Limit>
+            <Limit GET OPTIONS PROPFIND>
+                Require group DEVS_RO DEVS
+            </Limit>
+        </Directory>
+        [ ... OUTPUT COUPÉ ... ]
+
+
+Suite au changement vous devez recharger la configuration apache.
+Utilisation du client, réalisation du point de montage  avec l'utilisateur membre du groupe en Lecture seul:
+
+        $ sudo mount.davfs -o uid=xerus https://www.linux202-sitea.com/webdav/ /mnt/dav/
+        Please enter the username to authenticate with server
+        https://www.linux202-sitea.com/webdav/ or hit enter for none.
+          Username: nesta
+        Please enter the password to authenticate user nesta with server
+        https://www.linux202-sitea.com/webdav/ or hit enter for none.
+          Password:
+
+        $ ls -l /mnt/dav/
+        total 1
+        drwxr-xr-x 2 xerus root  0 Jun  1 08:54 commun
+        drwxr-xr-x 2 xerus root  0 Jun  1 08:53 devs
+
+Si vous essayons de créer un fichier dans le répertoires __devs__ nous aurons un message d'erreur :
+
+        $ touch /mnt/dav/devs/un_fichier
+        touch: setting times of ‘/mnt/dav/devs/un_fichier’: No such file or directory
+
+Si nous regardons les logs sur le serveur  nous avons le message explicite du "problème"
+
+        $ tail /data/vhosts/siteA/logs/ssl_error.log
+        [ ... OUTPUT COUPÉ ... ]
+        [Thu Jun 09 08:48:52.731436 2016] [authz_core:error] [pid 115] [client 172.17.42.1:53514] AH01631: user nesta: authorization failure for "/webdav/devs/un_fichier": 
+
+Bien entendu avec un utilisateur dans le bon groupe nous n'aurons pas cette problématique, vous pouvez maintenant limiter adéquatement l'accès au différent répertoire.
+
+TODO : Limitation de la taille des fichiers 
 
 TODO : 
 http://www.webdav.org/mod_dav/install.html
