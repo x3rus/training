@@ -630,14 +630,53 @@ Si nous regardons les logs sur le serveur  nous avons le message explicite du "p
 
 Bien entendu avec un utilisateur dans le bon groupe nous n'aurons pas cette problématique, vous pouvez maintenant limiter adéquatement l'accès au différent répertoire.
 
-TODO : Limitation de la taille des fichiers 
 
-TODO : 
-http://www.webdav.org/mod_dav/install.html
+Autre aspect intéressant de limitation sera la restriction de la taille des fichiers qui pourront être __uploadé__ sur le serveur vous n'avez probablement pas envie qu'un utilisateur utilise votre serveur __webdav__ pour s'échanger des films par exemple. Nous allons donc voir la possibilité de restreindre la taille des fichiers . L'instruction [LimitRequestBody](https://httpd.apache.org/docs/2.4/fr/mod/core.html#limitrequestbody) offre la fonctionnalité de restreindre la taille utilisable.
 
- mod\_dav will parse XML request bodies into memory. It would be a very effective "Denial of Service" attach to send a large request body at a mod_dav server. Apache defines a directive named LimitRequestBody which will limit all methods' request bodies. Unfortunately, this is not an effective mechanism for a mod_dav server since large PUT operations should be allowed.
+![limitrequestbody_screenshot-doc.png](./imgs/limitrequestbody_screenshot-doc.png)
 
- To limit just the methods that have an XML request body, mod_dav defines the LimitXMLRequestBody directive. The default for this value is a compile-time constant, which is set to one million (1000000) bytes in the standard distribution. Setting the value to zero (0) will disable the size limit. 
+**ATTENTION** : La taille fournit est en octects donc si vous désirez permettre un transfert de 2 Gig par exemple la valeur est astronomique 2147483647 :).
+
+Voyons un exemple d'utilisation , dans mon exemple je vais limiter à __100K__ ce sera plus rapide pour sur le temps de transfert. Voici la configuration apache : 
+
+        [ ... OUTPUT COUPÉ ... ]
+        <Directory /data/vhosts/siteA/docroot/webdav/devs>
+            LimitRequestBody 102400
+            <Limit POST PUT DELETE PROPFIND PROPPATCH MKCOL COPY MOVE LOCK UNLOCK>
+                Require group DEVS
+            </Limit>
+            <Limit GET OPTIONS PROPFIND>
+                Require group DEVS_RO DEVS
+            </Limit>
+        </Directory>
+        [ ... OUTPUT COUPÉ ... ]
+
+Nous avons donc définie  la limite si j'essaye de copier un fichier sur le serveur __webdav__ :
+
+        $ mount | grep dav
+        https://www.linux202-sitea.com/webdav/ on /mnt/dav type fuse (rw,nosuid,nodev,relatime,user_id=1000,group_id=0,allow_other,max_read=16384,uid=1000,gid=0,helper=davfs)
+
+        $ du -hs /tmp/access-denied.jpg
+        348K    /tmp/access-denied.jpg
+        $ cp /tmp/access-denied.jpg  /mnt/dav/devs/test_fichier.jpg
+        $ echo $?
+        0
+        $ du -hs /mnt/dav/devs/test_fichier.jpg
+        346K    /mnt/dav/devs/test_fichier.jpg
+        [ ... Quelque seconde plus tard ... ]
+        $ du -hs /mnt/dav/devs/test_fichier.jpg
+        du: cannot access ‘/mnt/dav/devs/test_fichier.jpg’: No such file or directory
+
+Si nous regardons sur le serveur les logs :
+
+        $ tail -f /data/vhosts/siteA/logs/ssl_error.log
+        [ ... OUTPUT COUPÉ ... ]
+        [Fri Jun 10 08:40:00.051902 2016] [dav:error] [pid 66] (-102)Unknown error -102: [client 172.17.42.1:53868] An error occurred while reading the request body (URI: /webdav/devs/test_fichier.jpg)  [500, #0]
+
+        [ ... OUTPUT COUPÉ ... ]
+
+Pourquoi lors du transfert original le fichier été présent puis après il a disparu ? Le système de __mount__ afin d'optimiser les accès n'écrit pas directement mais cache l'opération. Ceci n'est pas toujours l'idéal mais quand il n'y a pas de problème ceci permet de ne pas bloquer le système le temps de l'écriture . 
+Bien entendu ceci oblige votre logiciel à réaliser une validation __post-écriture__
 
 * Référence :
 
@@ -645,9 +684,7 @@ http://www.webdav.org/mod_dav/install.html
 
 # <a name="performance" /> Performance et analyse d'apache
 
-# <a name="compilation_module" /> Compilation d'un modules apache (a valider)
 
-https://httpd.apache.org/docs/2.4/developer/modguide.html
 
 # <a name="Reference" /> Référence :
 
