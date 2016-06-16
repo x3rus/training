@@ -684,6 +684,223 @@ Bien entendu ceci oblige votre logiciel à réaliser une validation __post-écri
 
 # <a name="performance" /> Performance et analyse d'apache
 
+Il est très difficile de faire une section performance, car les problèmes peuvent être très varié. Une configuration peut avoir un impacte d'amélioration signification pour un environnement et dans un autre environnement avoir un impacte négatif. De plus selon le point de vue la perception peut être différente , exemple de propos :
+
+* le sysadmin dit : "Le problème est le code, le développeur à mal codé son truc :P "
+* Le développeur dit : "Ça marche très bien sur mon poste , le problème est au niveau du serveur "
+* Le chargé de projet : "Les accès au système sont plus nombreux que planifié "
+
+Où est la vérité dans tous ça ? Je vous dirai que la réalité est un mixe dans tous ça , il y a probablement une amélioration du code possible car le serveur est différent du poste de travail du développeur. Le sysadmin doit être en mesure d'ajuster ça configuration pour les applications qui est installé sur la machine. N'oublions pas le chargé de projet :P , il faut être en mesure de réaliser des testes de performance sur le système avant afin de connaître le nombre de client que l'on peut prendre en charge.
+
+Quelles sont les problèmes classiques que nous retrouvons :
+
+* Problème de __DNS__
+* La charge sur la machine est trop haute ( utilisation du CPU ) 
+* L'utilisation de la mémoire est élevé
+* Les pages mettes beaucoup de temps à répondre  , c'est tellement générale que ça ne donne pas beaucoup d'information 
+* L'accès aux ressources sur le disque dur est lent 
+* Selon la période de la journée, le site réponds difficilement
+* L'utilisation de la bande passante est saturé 
+
+## <a name="perf_view" /> Visualisation de la situation
+
+Avant de commencé à mettre des efforts pour corriger le / les problème(s) essayons de les identifier. Évidement nous allons voir quelques applications qui ne touche pas apache, mais qui sont purement système. 
+Idéalement vous avez un système de monitoring et d'historique d'utilisation qui vous permet d'identifier la période du problème. Lors que je fais mention de monitoring de fait référence à un système de type [nagios](https://www.nagios.com/) qui permet de recevoir courriel ou __SMS__ lors de problème. Si votre système de monitoring ne vous permet pas de conserver des graphiques sur les valeurs dans le passé , je vous conseille d'en mettre un en place pour pouvoir identifier après coup une période en problème. Vous avez [cacti](http://www.cacti.net/) qui permet de réaliser cette opération. 
+Nous y reviendrons probablement , je vais tous de même fournir une liste d'outils qui nous permette de réaliser l'analyse sur le moment sans ces outils.
+
+Débutons avec un problème d'utilisation du CPU.
+
+## <a name="perf_simulation" /> Simulation de charge sur le serveur
+
+En tant lors des formations sur la performance nous terminons avec la simulation de charge cependant si je veux vous présenter les outils avec la configuration que j'ai actuellement uniquement avec mon portable sans client **réelle** ceci risque d'être un peu compliqué. Nous allons donc voir tous de suite la simulation de charge ceci peut être aussi utile en début de projet si vous désirez valider votre application avant de vous lancer en production. 
+
+Nous allons voir plusieurs outils certain plus complexe que d'autre, malheureusement ceci sera encore un survole car pour faire de bon teste de performance il faut que ces derniers soit en lien avec votre application. Ceci vous offrira un point de départ pour réaliser votre configuration.
+Nous commencerons par des applications simple et nous monterons en puissance à ce stade nous analyserons uniquement les logs pour voir  les accès par la suite nous regarderons les outils d'analyse de performance pour apache.
+
+L'utilisation des utilitaires présentés par la suite devrons être exécuté sur une autre machine que le serveur. Ceci afin de valider aussi l'ensemble de l'infrastructure réseau. Le comportement en local et à distance peut varier, de plus vos clients seront à distance donc autant simulé le même comportement. Si vous réalisez des testes de performance je vous invite aussi à utiliser plusieurs machines afin de monter en charge le serveur avec plusieurs sources de connexion.
+
+### <a name="perf_bench_ab" /> Utilisation du logiciel ApacheBench (AB)
+
+**ApacheBench** (**ab**) est un programme en ligne de commande pour la mesure de performance et les tests de charge de serveur HTTP. À l'origine conçu pour Apache HTTP Serveur, il est désormais utilisable sur tous les serveurs HTTP classiques. L'application est disponible bien entendu sous GNU/Linux et Windows (probablement Mac). 
+
+Installons l'application :
+
+        $ sudo apt-get install apache2-utils
+
+Débutons avec une petite requête simple nous allons réaliser au total 100 requêtes donc 10 simultanés sur la pages principale du site. Avec l'option **-w** vous pouvez avoir le résultat en format __HTML__  ça peut être pratique: 
+
+        $ ab  -n 100 -c 10 -l https://www.linux202-siteA.com/
+        [ ... OUTPUT COUPÉ ... ]
+        Benchmarking www.linux202-siteA.com (be patient).....done
+
+        Server Software:        Apache/2.4.7
+        Server Hostname:        www.linux202-siteA.com
+        Server Port:            443
+        SSL/TLS Protocol:       TLSv1.2,ECDHE-RSA-AES256-GCM-SHA384,2048,256
+
+        Document Path:          /
+        Document Length:        Variable
+
+        Concurrency Level:      10
+        Time taken for tests:   2.263 seconds
+        Complete requests:      100
+        Failed requests:        0
+        Total transferred:      36900 bytes
+        HTML transferred:       10000 bytes
+        Requests per second:    44.19 [#/sec] (mean)
+        Time per request:       226.313 [ms] (mean)
+        Time per request:       22.631 [ms] (mean, across all concurrent requests)
+        Transfer rate:          15.92 [Kbytes/sec] received
+
+        Connection Times (ms)
+                      min  mean[+/-sd] median   max
+        Connect:       33  189  77.2    201     456
+        Processing:     1   22  19.3     19      86
+        Waiting:        0   16  16.5      9      76
+        Total:         34  210  82.5    215     457
+
+        Percentage of the requests served within a certain time (ms)
+        50%    215
+        66%    237
+        75%    253
+        80%    258
+        90%    288
+        95%    363
+        98%    403
+        99%    457
+        100%   457 (longest request)
+
+
+Explication des arguments :
+
+* **-n** : Nombre total de requête qui seront transmise 
+* **-c** : Nombre de requête concurrente transmise 
+* **-l** : L'application ne va pas rapporter d'erreur si le temps de traitement de la requête n'est pas identique à la première réalisé . Si votre site est dynamique il est fort probable que le temps de traitement varie quelque peu.
+
+
+Explication du résultat :
+
+        Concurrency Level:      10
+        Time taken for tests:   2.263 seconds
+        Complete requests:      100
+        Failed requests:        0
+        Total transferred:      36900 bytes
+        HTML transferred:       10000 bytes
+        Requests per second:    44.19 [#/sec] (mean)
+        Time per request:       226.313 [ms] (mean)
+        Time per request:       22.631 [ms] (mean, across all concurrent requests)
+        Transfer rate:          15.92 [Kbytes/sec] received
+
+* __Concurrency Level: 10__ : Information sur le nombre de connexion concurrente 
+* __Time taken for tests: 2.263 seconds__ : Le temps total du teste de charge
+* __Complete requests: 100__ : Le nombre total de requête
+* __Failed requests: 0__ : Le nombre de requête en erreur 
+* __Total transferred: 36900 bytes__ : La quantité de donnée transmis lors du teste
+* __HTML transferred: 10000 bytes__ : La quantité de donnée __HTML__, excluant les images et autres média
+* __Requests per second: 44.19 \[#/sec\] (mean)__ : Le nombre de requête par seconde
+* __Time per request: 226.313 \[ms\] (mean)__: Le temps requis pris pour chaque requête
+* __Time per request: 22.631 \[ms\] (mean, across all concurrent requests)__ : Le temps par requête en gros ceci reprend la valeur mentionné plus tôt divisé par le nombre de requête concurrent.
+* __Transfer rate: 15.92 \[Kbytes/sec\] received__ : Le taux de transfert
+
+La seconde partie :
+
+                      min  mean[+/-sd] median   max
+        Connect:       33  189  77.2    201     456
+        Processing:     1   22  19.3     19      86
+        Waiting:        0   16  16.5      9      76
+        Total:         34  210  82.5    215     457
+
+* __Connect__: Le temps pris pour établir une connexion au serveur
+* __Processing__: Le temps pris pour transmettre les premiers __bytes__ au serveur et recevoir les premiers __bytes__ de réponses
+* __Waiting__ : Le temps entre l'envoie du premier __bytes__ de donnée et le dernier __bytes__
+
+#### <a name="perf_bench_ab_auth" /> Utilisation du logiciel ApacheBench (AB) avec Authentification
+
+Nous avons vu précédemment la possibilité de mettre en place un système d'authentification sur des sections du site, nous l'avons fait pour une section d'administrateur ou lors de la mise en place de la solution __WebDav__. Il est donc probable que vous désiriez valider ces sections aussi. 
+Si vous avez mis en place une authentification de type apache (__htaccess__) vous pouvez utiliser l'option **-A** :
+
+        $ ab  -n 100 -c 10 -l -A admin:mot_passe  https://www.linux202-siteA.com/admin/
+
+Cependant si vous avez mis en place une authentification dans votre application ceci ne fonctionnera pas , vous avez probablement utilisé une méthode utilisant une session / cookie. Si c'est le cas vous devez utiliser une autre option :
+
+        $ ab  -n 100 -c 10 -l -C '_x3access_session=BAh7CUkiD3Nlc...' https://www.linux202-siteA.com/
+
+REF : http://work.stevegrossi.com/2015/02/07/load-testing-rails-apps-with-apache-bench-siege-and-jmeter/
+
+
+### <a name="perf_bench_seige" /> Utilisation du Siege 
+
+__ApacheBench__ (ab) est bien mais voyons un autre produit qui offre d'autre possibilité , la combinaison des 2 nous permettra de mieux valider les capacités de notre serveurs. Reprenons globalement le même teste qui fut réalisé avec __ApacheBench__ afin de nous faire la main avec quelque chose de connu, par la suite nous explorons l'avantage de __Siege__.
+
+Cette fois ci le nom du pacquage est plus claire :
+
+        $ sudo apt-get install siege 
+
+Les arguments sont un peu différent d'__ab__ nous allons donc refaire les 100 requêtes totale donc 10 concurrentes. Voici la "formule" avec __siege__.
+
+        $ siege  -r 10 -c 10  https://www.linux202-siteA.com/
+        ** SIEGE 3.0.5
+        ** Preparing 10 concurrent users for battle.
+        The server is now under siege..      done.
+
+        Transactions:                    100 hits
+        Availability:                 100.00 %
+        Elapsed time:                   6.75 secs
+        Data transferred:               0.01 MB
+        Response time:                  0.06 secs
+        Transaction rate:              14.81 trans/sec
+        Throughput:                     0.00 MB/sec
+        Concurrency:                    0.89
+        Successful transactions:         100
+        Failed transactions:               0
+        Longest transaction:            0.19
+        Shortest transaction:           0.03
+
+
+Explication des arguments :
+
+* **-r** : Le nombre de requêtes ici 10 
+* **-c** : Le de requêtes concurrente ici 10
+
+Résultat nous aurons 10 requête (-r) \* 10 requêtes concurrentes (-c) = 100 Requêtes totales
+
+Le résultat de __siege__ est moins détaillé que __ApacheBench__, bien que ceci peut être suffisant selon le besoin établie. Je pense  que l'information transmise est claire si ce n'est pas le cas m'informer je tenterai de mettre à jour le document. 
+
+
+#### <a name="perf_bench_siege_auth" /> Utilisation du logiciel Siege  avec Authentification
+
+Tous comme __ApacheBench__ __siege__ est en mesure de gérer l'authentification apache ou d'utiliser un code de __cookie sessions__.
+
+Pour l'authentification de type Apache vous devez éditer / créer le fichier **.siegerc** dans votre répertoire personnel, avec la ligne suivante :
+
+        login = admin:mot_de_passe
+
+Pour l'utilisation de session __cookie__ vous définirez un __header__ avec l'information :
+
+        $ siege  -r 10 -c 10 -H 'Cookie:_x3access_session=BAh7CUkiD3Nlc...'  https://www.linux202-siteA.com/
+
+#### <a name="perf_bench_siege_plus" /> Avantage de l'utilisation du logiciel Siege
+
+ICI ICI
+
+## <a name="perf_view" /> Analyse des performances 
+
+## <a name="perf_view_cpu_prob" /> Analyse problème de charge CPU
+
+Pour réaliser l'analyse nous allons installer le pacquage **sysstat** si ceci n'est pas déjà présent .
+
+        $ apt-cache search iostat
+        sysstat - system performance tools for Linux
+        $ sudo apt-get install sysstat
+
+
+
+Idée :
+* __Jmeter__
+* __server-status__
+* __cactis  / piwik__
+* __mise en place du site en mémoire__
+* __sleep mysql__ : http://dev.mysql.com/doc/refman/5.7/en/miscellaneous-functions.html#function_sleep
 
 
 # <a name="Reference" /> Référence :
