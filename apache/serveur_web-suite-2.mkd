@@ -881,11 +881,102 @@ Pour l'utilisation de session __cookie__ vous définirez un __header__ avec l'in
 
 #### <a name="perf_bench_siege_plus" /> Avantage de l'utilisation du logiciel Siege
 
-ICI ICI
+À ce stade __siege__ et __ApacheBench__ réalise la même opération voyons ce qui démarque __siege__.
+Lors des 2 testes précédent nous réalisions un teste de charge uniquement sur UNE __URL__, __siege__ nous permet de définir un fichier contenant plusieurs __URL__ ceci nous permettant de valider non pas seulement la page principale mais une série de page du site web , car soyons réaliste vos utilisateurs ne se contenterons pas d'une page.
+
+L'option **-f** nous permet de définir une liste d'__URL__ __siege__ va utilisez ses dernières de manière aléatoire pour réaliser les requêtes au site web. Démonstration :
+
+        $ cat sitea_urls.txt 
+        https://www.linux202-sitea.com/
+        https://www.linux202-sitea.com/info.php
+        https://www.linux202-sitea.com/articles/2016/super_validation
+        https://www.linux202-sitea.com/app.php
+
+        $ sudo siege  -r 10 -c 10  -f sitea_urls.txt
+        ** SIEGE 3.0.5
+        ** Preparing 10 concurrent users for battle.
+        The server is now under siege..      done.
+
+        Transactions:                    100 hits
+        Availability:                 100.00 %
+        Elapsed time:                   8.20 secs
+        Data transferred:               0.52 MB
+        Response time:                  0.10 secs
+        Transaction rate:              12.20 trans/sec
+        Throughput:                     0.06 MB/sec
+        Concurrency:                    1.22
+        Successful transactions:         100
+        Failed transactions:               0
+        Longest transaction:            0.40
+        Shortest transaction:           0.03
+
+
+Si vous consultez le fichier de logs du site web nous voyons clairement le coté aléatoire des requêtes 
+
+        $ tail -f /data/vhosts/siteA/logs/ssl_access.log
+        [ ... OUTPUT COUPÉ ... ]
+        172.17.0.2 - - [17/Jun/2016:08:12:01 -0400] "GET / HTTP/1.1" 200 2146 "-" "Mozilla/5.0 (pc-i686-linux-gnu) Siege/3.0.5"
+        172.17.0.2 - - [17/Jun/2016:08:12:01 -0400] "GET /articles/2016/super_validation HTTP/1.1" 200 2798 "-" "Mozilla/5.0 (pc-i686-linux-gnu) Siege/3.0.5"
+        172.17.0.2 - - [17/Jun/2016:08:12:01 -0400] "GET / HTTP/1.1" 200 2146 "-" "Mozilla/5.0 (pc-i686-linux-gnu) Siege/3.0.5"
+        172.17.0.2 - - [17/Jun/2016:08:12:01 -0400] "GET /info.php HTTP/1.1" 200 19541 "-" "Mozilla/5.0 (pc-i686-linux-gnu) Siege/3.0.5"
+        172.17.0.2 - - [17/Jun/2016:08:12:01 -0400] "GET /info.php HTTP/1.1" 200 19545 "-" "Mozilla/5.0 (pc-i686-linux-gnu) Siege/3.0.5"
+        172.17.0.2 - - [17/Jun/2016:08:12:01 -0400] "GET /info.php HTTP/1.1" 200 19539 "-" "Mozilla/5.0 (pc-i686-linux-gnu) Siege/3.0.5"
+        172.17.0.2 - - [17/Jun/2016:08:12:02 -0400] "GET /app.php HTTP/1.1" 200 1923 "-" "Mozilla/5.0 (pc-i686-linux-gnu) Siege/3.0.5"
+        172.17.0.2 - - [17/Jun/2016:08:12:02 -0400] "GET / HTTP/1.1" 200 2146 "-" "Mozilla/5.0 (pc-i686-linux-gnu) Siege/3.0.5"
+        172.17.0.2 - - [17/Jun/2016:08:12:02 -0400] "GET /info.php HTTP/1.1" 200 19538 "-" "Mozilla/5.0 (pc-i686-linux-gnu) Siege/3.0.5"
+
+
+Tous en utilisant la possibilité d'utiliser une suite d'__URL__ aléatoire nous allons définir un nombre d'utilisateur concurrent pour une période de temps. Nous allons aussi définir un délais entre chaque requête des utilisateurs par défaut le délais entre chaque requêtes est de 1 secondes , cependant pour simulé le temps de "lecture" ou de prise de conscience du contenu nous allons définir 5 secondes entres les requêtes.
+
+Donc 25 utilisateurs concurrent, pendant 5 minutes , avec 5 secondes de délais entre les requêtes pour une période de 5 minutes.
+
+        $ siege -c 25 -t 5M -d 5 -f sitea_urls.txt
+        ** SIEGE 3.0.5
+        ** Preparing 25 concurrent users for battle.
+        The server is now under siege...
+        Lifting the server siege...      done.
+
+        Transactions:                   2950 hits
+        Availability:                 100.00 %
+        Elapsed time:                 299.19 secs
+        Data transferred:              13.05 MB
+        Response time:                  0.04 secs
+        Transaction rate:               9.86 trans/sec
+        Throughput:                     0.04 MB/sec
+        Concurrency:                    0.44
+        Successful transactions:        2950
+        Failed transactions:               0
+        Longest transaction:            0.36
+        Shortest transaction:           0.03
+
+Nous nous retrouvons avec un teste plus représentatif de l'utilisation dans la nature de notre site web, le problème avec cette solution est votre teste n'est pas reproductible. En effet comme le choix des URL est réalisé de manière aléatoire 2 testes même consécutif ne réaliserons pas les même accès, nous pouvons dire que ceci est bien car il est peut probable que vos utilisateurs accèdes toujours dans la même séquence vos pages mais le résultat des chiffres sont plus compliqué à interpréter.
+
+
+### <a name="perf_bench_jmeter" /> Utilisation de JMeter
+
+
+
+REF : 
+
+* http://jmeter.apache.org/
+
+### <a name="perf_bench_ngrinder" /> Utilisation de Ngrinder
+
+
+REF :
+
+* https://hub.docker.com/r/ngrinder/controller/
+* https://github.com/naver/ngrinder/wiki/
 
 ## <a name="perf_view" /> Analyse des performances 
 
-## <a name="perf_view_cpu_prob" /> Analyse problème de charge CPU
+Maintenant que nous sommes en mesure de simuler du trafic sur notre serveur nous allons être en mesure de visualiser le comportement de ce dernier. Nous 
+
+### <a name="perf_view_apache_process" /> Visualisation des processus Apache
+
+
+
+### <a name="perf_view_cpu_prob" /> Analyse problème de charge CPU
 
 Pour réaliser l'analyse nous allons installer le pacquage **sysstat** si ceci n'est pas déjà présent .
 
