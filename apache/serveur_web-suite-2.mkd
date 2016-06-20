@@ -970,10 +970,162 @@ REF :
 
 ## <a name="perf_view" /> Analyse des performances 
 
-Maintenant que nous sommes en mesure de simuler du trafic sur notre serveur nous allons être en mesure de visualiser le comportement de ce dernier. Nous 
+Maintenant que nous sommes en mesure de simuler du trafic sur notre serveur nous allons être en mesure de visualiser le comportement de ce dernier. Nous allons voir le comportement d'apache lors de la monté en charge, cette partie de visualisation est aussi importante que la section configuration. Chaque combinaisons serveur / site web étant unique vous devez être en mesure d'identifier le point problématique pour être en mesure de l'améliorer. Il n'y a pas de recette qui s'applique peut importe la sauce. 
 
 ### <a name="perf_view_apache_process" /> Visualisation des processus Apache
 
+Commençons par la visualisation des processus Apache, le serveur web peut fonctionner en 2 mode :
+
+* [prefork](https://httpd.apache.org/docs/2.4/fr/mod/prefork.html) : Ce module multi-processus (MPM) implémente un serveur web avec démarrage anticipé de processus. Chaque processus du serveur peut répondre aux requêtes entrantes, et un processus parent contrôle la taille du jeu de processus enfants. Nous avons donc le processus Apache qui démarre généralement sous l'utilisateur **root** afin de pouvoir écouter sur le port 80 et/ou 443 , par la suite les autres processus sont **forké** sous l'utilisateur Apache.
+Heu **for** quoi ?? Chaque nouveau processus est démarré suivant le principe de **fork** . La fonction **fork** fait partie des appels système standard d'__UNIX__ (norme __POSIX__). Cette fonction permet à un processus (un programme en cours d'exécution) de donner naissance à un nouveau processus qui est sa copie conforme, par exemple en vue de réaliser un second traitement parallèlement au premier. Un bon moyen de visualiser l'effet d'un **fork** sur un processus est d'imaginer une bactérie qui se coupe en deux. 
+En d'autre mot une copie complète du processus avec un nouveau **PID** est généré sur le système, l'ensemble des allocations mémoire réalisé du processus parent sont transmis au processus enfant. 
+Apache essaie toujours de maintenir plusieurs processus serveurs __inactifs ou en réserve__, afin de pouvoir traiter les requêtes entrantes. De cette façon, les clients n'ont pas besoin d'attendre le démarrage d'un nouveau processus enfant pour que leurs requêtes puissent être traitées.
+La directive [MaxConnectionsPerChild](https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html#maxconnectionsperchild) permet de contrôler la fréquence à laquelle le serveur recycle ses processus en arrêtant les plus anciens et en en lançant de nouveaux.
+* [worker](https://httpd.apache.org/docs/2.4/fr/mod/worker.html) : Ce module multi-processus (MPM) implémente un serveur hybride multi-processus multi-thread. En utilisant les __threads__ pour servir les requêtes, il peut en traiter un grand nombre tout en consommant moins de ressources qu'un serveur à base de processus. Cependant, il conserve une grande partie de la stabilité d'un serveur à base de processus en maintenant plusieurs processus disponibles, chacun de ces derniers possédant de nombreux __threads__. Un processus de contrôle unique (le parent) a pour tâche de lancer les processus enfants. Chaque processus enfant crée un nombre fixe de __threads__ serveurs selon la valeur de la directive ThreadsPerChild, ainsi qu'un __thread__ chargé d'attendre les connexions et de les passer à un __thread__ serveur pour traitement au fur et à mesure de leur arrivée.
+Le serveur HTTP Apache essaie toujours de maintenir un jeu de __threads__ serveurs inactifs ou en réserve, qui se tiennent prêts à traiter les requêtes entrantes. De cette façon, les clients n'ont pas besoin d'attendre la création d'un nouveau __thread__ ou d'un nouveau processus pour que leurs requêtes puissent être traitées. 
+Le gros avantage de ce module est que contrairement au système __fork__ ce n'est pas une copie complète du processus parent qui est dupliqué mais uniquement un processus démarrer, il utilise aussi moins de mémoire car les __threads__ partage un espace mémoire afin d'échanger de l'information sur le serveur. Cependant l'ensemble des module apache ne fonctionne pas tous en mode __threadé__ le plus connue **php** ne fonctionne pas à ce jour (2016) en mode __worker__.
+
+
+Voici une représentation graphique des 2 modes :
+
+![prefork-vs-worker.png](./imgs/prefork-vs-worker.png)
+
+Je vais me concentré sur le système **mpm_prefork**, je vous laisserai le plaisir si votre système utilise **worker** de réaliser la corrélation avec l'autre mode. 
+
+Visualisons la configuration actuelle du mode __mpm_prefork__ : 
+
+        $ cat /etc/apache2/mods-enabled/mpm_prefork.conf 
+        # prefork MPM
+        # StartServers: number of server processes to start
+        # MinSpareServers: minimum number of server processes which are kept spare
+        # MaxSpareServers: maximum number of server processes which are kept spare
+        # MaxRequestWorkers: maximum number of server processes allowed to start
+        # MaxConnectionsPerChild: maximum number of requests a server process serves
+
+        <IfModule mpm_prefork_module>
+            StartServers                     5
+            MinSpareServers           5
+            MaxSpareServers          10
+            MaxRequestWorkers         150
+            MaxConnectionsPerChild   0
+        </IfModule>
+
+Quand nous démarrons le service **httpd** nous aurons donc 5 processus __apache__ disponible (**StartServers**).
+
+        $ sudo /etc/init.d/apache2 start
+        * Starting web server apache2
+        * 
+        $ ps aux | grep apache
+        root        51  0.6  0.9  90420 19460 ?        Ss   17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    56  0.0  0.2  90452  5376 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    57  0.0  0.2  90452  5380 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    58  0.0  0.2  90452  5380 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    59  0.0  0.2  90452  5380 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    60  0.0  0.2  90452  5380 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+
+
+Si j'accède au site web 1 des processus ci-dessus prendra la tâche et fournira l'information demandé au client. Si nous montons en charge le système va créer d'autre processus pour répondre à la demande . Démonstration, vous pouvez utiliser la commande **top** pour visualiser en direct l'augmentation de processus ...
+
+        [client ]$ ab  -n 100 -c 10 -l https://www.linux202-siteA.com/
+
+        [server ]$ ps aux | grep apache 
+        root        51  0.0  0.9  90420 19460 ?        Ss   17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    56  0.1  0.4  90512  8432 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    57  0.1  0.4  90512  8432 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    58  0.1  0.4  90512  8432 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    59  0.1  0.4  90512  8432 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    60  0.1  0.4  90512  8432 ?        S    17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    70  5.2  0.4  90512  8432 ?        S    17:10   0:00 /usr/sbin/apache2 -k start
+        www-data    71  2.1  0.4  90512  8432 ?        S    17:10   0:00 /usr/sbin/apache2 -k start
+        www-data    72  1.7  0.4  90512  8432 ?        S    17:10   0:00 /usr/sbin/apache2 -k start
+
+Donc nous voyons qu'a présent nous avec 9 processus apache.
+Soyons un peu plus brutal à présent :
+
+        [client]$ ab  -n 200 -c 20 -l https://www.linux202-siteA.com/
+        
+        [server]$ ps aux | grep apache
+        root        51  0.0  0.9  90420 19460 ?        Ss   17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    56  0.2  0.4  90512  8436 ?        S    17:04   0:01 /usr/sbin/apache2 -k start
+        www-data    57  0.2  0.4  90512  8436 ?        S    17:04   0:01 /usr/sbin/apache2 -k start
+        www-data    58  0.2  0.4  90512  8436 ?        S    17:04   0:01 /usr/sbin/apache2 -k start
+        www-data    59  0.2  0.4  90512  8436 ?        S    17:04   0:01 /usr/sbin/apache2 -k start
+        www-data    60  0.2  0.4  90512  8436 ?        S    17:04   0:01 /usr/sbin/apache2 -k start
+        www-data    70  0.6  0.4  90512  8436 ?        S    17:10   0:01 /usr/sbin/apache2 -k start
+        www-data    71  0.6  0.4  90512  8436 ?        S    17:10   0:00 /usr/sbin/apache2 -k start
+        www-data    72  0.5  0.4  90512  8436 ?        S    17:10   0:00 /usr/sbin/apache2 -k start
+        www-data   130  2.5  0.4  90512  8432 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   136  1.9  0.4  90512  8432 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   161  6.6  0.4  90512  8432 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   164  4.5  0.4  90512  8432 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   165  3.5  0.4  90512  8432 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   168  2.3  0.4  90512  8432 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   169  3.3  0.4  90512  8432 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   170  2.3  0.4  90512  8432 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   171  5.0  0.4  90512  8432 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   174  1.0  0.3  90488  7380 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   175  1.0  0.3  90488  7380 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   178  1.0  0.3  90488  7380 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   179  0.0  0.2  90452  5380 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   180  0.0  0.2  90452  5380 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   181  0.0  0.2  90452  5380 ?        S    17:12   0:00 /usr/sbin/apache2 -k start 
+
+Nous voyons le nombre de processus Apache monté en flèche , une fois la monté en charge terminé le nombre de processus va réduire tout seule. Ce nombre correspond à la directive __MaxSpareServers__ :
+
+        [server] $ ps aux | grep apache
+        root        51  0.0  0.9  90420 19460 ?        Ss   17:04   0:00 /usr/sbin/apache2 -k start
+        www-data    56  0.1  0.4  90512  8436 ?        S    17:04   0:01 /usr/sbin/apache2 -k start
+        www-data    57  0.1  0.4  90512  8436 ?        S    17:04   0:01 /usr/sbin/apache2 -k start
+        www-data    70  0.3  0.4  90512  8436 ?        S    17:10   0:01 /usr/sbin/apache2 -k start
+        www-data    72  0.2  0.4  90512  8436 ?        S    17:10   0:00 /usr/sbin/apache2 -k start
+        www-data   130  0.3  0.4  90512  8432 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   161  0.1  0.4  90512  8432 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   164  0.1  0.4  90512  8432 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   174  0.0  0.3  90488  7380 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   175  0.0  0.3  90488  7380 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+        www-data   181  0.0  0.2  90452  5380 ?        S    17:12   0:00 /usr/sbin/apache2 -k start
+
+En théorie le nombre de processus qu'apache pourrait démarrer correspond  à la directive __MaxRequestWorkers__ , cependant dans mon cas mon portable ne sera plus en mesure de répondre à la charge avant :P. Pourquoi limité le nombre de processus me direz vous ? Si vous êtes __slashdoté__ par exemple donc une augmentation significative de l'accès à votre site web , si le nombre de processus était illimité, dans le cas où votre site web est en mesure de fournir 1000 utilisateurs lors que le 1001 arrive votre serveur ne serait plus en mesure de répondre TOTALEMENT à AUCUN utilisateur. Si vous avez configurer adéquatement votre serveur apache le 1001 utilisateur ne sera pas en mesure d'accéder à la page cependant les 1000 autres n'y verront rien.
+
+### <a name="perf_view_apache_process_status" /> Visualisation des pages traité par le processus
+
+Bon voir les processus apache c'est très bien, ça nous permet de visualiser l'utilisation du serveur mais si nous voyons un processus apache qui prend 100% du __CPU__ ou un nombre énorme de processus comment puis je savoir la source et ou la destination des requêtes ?!?! Certain me dirons de consulter les logs, c'est une TRÈS bonne idée malheureusement si vous avez mutualiser 200 sites sur votre serveur ce sera complètement illisible :-/. Vous pouvez utiliser des systèmes de google analytique ou __piwik__  par contre vous risquez d'avoir quelques problème à faire la corrélation avec les __PID__ du processus sur votre machine :-(. Bon vous vous doutez bien que si je prends autant de temps pour vous dire tous ceci c'est que j'ai une solution :P.
+
+Il existe un module qui permet d'avoir l'information en temps réelle des accès sur le serveur ce dernier est **mod_status**, le module est activé par défaut sur **Ubuntu** mais accessible uniquement localement sur le serveur. Nous allons donc réaliser une petite configuration afin de permettre l'accès depuis notre machine.
+
+        $ sudo vim /etc/apache2/mods-enabled/status.conf
+        [... OUTPUT COUPÉ ...]
+                <Location /server-status>
+                    SetHandler server-status
+                    #Require local
+                    Require ip 172.17.42.1
+                </Location>
+        [... OUTPUT COUPÉ ...]
+
+Dans la situation j'ai permis uniquement l'IP 172.17.42.1, faut __reloader__ la configuration apache pour que ce soit actif.
+
+Voici le résultat à froid :
+
+![server-status_empty.png](./imgs/server-status_empty.png)
+
+Nous pouvons déjà voir que la requêtes à cette page fut traité par le **PID** 383. Effectivement si je liste les processus en cours sur la machine : 
+
+        $ ps aux | grep apache
+        root       380  0.0  0.9  90420 19552 ?        Ss   17:42   0:00 /usr/sbin/apache2 -k start
+        www-data   383  0.0  0.4  90684  8836 ?        S    17:42   0:00 /usr/sbin/apache2 -k start
+        www-data   384  0.0  0.2  90452  5424 ?        S    17:42   0:00 /usr/sbin/apache2 -k start
+
+Nous allons voir à présent le comportement lors de l'accès a plusieurs page à l'aide de __siege__ :
+
+        $ cat sitea_urls.txt 
+        https://www.linux202-sitea.com/
+        https://www.linux202-sitea.com/info.php
+        https://www.linux202-sitea.com/articles/2016/super_validation
+        https://www.linux202-sitea.com/app.php
+        $ siege  -r 20 -c 20  -f sitea_urls.txt
+
+
+![server-status_siege-20-20.png](./imgs/server-status_siege-20-20.png)
 
 
 ### <a name="perf_view_cpu_prob" /> Analyse problème de charge CPU
