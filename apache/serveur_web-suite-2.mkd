@@ -7,7 +7,33 @@ TODO corriger les \_
 
 # Index 
 
-
+* [ Autorisation d'accès avec authentification local](#auth_local_access) 
+       * [ Création du fichier de mot de passe ( __htpasswd__ )](#htpasswd) 
+       * [ Gestion d'accès des utilisateurs et par groupe](#htpasswd_group) 
+       * [ Utilisation de système d'authentification externe](#Auth_methode) 
+           *Mysql
+           *Ldap 
+       * [ Combinaison d'une authentification externe et local](#htpasswd_file-et-externe) 
+* [ Webdav pour avoir un lieu de stockage de fichiers](#mod_webdav) 
+       * [ Client webdav sous GNU/Linux](#mod_webdav-client) 
+       * [ Sécuriser son webdav ](#mod_webdav-securisation) 
+       * [ Sécuriser son webdav pour chaque opération](#mod_webdav-securisation_granulaire) 
+           * [ Limiter l'utilisation du service webdav ](#mod_webdav-securisation_limitation) 
+* [ Performance et analyse d'apache](#performance) 
+       * [ Visualisation de la situation](#perf_view) 
+       * [ Simulation de charge sur le serveur](#perf_simulation) 
+           * [ Utilisation du logiciel ApacheBench (AB)](#perf_bench_ab) 
+               * [ Utilisation du logiciel ApacheBench (AB) avec Authentification](#perf_bench_ab_auth) 
+           * [ Utilisation du Siege ](#perf_bench_seige) 
+               * [ Utilisation du logiciel Siege  avec Authentification](#perf_bench_siege_auth) 
+               * [ Avantage de l'utilisation du logiciel Siege](#perf_bench_siege_plus) 
+           * [ Utilisation de JMeter](#perf_bench_jmeter) 
+           * [ Utilisation de Ngrinder](#perf_bench_ngrinder) 
+       * [ Analyse des performances ](#perf_view) 
+           * [ Visualisation des processus Apache](#perf_view_apache_process) 
+           * [ Visualisation des pages traité par le processus](#perf_view_apache_process_status) 
+           * [ Analyse problème de charge CPU](#perf_view_cpu_prob) 
+* [ Référence :](#Reference) 
 
 # <a name="auth_local_access" /> Autorisation d'accès avec authentification local
 
@@ -1127,6 +1153,25 @@ Nous allons voir à présent le comportement lors de l'accès a plusieurs page �
 
 ![server-status_siege-20-20.png](./imgs/server-status_siege-20-20.png)
 
+Donc le gros avantage est de pouvoir avoir le détail de ce que réalise un processus, vous avez le __pid__ ainsi que le __VirtualHost__ qui est demandé ainsi que la page demandée. Le tous avec l'adresse __ip__ de provenance , si vous êtes donc victime d'un **DOS** vous êtes en mesure de savoir d'où et surtout vers quelle page.
+
+Nous pouvons voir l'état des demandes de page web à l'aide du système d'identifiant :
+
+        Scoreboard Key:
+        "_" Waiting for Connection
+        "S" Starting up
+        "R" Reading Request,
+        "W" Sending Reply
+        "K" Keepalive (read)
+        "D" DNS Lookup,
+        "C" Closing connection
+        "L" Logging
+        "G" Gracefully finishing
+        "I" Idle cleanup of worker
+        "." Open slot with no current process
+
+__Anecdote__ : Dans le passé, un client avait un problème de disponibilité de page web, une page dynamique qui été plus que sollicité. Le problème été que le serveur web ne pouvait plus traité les demandes, grâce à la visualisation de la page demandé nous avons pu mettre une page web statique __html__, donc moins lourde à traité mentionnant un problème de disponibilité du service.
+
 
 ### <a name="perf_view_cpu_prob" /> Analyse problème de charge CPU
 
@@ -1144,6 +1189,19 @@ Idée :
 * __cactis  / piwik__
 * __mise en place du site en mémoire__
 * __sleep mysql__ : http://dev.mysql.com/doc/refman/5.7/en/miscellaneous-functions.html#function_sleep
+* __fail 2 ban__ : against DOS
+
+* idée pour hi_io mais pas bon resultat
+
+        $ cat hi_io.php 
+
+        <?php
+        // outputs the username that owns the running php/httpd process
+        // (on a system with the "whoami" executable in the path)
+        echo exec('whoami');
+        echo exec('dd if=/dev/urandom of=/tmp/hi_io bs=1M count=30 && echo "OK " ');
+
+        ?>
 
 
 # <a name="Reference" /> Référence :
