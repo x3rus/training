@@ -1181,7 +1181,64 @@ Pour réaliser l'analyse nous allons installer le pacquage **sysstat** si ceci n
         sysstat - system performance tools for Linux
         $ sudo apt-get install sysstat
 
+Pour continuer nous allons mettre une page __php__ non performante , et c'est moi qui l'ai fait :D ... Je voulais une page qui prenne beaucoup de __CPU__. J'ai donc créer une page qui affiche 100 fois un nombre aléatoire de 10000 caractère. On repassera pour la beauté de l'opération, mais le résultat est au rendez-vous le CPU augmente :D.
 
+        $ sudo vim /data/vhosts/siteA/docroot/perf/random.php
+        <?php
+            function generateRandomString($length = 10000) {
+                $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                $charactersLength = strlen($characters);
+                $randomString = '';
+
+                for ($i = 0; $i < $length; $i++) {
+                    $randomString .= $characters[rand(0, $charactersLength - 1)];
+                }
+                return $randomString;
+            }
+
+            for ($x = 0 ; $x < 100; $x++ ) {
+                echo generateRandomString();
+                echo "<br>";
+            }
+
+        ?>
+
+
+Si vous allons sur l'URL : https://www.linux202-sitea.com/perf/random.php , vous aurez une liste de caractère, si vous cliquez pour rafraichir la page d'autre nombre seront présenter.
+
+Nous allons à présent monter en charge le serveur, nous visualiserons le comportement avec la commande __vmstat__ :
+
+        [client]$ ab  -n 100 -c 10 -l https://www.linux202-siteA.com/perf/random.php
+
+        $ vmstat 5 20
+        procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+        r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+         1  0      0 406944 159168 768488    0    0   252    63  407  695 19  3 76  1  0
+         0  0      0 407376 159168 768496    0    0     0     0  992 1529  6  3 91  0  0
+        10  0      0 403116 159168 768504    0    0     0     0  969 1924 71  3 26  0  0
+        10  0      0 406056 159168 768504    0    0     0   531 1057 2679 96  4  0  0  0
+        10  0      0 399312 159192 768544    0    0     0   168  977 2349 96  4  0  0  0
+        10  0      0 400056 159216 768560    0    0     0   188  936 2107 97  3  0  0  0
+        10  0      0 402580 159240 768592    0    0     0    11  927 2211 96  4  0  0  0
+        10  0      0 400892 159264 768608    0    0     0    74  932 2121 97  3  0  0  0
+        10  0      0 400288 159288 768624    0    0     0   212  910 2056 97  3  0  0  0
+        10  0      0 410680 159312 768760    0    0     0   285 1076 2640 96  4  0  0  0
+        10  0      0 405372 159312 768764    0    0     0    35  922 2058 97  3  0  0  0
+        10  0      0 407108 159336 768776    0    0     0   164 1047 2219 97  3  0  0  0
+        11  0      0 400880 159360 768788    0    0     0   114 1447 2089 96  4  0  0  0
+         1  0      0 404488 159384 768808    0    0     0    12 1087 1647 31  2 67  0  0
+         0  0      0 398664 159408 768832    0    0     0   351  952 1586 10  4 86  0  0
+         0  0      0 396080 159432 768856    0    0     0   196 1060 1495  5  3 92  0  0
+
+Bien entendu vous pouvez aussi utiliser la commande __top__ pour visualiser le comportement , je voulais vous présenter une autre méthode possible qui se script bien et fournit l'ensemble de l'information du système ( Mémoire, __Input/Ouput__ , __cpu__ ...). Si vous désirez utilisé top en script c'est aussi possible avec l'option **-b** pour __batch__  qui est bien pratique.
+
+        # Avant test de charge
+        $ uptime
+         08:57:38 up 43 min,  1 user,  load average: 0.50, 0.69, 0.93
+
+        # Après test de charge
+        $ uptime
+         08:59:07 up 44 min,  1 user,  load average: 6.82, 2.48, 1.53
 
 Idée :
 * __Jmeter__
