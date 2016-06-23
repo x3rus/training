@@ -1185,7 +1185,7 @@ Pour continuer nous allons mettre une page __php__ non performante , et c'est mo
 
         $ sudo vim /data/vhosts/siteA/docroot/perf/random.php
         <?php
-            function generateRandomString($length = 10000) {
+            function generateRandomString($length = 100000 ) {
                 $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
                 $charactersLength = strlen($characters);
                 $randomString = '';
@@ -1196,8 +1196,10 @@ Pour continuer nous allons mettre une page __php__ non performante , et c'est mo
                 return $randomString;
             }
 
-            for ($x = 0 ; $x < 100; $x++ ) {
-                echo generateRandomString();
+            for ($x = 0 ; $x < 100000 ; $x++ ) {
+                if ( $x == 1 ) {
+                    echo generateRandomString();
+                }
                 echo "<br>";
             }
 
@@ -1208,37 +1210,265 @@ Si vous allons sur l'URL : https://www.linux202-sitea.com/perf/random.php , vous
 
 Nous allons à présent monter en charge le serveur, nous visualiserons le comportement avec la commande __vmstat__ :
 
-        [client]$ ab  -n 100 -c 10 -l https://www.linux202-siteA.com/perf/random.php
+        [client]$ ab  -n 200 -c 10 -l https://www.linux202-siteA.com/perf/random.php
+        Concurrency Level:      10
+        Time taken for tests:   20.719 seconds
+        Complete requests:      200
+        Failed requests:        0
+        Total transferred:      100047400 bytes
+        HTML transferred:       100000000 bytes
+        Requests per second:    9.65 [#/sec] (mean)
+        Time per request:       1035.974 [ms] (mean)
+        Time per request:       103.597 [ms] (mean, across all concurrent requests)
+        Transfer rate:          4715.49 [Kbytes/sec] received
+
+        Connection Times (ms)
+         min  mean[+/-sd] median   max
+         Connect:       64  143  36.9    139     293
+         Processing:   400  883 129.8    897    1265
+         Waiting:      141  545  96.4    551     889
+         Total:        540 1026 141.6   1038    1430
+
+        Percentage of the requests served within a certain time (ms)
+        50%   1038
+        66%   1088
+        75%   1116
+        80%   1141
+        90%   1183
+        95%   1224
+        98%   1334
+        99%   1398
+        100%   1430 (longest request)
 
         $ vmstat 5 20
         procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
         r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
-         1  0      0 406944 159168 768488    0    0   252    63  407  695 19  3 76  1  0
-         0  0      0 407376 159168 768496    0    0     0     0  992 1529  6  3 91  0  0
-        10  0      0 403116 159168 768504    0    0     0     0  969 1924 71  3 26  0  0
-        10  0      0 406056 159168 768504    0    0     0   531 1057 2679 96  4  0  0  0
-        10  0      0 399312 159192 768544    0    0     0   168  977 2349 96  4  0  0  0
-        10  0      0 400056 159216 768560    0    0     0   188  936 2107 97  3  0  0  0
-        10  0      0 402580 159240 768592    0    0     0    11  927 2211 96  4  0  0  0
-        10  0      0 400892 159264 768608    0    0     0    74  932 2121 97  3  0  0  0
-        10  0      0 400288 159288 768624    0    0     0   212  910 2056 97  3  0  0  0
-        10  0      0 410680 159312 768760    0    0     0   285 1076 2640 96  4  0  0  0
-        10  0      0 405372 159312 768764    0    0     0    35  922 2058 97  3  0  0  0
-        10  0      0 407108 159336 768776    0    0     0   164 1047 2219 97  3  0  0  0
-        11  0      0 400880 159360 768788    0    0     0   114 1447 2089 96  4  0  0  0
-         1  0      0 404488 159384 768808    0    0     0    12 1087 1647 31  2 67  0  0
-         0  0      0 398664 159408 768832    0    0     0   351  952 1586 10  4 86  0  0
-         0  0      0 396080 159432 768856    0    0     0   196 1060 1495  5  3 92  0  0
+        13  0    940 951656  74600 503100    0    0   266    37  322  525 26  3 70  1  0
+        11  0    940 947320  74600 503140    0    0     0     0 1228 3242 94  6  0  0  0
+        10  0    940 946772  74624 503164    0    0     0    13 1271 3252 94  6  0  0  0
+        11  0    940 955588  74648 503192    0    0     0    12 1172 3224 94  6  0  0  0
+         5  0    940 955292  74672 503208    0    0     0    11 1286 3170 94  6  0  0  0
+         0  0    940 959788  74696 503236    0    0     0    14  812 1145  8  3 89  0  0
+         1  0    940 961992  74720 503248    0    0     0    13  727  899  3  1 96  0  0
+
 
 Bien entendu vous pouvez aussi utiliser la commande __top__ pour visualiser le comportement , je voulais vous présenter une autre méthode possible qui se script bien et fournit l'ensemble de l'information du système ( Mémoire, __Input/Ouput__ , __cpu__ ...). Si vous désirez utilisé top en script c'est aussi possible avec l'option **-b** pour __batch__  qui est bien pratique.
 
         # Avant test de charge
         $ uptime
-         08:57:38 up 43 min,  1 user,  load average: 0.50, 0.69, 0.93
+         17:11:59 up 22 min,  1 user,  load average: 0.96, 1.62, 1.42
 
         # Après test de charge
         $ uptime
-         08:59:07 up 44 min,  1 user,  load average: 6.82, 2.48, 1.53
+         17:13:02 up 23 min,  1 user,  load average: 2.81, 1.96, 1.55
+
+Dans la situation suivant , quelle est la solution ? 
+
+* Corriger le code **php**, ce serait LA solution à mettre en place car clairement il y a un problème, cependant ceci n'est pas toujours possible à notre niveau 
+
+Donc quelle est la solution **de contournement** que l'on peut mettre en place ? 
+
+* Bien entendu ceci dépend de votre application , dans le cas présent la question que je peux me poser : est est-ce que les chiffres aléatoire doivent changé à chaque rafraichissement ? Puis je mettre en place un système de cache afin que cette dernier soit générer uniquement selon un intervalle définie ?
+
+Nous pourrions modifier le code __php__ afin qu'il ajoute un __header__ (en tête) __html__ afin que le client __cache__ le contenu de la page. Ceci est une très bonne solution malheureusement comme le système de __cache__ sera réalisé au niveau du client si j'ai énormément de requête provenant de source multiple , l'opération de __caching__ de la page ne s'effectuera PAS. Du moins pas comme nous l'entendu , la charge sur le serveur sera identique , ça ne solutionnera le problème que si le même client / fureteur accède à la page.
+
+Nous allons donc introduire le système de __cache__ au niveau du serveur , le résultat sera le suivant :
+
+* Le serveur va générer le résultat de la page dynamique __php__ une fois
+* Par la suite le serveur apache va cacher le contenu dans ça mémoire 
+* Lors des prochaines requêtes peut importe le client le même contenu sera transmis au demandeur
+* Un fois le cache expirer la page sera régénéré et caché , ainsi de suite.
+
+Bien entendu le coté négatif de cette opération est que le contenu dynamique ne sera pas généré à chaque requête , mais si l'on y pense un peu si nous prenons un site de nouvelle telle que lemonde.fr , lapresse.ca , ... Si nous utilisons un système de cache de 5 minutes permettant de répondre à des milliers voir millions de requêtes est-ce vraiment critique ?!?! 
+
+#### <a name="perf_mod_cache" /> Utilisation de mod_cache
+
+Le module que nous utiliserons pour nos besoin sera [mod_cache](https://httpd.apache.org/docs/current/fr/mod/mod_cache.html) , nous verrons uniquement un survole, cependant ceci vous offrira la possibilité d'aller plus loin par vous même.
+
+Le système __mod\_cache__ fonction avec 2 mode :
+
+
+* [mod\_cache\_disk](https://httpd.apache.org/docs/current/fr/mod/mod_cache_disk.html)
+implémente un gestionnaire de stockage sur disque. Les en-têtes et corps sont stockés séparément sur le disque dans une structure de répertoires basée sur le condensé md5 de l'URL mise en cache. Plusieurs réponses à contenu négocié peuvent être stockées en même temps, mais la mise en cache de contenus partiels n'est pas supportée par ce module. L'utilitaire htcacheclean permet de lister et de supprimer les URLs mises en cache, et de maintenir le cache en deçà de certaines limites de taille et de nombre d'inodes.
+* [mod\_cache\_socache](https://httpd.apache.org/docs/current/fr/mod/mod_cache_socache.html)
+Implémente un gestionnaire de stockage basé sur un cache d'objets partagés. Les en-têtes et corps sont stockés ensemble sous une seule clé basée sur l'URL de la réponse mise en cache. Des réponses à contenus multiples négociés peuvent être stockées simultanément, mais ce module ne supporte pas la mise en cache de contenus partiels. 
+
+Nous allons débuter avec le premier c'est très équivalant avec le deuxième donc pas de stresse :D. Attention le nom du module pour caché en mémoire n'est pas le même avec la version apache 2.2.
+
+Nous allons activer les modules qui est déjà disponible sous Ubuntu. 
+
+        $ ls /etc/apache2/mods-available/*cache*
+        /etc/apache2/mods-available/authn_socache.load  /etc/apache2/mods-available/file_cache.load
+        /etc/apache2/mods-available/cache.load          /etc/apache2/mods-available/socache_dbm.load
+        /etc/apache2/mods-available/cache_disk.conf     /etc/apache2/mods-available/socache_memcache.load
+        /etc/apache2/mods-available/cache_disk.load     /etc/apache2/mods-available/socache_shmcb.load
+        /etc/apache2/mods-available/cache_socache.load
+        $ sudo a2enmod cache 
+        Enabling module cache.
+        To activate the new configuration, you need to run:
+          service apache2 restart
+        $ sudo a2enmod cache_disk
+        Considering dependency cache for cache_disk:
+        Module cache already enabled
+        Enabling module cache_disk.
+        To activate the new configuration, you need to run:
+          service apache2 restart
+        $ ls /etc/apache2/mods-enabled/*cache*
+        cache.load  cache_disk.conf  cache_disk.load  socache_shmcb.load
+
+Regardons le fichier de configuration de cache pour le disque dur qui est définie par défaut sans les commentaires :
+
+        $ cat /etc/apache2/mods-enabled/cache_disk.conf  | grep -v "#" | grep -v "^$"
+        <IfModule mod_cache_disk.c>
+                CacheRoot /var/cache/apache2/mod_cache_disk
+                CacheDirLevels 2
+                CacheDirLength 1
+        </IfModule>
+
+Nous avons la configuration du répertoire qui sera utilisé pour stocké le contenu mis en cache ceci via la directive [CacheRoot](https://httpd.apache.org/docs/current/fr/mod/mod_cache_disk.html#cacheroot). La directive [CacheDirLevels](https://httpd.apache.org/docs/current/fr/mod/mod_cache_disk.html#cachedirlevels) permet de définir le nombre de niveaux de sous-répertoires que comportera le cache. La directive [CacheDirLength](https://httpd.apache.org/docs/current/fr/mod/mod_cache_disk.html#cachedirlength) permet de définir le nombre de caractères que comportera chaque nom de sous-répertoire de la hiérarchie du cache. 
+ 
+Si nous regardons le répertoire définie par __CacheRoot__ nous constaterons que les permissions sont définie pour l'utilisateur qui exécute le serveur __web__ :
+
+        $ ls -ld /var/cache/apache2/mod_cache_disk
+        drwxr-xr-x 2 www-data www-data 4096 Jan 14 12:46 /var/cache/apache2/mod_cache_disk
+
+Si vous optez pour changer cette configuration n'oubliez pas d'ajuster les configurations en conséquences. 
+
+À ce stade même si je refait un teste de charge j'aurais exactement le même comportement qu'avant car bien que les modules sont chargé et configurer "globalement" aucun serveur virtuel ne l'a d'activer !! 
+Nous allons donc l'activer pour le serveur virtuel __siteA__.
+
+        $  sudo vim /etc/apache2/sites-enabled/siteA-ssl.conf 
+        [... OUTPUT COUPE ...]
+                Alias "/cm-images" "/data/vhosts/common/images"
+
+                # Mise en cache de tous les contenus
+                CacheEnable  disk  /
+
+                <Directory /data/vhosts/siteA/docroot/>
+                    Options none
+                    AllowOverride ALL
+                    Require all granted
+                </Directory>
+                                                                                                
+        [... OUTPUT COUPE ...]
+
+On valide la configuration et on redémarre, je dois faire un __restart__ , car il y a des modules à charger.
+
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+        Syntax OK
+         * Restarting web server apache2
+         ...done.
+
+Nous avons activé le cache et réalisé le redémarrage d'apache , allons sur les pages du site . 
+
+* https://www.linux202-sitea.com/perf/random.php
+* https://www.linux202-sitea.com/
+
+Avec la commande **htcacheclean** vous pouvez voir le contenu qui est mis en cache :
+
+        $ sudo htcacheclean -A -p /var/cache/apache2/mod_cache_disk/
+        https://www.linux202-sitea.com:443/Free_Software_Foundation_logo.png? 620 37866 200 0 1466682926812864 1466769326812864 1466682926812463 1466682926812864 1 0
+        https://www.linux202-sitea.com:443/index.html? 612 109 200 0 1466682926780187 1466769326780187 1466682926779031 1466682926780187 1 0
+        $ sudo htcacheclean -a -p /var/cache/apache2/mod_cache_disk/
+        https://www.linux202-sitea.com:443/Free_Software_Foundation_logo.png?
+        https://www.linux202-sitea.com:443/index.html?
+
+**ATTENTION** : N'oubliez pas d'utiliser la commande avec __sudo__ sinon votre utilisateur n'ayant pas la permissions d'accéder au contenu vous aurez un résultat VIDE. 
+
+**heuu**  pourquoi on ne voit pas la page __PHP__ dans le système la liste des page qui caché ?!?! 
+Nous allons devoir mettre une petite modification dans la page __php__, nous allons devoir définir des en-tête (__header__) __HTML__ . Voici ce que nous allons rajouter :
+
+        $ sudo vim /data/vhosts/siteA/docroot/perf/random.php
+        <?php
+        header("Cache-Control: must-revalidate, max-age=3600");
+        header("Vary: Accept-Encoding");
+        ?>
+        <?php
+        function generateRandomString($length = 100000) {
+        [... OUTPUT COUPÉ ...]
+
+Nous avons 2 en-tête :
+TODO : a completer
+
+* *Cache-Control: must-revalidate, max-age=3600** : 
+* __Vary: Accept-Encoding__ :
+
+On valide :D, on retourne sur la page et on réutilise la commande  :
+
+        $ sudo htcacheclean  -a -p /var/cache/apache2/mod_cache_disk/
+        https://www.linux202-sitea.com:443/perf/random.php
+        [... OUTPUT COUPÉ ...]
+
+
+C'est le temps de refaire un test de performance :D.
+
+        [client]$ ab  -n 200 -c 10 -l https://www.linux202-siteA.com/perf/random.php
+        Concurrency Level:      10
+        Time taken for tests:   4.369 seconds
+        Complete requests:      200
+        Failed requests:        0
+        Total transferred:      2134200 bytes
+        HTML transferred:       2080000 bytes
+        Requests per second:    45.78 [#/sec] (mean)
+        Time per request:       218.458 [ms] (mean)
+        Time per request:       21.846 [ms] (mean, across all concurrent requests)
+        Transfer rate:          477.02 [Kbytes/sec] received
+
+        Connection Times (ms)
+         min  mean[+/-sd] median   max
+         Connect:       34  190  86.2    209     328
+         Processing:     1   20  18.1     14      93
+         Waiting:        1   13  14.2      9      79
+         Total:         35  210  94.7    239     341
+
+        Percentage of the requests served within a certain time (ms)
+         50%    239
+         66%    283
+         75%    297
+         80%    302
+         90%    313
+         95%    320
+         98%    325
+         99%    330
+        100%    341 (longest request)
+
+        $ uptime
+        # avant 
+         17:25:22 up 35 min,  1 user,  load average: 0.70, 0.85, 1.06
+        $ vmstat 5 20
+         procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+          r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+          1  0    940 877884  75524 520964    0    0   174    28  365  604 25  3 71  1  0
+         10  0    940 875124  75524 520992    0    0     0     1  844 1999 64  4 31  0  0
+          0  0    940 876540  75548 521004    0    0     0    30  855 1650 33  4 64  0  0 
+
+        # Apres 
+        $ uptime
+         17:26:16 up 36 min,  1 user,  load average: 1.06, 0.96, 1.09
+
+On peut dire que ça MARCHE :D , woot !! Bon c'est pas une raison pour programmer comme un porc ;-).
+
+Je vous ai dit ce n'est qu'une introduction au système nous allons tous de même prendre le temps d'exploirer un peu les options disponible on est dedans faut en profiter :D.
+
+Quand nous activons un système de **cache** la première question que l'on se pose souvent est combien de temps le système va caché l'information ?!?! Ceci est définie par la directive [CacheDefaultExpire](https://httpd.apache.org/docs/current/fr/mod/mod_cache.html#cachedefaultexpire)
+
+![CacheDefaultExpire-screenshot.png](./imgs/CacheDefaultExpire-screenshot.png)
+
+Comme vous pouvez le voir la valeur par défaut est 3600 secondes , mais j'aimerai surtout porter votre attention sur le lieu où peut être définie cette directive , le context :    configuration du serveur, serveur virtuel, répertoire, .htaccess.
+
+Comme vous pouvez le constater ceci peut être sur-définie à plusieurs lieux selon le besoin !!
+
+L'autre intérogation qui peut être soulever est , ouin mais moi je veux pas que TOUS mon site web soit caché , c'est juste une section qui me pose problème ... 
+
+Effectivement pour la démonstration j'ai activé le cache pour l'ensemble du site mais regardons la directive [CacheEnable](https://httpd.apache.org/docs/current/fr/mod/mod_cache.html#cacheenable). 
+
+![CacheEnable-screenshot.png](./imgs/CacheEnable-screenshot.png)
+
+Encore une fois je vous pointe la ligne **contexte** qui indique une liste non négligeable où nous pouvons activer le mode de caching. 
+
+Bon pour les personnes qui veulent l'activer pour un répertoire mais pas un fichier , oui il y a des besoins parfois comme ça :P . La directive [CacheDisable](https://httpd.apache.org/docs/current/fr/mod/mod_cache.html#cachedisable) est la pour ça encore une fois la liste des lieux où ceci peut être définie est conséquente au besoin ...
+
+![CacheDisable-screenshot.png](./imgs/CacheDisable-screenshot.png)
 
 Idée :
 * __Jmeter__
