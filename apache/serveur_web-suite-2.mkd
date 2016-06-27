@@ -1470,6 +1470,263 @@ Bon pour les personnes qui veulent l'activer pour un répertoire mais pas un fic
 
 ![CacheDisable-screenshot.png](./imgs/CacheDisable-screenshot.png)
 
+Conformément à la définition de la directive vous pouvez l'utiliser comme suit :
+
+        <Location "/foo">
+            CacheDisable on
+        </Location>
+        
+        # Ou
+        CacheDisable "/path/url/fichier/toto.html"
+
+Je ne couvrirai pas ici le module pour caché en mémoire le concept étant similaire je vais continuer pour couvrir plus de matière dans le cas où vous désiriez que je rajoute cette section SVP le dire :D.
+
+
+#### <a name="perf_wait_access" /> Augmentation de la charge du à un problème d'Input/Output (tmpfs)
+
+Bon nous avons corrigé le problème de charge du CPU , comme nous avons pu le constater lors de l'exemple précédent la charge du CPU été principalement du à une augmentation du pourcentage CPU utilisateur. Nous générions un processus qui générais un nombre aléatoire (poche :P) ce qui avait comme conséquence d'augmenter la charge .
+
+         procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+        r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+        13  0    940 951656  74600 503100    0    0   266    37  322  525 26  3 70  1  0
+        11  0    940 947320  74600 503140    0    0     0     0 1228 3242 94  6  0  0  0
+        10  0    940 946772  74624 503164    0    0     0    13 1271 3252 94  6  0  0  0
+
+Comme  nous pouvons le voir ci-dessus l'augmentation est sous la colonne **US** pour la section CPU.
+Voyons un autre cas de figure l'augmentation de la charge mais cette fois dû à un problème de **wait-access** (**WA**), généralement causé par un accès intensif d'écriture ou de lecture du disque dur. 
+
+Je vais créer un fichier texte de 27 __Megs__ nommé __data.dtd__ :
+
+        $ pwd
+        /data/vhosts/siteA/docroot/perf
+        $ tail data.dtd 
+        2016-06-13 08:42:31 status unpacked sysstat:i386 10.2.0-1
+        2016-06-13 08:42:31 status unpacked sysstat:i386 10.2.0-1
+        2016-06-13 08:42:31 status unpacked sysstat:i386 10.2.0-1
+        2016-06-13 08:42:31 status unpacked sysstat:i386 10.2.0-1
+        2016-06-13 08:42:31 status unpacked sysstat:i386 10.2.0-1
+        2016-06-13 08:42:31 status half-configured sysstat:i386 10.2.0-1
+        2016-06-13 08:42:32 status installed sysstat:i386 10.2.0-1
+        2016-06-13 08:42:32 trigproc libc-bin:i386 2.19-0ubuntu6 <none>
+        2016-06-13 08:42:32 status half-configured libc-bin:i386 2.19-0ubuntu6
+        2016-06-13 08:42:32 status installed libc-bin:i386 2.19-0ubuntu6
+        $ du -hs data.dtd
+        27M     data.dtd
+
+Je vais créer un fichier __php__ qui va lire et écrire ce fichier sous un autre nom  puis le supprimer :
+
+        $ sudo vim /data/vhosts/siteA/docroot/perf/io-file.php
+        <?php
+
+        function gen_io($id=0,$data="") {
+            
+            $file_name="./tmp/test".$id.".txt";
+            $file = fopen($file_name,"w");
+            echo fwrite($file,$data);
+            fclose($file);
+            unlink($file_name);
+        }
+        
+        $file_data = fopen("data.dtd","r");
+        $data = fread($file_data,filesize("data.dtd"));
+
+        for ($x = 0 ; $x < 100000; $x++ ) {
+            if ($x == 1 ) {
+                echo gen_io($x,$data);
+            }
+            echo "<br>";
+            }
+
+        fclose($file_data);
+
+        ?> 
+
+        $ sudo mkdir /data/vhosts/siteA/docroot/perf/tmp
+        $ sudo chown www-data  /data/vhosts/siteA/docroot/perf/tmp
+
+Comme il y a écriture sur le disque dur , je ne veux pas que ma page soit caché sinon le système ne réalisera pas l'opération à chaque accès au site :-/ . Donc l'option de mise en cache avec __mod\_cache__ n'est pas une option dans le cas présent je désactive donc l'option . 
+
+        $ head -30  /etc/apache2/sites-enabled/siteA-ssl.conf
+
+        <VirtualHost 172.17.0.1:443>
+                ServerAdmin webmaster@localhost
+                ServerName www.linux202-siteA.com
+                ServerAlias linux202-siteA.com
+                ServerAlias toto.linux202-siteA.com
+
+                DocumentRoot /data/vhosts/siteA/docroot/
+
+                Alias "/cm-images" "/data/vhosts/common/images"
+
+                # Mise en cache de tous les contenus
+                #CacheEnable  disk  /
+                #CacheIgnoreCacheControl On
+                #CacheDefaultExpire 3600
+
+        [... OUTPUT COUPÉ ...]
+
+On redémarre le service apache et on va faire un test
+
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+
+Je vais réutiliser la commande __ab__ pour charger le serveur et nous allons visualiser le comportement avec __vmstat__ sur le serveur.
+
+        [client]$ ab  -n 200 -c 10 -l https://www.linux202-siteA.com/perf/io-file.php
+        Document Path:          /perf/io-file.php
+        Document Length:        Variable
+
+        Concurrency Level:      10
+        Time taken for tests:   66.105 seconds
+        Complete requests:      200
+        Failed requests:        0
+        Total transferred:      80040200 bytes
+        HTML transferred:       80002000 bytes
+        Requests per second:    3.03 [#/sec] (mean)
+        Time per request:       3305.268 [ms] (mean)
+        Time per request:       330.527 [ms] (mean, across all concurrent requests)
+        Transfer rate:          1182.42 [Kbytes/sec] received
+
+        Connection Times (ms)
+                      min  mean[+/-sd] median   max
+        Connect:       34  130  64.4    128     338
+        Processing:   260 3153 1847.1   2666    8556
+        Waiting:      205 2879 1841.3   2405    8336
+        Total:        295 3283 1841.0   2767    8675
+
+        Percentage of the requests served within a certain time (ms)
+         50%   2767
+         66%   3643
+         75%   4174
+         80%   4630
+         90%   5822
+         95%   7789
+         98%   8035
+         99%   8477
+        100%   8675 (longest request)
+
+        [server]$ vmstat 2 30 
+        procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+        r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+         1  0   3280 369692  72788 1029732    0    1   186  1194  337  594 10  5 82  3  0
+        10  0   3280 238252  72796 1050980    0    0    50    60  533  765 18 12 70  0  0
+         7  0   3280 224696  72800 1056976    0    0    22 26014 5236 11333 35 62  4  0  0
+         0 12   3784  52768  72800 1071464   16  252    62 47898 4806 10102 33 61  0  6  0
+         3 13   4652  52848  72816 1065776   12  434    60 36304 6132 13241 11 27  0 62  0
+         2  9   4888  55556  72148 1062744    0  118    20 34436 1815 3370 22 22  0 56  0
+         0 10   5088  53288  69948 1068768    8  100    16 17190 4251 8884  9 14  0 77  0
+         2 12   5092 108800  69980 1051752    0    2    20 45946 1419 3885  7 18  1 73  0
+         9  1   9412  95056  70020 1059816    0 2160     0 20222 1549 5115  8 13  4 75  0
+         0  3   9412  72108  70044 1056564    0    0     4 36604 1299 5678 28 32  0 40  0
+         6  0   9512  50720  70060 1078776    0   50     0 41082 4313 10174  6 32  2 60  0
+        11  0   9792  69936  70060 1058804    0  140     0 63094 4520 10074 38 60  1  1  0
+         0  4   9792  58196  70072 1064724    0    0     0 59588 5369 12786 33 54  1 13  0
+        11  0   9792 154456  70088 1055740    0    0     4 29520 2257 8491 12 19  0 68  0
+        10  1  10324 147376  67184 1047248    0  266     8 68910 4080 8758 37 57  2  4  0
+         0  6  10324  77544  67192 1054612    0    0     6 15918 4640 10404 27 46  0 27  0
+         8  2  11644  54444  62904 1084604    0  660    10 41374  955 7323 10 25 14 52  0
+         0  5  11968  68560  62232 1067420    0  162     4 20014 3465 8940 30 37  0 33  0
+         0  2  12224  95116  62244 1047644    0  128     8 67342 2957 6338 34 57  1  8  0
+         2  5  13148  51240  62248 1091084    0  462     2 59418 2167 5202 16 27  1 56  0
+         0  3  13256  51636  62256 1090584    0   54     0 11078  484  442  2  1  0 97  0
+         6  0  13616 157088  58512 1040012    0  180    12 37504 4452 9477 30 43  0 27  0
+         0  7  13620  48864  58148 1100000    0    2    14 59066 3285 7892 26 55  0 19  0
+         7  9  14476 160316  57192 1059464    0  428    98 52044 4935 30204 24 33  0 43  0
+         0 10  14476  58264  57192 1088112    0    0    18  3938 2510 4311  5 18  0 77  0
+         0  7  19244  67108  49160 1087016    0 2384     4 60674 3020 8848 26 45  0 29  0
+         0  4  19244  62888  49164 1097100    0    0     0 18604  800 1125  3  2  0 95  0
+         8  3  19244 120060  49208 1074256    0    0   140 31384 1019 5032 26 29  0 44  0
+         1  6  19244  64604  49224 1107128    0    0     0 71612 2090 12644 36 57  1  6  0
+         2  3  20540  53464  39044 1121280    0  648     0 21408 5930 12650  3 14  0 83  0
+         $ uptime
+         17:22:34 up 27 min,  1 user,  load average: 9.56, 3.39, 1.67
+
+
+La question est comment puis je corriger ce problème, la mise en cache n'est pas une option car il faut que l'écriture soit réaliser à chaque appel. Je ne peux pas fournir une page pré généré au client, encore une fois il est possible probablement de corriger le problème au niveau du code (yeahhh I'm a sysadmin , so the problem is the code :P ) . Bon quelle solution de contournement s'offre à moi ?!?!
+Dans le cas présent ce pourrait être aussi un accès réseaux sur un disque partagé ou autre ... Soyons imaginatif :D.
+
+La première idée que l'on se dit faut un __SSD__ , c'est une très bonne idée quelle est la taille requis ?!?! Et vous avez combien de serveur qui doivent avoir se __SSD__ de présent ? Imaginons que ces fichiers soit des fichiers "temporaire" de traitement donc vous auriez besoin de 2 ou 3 __Gig__ sur chaque serveur , avec un __cluster__ de 30 machines. 
+Le prix des __SSD__ pour les serveurs sont très chères et malheureusement le __SSD__ n'est pas optimal pour l'écriture la longévité des __HD__ sont considérablement impacté.
+
+La deuxième idée pourquoi on l'écrit pas dans la mémoire ... Le script __php__ va conservé l'information en mémoire et faire tous de suite le traitement ... Super idée mais est-ce que le processus suivant est réalisé par la page __php__ ?? Est-ce un processus qui fait le traitement et combien de temps ce dernier prends ? Est-ce vraiment envisageable de gardé l'utilisateur le temps des 2 traitements ?!? Probablement pas .
+
+Voici ma proposition, mettre en place un faux répertoire qui sera en fait dans la mémoire du système , résultat le temps d'écriture est SUPER performant car effectué en mémoire. Le fichier sera disponible sur le système de fichier comme un fichier normale et pourra donc être traité par une autre application le temps venu. 
+**Le point négatif**: Si le serveur **crash** les données sont perdu , yep rien n'est parfait :P .
+
+Voyons le résultat , mis en place de la solution : 
+
+        $ sudo vim /etc/fstab 
+        [... OUTPUT COUPÉ ...]
+        tmpfs /data/vhosts/siteA/docroot/perf/tmp tmpfs   nodev,nosuid,size=1G          0  0
+
+Je configure le service **tmpfs** afin qu'il soit définie pour le répertoire __/data/vhosts/siteA/docroot/perf/tmp__ je lui alloué __1 Gig__ de mémoire maximum. __Mountons__ ce dernier.
+
+        $ sudo mount /data/vhosts/siteA/docroot/perf/tmp
+        $ sudo mount | grep perf
+        tmpfs on /data/vhosts/siteA/docroot/perf/tmp type tmpfs (rw,nosuid,nodev,relatime,size=1048576k)
+
+On refait un test ?? 
+
+
+        [client] $ ab  -n 200 -c 10 -l https://www.linux202-siteA.com/perf/io-file.php
+        Document Path:          /perf/io-file.php
+        Document Length:        Variable
+
+        Concurrency Level:      10
+        Time taken for tests:   28.298 seconds
+        Complete requests:      200
+        Failed requests:        0
+        Total transferred:      80040200 bytes
+        HTML transferred:       80002000 bytes
+        Requests per second:    7.07 [#/sec] (mean)
+        Time per request:       1414.915 [ms] (mean)
+        Time per request:       141.492 [ms] (mean, across all concurrent requests)
+        Transfer rate:          2762.15 [Kbytes/sec] received
+
+        Connection Times (ms)
+                      min  mean[+/-sd] median   max
+        Connect:       38  145  41.2    140     255
+        Processing:   584 1258 196.2   1267    1685
+        Waiting:      399  946 166.2    955    1299
+        Total:        693 1402 211.1   1403    1885
+
+        Percentage of the requests served within a certain time (ms)
+        50%   1403
+        66%   1491
+        75%   1557
+        80%   1592
+        90%   1660
+        95%   1741
+        98%   1834
+        99%   1840
+        100%   1885 (longest request)
+
+
+        [server] $ $ vmstat 2 40
+        procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+        r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+        1  0  21452 331592  35516 1115720    0    4   117  1266  329  583 13  4 79  3  0
+        10  0  21532 100284  32940 1121244    0   40    12    40 3836 7251 27 49 24  0  0
+        10  0  21768 216136  32940 1086536    0  118     0   118 2377 3998 47 54  0  0  0
+        10  0  21768  90072  32948 1111180    0    0     0     6 1966 4121 43 57  0  0  0
+        9  0  21768  67004  32972 1128720    0    0     0    30 3253 6686 45 55  0  0  0
+        13  0  22488 173208  32972 1080800    0  360     0   360 3488 6753 47 53  0  0  0
+        11  0  22488 237528  32996 1090832    0    0     0    30 4113 8468 49 50  1  0  0
+        7  0  22488  96588  32996 1094072    0    0     0     8 1474 3155 43 57  0  0  0
+        10  0  22664 155992  32448 1074988    0   88     0    88 1934 4156 47 53  0  0  0
+        6  0  22664 183056  32472 1059836    0    0     0    28 1299 2791 47 53  0  0  0
+        9  0  22664 130136  32472 1076684    0    0     0     0 4219 8722 41 59  0  0  0
+        9  0  22664 222444  32496 1063548    0    0     0    30 2267 4985 50 50  0  0  0
+        8  0  22664 111852  32496 1081300    0    0     0     0 3195 6426 41 59  0  0  0
+        10  0  22664 160976  32496 1061252    0    0     0     0 3926 8204 44 56  0  0  0
+        10  0  22664 225652  32520 1088308    0    0     0    28 3439 7062 49 51  0  0  0  
+        $ uptime
+         17:39:35 up 44 min,  1 user,  load average: 2.86, 1.25, 1.10
+
+
+Nous le voyons clairement, l'accès au disque est resté à 0 tous le long du processus , la charge sur le CPU est monté mais uniquement à cause des processus utilisateur, mais beaucoup moins. Le résultat du testes de charge est beaucoup mieux.
+
+Mais je le répète, si vous utilisez cette technique vous devez faire une copie ou un traitement des fichiers qui sont TEMPORAIRE . S'il y a crash il y a perte de donnée , bien entendu vous pourriez mettre tous votre site web en mémoire ceci augmentera la performance du serveur aussi :D.
+
 Idée :
 * __Jmeter__
 * __server-status__
