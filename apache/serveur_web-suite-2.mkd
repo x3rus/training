@@ -1727,32 +1727,35 @@ Nous le voyons clairement, l'accès au disque est resté à 0 tous le long du pr
 
 Mais je le répète, si vous utilisez cette technique vous devez faire une copie ou un traitement des fichiers qui sont TEMPORAIRE . S'il y a crash il y a perte de donnée , bien entendu vous pourriez mettre tous votre site web en mémoire ceci augmentera la performance du serveur :D.
 
+### <a name="perf_conf_worker_prefork" /> Configuration de l'exécution d'apache (Worker vs Prefork)
+
+Lors de la présentation des processus apache j'ai fait mention de 2 modes disponibles avec le système de __prefork__ et avec le système de __Thread__. Ceci était une présentation simple afin d'informer de la situation nous allons maintenant voir plus en détail les 2 modes , nous avons débuter avec la configuration par défaut pour la présentation, nous allons la manipulé à présent.
+
+
+#### <a name="perf_prefork" /> MPM prefork
+
+Telle que mentionné lors de la présentation précédent le système de prefork , fork un nouveau processus apache pour faire la gestion des nouvelles requêtes. Lors du Fork une copie du processus parent est réalisé avec sont pile mémoire, ceci est le système originale mis en place avec apache, donc l'ensemble des modules fonctionne avec ce mode , ce qui n'est pas vrai avec l'autre système.
+
+* REF : https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html
+
+### <a name="perf_php" /> Amélioration des performances de php
+
+Personnellement je ne suis pas un grand fan de __PHP__ pas que ce soit un mauvais langage de programmation, cependant ça simplicité de développement a amené  sont lot de page mal programmé. Résultat j'ai un préjugé négatif de ce langage , je suis honnête dans mon propos, cependant c'est une réalité que les pages __php__ sont très présent dans notre réalité.
+
+Nous donc voir comment nous pouvons améliorer les performances de notre système apache lorsque nous devons exécuter du __php__.
+
 Idée :
 * __Jmeter__
-* __server-status__
 * __cactis  / piwik__
-* __mise en place du site en mémoire__
 * __sleep mysql__ : http://dev.mysql.com/doc/refman/5.7/en/miscellaneous-functions.html#function_sleep
 * __fail 2 ban__ : against DOS
+* __php5-fpm - server-side, HTML-embedded scripting language (FPM-CGI binary)__
 
 * URL :
     * http://httpd.apache.org/docs/current/misc/perf-tuning.html
     * https://www.devside.net/articles/apache-performance-tuning
     * http://www.monitis.com/blog/2011/07/05/25-apache-performance-tuning-tips
     * https://wiki.mikejung.biz/Apache
-    *
-
-* idée pour hi_io mais pas bon resultat
-
-        $ cat hi_io.php 
-
-        <?php
-        // outputs the username that owns the running php/httpd process
-        // (on a system with the "whoami" executable in the path)
-        echo exec('whoami');
-        echo exec('dd if=/dev/urandom of=/tmp/hi_io bs=1M count=30 && echo "OK " ');
-
-        ?>
 
 
 # <a name="Reference" /> Référence :
