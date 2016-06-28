@@ -1725,7 +1725,7 @@ On refait un test ??
 
 Nous le voyons clairement, l'accès au disque est resté à 0 tous le long du processus , la charge sur le CPU est monté mais uniquement à cause des processus utilisateur, mais beaucoup moins. Le résultat du testes de charge est beaucoup mieux.
 
-Mais je le répète, si vous utilisez cette technique vous devez faire une copie ou un traitement des fichiers qui sont TEMPORAIRE . S'il y a crash il y a perte de donnée , bien entendu vous pourriez mettre tous votre site web en mémoire ceci augmentera la performance du serveur aussi :D.
+Mais je le répète, si vous utilisez cette technique vous devez faire une copie ou un traitement des fichiers qui sont TEMPORAIRE . S'il y a crash il y a perte de donnée , bien entendu vous pourriez mettre tous votre site web en mémoire ceci augmentera la performance du serveur :D.
 
 Idée :
 * __Jmeter__
@@ -1734,6 +1734,13 @@ Idée :
 * __mise en place du site en mémoire__
 * __sleep mysql__ : http://dev.mysql.com/doc/refman/5.7/en/miscellaneous-functions.html#function_sleep
 * __fail 2 ban__ : against DOS
+
+* URL :
+    * http://httpd.apache.org/docs/current/misc/perf-tuning.html
+    * https://www.devside.net/articles/apache-performance-tuning
+    * http://www.monitis.com/blog/2011/07/05/25-apache-performance-tuning-tips
+    * https://wiki.mikejung.biz/Apache
+    *
 
 * idée pour hi_io mais pas bon resultat
 
