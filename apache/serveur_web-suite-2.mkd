@@ -1791,6 +1791,27 @@ Nous allons analyser la configuration actuelle :
     La directive MaxSpareServers permet de définir le nombre maximum souhaité de processus serveurs enfants inactifs. Un processus inactif est un processus qui ne traite pas de requête. S'il y a plus de MaxSpareServers processus inactifs, le processus parent arrêtera les processus excédentaires.
 
     La modification de ce paramètre n'est nécessaire que dans le cas de sites très sollicités. Définir ce paramètre à une valeur très grande est cependant dans la plupart des cas une mauvaise idée.
+    Dans notre cas le nombre minimum est de 5 , s'il y a un nombre de requête excessif le système va démarrer plus de processus pour traiter les demandes . Une fois la charge terminé le apache va tuer les processus inactifs excédent ce nombre, cependant quand le nombre de processus apache sera égale à **MaxSpareServers** le système les laissera ceci causera une utilisation de mémoire pour conserver ces processus.
+
+* **MaxRequestWorkers** (__MaxClients__ avant la version 2.3.13)
+
+    ![MaxRequestWorkers-screenshot.png](./imgs/MaxRequestWorkers-screenshot.png)
+
+    La directive [MaxRequestWorkers](https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html#maxrequestworkers) permet de fixer le nombre maximum de requêtes pouvant être traitées simultanément. Si la limite __MaxRequestWorkers__ est atteinte, toute tentative de connexion sera normalement mise dans une file d'attente, et ceci jusqu'à un certain nombre dépendant de la directive [ListenBacklog](https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html#listenbacklog). Lorsqu'un processus enfant se libèrera suite à la fin du traitement d'une requête, la connexion en attente pourra être traitée à son tour.
+
+    Pour les serveurs non __threadés__ (c'est à dire utilisant **prefork**), la directive __MaxRequestWorkers__ définit alors le nombre maximum de processus enfants qui pourront être lancés simultanément pour traiter les requêtes. La valeur par défaut est 256 ; si vous l'augmentez, vous devez aussi augmenter la valeur de la directive [ServerLimit](https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html#serverlimit).
+
+* **MaxConnectionsPerChild**
+
+    ![MaxConnectionsPerChild-screenshot.png](./imgs/MaxConnectionsPerChild-screenshot.png)
+
+    La directive [MaxConnectionsPerChild](https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html#maxconnectionsperchild) permet de définir le nombre maximum de connexions qu'un processus enfant va pouvoir traiter au cours de son fonctionnement. Lorsqu'il a traité __MaxConnectionsPerChild__ connexions, le processus enfant est arrêté. Si __MaxConnectionsPerChild__ est définie à 0, il n'y a plus aucune limite sur le nombre de connexions que le processus pourra traiter.
+
+    Définir __MaxConnectionsPerChild__ à une valeur non nulle limite la quantité de mémoire qu'un processus peut consommer à cause de fuites (accidentelles) de mémoire. Il est donc fortement recommandé de définir une valeur afin d'avoir un recyclage des processus.
+
+##### <a name="perf_prefork_optimisation" /> MPM prefork Optimisation
+
+
 
 * Référence :
     * https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html
