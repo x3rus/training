@@ -1734,9 +1734,67 @@ Lors de la présentation des processus apache j'ai fait mention de 2 modes dispo
 
 #### <a name="perf_prefork" /> MPM prefork
 
-Telle que mentionné lors de la présentation précédent le système de prefork , fork un nouveau processus apache pour faire la gestion des nouvelles requêtes. Lors du Fork une copie du processus parent est réalisé avec sont pile mémoire, ceci est le système originale mis en place avec apache, donc l'ensemble des modules fonctionne avec ce mode , ce qui n'est pas vrai avec l'autre système.
+Telle que mentionné lors de la présentation précédent le système de __prefork__ , __fork__ un nouveau processus apache pour faire la gestion des nouvelles requêtes. Lors du __Fork__ une copie du processus parent est réalisé avec sont pile mémoire, ceci est le système originale mis en place avec apache, donc l'ensemble des modules fonctionne avec ce mode , ce qui n'est pas vrai avec l'autre système.
 
-* REF : https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html
+Un processus de contrôle unique a pour tâche de lancer les processus enfants qui attendent les connexions et les traitent au fur et à mesure qu'elles arrivent. Apache __httpd__ essaie toujours de maintenir plusieurs processus serveurs inactifs ou en réserve, afin de pouvoir traiter les requêtes entrantes. De cette façon, les clients n'ont pas besoin d'attendre le démarrage d'un nouveau processus enfant pour que leurs requêtes puissent être traitées.
+
+Le processus parent est en général démarré en tant que __root__ sous Unix afin de pouvoir se mettre à l'écoute sur le port 80, les processus enfants sont lancés par Apache __httpd__ sous un utilisateur avec privilèges restreints. On peut contrôler les privilèges accordés aux processus enfants d'Apache __httpd__ à l'aide des directives **User** et **Group**. Les processus enfants doivent être en mesure de lire tous les contenus destinés à être servis, mais leurs privilèges doivent être aussi bas que possible.
+
+Les directives [StartServers](https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html#startservers), [MinSpareServers](https://httpd.apache.org/docs/2.4/fr/mod/prefork.html#minspareservers), [MaxSpareServers](https://httpd.apache.org/docs/2.4/fr/mod/prefork.html#maxspareservers) et [MaxRequestWorkers](https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html#maxrequestworkers) permettent de contrôler la manière dont le processus parent crée les processus enfants pour traiter les requêtes. Les sites qui doivent traiter plus de 256 requêtes simultanées doivent augmenter la valeur de [MaxRequestWorkers](https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html#maxrequestworkers), alors que les sites dont la ressource mémoire est limitée doivent la diminuer afin d'éviter une __hyperactivité__ du serveur (utilisation excessive de la mémoire virtuelle sur disque). 
+
+Nous allons analyser la configuration actuelle : 
+
+        $ cat /etc/apache2/mods-enabled/mpm_prefork.conf
+        [ ... OUTPUT COUPÉ ... ]
+        <IfModule mpm_prefork_module>
+                StartServers              5
+                MinSpareServers           5
+                MaxSpareServers          10
+                MaxRequestWorkers       150
+                MaxConnectionsPerChild    0
+        </IfModule>
+        [ ... OUTPUT COUPÉ ... ]
+
+
+* **StartServers**
+
+    ![StartServers-screenshot.png](./imgs/StartServers-screenshot.png)
+
+    Définie le nombre de processus qui seront démarrer lors de l'initialisation du service , avec le module __preforf__ la valeur par défaut est **5**. Cette valeur est généralement assez basse , l'objectif est d'être en mesure de répondre au première requêtes rapidement, par la suite lors de la monté en charge ce sera les directive **\*SparesServers** qui prendront le relais.
+
+* **MinSpareServers**
+
+    ![MinSpareServers-screenshot.png](./imgs/MinSpareServers-screenshot.png)
+
+    La directive MinSpareServers permet de définir le nombre minimum désiré de processus serveurs enfants inactifs. Un processus inactif est un processus qui ne traite pas de requête. S'il y a moins de MinSpareServers processus inactifs, le processus parent va créer de nouveaux enfants de la manière suivante : il en crée un, attend une seconde, il en crée deux, attend une seconde, il en crée quatre, puis continue ainsi exponentiellement jusu'à ce que son taux de création de processus enfants soit de 32 par seconde. Il ne s'arrête que lorsque le nombre de processus enfants correspond à la définition de la directive MinSpareServers.
+    Je vais insister sur l'aspect de processus inactif ! Si vous démarrez votre service apache, vous aurez 5 processus apache (en dehors du parent présent pour écouter sur le port ) 
+        
+            $ ps aux | grep ^www-data
+            www-data    59  0.0  0.2  90588  5568 ?        S    08:42   0:00 /usr/sbin/apache2 -k start
+            www-data    60  0.0  0.2  90588  5572 ?        S    08:42   0:00 /usr/sbin/apache2 -k start
+            www-data    61  0.0  0.2  90588  5572 ?        S    08:42   0:00 /usr/sbin/apache2 -k start
+            www-data    62  0.0  0.2  90588  5572 ?        S    08:42   0:00 /usr/sbin/apache2 -k start
+            www-data    63  0.0  0.2  90588  5572 ?        S    08:42   0:00 /usr/sbin/apache2 -k start
+
+    Si vous accéder à l'URL **Server-status** (https://www.linux202-sitea.com/server-status), vous pourrez voir l'état actuelle des processus 
+
+            CPU Usage: u0 s0 cu0 cs0
+            0 requests/sec - 0 B/second -
+            1 requests currently being processed, 4 idle workers
+
+   1 Requête en cours 4 en attentes , mais l'instruction **MinSpareServers** indique que nous devons avoir 5 processus en attente , effectivement si vous réalisé la commande **ps** vous aurez bien 6 processus apache en execution , l'URL **server-status** vous donnera la même information. 
+
+* **MaxSpareServers** 
+
+    ![MaxSpareServers-screenshot.png](./imgs/MaxSpareServers-screenshot.png)
+
+    La directive MaxSpareServers permet de définir le nombre maximum souhaité de processus serveurs enfants inactifs. Un processus inactif est un processus qui ne traite pas de requête. S'il y a plus de MaxSpareServers processus inactifs, le processus parent arrêtera les processus excédentaires.
+
+    La modification de ce paramètre n'est nécessaire que dans le cas de sites très sollicités. Définir ce paramètre à une valeur très grande est cependant dans la plupart des cas une mauvaise idée.
+
+* Référence :
+    * https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html
+    * https://httpd.apache.org/docs/2.4/fr/mod/prefork.html
 
 ### <a name="perf_php" /> Amélioration des performances de php
 
