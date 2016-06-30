@@ -1811,6 +1811,65 @@ Nous allons analyser la configuration actuelle :
 
 ##### <a name="perf_prefork_optimisation" /> MPM prefork Optimisation
 
+Maintenant que l'on comprend un peu mieux la configuration du système de démarrage des processus apache nous allons pouvoir discuter de modification de configuration afin d'améliorer les performances. Je vous préviens tous de suite à moins d'avoir un site web ultra chargé les gains de performances ne seront pas si significatif, de plus vous devrez faire des testes de validation et prendre des " risques " jusqu'à un certain point lors des modifications. 
+Le plus gros gains que vous allez avoir est si vous avez un __VPS__ avec peu de __RAM__ ou si vous prenez une instance __Amazon EC2__ avec peu de mémoire et __cpu__.
+
+Voyons un exemple de configuration "classique" si vous avez 25 processus enfants 
+
+
+        ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum}'
+
+        ab  -n 200 -c 200 -l https://www.linux202-siteA.com/
+
+
+         # Prise 2 
+        cat /etc/apache2/mods-enabled/mpm_prefork.conf 
+
+        MaxRequestWorkers         150
+
+        ab  -n 250 -c 250 -l https://www.linux202-siteA.com/
+        Percentage of the requests served within a certain time (ms)
+          50%   2416
+          66%   2622
+          75%   2753
+          80%   2801
+          90%   3089
+          95%   3352
+          98%   3735
+          99%   4689
+          100%   4805 (longest request)
+
+
+        ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum}'
+        bob@xerus:~$ bc -l
+        bc 1.06.95
+        Copyright 1991-1994, 1997, 1998, 2000, 2004, 2006 Free Software Foundation, Inc.
+        This is free software with ABSOLUTELY NO WARRANTY.
+        For details type `warranty'.
+        799480 / 1024
+        780.74218750000000000000
+
+
+        # Prise 3 
+        cat /etc/apache2/mods-enabled/mpm_prefork.conf 
+
+        MaxRequestWorkers         50
+
+        $ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum}'
+        441432
+
+
+        ab  -n 250 -c 250 -l https://www.linux202-siteA.com/
+        Percentage of the requests served within a certain time (ms)
+          50%   2467
+          66%   2746
+          75%   2857
+          80%   2954
+          90%   3488
+          95%   3894
+          98%   4298
+          99%   4748
+         100%   4806 (longest request)
 
 
 * Référence :
