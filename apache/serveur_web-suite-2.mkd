@@ -1812,22 +1812,34 @@ Nous allons analyser la configuration actuelle :
 ##### <a name="perf_prefork_optimisation" /> MPM prefork Optimisation
 
 Maintenant que l'on comprend un peu mieux la configuration du système de démarrage des processus apache nous allons pouvoir discuter de modification de configuration afin d'améliorer les performances. Je vous préviens tous de suite à moins d'avoir un site web ultra chargé les gains de performances ne seront pas si significatif, de plus vous devrez faire des testes de validation et prendre des " risques " jusqu'à un certain point lors des modifications. 
-Le plus gros gains que vous allez avoir est si vous avez un __VPS__ avec peu de __RAM__ ou si vous prenez une instance __Amazon EC2__ avec peu de mémoire et __cpu__.
+Le plus gros gains que vous allez avoir est si vous avez un __VPS__ avec peu de __RAM__ ou si vous prenez une instance __Amazon EC2__ avec peu de mémoire et de __cpu__.
 
-Voyons un exemple de configuration "classique" si vous avez 25 processus enfants 
+Voyons un exemple de configuration "classique" par défaut pour le système __préfork__
 
+        $ cat /etc/apache2/mods-enabled/mpm_prefork.conf
+        [ ... OUTPUT COUPÉ ... ]
+        <IfModule mpm_prefork_module>
+                StartServers                     5
+                MinSpareServers           5
+                MaxSpareServers          10
+                MaxRequestWorkers         150
+                MaxConnectionsPerChild   0
+        </IfModule>
 
-        ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum}'
+Afin de ne pas interférer avec les configurations préalablement réalisé nous allons désactiver le système de cache activé lors de la démonstration de l'utilisation du __CPU__ .
 
-        ab  -n 200 -c 200 -l https://www.linux202-siteA.com/
+        $ cat /etc/apache2/sites-enabled/siteA-ssl.conf
+        [ ... OUTPUT COUPÉ ... ]
+                # Mise en cache de tous les contenus
+                #CacheEnable  disk  /
+                #CacheIgnoreCacheControl On
+                #CacheDefaultExpire 3600
+        [ ... OUTPUT COUPÉ ... ]
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
 
+Je vais principalement manipuler la directive [MaxRequestWorkers](https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html#maxrequestworkers). Pour rappel cette directive définie le nombre de processus qu'apache va démarrer afin d'être en mesure de supporter la charge , en d'autre mot dans cette situation le site sera en mesure de fournir 150 clients concurrentiels. Nous allons faire un teste de charge avec 250 requêtes dont 250 concurrent :
 
-         # Prise 2 
-        cat /etc/apache2/mods-enabled/mpm_prefork.conf 
-
-        MaxRequestWorkers         150
-
-        ab  -n 250 -c 250 -l https://www.linux202-siteA.com/
+        [client]$ ab  -n 250 -c 250 -l https://www.linux202-siteA.com/
         Percentage of the requests served within a certain time (ms)
           50%   2416
           66%   2622
@@ -1840,26 +1852,41 @@ Voyons un exemple de configuration "classique" si vous avez 25 processus enfants
           100%   4805 (longest request)
 
 
-        ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum}'
-        bob@xerus:~$ bc -l
+        [server]$ $ ps aux  | egrep 'apache|RSS' | head   
+        USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+        root        58  0.1  0.9  90556 19536 ?        Ss   08:33   0:00 /usr/sbin/apache2 -k start
+        www-data    63  0.0  0.2  90588  5468 ?        S    08:33   0:00 /usr/sbin/apache2 -k start
+        [ ... OUTPUT COUPÉ ... ]
+
+        [server]$ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum}'
+        799480
+        [server]$ bc -l
         bc 1.06.95
         Copyright 1991-1994, 1997, 1998, 2000, 2004, 2006 Free Software Foundation, Inc.
         This is free software with ABSOLUTELY NO WARRANTY.
-        For details type `warranty'.
+        For details type warranty.
         799480 / 1024
         780.74218750000000000000
 
+Dans l'exemple ci-dessus lors de la monté en charge j'ai fait la calcule de la mémoire utilisé par apache , en additionnant la colonne __RSS__ . Comme vous pouvez le constater nous monté a 780 __Megs__ de __RAM__ , pour uniquement la page d'accueil avec 250 client concurrent, cette monté en charge n'est que temporaire le temps de faire le traitement des connexions. Est-ce vraiment requis ?!?! Nous communiquons uniquement avec la page d'accueil qui ne contient pas beaucoup d'information ... Nous pouvons voir aussi que le temps maximal de réponde pour la page est de 4805 ms.
 
-        # Prise 3 
-        cat /etc/apache2/mods-enabled/mpm_prefork.conf 
-
-        MaxRequestWorkers         50
-
-        $ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum}'
-        441432
+Réalisons une petite modification réalisons la même opération mais en réduisant le nombre de processus apache qui peut être démarré. Comme nous sommes en __prefork__ et qu'il y a copie du __stack__ mémoire pour chaque processus s'il y a moins de processus il y aura donc moins de mémoire. Je présume que votre premier réflexe est de vous dire : " oui c'est vraie, mais moins de processus pour prendre les requêtes vont exploser le temps de réponse ..." . Votre idée est juste mais présumé ce n'est pas confirmer :P , faisons le teste et regardons le résultat :
 
 
-        ab  -n 250 -c 250 -l https://www.linux202-siteA.com/
+        $ cat /etc/apache2/mods-enabled/mpm_prefork.conf
+        [ ... OUTPUT COUPÉ ... ]
+        <IfModule mpm_prefork_module>
+                StartServers                     5
+                MinSpareServers           5
+                MaxSpareServers          10
+                MaxRequestWorkers         50
+                MaxConnectionsPerChild   0
+        </IfModule>
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+
+Donc nous réduisons le nombre de processus utilisable par apache , nous le passons de 150 à 50
+
+        [client]$ ab  -n 250 -c 250 -l https://www.linux202-siteA.com/
         Percentage of the requests served within a certain time (ms)
           50%   2467
           66%   2746
@@ -1871,6 +1898,60 @@ Voyons un exemple de configuration "classique" si vous avez 25 processus enfants
           99%   4748
          100%   4806 (longest request)
 
+
+        [server]$ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum}'
+        441432
+        [server]$  bc -l
+        bc 1.06.95
+        Copyright 1991-1994, 1997, 1998, 2000, 2004, 2006 Free Software Foundation, Inc.
+        This is free software with ABSOLUTELY NO WARRANTY.
+        For details type warranty.
+        441432/ 1024
+        431.08593750000000000000
+
+Donc nous utilisons maintenant 431 __megs__ de RAM et comparons le résultat du temps de réponses du serveur :
+
+          150 Workers                               50 Workrs
+          % of the requests served (ms)             % of the requests served (ms)
+          50%   2416                                50%   2467
+          66%   2622                                66%   2746
+          75%   2753                                75%   2857
+          80%   2801                                80%   2954
+          90%   3089                                90%   3488
+          95%   3352                                95%   3894
+          98%   3735                                98%   4298
+          99%   4689                                99%   4748
+          100%  4805 (longest request)             100%   4806 (longest request)
+
+
+Nous avons presque réduit de 50% la mémoire utilisé par le système pour un impacte minime sur les temps de réponses, nous pouvons donc y voir comme un succès . Nous pourrions même essayer de réduire ce nombre encore à 25 par exemple :
+
+        [client]$ ab  -n 250 -c 250 -l https://www.linux202-siteA.com/
+        Percentage of the requests served within a certain time (ms)
+          50%   2443
+          66%   2690
+          75%   2825
+          80%   2893
+          90%   3316
+          95%   3704
+          98%   4024
+          99%   4488
+         100%   4660 (longest request)
+
+        [server]$ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END      {print sum}'
+        235584
+
+        [server]$ bc -l
+        bc 1.06.95
+        Copyright 1991-1994, 1997, 1998, 2000, 2004, 2006 Free Software Foundation, Inc.
+        This is free software with ABSOLUTELY NO WARRANTY.
+        For details type `warranty'. 
+        235584 / 1024
+        230.06250000000000000000
+
+Donc 250 __megs__ pour un impacte sur les temps de réponses encore franchement très très confortable. 
+
+**Woww** , bon je comprend l'économie de mémoire ... Mais si j'accepte que 50 connections et qu'il y en arrive 250 comment le serveur fait pour répondre ?!?! Où est la limite du serveur ?!?! Ceci n'est pas claire ! Vous avez raisons, ça demande un peu plus d'explication sur ce qui se passe sous le tapi :P.
 
 * Référence :
     * https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html
