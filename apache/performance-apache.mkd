@@ -306,7 +306,7 @@ Heu **for** quoi ?? Chaque nouveau processus est démarré suivant le principe d
 En d'autre mot une copie complète du processus avec un nouveau **PID** est généré sur le système, l'ensemble des allocations mémoire réalisé du processus parent sont transmis au processus enfant. 
 Apache essaie toujours de maintenir plusieurs processus serveurs __inactifs ou en réserve__, afin de pouvoir traiter les requêtes entrantes. De cette façon, les clients n'ont pas besoin d'attendre le démarrage d'un nouveau processus enfant pour que leurs requêtes puissent être traitées.
 La directive [MaxConnectionsPerChild](https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html#maxconnectionsperchild) permet de contrôler la fréquence à laquelle le serveur recycle ses processus en arrêtant les plus anciens et en en lançant de nouveaux.
-* [worker](https://httpd.apache.org/docs/2.4/fr/mod/worker.html) : Ce module multi-processus (MPM) implémente un serveur hybride multi-processus multi-thread. En utilisant les __threads__ pour servir les requêtes, il peut en traiter un grand nombre tout en consommant moins de ressources qu'un serveur à base de processus. Cependant, il conserve une grande partie de la stabilité d'un serveur à base de processus en maintenant plusieurs processus disponibles, chacun de ces derniers possédant de nombreux __threads__. Un processus de contrôle unique (le parent) a pour tâche de lancer les processus enfants. Chaque processus enfant crée un nombre fixe de __threads__ serveurs selon la valeur de la directive ThreadsPerChild, ainsi qu'un __thread__ chargé d'attendre les connexions et de les passer à un __thread__ serveur pour traitement au fur et à mesure de leur arrivée.
+* [worker](https://httpd.apache.org/docs/2.4/fr/mod/worker.html) : Ce module multi-processus (MPM) implémente un serveur hybride multi-processus multi-thread. En utilisant les __threads__ pour servir les requêtes, il peut en traiter un grand nombre tout en consommant moins de ressources qu'un serveur à base de processus. Cependant, il conserve une grande partie de la stabilité d'un serveur à base de processus en maintenant plusieurs processus disponibles, chacun de ces derniers possédant de nombreux __threads__. Un processus de contrôle unique (le parent) a pour tâche de lancer les processus enfants. Chaque processus enfant crée un nombre fixe de __threads__ serveurs selon la valeur de la directive __ThreadsPerChild__, ainsi qu'un __thread__ chargé d'attendre les connexions et de les passer à un __thread__ serveur pour traitement au fur et à mesure de leur arrivée.
 Le serveur HTTP Apache essaie toujours de maintenir un jeu de __threads__ serveurs inactifs ou en réserve, qui se tiennent prêts à traiter les requêtes entrantes. De cette façon, les clients n'ont pas besoin d'attendre la création d'un nouveau __thread__ ou d'un nouveau processus pour que leurs requêtes puissent être traitées. 
 Le gros avantage de ce module est que contrairement au système __fork__ ce n'est pas une copie complète du processus parent qui est dupliqué mais uniquement un processus démarrer, il utilise aussi moins de mémoire car les __threads__ partage un espace mémoire afin d'échanger de l'information sur le serveur. Cependant l'ensemble des module apache ne fonctionne pas tous en mode __threadé__ le plus connue **php** ne fonctionne pas à ce jour (2016) en mode __worker__.
 
@@ -1271,6 +1271,8 @@ Donc tous le mystère de la gestion des connexions est dans ces 2 paramètres :D
 
 Nous venons de couvrir le mode __prefork__ passons au mode __worker__ au risque de me répété, __prefork__ __fork__ les processus donc réalise une copie du processus pour faire le traitement alors que __worker__ fonctionne en mode __thread__ et utilise la mémoire partagé des __thread__ pour faire le traitement. 
 
+![prefork-vs-worker.png](./imgs/prefork-vs-worker.png)
+
 Je vais modifier le mode par défaut __préfork__ pour passer en mode __worker__.
 
         $ sudo a2enmod mpm_worker
@@ -1336,7 +1338,168 @@ Visualisons la configuration :
                 MaxConnectionsPerChild   0
         </IfModule>
 
+Analysons les directives disponible
 
+* **StartServers**
+
+    ![StartServers-screenshot.png](./imgs/StartServers-screenshot.png)
+
+    Définie le nombre de processus qui seront démarrer lors de l'initialisation du service , avec le module __worker__ la valeur par défaut est **2**. Cette valeur est généralement assez basse , l'objectif est d'être en mesure de répondre au première requêtes rapidement. Comme vous pouvez le constater la valeur est plus basse que pour le module __prefork__ comme le système utilise 1 processus pour traiter plusieurs demande à l'aide des __thread__ il a moins besoin de démarrer de processus pour prendre en charge la demande.
+
+* **MinSpareThreads**
+
+    ![MinSpareThreads-screenshot.png](./imgs/MinSpareThreads-screenshot.png)
+
+    C'est le nombre minimum de __threads__ inactifs pour être en mesure de traiter les pics de requêtes.
+    Sous le mode __worker__ , la définition par défaut est __MinSpareThreads 75__, et le nombre de __threads__ inactifs est surveillé au niveau du serveur. Si le serveur ne possède pas assez de __threads__ inactifs, des processus enfants sont créés jusqu'à ce que le nombre de __threads__ inactifs repasse au dessus de nombre.
+
+* **MaxSpareThreads**
+
+    ![MaxSpareThreads-screenshot.png](./imgs/MaxSpareThreads-screenshot.png)
+
+    C'est le nombre maximum de __threads__ inactifs.
+    Sous le mode __worker__ , la définition par défaut est __MaxSpareThreads 250__. Ce __MPM__ gère les __threads__ inactifs au niveau du serveur. Si le serveur possède trop de __threads__ inactifs, des processus enfants seront arrêtés jusqu'à ce que le nombre de __threads__ inactifs repasse en dessous de cette limite.
+
+* **ThreadLimit**
+
+    ![ThreadLimit-screenshot.png](./imgs/ThreadLimit-screenshot.png)
+
+    Cette directive permet de définir le nombre maximum que l'on peut affecter à la directive __ThreadsPerChild__ pour la durée de vie du processus Apache __httpd__. La directive __ThreadsPerChild__peut être modifiée au cours d'un redémarrage jusqu'à la valeur de la directive __ThreadLimit__, mais toute tentative de modification de la directive __ThreadLimit__ au cours d'un redémarrage sera ignorée.
+
+    L'utilisation de cette directive doit faire l'objet de précautions particulières. Si __ThreadLimit__ est définie à une valeur très supérieure à la directive __ThreadsPerChild__, de la mémoire partagée supplémentaire sera inutilement allouée. Si les directives __ThreadLimit__ et __ThreadsPerChild__ sont définies à des valeurs supérieures à ce que le système peut supporter, ce dernier peut devenir instable, ou Apache __httpd__ peut tout simplement refuser de démarrer. Ne définissez pas cette directive à une valeur supérieure à la valeur maximale que vous pensez affecter à la directive __ThreadsPerChild__ pour le processus Apache __httpd__ en cours d'exécution.
+
+* **ThreadsPerChild**
+
+    ![ThreadsPerChild-screenshot.png](./imgs/ThreadsPerChild-screenshot.png)
+
+    Cette directive permet de définir le nombre de __threads__ que va créer chaque processus enfant. Un processus enfant crée ces __threads__ au démarrage et n'en crée plus d'autres par la suite. Avec un __MPM__ comme __worker__ qui lance plusieurs processus enfants, c'est le nombre total de __threads__ qui doit être suffisamment grand pour supporter la charge du serveur
+
+
+* **MaxRequestWorkers**
+
+    ![MaxRequestWorkers-screenshot.png](./imgs/MaxRequestWorkers-screenshot.png)
+
+    La directive __MaxRequestWorkers__ permet de fixer le nombre maximum de requêtes pouvant être traitées simultanément. Si la limite __MaxRequestWorkers__ est atteinte, toute tentative de connexion sera normalement mise dans une file d'attente, et ceci jusqu'à un certain nombre dépendant de la directive __ListenBacklog__. Lorsqu'un processus enfant se libèrera suite à la fin du traitement d'une requête, la connexion en attente pourra être traitée à son tour.
+    Pour les serveur __threadés__ et hybrides (utilisant par exemple __event__ ou __worker__), __MaxRequestWorkers__ définit alors le nombre total de __threads__ qui seront disponibles pour servir les clients. Dans le cas des __MPMs__ hybrides, la valeur par défaut est 16 (directive __ServerLimit__) multiplié par la valeur 25 (directive __ThreadsPerChild__). Par conséquent, pour affecter à la directive __MaxRequestWorkers__ une valeur qui requiert plus de 16 processus, vous devez aussi augmenter la valeur de la directive __ServerLimit__.
+
+
+* **MaxConnectionsPerChild**
+
+    ![MaxConnectionsPerChild-screenshot.png](./imgs/MaxConnectionsPerChild-screenshot.png)
+
+    La directive __MaxConnectionsPerChild__ permet de définir le nombre maximum de connexions qu'un processus enfant va pouvoir traiter au cours de son fonctionnement. Lorsqu'il a traité __MaxConnectionsPerChild__ connexions, le processus enfant est arrêté. Si __MaxConnectionsPerChild__ est définie à 0, il n'y a plus aucune limite sur le nombre de connexions que le processus pourra traiter. Définir __MaxConnectionsPerChild__ à une valeur non nulle limite la quantité de mémoire qu'un processus peut consommer à cause de fuites (accidentelles) de mémoire.
+
+##### <a name="perf_worker_optimisation" /> MPM Worker Optimisation
+
+Maintenant que l'on comprend un peu mieux la configuration du système de démarrage des processus apache nous allons pouvoir discuter de modification de configuration afin d'améliorer les performances. Je vous préviens tous de suite à moins d'avoir un site web ultra chargé les gains de performances ne seront pas si significatif, de plus vous devrez faire des testes de validation et prendre des " risques " jusqu'à un certain point lors des modifications. 
+Le plus gros gains que vous allez avoir est si vous avez un __VPS__ avec peu de __RAM__ ou si vous prenez une instance __Amazon EC2__ avec peu de mémoire et de __cpu__.
+
+Nous allons commencer par voir le comportement du système __worker__ pour réaliser les manipulations par la suite . Premièrement conformément à la directive [StartServers](https://httpd.apache.org/docs/2.4/fr/mod/mpm_common.html#startservers) lors du démarrage du service nous avons bien uniquement 2 processus en plus de celui qui écoute sur le(s) port(s).
+
+        $ ps aux |grep apache2
+        root        54  0.0  0.3   8952  6580 ?        Ss   08:41   0:00 /usr/sbin/apache2 -k start
+        www-data    59  0.0  0.2 231584  4656 ?        Sl   08:41   0:00 /usr/sbin/apache2 -k start
+        www-data    60  0.0  0.2 231584  4656 ?        Sl   08:41   0:00 /usr/sbin/apache2 -k start
+
+Nous allons monté en charge tranquillement avec un premier teste afin de voir le comportement des processus. Nous allons y allé gentiment avec un 200 requêtes dont 10 concurrentes.
+
+        [client]$ ab  -n 100 -c 10 -l https://www.linux202-siteA.com/
+        [ ... OUTPUT COUPÉ ... ]
+        Concurrency Level:      10
+        Time taken for tests:   2.056 seconds
+        Complete requests:      100
+        Failed requests:        0
+        Total transferred:      36900 bytes
+        HTML transferred:       10000 bytes
+        Requests per second:    48.63 [#/sec] (mean)
+        Time per request:       205.628 [ms] (mean)
+        Time per request:       20.563 [ms] (mean, across all concurrent requests)
+        Transfer rate:          17.52 [Kbytes/sec] received
+
+        Connection Times (ms)
+                      min  mean[+/-sd] median   max
+                      Connect:       33  184  92.6    213     291
+                      Processing:     1   12  17.1      5      77
+                      Waiting:        0    9  14.4      3      64
+                      Total:         34  196  95.1    240     303
+
+        Percentage of the requests served within a certain time (ms)
+           50%    240
+           66%    263
+           75%    284
+           80%    285
+           90%    287
+           95%    292 
+           98%    300 
+           99%    303 
+          100%    303 (longest request)
+
+        [server]$ ps aux | grep apache2
+        root        54  0.0  0.3   8952  6580 ?        Ss   08:41   0:00 /usr/sbin/apache2 -k start
+        www-data    59  0.4  0.3 234884  8084 ?        Sl   08:41   0:01 /usr/sbin/apache2 -k start
+        www-data    60  0.3  0.3 234744  8020 ?        Sl   08:41   0:01 /usr/sbin/apache2 -k start
+
+Comme l'ensemble des requêtes furent traité par des __threads__ exécuter par les processus il n'y a pas d'augmentation de ces derniers.
+
+J'aimerai porter votre attention sur le premier teste de **AB** que nous avions réalisé [présentation de ab](#perf_bench_ab), nous avions utilisé le même nombre de requête mais avec le système __prefork__ , voici les résultats que nous avions eu :
+
+        Concurrency Level:      10
+        Time taken for tests:   2.263 seconds
+        Complete requests:      100
+        Failed requests:        0
+        Total transferred:      36900 bytes
+        HTML transferred:       10000 bytes
+        Requests per second:    44.19 [#/sec] (mean)
+        Time per request:       226.313 [ms] (mean)
+        Time per request:       22.631 [ms] (mean, across all concurrent requests)
+        Transfer rate:          15.92 [Kbytes/sec] received
+
+        Connection Times (ms)
+                      min  mean[+/-sd] median   max
+        Connect:       33  189  77.2    201     456
+        Processing:     1   22  19.3     19      86
+        Waiting:        0   16  16.5      9      76
+        Total:         34  210  82.5    215     457
+
+        Percentage of the requests served within a certain time (ms)
+        50%    215
+        66%    237
+        75%    253
+        80%    258
+        90%    288
+        95%    363
+        98%    403
+        99%    457
+        100%   457 (longest request)
+
+Il n'y a pas beaucoup de différence cependant on voit que sur la duré le système de __thread__ répond mieux, ceci est principalement au fait que le système n'a pas besoin d'attendre que le système d'exploitation démarre des processus pour faire la gestion des requêtes.
+
+Montons en charge pour voir un peu :D 
+
+        [client]$ ab  -n 200 -c 50 -l https://www.linux202-siteA.com/
+        [... OUTPUT COUPÉ ..]
+        Percentage of the requests served within a certain time (ms)
+          50%    992
+          66%   1007
+          75%   1014
+          80%   1026
+          90%   1066
+          95%   1073
+          98%   1077
+          99%   1135
+         100%   1266 (longest request)
+
+
+        [server]$ ps aux | grep apache
+        root        54  0.0  0.3   8952  6580 ?        Ss   08:41   0:00 /usr/sbin/apache2 -k start
+        www-data    59  0.4  0.4 236072  9396 ?        Sl   08:41   0:03 /usr/sbin/apache2 -k start
+        www-data    60  0.3  0.4 235944  9556 ?        Sl   08:41   0:03 /usr/sbin/apache2 -k start
+        www-data   129 26.8  0.4 235796  9264 ?        Sl   08:54   0:01 /usr/sbin/apache2 -k start
+        www-data   159  0.0  0.2 231584  4660 ?        Sl   08:54   0:00 /usr/sbin/apache2 -k start
+
+        [server]$ ps aux | grep apache
+        root        54  0.0  0.3   8952  6580 ?        Ss   08:41   0:00 /usr/sbin/apache2 -k start
+        www-data   191  0.0  0.2 231584  4660 ?        Sl   08:54   0:00 /usr/sbin/apache2 -k start
 
 ### <a name="perf_php" /> Amélioration des performances de php
 
