@@ -7,6 +7,30 @@ TODO corriger les \_
 
 # Index 
 
+* [ Performance et analyse d'apache](#performance) 
+       * [ Visualisation de la situation](#perf_view) 
+       * [ Simulation de charge sur le serveur](#perf_simulation) 
+           * [ Utilisation du logiciel ApacheBench (AB)](#perf_bench_ab) 
+               * [ Utilisation du logiciel ApacheBench (AB) avec Authentification](#perf_bench_ab_auth) 
+           * [ Utilisation du Siege ](#perf_bench_seige) 
+               * [ Utilisation du logiciel Siege  avec Authentification](#perf_bench_siege_auth) 
+               * [ Avantage de l'utilisation du logiciel Siege](#perf_bench_siege_plus) 
+           * [ Utilisation de JMeter](#perf_bench_jmeter) 
+           * [ Utilisation de Ngrinder](#perf_bench_ngrinder) 
+       * [ Analyse des performances ](#perf_view) 
+           * [ Visualisation des processus Apache](#perf_view_apache_process) 
+           * [ Visualisation des pages traité par le processus](#perf_view_apache_process_status) 
+           * [ Analyse problème de charge CPU](#perf_view_cpu_prob) 
+               * [ Utilisation de mod_cache](#perf_mod_cache) 
+               * [ Augmentation de la charge du à un problème d'Input/Output (tmpfs)](#perf_wait_access) 
+           * [ Configuration de l'exécution d'apache (Worker vs Prefork)](#perf_conf_worker_prefork) 
+               * [ MPM prefork](#perf_prefork) 
+                   * [ MPM prefork Optimisation](#perf_prefork_optimisation) 
+               * [ MPM worker](#perf_worker) 
+                   * [ MPM Worker Optimisation](#perf_worker_optimisation) 
+           * [ Amélioration des performances de php](#perf_php) 
+* [ Référence :](#Reference) 
+
 # <a name="performance" /> Performance et analyse d'apache
 
 Il est très difficile de faire une section performance, car les problèmes peuvent être très varié. Une configuration peut avoir un impacte d'amélioration signification pour un environnement et dans un autre environnement avoir un impacte négatif. De plus selon le point de vue la perception peut être différente , exemple de propos :
