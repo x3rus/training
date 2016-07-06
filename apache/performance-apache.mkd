@@ -1525,6 +1525,101 @@ Montons en charge pour voir un peu :D
         root        54  0.0  0.3   8952  6580 ?        Ss   08:41   0:00 /usr/sbin/apache2 -k start
         www-data   191  0.0  0.2 231584  4660 ?        Sl   08:54   0:00 /usr/sbin/apache2 -k start
 
+
+Je vais remettre le système de __prefork__ et faire une vraie monté en charge afin de démontré la différence de comportement nous allons toujours utiliser la page d'accueil afin d'avoir un teste équivalent . 
+
+Pour rappel la configuration __prefork__ 
+
+        $ cat /etc/apache2/mods-available/mpm_prefork.conf
+        <IfModule mpm_prefork_module>
+                StartServers                     5
+                MinSpareServers           5
+                MaxSpareServers          10
+                MaxRequestWorkers        150
+                MaxConnectionsPerChild   0
+        </IfModule>
+
+        [server]$ uptime
+         08:17:32 up 7 min,  1 user,  load average: 0.50, 0.48, 0.28
+
+        [client]$ ab  -n 500 -c 100 -l https://www.linux202-siteA.com/
+        Percentage of the requests served within a certain time (ms)
+          50%   1953
+          66%   2038
+          75%   2083
+          80%   2114
+          90%   2195
+          95%   2227
+          98%   2348
+          99%   2392
+         100%   2434 (longest request)
+
+        # apres le teste de charge 
+        [server]$ uptime
+         08:18:39 up 8 min,  1 user,  load average: 3.16, 1.04, 0.47
+
+
+J'active le mode __prefork__ et refait le teste ...
+
+        $ cat /etc/apache2/mods-enabled/mpm_worker.conf
+        <IfModule mpm_worker_module>
+               StartServers                     2
+               MinSpareThreads          25
+               MaxSpareThreads          75
+               ThreadLimit                      64
+               ThreadsPerChild          25
+               MaxRequestWorkers         150
+               MaxConnectionsPerChild   0
+        </IfModule>
+        
+        [server]$ uptime
+        08:21:42 up 11 min,  1 user,  load average: 0.36, 0.68, 0.44
+
+        [client]$ ab  -n 500 -c 100 -l https://www.linux202-siteA.com/
+        Percentage of the requests served within a certain time (ms)
+          50%   1964
+          66%   2103
+          75%   2189
+          80%   2267
+          90%   2501
+          95%   2622
+          98%   2848
+          99%   3071
+         100%   3454 (longest request)
+
+
+        # apres le teste de charge 
+        [server]$ uptime
+        08:23:43 up 13 min,  1 user,  load average: 14.77, 4.49, 1.75
+
+Clairement c'est plus performant ... Heu __oupss__ le __load__ de la machine est monté a 14.77, il y a un problème nous ne serons pas en mesure de monté en charge si la machine est autant sollicité.
+
+La question est pourquoi cette monté en charge, ce qui n'est pas affiché dans la démonstration ci-dessus c'est le nombre de processus qui furent démarrer même si le système de __thread__ est plus performant mon système n'est pas en mesure de supporter cette monté en charge.
+
+Je vais réduire  le nombre de **MaxRequestWorkers** de 150 à 25
+
+        
+        [server]$ uptime
+         08:31:31 up 21 min,  1 user,  load average: 0.58, 2.61, 1.95
+
+        [client]$ ab  -n 500 -c 100 -l https://www.linux202-siteA.com/
+        Percentage of the requests served within a certain time (ms)
+          50%   2149 
+          66%   2557 
+          75%   2602 
+          80%   2634 
+          90%   2693 
+          95%   2708 
+          98%   2751 
+          99%   2755 
+         100%   2802 (longest request)
+
+        # apres le teste de charge 
+        [server]$ uptime
+         08:31:45 up 21 min,  1 user,  load average: 2.30, 2.89, 2.06
+
+Une nouvelle fois en réduisant le nombre de traitement concurrent que j'accepte de manière concurrente je réduit la charge sur le serveur et permet un meilleur traitement de ces derniers.
+
 ### <a name="perf_php" /> Amélioration des performances de php
 
 Personnellement je ne suis pas un grand fan de __PHP__ pas que ce soit un mauvais langage de programmation, cependant ça simplicité de développement a amené  sont lot de page mal programmé. Résultat j'ai un préjugé négatif de ce langage , je suis honnête dans mon propos, cependant c'est une réalité que les pages __php__ sont très présent dans notre réalité.
