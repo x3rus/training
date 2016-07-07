@@ -1618,9 +1618,70 @@ Je vais réduire  le nombre de **MaxRequestWorkers** de 150 à 25
         [server]$ uptime
          08:31:45 up 21 min,  1 user,  load average: 2.30, 2.89, 2.06
 
-Une nouvelle fois en réduisant le nombre de traitement concurrent que j'accepte de manière concurrente je réduit la charge sur le serveur et permet un meilleur traitement de ces derniers.
+Une nouvelle fois en réduisant le nombre de traitement concurrent que j'accepte , je réduit la charge sur le serveur et permet un meilleur traitement de ces derniers.
+
+Mais , mais , mais on avait pas dit que __worker__ est plus performant ... Oui car il ne réalise pas une copie des processus mais gère les requêtes par __thread__ 
+
+**Worker**
+
+        # Utilisation de la RAM au démarrage 
+        [server]$ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+         11.3555 Megs
+        [server]$ uptime
+         08:45:11 up 24 min,  1 user,  load average: 0.20, 0.28, 0.33
+
+        [client]$ ab  -n 500 -c 100 -l https://www.linux202-siteA.com/
+        [... OUTPUT COUPÉ ...]
+        Percentage of the requests served within a certain time (ms)
+          50%   1933
+          66%   2052
+          75%   2126
+          80%   2157
+          90%   2224
+          95%   2250
+          98%   2279
+          99%   2316
+         100%   2326 (longest request)
+
+        [server]$ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+        16.0039 Megs
+
+        [server]$ $ uptime
+         08:48:57 up 28 min,  1 user,  load average: 2.02, 0.65, 0.44
+
+Donc avec le mode __worker__ pendant le temps du traitement nous sommes monté à un gros 16 Megs de RAM pour traiter les requêtes.
+
+**PreFork**
+
+        # Switch de la configuration
+        [server]$ sudo a2dismod mpm_worker
+        [server]$ sudo a2enmod mpm_prefork
+        [server]$ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+
+        # Utilisation de la RAM au démarrage 
+        [server]$ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+        23.0352 Megs
+
+        [server]$ uptime
+         08:53:48 up 33 min,  1 user,  load average: 0.29, 0.47, 0.41
+
+        [client]$ ab  -n 500 -c 100 -l https://www.linux202-siteA.com/
+        [... OUTPUT COUPÉ ...]
+
+        [server]$ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+        157.547 Megs
+
+        [server]$ uptime
+         08:54:40 up 34 min,  1 user,  load average: 2.39, 0.90, 0.56
+
+**Conclusion**
+
+Bien que la charge sur le serveur est sensiblement équivalent au niveau du __load average__ nous voyons clairement un gain au niveau de la gestion de la mémoire . Pour le même teste nous passons de 157 __Megs__ (__prefork__) à 16 __Megs__ (__worker__) un petit 141 __Megs__ d économisé. 
+
+Vous me direz peut-être la RAM n'est pas très chère , cependant si vous voyez l'utilisation de plusieurs instance Amazon EC2, ou la location de petite machine à moindre coût telle que des __VPS__ vous aurez tous avantage à mieux utiliser la mémoire disponible. Nous aurons le même requis si nous mettons en place des dockers sur une même machine pour faire la gestion de micro services..
 
 ### <a name="perf_php" /> Amélioration des performances de php
+
 
 Personnellement je ne suis pas un grand fan de __PHP__ pas que ce soit un mauvais langage de programmation, cependant ça simplicité de développement a amené  sont lot de page mal programmé. Résultat j'ai un préjugé négatif de ce langage , je suis honnête dans mon propos, cependant c'est une réalité que les pages __php__ sont très présent dans notre réalité.
 
