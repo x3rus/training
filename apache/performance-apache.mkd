@@ -1680,12 +1680,58 @@ Bien que la charge sur le serveur est sensiblement équivalent au niveau du __lo
 
 Vous me direz peut-être la RAM n'est pas très chère , cependant si vous voyez l'utilisation de plusieurs instance Amazon EC2, ou la location de petite machine à moindre coût telle que des __VPS__ vous aurez tous avantage à mieux utiliser la mémoire disponible. Nous aurons le même requis si nous mettons en place des dockers sur une même machine pour faire la gestion de micro services..
 
+Super me direz vous mais j'ai besoin d'avoir __php__ moi, vous avez probablement une application développé avec ce langage qui est difficile a vous départir. Vous n'avez pas envie d'avoir un autre serveur apache uniquement pour fournir le service __php__ qui fonctionne en __préfork__. Nous allons donc maintenant voir comment nous pouvons faire fonctionner __php__avec le mode __worker__. 
+
 ### <a name="perf_php" /> Amélioration des performances de php
 
 
-Personnellement je ne suis pas un grand fan de __PHP__ pas que ce soit un mauvais langage de programmation, cependant ça simplicité de développement a amené  sont lot de page mal programmé. Résultat j'ai un préjugé négatif de ce langage , je suis honnête dans mon propos, cependant c'est une réalité que les pages __php__ sont très présent dans notre réalité.
+Personnellement je ne suis pas un grand fan de __PHP__ pas que ce soit un mauvais langage de programmation, cependant ça simplicité de développement a amené  sont lot de page mal programmé. Résultat j'ai un préjugé négatif de ce langage , je suis honnête dans mon propos, cependant c'est une réalité que les pages __php__ sont très présent dans notre quotidien.
 
-Nous donc voir comment nous pouvons améliorer les performances de notre système apache lorsque nous devons exécuter du __php__.
+Nous allons donc voir comment nous pouvons améliorer les performances de notre système apache lorsque nous devons exécuter du __php__. Nous avons vu comment géré le problème de __CPU__ à l'aide d'un système de cache , nous avons vu comment traiter le problème d'__IO__ lors de l'écriture de fichier à l'aide d'un système de fichier en mémoire. Par contre la solution idéal pour le problème de mémoire reste l'utilisation du module de gestion de processus __worker__ malheureusement __mod\_php__ ne peut pas fonctionner avec ce dernier. Voyons une solution à ce problème , nous allons utiliser __php5-fpm__.
+
+#### <a name="perf_php_php5-fpm" /> Utilisation en mode cgi (php5-fpm)
+
+__PHP-FPM__ (__FastCGI Process Manager__) est une interface [SAPI](https://fr.wikipedia.org/wiki/Server_Application_Programming_Interface) permettant la communication entre un serveur Web et __PHP__, basée sur le protocole __FastCGI__ et écrite par __Andrei Nigmatulin__.
+
+#### <a name="perf_php_php5-fpm_installation" /> Installation & configuration de php5-fpm
+
+Merci Debian nous avons un pacquage pour ça :P.
+
+        $ sudo apt-get install php5-fpm
+
+REF : https://www.digitalocean.com/community/questions/apache-2-4-with-php5-fpm
+
+**comparatif de performance prefork**
+
+
+$ uptime
+ 08:40:58 up 22 min,  1 user,  load average: 0.17, 0.44, 0.41
+ bob@xerus:/etc/apache2$ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+ 59.332 Megs
+
+ $ ab  -n 100 -c 10 -l https://www.linux202-siteA.com/info.php
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+              Connect:       51  191  65.0    197     334
+              Processing:     9   41  23.0     34     133
+              Waiting:        1   21  16.0     18      95
+              Total:         65  232  73.9    230     407
+
+Percentage of the requests served within a certain time (ms)
+50%    230
+66%    269
+75%    289
+80%    296
+90%    327
+95%    340
+98%    383
+99%    407
+100%    407 (longest request)
+
+ $ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+ 130.27 Megs
+ bob@xerus:/etc/apache2$ uptime
+  08:41:58 up 23 min,  1 user,  load average: 0.14, 0.38, 0.39
 
 Idée :
 * __Jmeter__
