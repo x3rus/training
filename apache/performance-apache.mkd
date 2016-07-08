@@ -1697,7 +1697,175 @@ __PHP-FPM__ (__FastCGI Process Manager__) est une interface [SAPI](https://fr.wi
 
 Merci Debian nous avons un pacquage pour ça :P.
 
-        $ sudo apt-get install php5-fpm
+        $ sudo apt-get install php5-fpm libapache2-mod-fastcgi
+
+Ceci va nous permettre d'avoir un service __Fastcgi__ disponible pour apache, mais c'est quoi ça __Fastcgi__ en d'autre mot au lieu qu'apache soit en mesure d'interpréter lui même à l'interne les fichiers de type __php__ il va exécuter la la commande __/usr/bin/php__ pour générer la page . Le point négatif si vous utilisez cette méthode est que j'ai déjà vu dans le passer un petit changement de comportement dans les pages __php__ lorsque ce dernier s'attend à "vivre" dans apache. Nous avions rencontré un problème principalement dans des variables d'environnement qui ne sont pas présente, car non exécuter sous apache.
+
+Suite à l'opération vous pouvez constater que le module __FastCGI__ est déjà actif :
+
+        $  ls -l /etc/apache2/mods-enabled/*fast*
+        lrwxrwxrwx 1 root root 30 Jul  8 17:05 /etc/apache2/mods-enabled/fastcgi.conf -> ../mods-available/fastcgi.conf
+        lrwxrwxrwx 1 root root 30 Jul  8 17:05 /etc/apache2/mods-enabled/fastcgi.load -> ../mods-available/fastcgi.load
+
+
+Nous allons désactiver le __mod\_php__ et mettre le système en mode __worker__ :
+
+        $ sudo a2dismod php5
+        $ sudo a2dismod mpm_prefork
+        $ sudo a2enmod  mpm_worker
+
+Nous pourrions redémarrer apache à ce stade mais nous allons mettre en place la configuration pour __php-fpm__. Nous allons donc créer le fichier de configuration **/etc/apache2/conf-available/php5-fpm.conf**
+
+        <IfModule mod_fastcgi.c>
+            AddHandler php5-fcgi .php
+            Action php5-fcgi /php5-fcgi
+            Alias /php5-fcgi /usr/lib/cgi-bin/php5-fcgi
+            FastCgiExternalServer /usr/lib/cgi-bin/php5-fcgi -socket /var/run/php5-fpm.sock -pass-header Authorization
+        </IfModule>
+
+Analysons le fichier de configuration :
+
+* **AddHandler** : nous ajoutons un interpréter pour les fichiers dont l'extension se termine par __.php__ lors que ce type de fichier sera traiter nous appellerons l'__handler__  (l'interpréteur) __php-fcgi__
+* **Action** : Suite à l'identification de l'extension du fichier nous définissons l'action a prendre nous lui indiquons de communiquer avec __/php5-fcgi__
+* **Alias** : Nous l'avons déjà vu le mode Alias ceci nous permet de redirigé une destination dans l'URL vers un autre __PATH__ sur le serveur. Dans notre cas ce sera __/usr/lib/cgi-bin/php5-fcgi__
+* **FastCgiExternalServer** : Pour terminé nous spécifions que lors de la communication au fichier __/usr/lib/cgi-bin/php5-fcgi__ il doit le transmettre au __socket__ __/var/run/php5-fpm.sock__ via le système de __FastCgi__.
+
+**WOOT**, j'ai presque compris :P , bon voyons les fichiers maintenant : 
+
+        $ ls -l /usr/lib/cgi-bin/php5-fcgi
+        ls: cannot access /usr/lib/cgi-bin/php5-fcgi: No such file or directory
+        $ ls -l /var/run/php5-fpm.sock
+        ls: cannot access /var/run/php5-fpm.sock: No such file or directory
+
+
+Bon là si vous avez juste copiez collé les fichiers de configuration vous vous dites , voilà Thomas a écris la documentation après la victoire de la France contre l'Allemagne à __l'EURO__ 2016. Il était dans les patates ... Pas de panique j'ai cuvé depuis :P
+
+Le fichier __/usr/lib/cgi-bin/php5-fcgi__ n'est pas vraie mais uniquement pour forcé l'appelle  du __FastCgiExternalServer__ , nous allons créer un fichier vide .
+
+        $ sudo touch /usr/lib/cgi-bin/php5-fcgi
+        $ ls -ld /usr/lib/cgi-bin/php5-fcgi
+        -rw-r--r-- 1 root root 0 Jul  8 17:24 /usr/lib/cgi-bin/php5-fcgi
+
+Le fichier __/var/run/php5-fpm.sock__ est un __socket__ définie par le service __php5-fpm__ nous allons donc le démarrer , bien entendu il faut aussi vous assurer que ce service redémarre lors d'un redémarrage du serveur tous comme apache.
+
+        $ sudo /etc/init.d/php5-fpm start
+        $ sudo /etc/init.d/php5-fpm status
+         * php5-fpm is running
+        $ ls -l  /var/run/php5-fpm.sock
+         srw-rw---- 1 www-data www-data 0 Jul  8 17:26 /var/run/php5-fpm.sock
+
+Activons la configuration :
+
+        $ cd /etc/apache2/conf-enabled/
+        $ sudo ln -s ../conf-available/php5-fpm.conf
+Bon ça semble bon GO ?
+
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+        AH00526: Syntax error on line 3 of /etc/apache2/conf-enabled/php5-fpm.conf:
+        Invalid command 'Action', perhaps misspelled or defined by a module not included in the server configuration
+        Action 'configtest' failed.
+        The Apache error log may have more information.
+
+__Oupss__ il manquait un module 
+
+        $ sudo a2enmod  actions
+
+__RE__ GO ?
+
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+        Syntax OK
+         * Restarting web server apache2
+             ...done.
+
+Validons l'URL : https://www.linux202-sitea.com/info.php
+__Issh__ :   __You don't have permission to access /php5-fcgi/info.php on this server.__
+
+Validons les logs, j'aime mettre quelque erreurs dans mes formations ceci permet de voir un peu de pratique d'analyse car malheureusement ça marche rarement du premier coup :P, ce sera probablement pas les même erreurs mais ça vous offre une démonstration d'analyse .
+
+        $ tail /data/vhosts/siteA/logs/error-ssl.log
+        [... OUPUT COUPÉ ...]
+        [Fri Jul 08 17:29:39.669126 2016] [authz_core:error] [pid 473:tid 3051350848] [client 172.17.42.1:43232] AH01630: client denied by server configuration: /usr/lib/cgi-bin/php5-fcgi
+
+Pourquoi ?? Rappelez au niveau de la sécurité j'aime bloqué l'ensemble du système avec depuis la racine résultat toutes nouvelle configuration m'oblige à ouvrir l'accès ... Nous allons donc modifier la configuration afin de permettre l'accès au répertoire __/usr/lib/cgi-bin/__. Ouvrons le fichier 
+
+        <IfModule mod_fastcgi.c>
+            AddHandler php5-fcgi .php
+            Action php5-fcgi /php5-fcgi
+            Alias /php5-fcgi /usr/lib/cgi-bin/php5-fcgi
+            FastCgiExternalServer /usr/lib/cgi-bin/php5-fcgi -socket /var/run/php5-fpm.sock -pass-header Authorization
+
+             # Authorization de l'access au repertoire cgi-bin
+            <Directory /usr/lib/cgi-bin>
+                Require all granted
+            </Directory> 
+        </IfModule>
+
+C'est repartie :D : 
+
+        $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
+
+Nous allons sur l'URL : https://www.linux202-sitea.com/info.php : **WOOT** ça marche ... Allez c'est le temps du stresse teste . Pour le calcule de l'utilisation de la RAM, j'ai changé un peu la commande car en plus d'apache nous devons être en mesure de calculer le service __php__ :
+
+        $  ps aux  | tr -s " " | grep ^www-data
+        www-data 422 0.0 0.2 86620 4700 ? S 17:26 0:00 php-fpm: pool www
+        www-data 423 0.0 0.4 86620 9912 ? S 17:26 0:00 php-fpm: pool www
+        www-data 551 0.0 0.1 8380 3200 ? S 17:36 0:00 /usr/sbin/fcgi-pm -k start
+        www-data 552 0.0 0.3 232920 7016 ? Sl 17:36 0:00 /usr/sbin/apache2 -k start
+
+        $  ps aux  | tr -s " " | grep ^www-data | cut -d " " -f 6,11- | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+        24.2461 Megs
+
+Donc nous avons le processus __apache2__ mais aussi l'ensemble des processus en lien à la gestion de __php__ 
+
+J'ai vraiment hâte de faire le teste de charge donc GO :). 
+
+        [server]$ uptime 
+        17:41:51 up 47 min,  1 user,  load average: 0.53, 0.47, 0.41
+
+        [server]$  ps aux  | tr -s " " | grep ^www-data | cut -d " " -f 6,11- | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+        24.2461 Megs
+
+        [client]$ ab  -n 100 -c 10 -l https://www.linux202-siteA.com/info.php
+        Percentage of the requests served within a certain time (ms)
+          50%    241
+          66%    263
+          75%    287
+          80%    294
+          90%    313
+          95%    339
+          98%    353
+          99%    361
+         100%    361 (longest request)
+
+        [server]$ ps aux  | tr -s " " | grep ^www-data | cut -d " " -f 6,11- | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+        29.543 Megs
+
+        [server]$ uptime
+         17:43:26 up 49 min,  1 user,  load average: 0.95, 0.59, 0.46
+
+Deuxième teste :
+
+        [server]$ $ uptime
+         17:46:41 up 52 min,  1 user,  load average: 0.45, 0.57, 0.48
+        [server]$ ps aux  | tr -s " " | grep ^www-data | cut -d " " -f 6,11- | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+         29.543 Megs
+
+         [client]$ ab  -n 300 -c 30 -l https://www.linux202-siteA.com/info.php
+         Percentage of the requests served within a certain time (ms)
+           50%    781
+             66%    842
+               75%    886
+                 80%    933
+                   90%   1106
+                     95%   1229
+                       98%   1348
+                         99%   1404
+                          100%   1417 (longest request)
+
+         [server]$ uptime
+          17:46:55 up 52 min,  1 user,  load average: 2.42, 1.00, 0.62
+          bob@xerus:/etc/apache2/conf-enabled$ ps aux  | tr -s " " | grep ^www-data | cut -d " " -f 6,11- | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+          39.4375 Megs
 
 REF : https://www.digitalocean.com/community/questions/apache-2-4-with-php5-fpm
 
