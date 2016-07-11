@@ -29,6 +29,10 @@ TODO corriger les \_
                * [ MPM worker](#perf_worker) 
                    * [ MPM Worker Optimisation](#perf_worker_optimisation) 
            * [ Amélioration des performances de php](#perf_php) 
+               * [ Utilisation en mode cgi (php5-fpm)](#perf_php_php5-fpm) 
+               * [ Installation & configuration de php5-fpm](#perf_php_php5-fpm_installation) 
+               * [ test de performance avec php5-fpm](#perf_php_php5-fpm_perf) 
+               * [ Comparatif avec prefork et mod_php5](#perf_php_php5-fpm_perf_vs_mod_php5) 
 * [ Référence :](#Reference) 
 
 # <a name="performance" /> Performance et analyse d'apache
@@ -1963,11 +1967,18 @@ Deuxième teste avec 300 requêtes dont 30 concurrentes :
 
 Dans la situation actuelle avec un serveur qui à très peu de CPU nous avons des résultats très similaire dans les deux modes ,en terme de temps de réponse des pages web . Nous pouvons aussi constater que la charge sur le CPU est très similaire si nous nous référons au __load average__ du système . Nous pouvons constater une grosse amélioration de l'utilisation du système au niveau de la mémoire nous avons une énorme économique en utilisant le mode __mpm\_worker__ .
 
-Idée :
-* __Jmeter__
+### <a name="perf_bandwidth" /> Correction de transfert de donnée
+
+Nous avons vu l'utilisation de __mod\_cache__ qui nous à permit de définir un système de cache sur les pages qui sont appeler sur notre serveur améliorant ainsi la charge du CPU utilisé lors de l'appel. Je vais faire mention d'un autre module à analyser si vous avez un autre type de problème. Je ne prendrai pas le temps de faire la démonstration de son utilisation, je vous laisse se plaisir . Je pense que ma plus value n'est pas tant dans la démonstration de chaque fonctionnalité mais plutôt  dans la démonstration des principes.
+
+Si vous avez un problème d'utilisation de bande passante, votre site transmet énormément de donnée ceci congestionnant le lien internet ou causant un ralentissement lors du transfert au client. Avec le module [mod\_deflate](http://httpd.apache.org/docs/current/fr/mod/mod_deflate.html) vous pourrez mettre un place un système de compression de votre site lors du transfert au client . Bien entendu ceci aura un impacte sur l'utilisation du CPU sur votre machine car la compression a un coup !
+
+Je vous laisse le plaisir de consulter  le site d'apache en lien avec ce module : [mod\_deflate](http://httpd.apache.org/docs/current/fr/mod/mod_deflate.html) .
+
 * __cactis  / piwik__
 * __sleep mysql__ : http://dev.mysql.com/doc/refman/5.7/en/miscellaneous-functions.html#function_sleep
 * __fail 2 ban__ : against DOS
+        REF: https://www.digitalocean.com/community/tutorials/how-to-protect-an-apache-server-with-fail2ban-on-ubuntu-14-04
 
 * URL :
     * http://httpd.apache.org/docs/current/misc/perf-tuning.html
