@@ -1804,6 +1804,22 @@ C'est repartie :D :
 
         $ sudo apachectl configtest && sudo /etc/init.d/apache2 restart
 
+#### <a name="perf_php_php5-fpm_perf" /> test de performance avec php5-fpm
+
+Visualisation des configurations de __mpm\_worker__ :
+
+        $ cat /etc/apache2/mods-enabled/mpm_worker.conf
+        <IfModule mpm_worker_module>
+                StartServers                     2
+                MinSpareThreads          25
+                MaxSpareThreads          75
+                ThreadLimit                      64
+                ThreadsPerChild          25
+                MaxRequestWorkers         25
+                MaxConnectionsPerChild   0
+        </IfModule>
+
+
 Nous allons sur l'URL : https://www.linux202-sitea.com/info.php : **WOOT** ça marche ... Allez c'est le temps du stresse teste . Pour le calcule de l'utilisation de la RAM, j'ai changé un peu la commande car en plus d'apache nous devons être en mesure de calculer le service __php__ :
 
         $  ps aux  | tr -s " " | grep ^www-data
@@ -1853,60 +1869,105 @@ Deuxième teste :
          [client]$ ab  -n 300 -c 30 -l https://www.linux202-siteA.com/info.php
          Percentage of the requests served within a certain time (ms)
            50%    781
-             66%    842
-               75%    886
-                 80%    933
-                   90%   1106
-                     95%   1229
-                       98%   1348
-                         99%   1404
-                          100%   1417 (longest request)
+           66%    842
+           75%    886
+           80%    933
+           90%   1106
+           95%   1229
+           98%   1348
+           99%   1404
+          100%   1417 (longest request)
 
          [server]$ uptime
           17:46:55 up 52 min,  1 user,  load average: 2.42, 1.00, 0.62
-          bob@xerus:/etc/apache2/conf-enabled$ ps aux  | tr -s " " | grep ^www-data | cut -d " " -f 6,11- | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+         [server]$ ps aux  | tr -s " " | grep ^www-data | cut -d " " -f 6,11- | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
           39.4375 Megs
 
 REF : https://www.digitalocean.com/community/questions/apache-2-4-with-php5-fpm
 
-**comparatif de performance prefork**
+
+#### <a name="perf_php_php5-fpm_perf_vs_mod_php5" /> Comparatif avec prefork et mod_php5
 
 
-$ uptime
- 08:40:58 up 22 min,  1 user,  load average: 0.17, 0.44, 0.41
- bob@xerus:/etc/apache2$ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
- 59.332 Megs
+Reprenons le teste avec le __mod\_prefork__ avec 100 requête dont 10 concurrentes , voici la configuration du __prefork__ :
 
- $ ab  -n 100 -c 10 -l https://www.linux202-siteA.com/info.php
-Connection Times (ms)
+        $ cat /etc/apache2/mods-enabled/mpm_prefork.conf
+        <IfModule mpm_prefork_module>
+                StartServers                     5
+                MinSpareServers           5
+                MaxSpareServers          10
+                #       MaxRequestWorkers        150
+                MaxRequestWorkers        25
+                MaxConnectionsPerChild   0
+         </IfModule>
+
+C'est repartie pour le teste de charge 
+
+        [server]$ uptime
+        08:40:58 up 22 min,  1 user,  load average: 0.17, 0.44, 0.41
+        [server]$ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+         59.332 Megs
+
+        [client] $ ab  -n 100 -c 10 -l https://www.linux202-siteA.com/info.php
+            Connection Times (ms)
               min  mean[+/-sd] median   max
               Connect:       51  191  65.0    197     334
               Processing:     9   41  23.0     34     133
               Waiting:        1   21  16.0     18      95
               Total:         65  232  73.9    230     407
 
-Percentage of the requests served within a certain time (ms)
-50%    230
-66%    269
-75%    289
-80%    296
-90%    327
-95%    340
-98%    383
-99%    407
-100%    407 (longest request)
+        Percentage of the requests served within a certain time (ms)
+          50%    230
+          66%    269
+          75%    289
+          80%    296
+          90%    327
+          95%    340
+          98%    383
+          99%    407
+         100%    407 (longest request)
 
- $ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
- 130.27 Megs
- bob@xerus:/etc/apache2$ uptime
-  08:41:58 up 23 min,  1 user,  load average: 0.14, 0.38, 0.39
+        [server]$ ps aux  | tr -s " " | cut -d " " -f 6,11- | grep apache | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+         130.27 Megs
+        [server]$ uptime
+          08:41:58 up 23 min,  1 user,  load average: 0.14, 0.38, 0.39
+
+Deuxième teste avec 300 requêtes dont 30 concurrentes :
+
+        [server]$ uptime
+         08:30:49 up 13 min,  1 user,  load average: 0.11, 0.18, 0.21
+        [server]$ ps aux  | tr -s " " | grep ^www-data | cut -d " " -f 6,11- | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+        43.6719 Megs
+
+        [client]$  ab  -n 300 -c 30 -l https://www.linux202-siteA.com/info.php
+        Percentage of the requests served within a certain time (ms)
+          50%    736
+          66%    810
+          75%    845
+          80%    867
+          90%    940
+          95%    986
+          98%   1135
+          99%   1233
+         100%   1284 (longest request)
+
+
+        [server]$ $ ps aux  | tr -s " " | grep ^www-data | cut -d " " -f 6,11- | egrep -v "grep|htcache" | awk '{ sum+=$1} END {print sum/1024 " Megs"}'
+        324.855 Megs
+
+        [server]$ uptime
+         08:31:56 up 14 min,  1 user,  load average: 2.36, 0.67, 0.36
+
+
+**conclusion** 
+
+Dans la situation actuelle avec un serveur qui à très peu de CPU nous avons des résultats très similaire dans les deux modes ,en terme de temps de réponse des pages web . Nous pouvons aussi constater que la charge sur le CPU est très similaire si nous nous référons au __load average__ du système . Nous pouvons constater une grosse amélioration de l'utilisation du système au niveau de la mémoire nous avons une énorme économique en utilisant le mode __mpm\_worker__ .
 
 Idée :
 * __Jmeter__
 * __cactis  / piwik__
 * __sleep mysql__ : http://dev.mysql.com/doc/refman/5.7/en/miscellaneous-functions.html#function_sleep
 * __fail 2 ban__ : against DOS
-* __php5-fpm - server-side, HTML-embedded scripting language (FPM-CGI binary)__
 
 * URL :
     * http://httpd.apache.org/docs/current/misc/perf-tuning.html
