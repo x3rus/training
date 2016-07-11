@@ -1975,10 +1975,29 @@ Si vous avez un problème d'utilisation de bande passante, votre site transmet �
 
 Je vous laisse le plaisir de consulter  le site d'apache en lien avec ce module : [mod\_deflate](http://httpd.apache.org/docs/current/fr/mod/mod_deflate.html) .
 
-* __cactis  / piwik__
-* __sleep mysql__ : http://dev.mysql.com/doc/refman/5.7/en/miscellaneous-functions.html#function_sleep
-* __fail 2 ban__ : against DOS
-        REF: https://www.digitalocean.com/community/tutorials/how-to-protect-an-apache-server-with-fail2ban-on-ubuntu-14-04
+## <a name="perf_concept_generic" /> Considération globale pour améliorer les performances
+
+J'aurais peut-être du commencer par ça mais j'aime bien allé dans le vif du sujet pour commencer et revenir sur les considérations moins critique par la suite. Car L'ensemble des instructions ci-dessous vous pouvez les trouver sur l'Internet sans moi, donc il y a moins de valeur de mon point de vue.
+
+Pour améliorer les performances vous devriez considérer les points suivant :
+
+* **Répartition de l'accès disque** : L'accès au disque dur reste un point "problématique" lors de l'optimisation des performances , le disque étant lent vous pouvez avoir un gain de performance en ajustant l'organisation de votre système de fichier selon l'accès . Voici des manières plus concrète de l'utilisation :
+    * **Définir vos logs sur un disque dur distinct** : Il peut être optimal que votre système apache écrit les logs sur un disque dur dédier ceci évitera qu'il parcourt le même disque pour écrire le logs ET fournir l'information du site web.
+    * **Définir le cache sur un disque dédier** : Tous comme les logs il est plus optimal de dédier un disque pour le système de cache au lieu de le mettre sur le reste du système de fichier.
+* **Désactivation des logs verboses** : Si vous activer le mode de __logs__ de type __debug__ le système devra écrire une grande quantité sur le disque ralentissent ainsi le système à cause d'accès disque . Nous retrouvons le mode __debug__ pour __php__ ou encore __mod\_rewrite__. 
+* **Désactivé TOUS les modules que vous n'utilisez pas** : L'ensemble des modules utilise de la mémoire , que vous utilisiez le mode __worker__ ou __prefork__ si vous ne les utilisez pas désactivez les . Bien entendu avec le mode __prefork__ l'impacte sera encore plus significatif.
+* **Désactivé la directive HostnameLookups** : Si vous activez cette directive Apache réalisera un reverse __DNS__ sur l'adresse IP afin d'avoir le nom de domaine associé pour l'écrire dans les logs. Même si cette information peut vous être utile je vous conseille de réaliser cette opération lors de la génération des statistiques d'accès au site quand votre site web est moins sollicité.
+* **Utilisation d'adresse IP dans la configuration au lieu des nom DNS** : Je suis ambigüe sur cette recommandation , mais je l'ai vu à plusieurs reprise. Il y a ici une relation forte entre gestion / maintenance de l'infrastructure et la performance. Si vous définissez uniquement des adresses IP effectivement nous économisons une requête __DNS__. Cependant ceci peut avoir un coût sur la gestion, car vous perdez la flexibilité de pouvoir modifier l'infrastructure environnante sans modifier l'application. Faut donc voir selon votre problème.
+* **Désactivation de la gestion des fichier .htaccess** : telle que présenter lors de la démonstration des fichiers __.htaccess__ afin d'éviter que Apache cherche ce fichier dans chaque répertoire désactivé le complètement. 
+* **Utilisez Apache pour les données dynamique** : Apache est un couteau suisse du web, nous pouvons faire énormément de chose . Par contre Apache n'est pas le serveur web est un peu gourmand avec le temps d'autre solution on vu le jours, avec certes  moins de fonctionnalité mais plus rapide. Si vous avez des problèmes pour fournir vos clients vous pourriez configurer un serveur __lighttpd__ ou __ngnix__ pour fournir l'ensemble du contenu statique (images, vidéos , ...) et Apache pour le contenu dynamique (__php__, ...).
+
+## <a name="perf_protection" /> Protection de votre site web 
+
+Je vais faire un petit écart sur la considération des performances, car peut importe les configurations que vous mettrez en place si vous êtes victimes d'une [DDOS](https://fr.wikipedia.org/wiki/Attaque_par_d%C3%A9ni_de_service) votre site va s'écraser. L'objectif de la solution est simple, un système analyse les logs de votre site web et selon des règles établie va bloquer l'adresse de provenance du client. Les règles peuvent être simple telle qu'un nombre répété d'erreur 404 vers votre site ou ou alors un nombre de requête dans un délais définie , indiquant que nous avons affaire à un robot. 
+Le système mettra en place une règles __iptables__ __firewall__ applicatif sur la machine.
+Le logiciel ce nomme : [fail2ban](http://www.fail2ban.org).
+
+REF: https://www.digitalocean.com/community/tutorials/how-to-protect-an-apache-server-with-fail2ban-on-ubuntu-14-04
 
 * URL :
     * http://httpd.apache.org/docs/current/misc/perf-tuning.html
