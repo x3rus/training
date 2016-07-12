@@ -1998,6 +1998,7 @@ Le système mettra en place une règles __iptables__ __firewall__ applicatif sur
 Le logiciel ce nomme : [fail2ban](http://www.fail2ban.org).
 
 REF: https://www.digitalocean.com/community/tutorials/how-to-protect-an-apache-server-with-fail2ban-on-ubuntu-14-04
+REF: http://r3dux.org/2013/06/how-to-stop-apache-dos-attacks-with-fail2ban/
 
 * URL :
     * http://httpd.apache.org/docs/current/misc/perf-tuning.html
@@ -2008,9 +2009,11 @@ REF: https://www.digitalocean.com/community/tutorials/how-to-protect-an-apache-s
 
 # <a name="Reference" /> Référence :
 
-* [Documentation Apache 2.4](https://httpd.apache.org/docs/2.4/) : https://httpd.apache.org/docs/2.4/
-* [Liste des code d'état du protocole http](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes): https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
-* http://httpd.apache.org/docs/current/fr/howto/auth.html
+* http://httpd.apache.org/docs/current/misc/perf-tuning.html
+* https://www.devside.net/articles/apache-performance-tuning
+* http://www.monitis.com/blog/2011/07/05/25-apache-performance-tuning-tips
+* https://wiki.mikejung.biz/Apache
+
 
 
 
