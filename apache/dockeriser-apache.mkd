@@ -1,0 +1,163 @@
+
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+TODO corriger les \_
+
+# Index 
+
+
+# <a name="dockeriser" /> Dockeriser Apache
+
+Nous avons vu la configuration de apache, en long en large et en détail, nous allons maintenant voir comment __dockeriser__ apache . Comme toujours la partie __docker__ est optionnel , mais je trouve très intéressant pour standardiser vos déploiement. Je vais prendre le temps de présenter un mode simple de mise en place et d'adresser quelques problème que vous pourriez rencontrer.
+
+
+## <a name="dockeriser_simple" /> Dockeriser Apache version simple 
+
+Nous allons continuer d'utiliser le système Ubuntu pour faire le déploiement libre à vous de modifier la distribution bien entendu vous aurez des problèmes de chemin des fichiers si vous optez pour __CentOS__ et __RedHat__.
+
+Nous avons déjà vu la création d'une image personnaliser docker, comme ça fait un petit peu de temps nous allons y aller tranquillement offrant la possibilité à tous le monde de ce rafraichir la mémoire. 
+
+Nous allons mettre en place les bases en installant apache et ainsi que la structure des fichiers . Mettons en place une structure de travail :
+
+        $ mkdir ~/git/mein_apache
+        $ cd ~/git/mein_apache
+        $ git init .
+        $ touch Licence
+        $ git add Licence
+        $ git commit -a -m "Initialisation du dépot Git "
+        $ vim Dockerfile
+
+Je vous invite FORTEMENT à utiliser __git__ afin de conserver une traçabilité des modifications de votre Docker.
+
+        $ cat Dockerfile
+        # Définition de l'image de Base ( distribution )
+        FROM i686/ubuntu
+        MAINTAINER Boutry Thomas 'thomas.boutry@x3rus.com'
+
+        # Activation du mode non interactif pour apt
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Installation des applications de Base
+        RUN apt-get update && apt-get install -y \
+          apache2 apache2-utils && apt-get clean
+
+        # Fix timezone
+        RUN ln -s -f /usr/share/zoneinfo/Canada/Eastern /etc/localtime
+
+        # Port exposer 
+        EXPOSE 80
+
+        CMD ["/usr/sbin/apache2","-DFOREGROUND"]
+
+Réalisons le __build__ de l'image en lui donnant un nom significatif dans mon cas : __apache-train__
+
+        $ docker build -t apache-train . 
+        [... OUTPUT COUPÉ ...]
+        Step 5 : EXPOSE 80
+         ---> Running in cb3cec30ef9c
+         ---> 7648874030d3
+        Removing intermediate container cb3cec30ef9c
+        Step 6 : CMD /usr/sbin/apache2 -DFOREGROUND
+         ---> Running in c37de7aa4829
+         ---> 6c9f625812c5
+        Removing intermediate container c37de7aa4829
+        Successfully built 6c9f625812c5
+
+On fait un test ?? Je vous dis tous de suite ça ne fonctionnera pas :P , c'est partie 
+
+        $ docker run apache-train
+        [Tue Jul 12 17:25:05.374632 2016] [core:warn] [pid 1] AH00111: Config variable ${APACHE_LOCK_DIR} is not defined
+        [Tue Jul 12 17:25:05.377490 2016] [core:warn] [pid 1] AH00111: Config variable ${APACHE_PID_FILE} is not defined
+        [Tue Jul 12 17:25:05.377522 2016] [core:warn] [pid 1] AH00111: Config variable ${APACHE_RUN_USER} is not defined
+        [Tue Jul 12 17:25:05.377529 2016] [core:warn] [pid 1] AH00111: Config variable ${APACHE_RUN_GROUP} is not defined
+        [Tue Jul 12 17:25:05.377556 2016] [core:warn] [pid 1] AH00111: Config variable ${APACHE_LOG_DIR} is not defined
+        [Tue Jul 12 17:25:05.396087 2016] [core:warn] [pid 1:tid 3075414656] AH00111: Config variable ${APACHE_LOG_DIR} is not defined
+        [Tue Jul 12 17:25:05.397428 2016] [core:warn] [pid 1:tid 3075414656] AH00111: Config variable ${APACHE_LOG_DIR} is not defined
+        [Tue Jul 12 17:25:05.397458 2016] [core:warn] [pid 1:tid 3075414656] AH00111: Config variable ${APACHE_LOG_DIR} is not defined
+        AH00526: Syntax error on line 74 of /etc/apache2/apache2.conf:
+        Invalid Mutex directory in argument file:${APACHE_LOCK_DIR}
+
+
+Nous allons profiter de cette opportunité pour voir comment nous allons analyser ce problème , mon premier reflex et de démarrer la conteneur non plus en mode automatique avec exécution  de l'instruction **EXEC** contenu à la fin du __Dockerfile__
+
+        [ ... OUTPUT COUPÉ ... ]
+        # Port exposer 
+        EXPOSE 80
+
+        CMD ["/usr/sbin/apache2","-DFOREGROUND"]
+
+Donc exécutons  le conteneur avec __bash__ en mode interactif :
+
+        $ docker run -it apache-train bash
+        root@46e37e65f98b:/# ip addr show
+        [... OUTPUT COUPÉ ...]
+        15: eth0@if16: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default
+            link/ether 02:42:ac:11:00:06 brd ff:ff:ff:ff:ff:ff
+                inet 172.17.0.6/16 scope global eth0
+
+Nous allons démarrer le service apache de la manière "classique" :
+
+        root@46e37e65f98b:/# /etc/init.d/apache2 start
+         * Starting web server apache2                                                                                                /usr/sbin/apache2ctl: 87: ulimit: error setting limit (Operation not permitted)
+         Setting ulimit failed. See README.Debian for more information.
+         AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.6. Set the 'ServerName' directive globally to suppress this message
+         *
+        root@46e37e65f98b:/# ps aux | grep apac
+        root        37  0.0  0.2   5500  4124 ?        Ss   17:32   0:00 /usr/sbin/apache2 -k start
+        www-data    40  0.0  0.1 228132  3744 ?        Sl   17:32   0:00 /usr/sbin/apache2 -k start
+        www-data    41  0.0  0.1 228132  3832 ?        Sl   17:32   0:00 /usr/sbin/apache2 -k start
+
+Si nous allons à l'URL : http://172.17.0.6/ ça fonctionne :
+
+![default_page_ubuntu.png](./imgs/default_page_ubuntu.png)
+
+Mais dans l'instruction du __Dockerfile__ ce n'est PAS __/etc/init.d/apache2 start__ qui est utilisé , essayons avec la commande dans le __Dockerfile__ :
+
+        root@46e37e65f98b:/# /usr/sbin/apache2 -DFOREGROUND
+        [Tue Jul 12 17:37:40.874436 2016] [core:warn] [pid 146] AH00111: Config variable ${APACHE_LOCK_DIR} is not defined
+        [Tue Jul 12 17:37:40.874582 2016] [core:warn] [pid 146] AH00111: Config variable ${APACHE_PID_FILE} is not defined
+        [Tue Jul 12 17:37:40.874623 2016] [core:warn] [pid 146] AH00111: Config variable ${APACHE_RUN_USER} is not defined
+        [Tue Jul 12 17:37:40.874642 2016] [core:warn] [pid 146] AH00111: Config variable ${APACHE_RUN_GROUP} is not defined
+        [Tue Jul 12 17:37:40.876067 2016] [core:warn] [pid 146] AH00111: Config variable ${APACHE_LOG_DIR} is not defined
+        [Tue Jul 12 17:37:40.882795 2016] [core:warn] [pid 146:tid 3075172992] AH00111: Config variable ${APACHE_LOG_DIR} is not defined
+        [Tue Jul 12 17:37:40.883647 2016] [core:warn] [pid 146:tid 3075172992] AH00111: Config variable ${APACHE_LOG_DIR} is not defined
+        [Tue Jul 12 17:37:40.883699 2016] [core:warn] [pid 146:tid 3075172992] AH00111: Config variable ${APACHE_LOG_DIR} is not defined
+        AH00526: Syntax error on line 74 of /etc/apache2/apache2.conf:
+        Invalid Mutex directory in argument file:${APACHE_LOCK_DIR}
+
+SUPER , on a pas la solution mais on peut le reproduire , mais pourquoi on utiliserai pas la commande qui fonctionne dans le __Dockerfile__. Le problème avec l'instruction du __service apache start__ est que le processus sera mis en arrière plan , donc le conteneur docker va démarrer , il va démarrer apache avec succès mais comme ce dernier sera en arrière plan le conteneur va s'arrêter . Démonstration :
+
+        root@46e37e65f98b:/# exit
+
+        $ tail Dockerfile 
+        [... OUTPUT COUPÉ ...]
+        # Port exposer
+        EXPOSE 80
+
+        CMD ["/etc/init.d/apache2","start"]
+
+        $ docker build -t apache-train .
+        [... OUTPUT COUPÉ ...]
+        Step 5 : EXPOSE 80
+         ---> Using cache
+         ---> 7648874030d3
+        Step 6 : CMD /etc/init.d/apache2 start
+         ---> Running in 5921092110f2
+         ---> 8bd040c92c51
+        Removing intermediate container 5921092110f2
+        Successfully built 8bd040c92c51
+
+        $ docker  run apache-train
+         * Starting web server apache2
+        /usr/sbin/apache2ctl: 87: ulimit: error setting limit (Operation not permitted)
+        Setting ulimit failed. See README.Debian for more information.
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.7. Set the 'ServerName' directive globally to suppress this message
+        * 
+
+        $ docker  ps
+        CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+
+Donc le processus de création de l'image fut un succès mais lors de l'exécution apache est démarrer mais comme le processus est en arrière plan le docker s'est arrêter avec succès. Nous le voyons lors de l'utilisation de la commande **docker ps**
