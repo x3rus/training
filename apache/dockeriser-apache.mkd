@@ -158,6 +158,144 @@ SUPER , on a pas la solution mais on peut le reproduire , mais pourquoi on utili
         * 
 
         $ docker  ps
-        CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+        CONTAINER ID     IMAGE         COMMAND        CREATED         STATUS       PORTS               NAMES
 
-Donc le processus de création de l'image fut un succès mais lors de l'exécution apache est démarrer mais comme le processus est en arrière plan le docker s'est arrêter avec succès. Nous le voyons lors de l'utilisation de la commande **docker ps**
+Donc le processus de création de l'image fut un succès mais lors de l'exécution, apache est démarrer mais comme le processus est en arrière plan le docker s'est arrêter avec succès. Nous le voyons lors de l'utilisation de la commande **docker ps** .
+
+Revenons à la première tentative avec la mise en avant plan (__FOREGROUND__) du processus apache si nous regardons les erreurs que nous avions l'ensemble est dû à des variables d'environnement non définie. Lors de l'utilisation de la commande __Service__ ce dernier charge le fichier , si vous exécutez le conteneur __apache_train__ vous pourrez visualiser ce fichier :
+
+        # cat /etc/apache2/envvars  | grep -v "^#" | grep -v "^$"
+        unset HOME
+        if [ "${APACHE_CONFDIR##/etc/apache2-}" != "${APACHE_CONFDIR}" ] ; then
+            SUFFIX="-${APACHE_CONFDIR##/etc/apache2-}"
+        else
+           SUFFIX=
+        fi
+        export APACHE_RUN_USER=www-data
+        export APACHE_RUN_GROUP=www-data
+        export APACHE_PID_FILE=/var/run/apache2/apache2$SUFFIX.pid
+        export APACHE_RUN_DIR=/var/run/apache2$SUFFIX
+        export APACHE_LOCK_DIR=/var/lock/apache2$SUFFIX
+        export APACHE_LOG_DIR=/var/log/apache2$SUFFIX
+        export LANG=C
+        export LANG
+
+Si vous revitalisons les erreurs, nous pourrons constater ce manque :
+
+        [Tue Jul 12 17:25:05.374632 2016] [core:warn] [pid 1] AH00111: Config variable ${APACHE_LOCK_DIR} is not defined
+        [Tue Jul 12 17:25:05.377490 2016] [core:warn] [pid 1] AH00111: Config variable ${APACHE_PID_FILE} is not defined
+        [Tue Jul 12 17:25:05.377522 2016] [core:warn] [pid 1] AH00111: Config variable ${APACHE_RUN_USER} is not defined
+        [Tue Jul 12 17:25:05.377529 2016] [core:warn] [pid 1] AH00111: Config variable ${APACHE_RUN_GROUP} is not defined
+        [Tue Jul 12 17:25:05.377556 2016] [core:warn] [pid 1] AH00111: Config variable ${APACHE_LOG_DIR} is not defined
+
+Afin de corriger ce problème lors de la création de l'image donc le __Dockerfile__ je vais pré définie ces variables . Ceci donne :
+
+        $ cat Dockerfile
+        [... OUTPUT COUPÉ ...]
+        # Fix timezone
+        RUN ln -s -f /usr/share/zoneinfo/Canada/Eastern /etc/localtime
+
+        ENV APACHE_RUN_USER  www-data
+        ENV APACHE_RUN_GROUP www-data
+        ENV APACHE_PID_FILE  /var/run/apache2.pid
+        ENV APACHE_RUN_DIR   /var/run/apache2
+        ENV APACHE_LOCK_DIR  /var/lock/apache2
+        ENV APACHE_LOG_DIR   /var/log/apache2
+
+        # Port exposer 
+        EXPOSE 80
+
+        CMD ["/usr/sbin/apache2","-DFOREGROUND"]
+         
+Reprenons la création de l'image : 
+
+        $ docker build -t apache-train .
+        [... OUTPUT COUPÉ ...]
+        Removing intermediate container 2be1c89d4526
+        Step 10 : ENV APACHE_LOG_DIR /var/log/apache2
+         ---> Running in 5eca720fb524
+         ---> 7746103ca4f7
+        Removing intermediate container 5eca720fb524
+        Step 11 : EXPOSE 80
+         ---> Running in 64727159ffb2
+         ---> 3fc14f0e80ac
+        Removing intermediate container 64727159ffb2
+        Step 12 : CMD /usr/sbin/apache2 -DFOREGROUND
+         ---> Running in 525ec50bd3aa
+         ---> 52d35906d969
+        Removing intermediate container 525ec50bd3aa
+        Successfully built 52d35906d969
+
+Exécutons l'image afin de créer le conteneur :
+
+        $ docker  run apache-train
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
+
+Comme vous pouvez le constater le système ne vous redonne pas la main , vous avez le processus apache en avant plan , si vous prenez un autre terminal vous pourrez constater que le conteneur est bien en exécution
+
+        $ docker  ps
+        CONTAINER ID    IMAGE          COMMAND                CREATED              STATUS              PORTS    NAMES
+        e03dc52435a9    apache-train   "/usr/sbin/apache2 -   About a minute ago   Up About a minute   80/tcp   angry_tesla
+
+Afin de compléter la validation récupérons l'adresse IP du conteneur pour confirmer que nous voyons bien la page par défaut d'apache. Comme vous pouvez le voir la dernière colonne comprend le nom "générique" qui fut donné au conteneur dans le cas présent __angry_tesla__ , nous allons donc utiliser l'instruction __docker inspect__ afin d'extraire l'adresse IP qui fut alloué par __DHCP__ par le __deamon__ __docker__.
+
+        $ docker inspect angry_tesla | grep IPAddress
+                "IPAddress": "172.17.0.2",
+                "SecondaryIPAddresses": null,
+
+Donc si vous allez à l'URL : http://172.17.0.2 , vous aurez la page web par défaut d'apache . **Woot**, ça fonctionne , mais car il a souvent des mais , essayer sur une autre machine de votre réseau d'accéder à la page avec l'IP 172.17.0.2 , vous constaterez que ça ne fonctionne PAS  :-(. 
+
+## <a name="dockeriser_network" /> Considération réseau pour le conteneur Apache
+
+Nous avons un conteneur qui fonctionne la page par défaut d'apache s'affiche, mais ce n'est accessible que depuis la machine où roule le conteneur. Reprenons quelques minute pour parler de la réseautique sous docker , commençons par une représentation graphique des adresses IP et du réseau :
+
+![docker-network-diagramme.png](./imgs/docker-network-diagramme.png)
+
+Donc ici nous avons un docker __host__ qui à 2 conteneurs, __apache-train__ et __apache-test__ (manque d'imagination :P).
+
+Le docker __host__ à l'IP 192.168.42.25 sur le réseau , si nous devons établir une connexion ssh, nous utilisons cette adresse IP . La machine docker gère un réseau "interne" pour les conteneurs le segment réseau choisie est __172.17.0.0/16__ ce segment réseau n'est connu QUE du docker __host__.
+Lors de l'initialisation d'un nouveau conteneur :
+
+1. docker initialise  l'instance du conteneur 
+2. crée une interface virtuel qui sera  le docker __host__ exemple : **vethcdff57c** qui sera associé au conteneur 
+3. Docker crée une interface **eth0** dans le conteneur et l'associer à l'interface créé soit **vethcdff57c**
+4. Par la suite le docker __host__ pige dans son pool d'adresse IP et l'assigne au conteneur soit **172.17.0.4**
+
+Donc le segment réseau 172.17.0.0/16 n'est connu QUE du docker __host__ il n'est pas possible de communiquer directement avec les conteneurs en utilisant leur IP interne. 
+
+Oui mais pourtant j'arrive à me connecter depuis mon conteneur sur les dépôts de logiciel pour faire les installations, donc le réseau fonctionne même à l'extérieur . Effectivement les communications sortante fonctionne SANS problème ,est-ce de la magie ? 
+
+J'aimerai vous dire oui, mais non ... La magie est réalisé par un système de **nat** (**N**etwork **A**ddress **T**ranslation). Heu et en français ça veut dire quoi ? 
+
+Si vous réaliser la commande suivante si votre docker __host__ vous aurez quelque chose de similaire :
+
+        $ sudo iptables -L -n -v -t nat
+        [... OUTPUT COUPÉ ...]
+        Chain POSTROUTING (policy ACCEPT 876 packets, 59176 bytes)
+         pkts bytes target     prot opt in     out     source               destination
+             0     0 MASQUERADE  all  --  *      !docker0  172.17.0.0/16        0.0.0.0/0
+
+        [... OUTPUT COUPÉ ...]
+
+Nous utilisons **iptables** qui est le __firewall__  interne à GNU/Linux , il est capable de faire du __nat__ aussi .
+
+En gros l'instruction suivante veut dire , Si l'adresse IP source est dans le segment réseau 172.17.0.0/16 donc :
+
+        $  ipcalc 172.17.0.0/16
+        [... OUTPUT COUPÉ ...]
+        HostMin:   172.17.0.1           10101100.00010001. 00000000.00000001
+        HostMax:   172.17.255.254       10101100.00010001. 11111111.11111110
+
+Donc si l'adresse de provenance est comprise entre l'IP 172.17.0.1 et 172.17.255.254 et que l'interface de destination n'est PAS **docker0** donc qui n'est pas une communication interne entre les conteneurs alors change l'adresse IP source afin de mettre l'adresse IP : 192.168.42.45 (la c'est implicite :P )
+
+TODO : chemin de communication avec NAT
+
+
+## <a name="dockeriser_site-web" /> Mise en place du site web
+
+## <a name="dockeriser_config" /> Configuration Apache
+
+## <a name="dockeriser_apache_logs" /> Visualisation des logs Apache
+
+## <a name="dockeriser_reuse_imgs" /> Réutilisation des images docker
+
