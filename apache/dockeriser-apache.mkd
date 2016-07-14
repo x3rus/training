@@ -294,9 +294,50 @@ Donc voyons le chemin des paquets réseaux afin de clarifier la situation une pe
 
 Si vous vous demandez comment le système est en mesure de transmettre l'information quand le serveur distant lui réponds , lorsqu'il y a changement d'adressage __iptables__ conserver une table de correspondance afin de gérer lorsque le paquets revient . Il refera le changement d'adressage mais au lieu de changer la Source du paquet il changera la destination , il remplacera 192.168.42.45 par l'IP du conteneur soit 172.17.0.6 dans notre exemple. 
 
-Maintenant que l'explication sur les communications vers l'externe est réalisé comment on fait pour les communications initié depuis l'extérieur qui désire voir la page web dans le conteneur. Pour ce faire nous allons associé un port sur l'adresse IP "publique" sur le réseau qui sera associé avec le conteneur. En anglais / français on va faire un __port-forward__
+Maintenant que l'explication sur les communications vers l'externe est réalisé comment on fait pour les communications initié depuis l'extérieur qui désire voir la page web dans le conteneur. Pour ce faire nous allons associé un port sur l'adresse IP "publique" sur le réseau qui sera associé avec le conteneur. En anglais / français on va faire un __port-forward__.
+
+![docker-network-port-fw-diagramme.png](./imgs/docker-network-port-fw-diagramme.png)
+
+Réalisons l'opération afin de confirmer que je ne vous ment pas :P , sans farce afin de voir le fonctionnement.
+
+        $ docker  run  -p 80:80 apache-train 
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
+
+Nous utilisons l'option **-p** pour définir le port sur la machine local -> vers -> le port du conteneur . Si nous réalisons la commande **netstat** nous verrons le port disponible 
+
+        $ sudo netstat -lntp | grep 80
+        tcp6       0      0 :::80                   :::*                    LISTEN      4608/docker-proxy
+        $ ps aux | grep 4608
+        root      4608  0.0  0.7 837704 15600 ?        Sl   17:02   0:00 docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 80 -container-ip 172.17.0.6 -container-port 80
+
+
+Maintenant nous pouvons accéder à page par défaut d'apache depuis l'ensemble du réseau en utilisant l'IP de la machine hôtes. Soit http://192.168.42.45.
+
+Super donc nous avons un conteneur avec apache qui fonctionne , disponible sur l'ensemble du réseau , il est temps de mettre du contenu dessus . 
 
 ## <a name="dockeriser_site-web" /> Mise en place du site web
+
+Nous arrivons tranquillement dans le dur, le mise en place du site web afin qu'il soit disponible pour tous. Plusieurs méthodes sont disponible pour cette opération, vous devrez choisir la plus approprié pour vous. Ce qui va probablement être un facteur décisionnel est la maturité de votre site , si ce dernier est plutôt statique ou énormément modifié.
+
+Pour rappel , le système de docker fut originalement mis en place afin de fournir une application ou un service avec un __packging__ complet ( OS + application + ensemble des dépendances ... ) nous parlons donc de version final ou du moins qui sera __repackgé__ lors de modification nous allons donc voir la première méthode en utilisant ce mode. 
+
+
+### <a name="dockeriser_site-web_git" /> Mise en place du site web via Git ou Subversion
+
+Une méthode est de brûler dans l'image de base le site web, personnellement je trouve cette solution la meilleur , utiliser le contrôleur de révision ( __Git__ ou __subversion__ ou autre ) comme source. Rappelez vous de la formation __git__ vous pourriez faire appel à une branche spécifique afin d'avoir une version exacte de votre site web dans votre conteneur apache.
+
+Voyons un exemple avec le dépôt git : [https://github.com/x3rus/siteweb\_formation](https://github.com/x3rus/siteweb_formation).
+
+Nous avons un site web dans git composé de 3 branches : __master__, 2.0 et 2.1 .
+
+Nous allons voir pour mettre en place les différentes version et la gestion de l'images . C'est partie modifions notre image afin d'avoir une page approprié avec la branche __master__
+
+
+
+### <a name="dockeriser_site-web_git" /> Mise en place du site web via Git ou Subversion
+
+### <a name="dockeriser_site-volume" /> Mise en place du site web avec un volume 
+
 
 ## <a name="dockeriser_config" /> Configuration Apache
 
