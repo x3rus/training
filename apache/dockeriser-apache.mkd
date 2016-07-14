@@ -288,8 +288,13 @@ En gros l'instruction suivante veut dire , Si l'adresse IP source est dans le se
 
 Donc si l'adresse de provenance est comprise entre l'IP 172.17.0.1 et 172.17.255.254 et que l'interface de destination n'est PAS **docker0** donc qui n'est pas une communication interne entre les conteneurs alors change l'adresse IP source afin de mettre l'adresse IP : 192.168.42.45 (la c'est implicite :P )
 
-TODO : chemin de communication avec NAT
+Donc voyons le chemin des paquets réseaux afin de clarifier la situation une petite image aide souvent dans l'explication :
 
+![docker-network-NAT-diagramme.png](./imgs/docker-network-NAT-diagramme.png)
+
+Si vous vous demandez comment le système est en mesure de transmettre l'information quand le serveur distant lui réponds , lorsqu'il y a changement d'adressage __iptables__ conserver une table de correspondance afin de gérer lorsque le paquets revient . Il refera le changement d'adressage mais au lieu de changer la Source du paquet il changera la destination , il remplacera 192.168.42.45 par l'IP du conteneur soit 172.17.0.6 dans notre exemple. 
+
+Maintenant que l'explication sur les communications vers l'externe est réalisé comment on fait pour les communications initié depuis l'extérieur qui désire voir la page web dans le conteneur. Pour ce faire nous allons associé un port sur l'adresse IP "publique" sur le réseau qui sera associé avec le conteneur. En anglais / français on va faire un __port-forward__
 
 ## <a name="dockeriser_site-web" /> Mise en place du site web
 
