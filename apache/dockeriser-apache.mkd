@@ -332,9 +332,106 @@ Nous avons un site web dans git composé de 3 branches : __master__, 2.0 et 2.1 
 
 Nous allons voir pour mettre en place les différentes version et la gestion de l'images . C'est partie modifions notre image afin d'avoir une page approprié avec la branche __master__
 
+        # Définition de l'image de Base ( distribution )
+        FROM i686/ubuntu
+        MAINTAINER Boutry Thomas 'thomas.boutry@x3rus.com'
+
+        # Activation du mode non interactif pour apt
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Installation des applications de Base
+        RUN apt-get update && apt-get install -y \
+          apache2 apache2-utils git && apt-get clean
+
+        # Fix timezone
+        RUN ln -s -f /usr/share/zoneinfo/Canada/Eastern /etc/localtime
+
+        ENV APACHE_RUN_USER  www-data
+        ENV APACHE_RUN_GROUP www-data
+        ENV APACHE_PID_FILE  /var/run/apache2.pid
+        ENV APACHE_RUN_DIR   /var/run/apache2
+        ENV APACHE_LOCK_DIR  /var/lock/apache2
+        ENV APACHE_LOG_DIR   /var/log/apache2
+
+        ENV SITE_DOCROOT /var/www/html/
+        ENV SITE_REPO https://github.com/x3rus/siteweb_formation
+        ENV SITE_VERSION master
+
+        # Mise en place du site
+        RUN rm -rf $SITE_DOCROOT  &&  git clone $SITE_REPO -b $SITE_VERSION $SITE_DOCROOT
+
+        # Port exposer 
+        EXPOSE 80
+
+        CMD ["/usr/sbin/apache2","-DFOREGROUND"]
+
+Petit ajustement dans la configuration premièrement en plus d'installer apache , nous installons l'application __git__ afin de nous permettre de récupérer la version du site web sur le dépôt. De plus j'ai défini 3 variables :
+
+* __SITE\_DOCROOT__ : répertoire où nous installons le site web
+* __SITE\_REPO__ : URL où faire le __checkout__ / la récupération du site web
+* __SITE\_VERSION__ : la branche que je désire extraire
+
+Si nous réalisons le __build__ et démarrons le conteneur nous aurons accès au site web .
+
+        $ docker build -t apache-train .
+        $ docker  run   apache-train
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.8. Set the 'ServerName' directive globally to suppress this message
 
 
-### <a name="dockeriser_site-web_git" /> Mise en place du site web via Git ou Subversion
+Si nous désirons créer le conteneur pour la version 2.0 du site je n'ai qu'à modifier la variable __SITE\_VERSION__ . Bien entendu nous pourrions utiliser la même commande de __build__, mais profitons de l'occasion pour voir l'utilisation des __tags__ disponible pour l'image.
+
+    $ cat Dockerfile
+    [... OUTPUT COUPÉ ...]
+    ENV SITE_DOCROOT /var/www/html/
+    ENV SITE_REPO https://github.com/x3rus/siteweb_formation
+    ENV SITE_VERSION 2.0
+
+    # Mise en place du site
+    RUN rm -rf $SITE_DOCROOT  &&  git clone $SITE_REPO -b $SITE_VERSION $SITE_DOCROOT
+    [... OUTPUT COUPÉ ...]
+
+    $ docker build -t apache-train:2.0 .
+    [... OUTPUT COUPÉ ...]
+    Step 11 : ENV SITE_DOCROOT /var/www/html/
+     ---> Using cache
+     ---> ffb88a8f9010
+    Step 12 : ENV SITE_REPO https://github.com/x3rus/siteweb_formation
+     ---> Using cache
+     ---> 96a00982c41c
+    Step 13 : ENV SITE_VERSION 2.0
+     ---> Running in bb0f9948e540
+     ---> bb0edcfebf23
+    Removing intermediate container bb0f9948e540
+    Step 14 : RUN rm -rf $SITE_DOCROOT  &&  git clone $SITE_REPO -b $SITE_VERSION $SITE_DOCROOT
+     ---> Running in 620ecdce4428
+    Cloning into '/var/www/html'...
+     ---> 19218c816f5b
+    Removing intermediate container 620ecdce4428
+    Step 15 : EXPOSE 80
+     ---> Running in 0f3595f15808
+     ---> c74a55cf7036
+    Removing intermediate container 0f3595f15808
+    Step 16 : CMD /usr/sbin/apache2 -DFOREGROUND
+     ---> Running in f56d32de0082
+     ---> 8e8ba8bd17ac
+    Removing intermediate container f56d32de0082
+    Successfully built 8e8ba8bd17ac
+
+Comme vous pouvez le constater l'ensemble de la création du conteneur ne fut pas refait, comme nous avions des couches de création similaire entre la version __master__ et la version __2.0__ il réutilise les couches de création jusqu'à la première différence.
+
+Résultat si nous affichons les images disponible sur le système nous avons la version __master__ == __latest__ et la version 2.0 qui est nommé avec ce même numéro.
+
+        $ docker  images | grep apache
+        apache-train        2.0                 8e8ba8bd17ac        3 minutes ago       339.1 MB
+        apache-train        latest              865ad6322b1b        18 minutes ago      339.1 MB
+
+Maintenant vous pouvez démarrer la version de votre site web :
+
+        $ docker  run   apache-train 
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.10. Set the 'ServerName' directive globally to suppress this message
+
+        $ docker  run   apache-train:2.0
+         AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.11. Set the 'ServerName' directive globally to suppress this message
 
 ### <a name="dockeriser_site-volume" /> Mise en place du site web avec un volume 
 
