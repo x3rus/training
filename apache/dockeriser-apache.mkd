@@ -433,7 +433,120 @@ Maintenant vous pouvez démarrer la version de votre site web :
         $ docker  run   apache-train:2.0
          AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.11. Set the 'ServerName' directive globally to suppress this message
 
+
 ### <a name="dockeriser_site-volume" /> Mise en place du site web avec un volume 
+
+Pour les personnes ayant un site web "mature" qui ne bouge pas beaucoup ou qui est en évolution avec un système de __release__ bien définie ceci est très bien cependant si vous avez un petit site personnel qui bouge tranquillement dans le temps il est probable que cette solution soit contraignante. Nous allons donc voir une autre solution , nous allons extériorisé le site web du conteneur. Cette solution est moins belle , car n'ayant pas le site web inclut dans le conteneur ce dernier n'est pas complet , mais chacun ça réalité avec les contraintes.
+
+Voyons le système de volume ce mécanisme permet de définir un répertoire du __docker host__ dans le conteneur. Je vais commencer par enlever la configuration la commande __git__ du __DockerFile__ afin de ne plus inclure le site web dans le conteneur.
+
+Voici le résultat du __DockerFile__ :
+
+        # Définition de l'image de Base ( distribution )
+        FROM i686/ubuntu
+        MAINTAINER Boutry Thomas 'thomas.boutry@x3rus.com'
+
+        # Activation du mode non interactif pour apt
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Installation des applications de Base
+        RUN apt-get update && apt-get install -y \
+          apache2 apache2-utils git && apt-get clean
+
+        # Fix timezone
+        RUN ln -s -f /usr/share/zoneinfo/Canada/Eastern /etc/localtime
+
+        ENV APACHE_RUN_USER  www-data
+        ENV APACHE_RUN_GROUP www-data
+        ENV APACHE_PID_FILE  /var/run/apache2.pid
+        ENV APACHE_RUN_DIR   /var/run/apache2
+        ENV APACHE_LOCK_DIR  /var/lock/apache2
+        ENV APACHE_LOG_DIR   /var/log/apache2
+
+        # Port exposer 
+        EXPOSE 80
+
+        CMD ["/usr/sbin/apache2","-DFOREGROUND"]
+
+Je __build__ l'image avec le __tag:flat__ :
+
+        $ docker build -t apache-train:flat .
+        Sending build context to Docker daemon 44.54 kB
+        Sending build context to Docker daemon
+        Step 0 : FROM i686/ubuntu
+         ---> 6a6004b92956
+        [ ... OUTPUT COUPÉ ...]
+
+        Removing intermediate container 71625a7802d8
+        Successfully built 0e166a670d17
+
+        $ docker  images | grep flat
+        apache-train        flat                0e166a670d17        About a minute ago   338.6 MB
+
+Si on démarre le conteneur nous aurons la page par défaut d'apache :
+
+        $ docker  run apache-train:flat
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.1. Set the 'ServerName' directive globally to suppress this message
+
+ 
+Arrêtons le conteneur et réalisons le point de montage / **volume**. Premièrement je crée le site web dans le répertoire __/data/apache/html__ et redémarre le conteneur apache avec le volume.
+
+        $ sudo mkdir -p /data/apache/html
+        $ sudo vim /data/apache/html/index.html
+        $ sudo cat /data/apache/html/index.html
+        Super site web directement
+        dans le docker host
+
+Démarrage du conteneur 
+
+        $ docker  run -v /data/apache/html/:/var/www/html apache-train:flat
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
+
+Si nous allons à l'URL : http://172.17.0.2 , nous aurons la page précédemment créer , nous pouvons modifier le fichier __index.html__ sans être obligé de refaire / recréer un conteneur.
+
+Mais je le répète cette solution à un inconvénient majeur le fait que le conteneur n'est pas complet cependant ceci vous permet d'isoler facilement votre application apache du reste du système. 
+Comme j'aime moins cette solution je vais retourné à la méthode avec le système d'extraction du site avec __git__ , c'est ma formation je suis libre :P , par contre nous allons voir un usage intéressant du volume , tous de suite :D.
+
+### <a name="dockeriser_volume4data" /> Conservation des données du sites (volume et nommage du conteneur)
+
+Reprenons donc notre conteneur avec l'extraction du site avec le système de git , je vais aussi réaliser une petite modification afin d'avoir __php__ de présent afin de faire une démonstration. De plus j'ai créer la branche 2.2 du site web , car nous avons une nouvelle version celle ci utilisant __php__.
+
+Voici le résultat du __DockerFile__ : 
+
+        # Définition de l'image de Base ( distribution )
+        FROM i686/ubuntu
+        MAINTAINER Boutry Thomas 'thomas.boutry@x3rus.com'
+
+        # Activation du mode non interactif pour apt
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Installation des applications de Base
+        RUN apt-get update && apt-get install -y \
+          apache2 apache2-utils git libapache2-mod-php5 && apt-get clean
+
+        # Fix timezone
+        RUN ln -s -f /usr/share/zoneinfo/Canada/Eastern /etc/localtime
+
+        ENV APACHE_RUN_USER  www-data
+        ENV APACHE_RUN_GROUP www-data
+        ENV APACHE_PID_FILE  /var/run/apache2.pid
+        ENV APACHE_RUN_DIR   /var/run/apache2
+        ENV APACHE_LOCK_DIR  /var/lock/apache2
+        ENV APACHE_LOG_DIR   /var/log/apache2
+
+        ENV SITE_DOCROOT /var/www/html/
+        ENV SITE_REPO https://github.com/x3rus/siteweb_formation
+        ENV SITE_VERSION 2.2
+
+        # Mise en place du site
+        RUN rm -rf $SITE_DOCROOT  &&  git clone $SITE_REPO -b $SITE_VERSION $SITE_DOCROOT
+
+        # Port exposer
+        EXPOSE 80
+
+        CMD ["/usr/sbin/apache2","-DFOREGROUND"]
+
+
 
 
 ## <a name="dockeriser_config" /> Configuration Apache
@@ -441,4 +554,8 @@ Maintenant vous pouvez démarrer la version de votre site web :
 ## <a name="dockeriser_apache_logs" /> Visualisation des logs Apache
 
 ## <a name="dockeriser_reuse_imgs" /> Réutilisation des images docker
+
+## <a name="dockeriser_fix_tempo" /> Correctif d'urgence
+
+## <a name="dockeriser_dockercompose" /> Docker-Compose pour simplifier
 
