@@ -539,15 +539,81 @@ Voici le résultat du __DockerFile__ :
         ENV SITE_VERSION 2.2
 
         # Mise en place du site
-        RUN rm -rf $SITE_DOCROOT  &&  git clone $SITE_REPO -b $SITE_VERSION $SITE_DOCROOT
+        RUN rm -rf $SITE_DOCROOT  &&  git clone $SITE_REPO -b $SITE_VERSION $SITE_DOCROOT && \
+            chown $APACHE_RUN_USER:$APACHE_RUN_GROUP $SITE_DOCROOT/data
 
         # Port exposer
         EXPOSE 80
 
         CMD ["/usr/sbin/apache2","-DFOREGROUND"]
 
+Je réalise l'image __apache-train:2.2__ avec cette nouvelle configuration
+
+        $ docker build -t apache-train:2.2 .
+
+On l'exécute 
+
+        $ docker run apache-train:2.2
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.7. Set the 'ServerName' directive globally to suppress this message
+
+Si vous allez à la page web http://172.17.0.7 vous aurez la page avec le mouton, j'ai ajouté un petit fichier __php__ nommé __cfile.php__ ce dernier fait la création de 10 fichiers dans le répertoire __/var/www/html/data__ sur le serveur.
+
+Regardons ensemble le mécanisme , avant de générer les fichiers nous allons voir le contenu du répertoire , pour ce faire nous allons allez en mode interactif dans le conteneur. J'utilise la commande **docker ps** pour lister les conteneurs en exécution. 
+
+        $ docker ps
+        CONTAINER ID    IMAGE             COMMAND                CREATED        STATUS         PORTS    NAMES
+        e05bf8a9adae    apache-train:2.2  "/usr/sbin/apache2 -   4 seconds ago  Up 3 seconds   80/tcp   admiring_feynman
+
+Nous voyons notre conteneur basé sur l'image **apache-train:2.2** , qui est en exécution depuis 4 secondes, le nom du conteneur est **admiring_feynman**. Je vais utilisé ce nom pour m'y connecter.
+
+        $ docker exec -it admiring_feynman bash
+        root@e05bf8a9adae:/# ls
+        bin  boot  dev  etc  home  lib  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+        root@e05bf8a9adae:/# ls /var/www/html/
+        LICENSE  cfile.php  data  data.dtd  dessin_mouton.jpg  index.html
+        root@e05bf8a9adae:/# ls /var/www/html/data
+        README
 
 
+Le site web est présent ainsi que le répertoire contenant les données , si nous accédons à l'URL __http://172.17.0.7/cfile.php__ vous devriez avoir l'information suivante dans votre browser :
+
+        58
+        58
+        58
+        58
+        58
+        58
+        58
+        58
+        58
+        58
+
+De plus , nous aurons 10 fichiers dans le répertoire __/var/www/html/data__ :
+
+        root@e05bf8a9adae:/# ls /var/www/html/data
+        0.txt  1.txt  2.txt  3.txt  4.txt  5.txt  6.txt  7.txt  8.txt  9.txt  README
+
+Si j'arrête le conteneur , et le redémarre , le tout proprement :
+
+        root@e05bf8a9adae:/# exit
+        $ docker  stop admiring_feynman
+        $ docker run apache-train:2.2
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.8. Set the 'ServerName' directive globally to suppress this message
+
+
+        $ docker  ps
+        CONTAINER ID  IMAGE               COMMAND                CREATED         STATUS         PORTS    NAMES
+        4dcddcf83a7b  apache-train:2.2    "/usr/sbin/apache2 -   48 seconds ago  Up 46 seconds  80/tcp   lonely_pare
+
+
+        $ docker exec -it lonely_pare bash
+        root@4dcddcf83a7b:/# ls /var/www/html/  
+        LICENSE  cfile.php  data  data.dtd  dessin_mouton.jpg  index.html
+        root@4dcddcf83a7b:/# ls /var/www/html/data
+        README
+
+
+ICI ICI ICI ICI << dire que les donneés perdu rappel layer write effemaire 
 
 ## <a name="dockeriser_config" /> Configuration Apache
 
