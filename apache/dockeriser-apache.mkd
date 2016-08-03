@@ -613,7 +613,164 @@ Si j'arrête le conteneur , et le redémarre , le tout proprement :
         README
 
 
-ICI ICI ICI ICI << dire que les donneés perdu rappel layer write effemaire 
+Si vous vous rappelez lors de la présentation de docker nous avions fait mention que le système fonctionne avec des couches (__layers__) la couche supérieur est par défaut éphémère, elle n'est présente que lors de l'exécution du conteneur.
+
+<img src="http://docs.master.dockerproject.org/terms/images/docker-filesystems-multilayer.png"  width="600px" />
+
+#### <a name="dockeriser_volume4dataInfo" /> Définition d'un volume pour les données
+
+Donc l'ensemble des données furent écrite dans cette couche qui a disparue lors de l'arrêt du conteneur. Ceci peut être très problématique , afin de corriger ce problème nous pouvons mettre en place le système de volume non pas sur l'ensemble du site web mais sur les données écrite lors de l'utilisation du conteneur.
+
+        $ sudo mkdir -p /data/data-site/
+        $ docker run -v /data/data-site/:/var/www/html/data apache-train:2.2
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.1. Set the 'ServerName' directive globally to suppress this message
+
+
+        $ docker  ps
+        CONTAINER ID   IMAGE             COMMAND                CREATED       STATUS       PORTS     NAMES
+        cd07dc0a105c   apache-train:2.2  "/usr/sbin/apache2 -   5 seconds ago Up 3 seconds 80/tcp    jolly_pare
+        $ docker  exec -it jolly_pare bash
+        root@cd07dc0a105c:/# ls /var/www/html/data
+        root@cd07dc0a105c:/#
+
+Si  nous accédons au site web http://172.17.0.1 , nous voyons bien la page web avec le mouton :D. Si nous accédons à l'URL __http://172.17.0.1/cfile.php__ nous ne voyons pas la liste de chiffre comme avant :-/. Analysons ensemble le problème ceci est un problème "classique" lors d'utilisation des volumes. 
+Commençons par les logs du serveur apache qui nous offrira probablement de l'information :
+
+        root@cd07dc0a105c:/# tail /var/log/apache2/error.log
+        [Wed Aug 03 08:25:07.437086 2016] [:error] [pid 7] [client 172.17.42.1:41958] PHP Warning:  fclose() expects parameter 1 to be resource, boolean given in /var/www/html/cfile.php on line 9
+        [Wed Aug 03 08:25:07.437132 2016] [:error] [pid 7] [client 172.17.42.1:41958] PHP Warning:  fopen(./data/7.txt): failed to open stream: Permission denied in /var/www/html/cfile.php on line 7
+
+Le message est claire le système apache n'est pas en mesure d'ouvrir / écrire dans le répertoire **data** , validons les permission de ce répertoire.
+
+        root@cd07dc0a105c:/# ls -ld /var/www/html/data
+        drwxr-xr-x 2 root root 4096 Aug  3 08:22 /var/www/html/data
+
+**Oupss** pourtant ça fonctionnait avant , nous l'avions définie dans le fichier __DockerFile__ lors de la création du conteneur . Voici ce qui est dans le __DockerFile__ pour la création du répertoire :
+
+        # Mise en place du site
+        RUN rm -rf $SITE_DOCROOT  &&  git clone $SITE_REPO -b $SITE_VERSION $SITE_DOCROOT && \
+            chown $APACHE_RUN_USER:$APACHE_RUN_GROUP $SITE_DOCROOT/data
+
+Lors de l'utilisation du volume , ce dernier à le dessus sur la couche système du conteneur , c'est un peu comme quand on fait un __mount bind__ nous nous retrouvons avec le nouveau point de montage par dessus le système de fichier original. La solution définir les bonne permissions sur le système de fichier du **docker host**. Nous devons donc permettre à l'utilisateur __www-data__ d'écrite dans le répertoire du **docker host** soit __/data/data-site__ .
+
+        $ sudo chown www-data:www-data /data/data-site
+        chown: invalid user: ‘www-data:www-data’
+
+**Oupss** l'utilisateur __www-data__ n'existe pas sur mon système :-(, il n'est présent QUE dans mon conteneur , comment puis je solutionner ce problème ?
+En fait le file système GNU/Linux il s'en fou du nom :P, c'est vraiment uniquement pour que ce soit plus simple pour l'humain mais le système ne conserve QUE le __UID__ et __GID__ de l'utilisateur. Donc si je connais ces informations je peux les associé au répertoire et ils seront bien représenté dans le conteneur ... Démonstration , premièrement je récupère le __UID__ et __GID__ de l'utilisateur dans le conteneur 
+
+        root@cd07dc0a105c:/# id www-data
+        uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+        $ sudo chown 33:33 /data/data-site/
+
+        root@cd07dc0a105c:/# ls -ld /var/www/html/data
+        drwxr-xr-x 2 www-data www-data 4096 Aug  3 08:22 /var/www/html/data
+
+**WOOT** magie :D , validons que ceci fonctionne à présent, je retourne donc à l'URL __http://172.17.0.1/cfile.php__ , maintenant j'ai la liste de numéro . Si nous regardons dans le conteneur et sur le __docker host__ nous aurons les données.
+
+        root@cd07dc0a105c:/# ls -l /var/www/html/data 
+        total 40
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 0.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 1.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 2.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 3.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 4.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 5.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 6.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 7.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 8.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 9.txt
+
+        $ ls -l /data/data-site/
+        total 40
+        -rw-r--r-- 1 http http 58 Aug  3 08:42 0.txt
+        -rw-r--r-- 1 http http 58 Aug  3 08:42 1.txt
+        -rw-r--r-- 1 http http 58 Aug  3 08:42 2.txt
+        -rw-r--r-- 1 http http 58 Aug  3 08:42 3.txt
+        -rw-r--r-- 1 http http 58 Aug  3 08:42 4.txt
+        -rw-r--r-- 1 http http 58 Aug  3 08:42 5.txt
+        -rw-r--r-- 1 http http 58 Aug  3 08:42 6.txt
+        -rw-r--r-- 1 http http 58 Aug  3 08:42 7.txt
+        -rw-r--r-- 1 http http 58 Aug  3 08:42 8.txt
+        -rw-r--r-- 1 http http 58 Aug  3 08:42 9.txt
+
+Si nous arrêtons le conteneur et le redémarrons nous aurons toujours les données car elles sont contenu sur le __docker host__.
+
+        
+        $ docker  ps
+        CONTAINER ID   IMAGE             COMMAND                CREATED       STATUS       PORTS     NAMES
+        cd07dc0a105c   apache-train:2.2  "/usr/sbin/apache2 -   5 seconds ago Up 3 seconds 80/tcp    jolly_pare
+        $ docker  stop jolly_pare
+        jolly_pare
+
+        $ docker run -v /data/data-site/:/var/www/html/data apache-train:2.2
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
+
+
+        $ docker  ps
+        CONTAINER ID   IMAGE             COMMAND                CREATED          STATUS       PORTS     NAMES
+        bdb7aab8b32d   apache-train:2.2  "/usr/sbin/apache2 -   25 seconds ago  Up 24 seconds 80/tcp    kickass_newton
+        $ docker  exec -it kickass_newton bash
+        root@bdb7aab8b32d:/# ls -l /var/www/html/data
+        total 40
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 0.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 1.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 2.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 3.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 4.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 5.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 6.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 7.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 8.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 08:42 9.txt
+
+#### <a name="dockeriser_Name4dataInfo" /> Nommage du conteneur pour conserver les données du site
+
+L'autre méthode est de s'assurer que la couche supérieur soit conserver et rappeler lors du démarrage du conteneur :
+
+<img src="http://docs.master.dockerproject.org/terms/images/docker-filesystems-multilayer.png"  width="600px" />
+
+Pour ce faire nous nommerons le conteneur, ceci nous donnera un nom fixe contrairement à ceux généré dynamiquement comme nous avons utilisé jusqu'à présent. Démonstration de l'opération sans le volume mais avec le nommage du conteneur.
+
+        $ docker run --name x3rus_site  apache-train:2.2
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.3. Set the 'ServerName' directive globally to suppress this message
+
+J'ai donc démarrer l'image __apache-train:2.2__ en nommant explicitement le conteneur __x3rus\_site__.
+
+        CONTAINER ID   IMAGE            COMMAND                CREATED        STATUS         PORTS   NAMES
+        14979a4cf52c   apache-train:2.2 "/usr/sbin/apache2 -   49 seconds ago Up 48 seconds  80/tcp  x3rus_site 
+
+Si nous regardons le contenu du répertoire de données du site :
+
+        $ docker  exec -it x3rus_site bash
+        root@14979a4cf52c:/# ls -l /var/www/html/data
+        total 4
+        -rw-r--r-- 1 root root 40 Aug  2 08:32 README
+
+J'accède à l'URL de création des fichiers : __http://172.17.0.3/cfile.php__, j'ai bien la liste de numéro et si nous regardons le contenu du répertoire l'ensemble est présent :
+
+        root@14979a4cf52c:/# ls -l /var/www/html/data
+        total 44
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 0.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 1.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 2.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 3.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 4.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 5.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 6.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 7.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 8.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 9.txt
+        -rw-r--r-- 1 root     root     40 Aug  2 08:32 README
+
+Je ferme le conteneur et vais le redémarrer 
+
+        $ docker  stop x3rus_site
+        x3rus_site
+
+
+ICI ICI ICI <<=== redémarrer le conteneur
 
 ## <a name="dockeriser_config" /> Configuration Apache
 
