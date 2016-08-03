@@ -769,10 +769,163 @@ Je ferme le conteneur et vais le redémarrer
         $ docker  stop x3rus_site
         x3rus_site
 
+        $ docker  start x3rus_site
+        x3rus_site
 
-ICI ICI ICI <<=== redémarrer le conteneur
+        $ docker ps
+        CONTAINER ID   IMAGE            COMMAND                CREATED        STATUS         PORTS   NAMES
+        14979a4cf52c   apache-train:2.2 "/usr/sbin/apache2 -   8 hours ago    Up 10 seconds  80/tcp  x3rus_site 
+
+        $ docker  exec -it x3rus_site bash
+        root@14979a4cf52c:/# ls -l /var/www/html/data
+        total 44
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 0.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 1.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 2.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 3.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 4.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 5.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 6.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 7.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 8.txt
+        -rw-r--r-- 1 www-data www-data 58 Aug  3 09:00 9.txt
+        -rw-r--r-- 1 root     root     40 Aug  2 08:32 README
+
+Comme nous pouvons le voir le conteneur contient toujours l'ensemble des données généré par le système , la couche (__layeur__) de données fut conservé malgré le redémarrage. Cette couche n'est cependant conservé que sur le docker __host__ et non sur l'image original, à ce stade vous devais planifier votre gestion de données :D.
+
+Rien ne vous empêche d'utiliser les deux méthode le volume ET le nommage du conteneur !!
 
 ## <a name="dockeriser_config" /> Configuration Apache
+
+Nous avons couvert la question de la mise en place du site web , ainsi que la question du stockage des informations , mais rien au niveau de la configuration du serveur apache. Je pense que le moment est venu de couvrir ce point non moins critique surtout si vous avez un site web complet voir complexe. 
+
+Les solutions sont encore multiple , bien entendu il est toujours possible de réaliser un point de montage avec le volume, cependant vous risquez d'avoir rapidement un problème de gestion ou de standardisation si vous avez un nombre important de serveur. 
+
+La configuration Apache est lié à votre application, si vous avez des instructions telle que __mod\_rewrite__ ou des sections d'authentification ceci s'applique tous le temps. Nous allons donc mettre en place une configuration générique standardisé dans l'image de base puis nous la personnaliserons lors de l'exécution du conteneur.
+
+Premièrement modifions le site web le dépôt **git** afin d'inclure la configuration. 
+
+        $ cd siteweb_formation/
+        $ ls
+        cfile.php  data  data.dtd  dessin_mouton.jpg  index.html  LICENSE
+        $ git branch
+          2.0
+          2.1
+          * 2.2
+          master
+
+Nous allons crée la branche 3.0 afin d'inclure la nouvelle configuration , ce sera plus propre.
+
+        $ git checkout -b 3.0
+        Switched to a new branch '3.0'
+
+Je vais mettre l'ensemble du site sous un répertoire **docroot** et définir la configuration apache sous **apacheConf** , je crée aussi un répertoire **privates** pour les données hors site.
+
+        $ mkdir docroot
+        $ mv * docroot
+        mv: cannot move ‘docroot’ to a subdirectory of itself, ‘docroot/docroot’
+        $ mkdir apacheConf privates
+
+Voici la configuration apache :
+
+        $ cat apacheConf/siteA.conf
+        <VirtualHost *:80>
+
+                ServerAdmin ${SERVER_ADMIN}
+                DocumentRoot /var/www/html/docroot
+
+                <Directory /var/www/html/docroot/data>
+                    Options None    
+                    AllowOverride None
+                    #  Section d'authentification
+                    AuthType Basic
+                    AuthName "Authentication Required"
+                    AuthUserFile "/var/www/html/privates/htaccess"
+                    Require ${VALIDE_USER}
+                </Directory>
+
+                ErrorLog ${APACHE_LOG_DIR}/error.log
+                CustomLog ${APACHE_LOG_DIR}/access.log combined
+        </VirtualHost>
+
+Comme vous pouvez le voir j'ai définie un fichier de mot de passe dans le répertoire **privates** je vais donc aussi définir un fichier __htpasswd__.
+
+
+        $ htpasswd -c privates/htpasswd admin
+        $ htpasswd  privates/htpasswd tom 
+        $ htpasswd  privates/htpasswd bob 
+
+        $ cat privates/htpasswd 
+        tom:$apr1$nh2m2SRP$Vr7T.s8jH3n2F6tQECUc9/
+        bob:$apr1$UTUQuKYU$Ot1G/ICuCWvtdF48C4Lkg1
+        robert:$apr1$.2jP2rT4$c7Ddv9YMdzYj.UYpUReFi.
+        admin:$apr1$bYi5/UtQ$17RBM3ieAzaQRRIYJcOHO.
+
+On ajoute le tous dans git et on pousse au serveur git :D.
+
+        $ git add *
+        $ git commit -a -m "Version 3.0 avec configuration apache plus fichier de mot de passe"
+        $ git push origin master
+
+On modifie le __DockerFile__ à présent afin de refléter cette nouvelle configuration.
+
+        $ cat DockerFile
+        FROM i686/ubuntu
+        MAINTAINER Boutry Thomas 'thomas.boutry@x3rus.com'
+
+        # Activation du mode non interactif pour apt
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Installation des applications de Base
+        RUN apt-get update && apt-get install -y \
+          apache2 apache2-utils git libapache2-mod-php5 && apt-get clean
+
+        # Fix timezone
+        RUN ln -s -f /usr/share/zoneinfo/Canada/Eastern /etc/localtime
+
+        ENV APACHE_RUN_USER  www-data
+        ENV APACHE_RUN_GROUP www-data
+        ENV APACHE_PID_FILE  /var/run/apache2.pid
+        ENV APACHE_RUN_DIR   /var/run/apache2
+        ENV APACHE_LOCK_DIR  /var/lock/apache2
+        ENV APACHE_LOG_DIR   /var/log/apache2
+
+        ENV SITE_DOCROOT /var/www/html/
+        ENV SITE_REPO https://github.com/x3rus/siteweb_formation
+        ENV SITE_VERSION 3.0
+
+        # Mise en place du site
+        RUN rm -rf $SITE_DOCROOT  &&  git clone $SITE_REPO -b $SITE_VERSION $SITE_DOCROOT && \
+            chown $APACHE_RUN_USER:$APACHE_RUN_GROUP $SITE_DOCROOT/docroot/data
+
+        RUN cp $SITE_DOCROOT/apacheConf/* /etc/apache2/sites-available/ && \
+            a2dissite 000-default && a2ensite siteA 
+
+        # Port exposer 
+        EXPOSE 80
+
+        CMD ["/usr/sbin/apache2","-DFOREGROUND"]
+
+On build le tout :
+
+        $ docker build -t apache-train:3.0 .
+
+
+On exécute : 
+
+        $ docker run  apache-train:3.0
+        [Wed Aug 03 17:43:36.836978 2016] [core:warn] [pid 1] AH00111: Config variable ${SERVER_ADMIN} is not defined
+        [Wed Aug 03 17:43:36.839862 2016] [core:warn] [pid 1] AH00111: Config variable ${VALIDE_USER} is not defined
+        AH00526: Syntax error on line 14 of /etc/apache2/sites-enabled/siteA.conf:
+        Unknown Authz provider: ${VALIDE_USER}
+
+ICI ICI ICI ICI << ajout explication
+**oupss** 
+
+        $ docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER=valid-user  apache-train:3.0
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.10. Set the 'ServerName' directive globally to suppress this message
+
+
 
 ## <a name="dockeriser_apache_logs" /> Visualisation des logs Apache
 
