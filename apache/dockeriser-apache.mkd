@@ -795,7 +795,9 @@ Comme nous pouvons le voir le conteneur contient toujours l'ensemble des donnée
 
 Rien ne vous empêche d'utiliser les deux méthode le volume ET le nommage du conteneur !!
 
-## <a name="dockeriser_config" /> Configuration Apache
+## <a name="dockeriser_config" /> Configuration 
+
+### <a name="dockeriser_config_Apache" /> Configuration Apache
 
 Nous avons couvert la question de la mise en place du site web , ainsi que la question du stockage des informations , mais rien au niveau de la configuration du serveur apache. Je pense que le moment est venu de couvrir ce point non moins critique surtout si vous avez un site web complet voir complexe. 
 
@@ -835,18 +837,20 @@ Voici la configuration apache :
                 DocumentRoot /var/www/html/docroot
 
                 <Directory /var/www/html/docroot/data>
-                    Options None    
+                    Options Indexes
                     AllowOverride None
                     #  Section d'authentification
                     AuthType Basic
                     AuthName "Authentication Required"
-                    AuthUserFile "/var/www/html/privates/htaccess"
+                    AuthUserFile "/var/www/html/privates/htpasswd"
                     Require ${VALIDE_USER}
                 </Directory>
 
                 ErrorLog ${APACHE_LOG_DIR}/error.log
                 CustomLog ${APACHE_LOG_DIR}/access.log combined
         </VirtualHost>
+
+Comme vous pouvez le voir j'ai définie des variables d'environnement pour l'instruction **ServerAdmin** et **Require**. Ceci nous permettra d'avoir UNE image docker utilisable pour l'ensemble des déploiements. Nous allons voir comment définir les valeurs lors du démarrage du conteneur. Nous pouvons planifier que la valeur en place pour le courriel soit distinct de l'environnement de développement ou de production , ceci est la même chose pour l'autorisation d'accès au répertoire de données.
 
 Comme vous pouvez le voir j'ai définie un fichier de mot de passe dans le répertoire **privates** je vais donc aussi définir un fichier __htpasswd__.
 
@@ -919,12 +923,60 @@ On exécute :
         AH00526: Syntax error on line 14 of /etc/apache2/sites-enabled/siteA.conf:
         Unknown Authz provider: ${VALIDE_USER}
 
-ICI ICI ICI ICI << ajout explication
-**oupss** 
+**Oupss**  effectivement j'ai définie des configurations particulière via les variables d'environnement dans la configuration d'apache mais je ne les ai pas fournit au démarrage ... Corrigeons le problème tous de suite. 
+Dans l'exemple ci-dessous je démarrage avec un courriel bidon pour l'administrateur ou je permet à n'importe quelle utilisateur valide d'établir une connexion dans le répertoire **data**
 
-        $ docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER=valid-user  apache-train:3.0
+        $ docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_2USER=valid-user  apache-train:3.0
         AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.10. Set the 'ServerName' directive globally to suppress this message
 
+Voici un autre exemple d'utilisation pour la production par exemple :
+
+        $ docker run  --env SERVER_ADMIN=prod@x3rus.com --env VALIDE_2USER="user admin" apache-train:3.0
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.6. Set the 'ServerName' directive globally to suppress this message
+
+Dans ce dernier exemple uniquement le compte __admin__ peut voir le contenu du répertoire .
+
+### <a name="dockeriser_config_App" /> Configuration Applicative
+
+Super donc la gestion de configuration apache est fait , il faut mettre plus de viande selon vos besoin mais le concept est présenté. Passons maintenant à la configuration applicative , en effet il est fort probable que si votre application utilise une Base de donnée pour fonctionner cette dernière n'est pas la même pour la production ou le développement.
+
+Je vais créer une autre branche , oui oui encore :P
+
+
+        $ git checkout -b 3.1
+        Switched to a new branch '3.1'
+        $ vim docroot/config.conf
+        $ cat docroot/config.conf
+        database_host = ${DB_HOST}
+        database_user = ${DB_USER}
+        database_pass = ${DB_PASS}
+        database_db   = ${DB_DB}
+
+J'utilise encore la même définition de variable ... On commit et on valide , c'est exactement le moment où il ne faut pas sauté la présentation, car ça ne marchera pas je vous le dit tous de suite :P.
+
+        $ git commit -a -m "Ajout de la configuration DB"
+        [3.1 2e804ed] Ajout de la configuration DB
+         1 file changed, 4 insertions(+)
+         create mode 100644 docroot/config.conf
+        $ git push origin 3.1
+
+Je modifie le __DockerFile__ afin d'utiliser la nouvelle branche lors du __build__
+
+        ENV SITE_VERSION 3.1
+
+Puis nous __buildons__ : 
+
+        $ docker build -t apache-train:3.1 .
+
+On utilise le passage d'argument pour démarrer le conteneur
+
+        $ docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER="user admin" --env DB_HOST=db.x3rus.com --env DB_USER=toto --env DB_PASS=password --env DB_DB=mydb  apache-train:3.1
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.10. Set the 'ServerName' directive globally to suppress this message
+
+
+Nous allons à L'URL : http://172.17.0.10/config.conf et là ... Heu heu ... Ça n'a pas changé !! Le __daemon__ apache est assez intelligent pour prendre en charge les variables d'environnement malheureusement ce n'est pas natif pour l'ensemble des applications . Nous allons devoir mettre un mécanisme supplémentaire. 
+
+        for cust_env in $( env | grep ^DB | cut -d "=" -f 1) ; do sed "s/\${$cust_env}/$cust_env/g" docroot/config.conf ; done
 
 
 ## <a name="dockeriser_apache_logs" /> Visualisation des logs Apache
