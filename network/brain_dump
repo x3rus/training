@@ -1,0 +1,15 @@
+
+Nom Vs IP
+
+Connection refuse et Connection Timeout 
+
+    Analyse de la connection (tcpdump + nc + iptables ... )
+
+Routage 
+
+    Explication du routage
+
+Nat
+
+Structure d'un packet TCP/IP    
+
