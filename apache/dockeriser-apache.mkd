@@ -8,6 +8,21 @@ TODO corriger les \_
 
 # Index 
 
+* [ Dockeriser Apache](#dockeriser) 
+       * [ Dockeriser Apache version simple ](#dockeriser_simple) 
+       * [ Considération réseau pour le conteneur Apache](#dockeriser_network) 
+       * [ Mise en place du site web](#dockeriser_site-web) 
+           * [ Mise en place du site web via Git ou Subversion](#dockeriser_site-web_git) 
+           * [ Mise en place du site web avec un volume ](#dockeriser_site-volume) 
+           * [ Conservation des données du sites (volume et nommage du conteneur)](#dockeriser_volume4data) 
+               * [ Définition d'un volume pour les données](#dockeriser_volume4dataInfo) 
+               * [ Nommage du conteneur pour conserver les données du site](#dockeriser_Name4dataInfo) 
+       * [ Configuration ](#dockeriser_config) 
+           * [ Configuration Apache](#dockeriser_config_Apache) 
+           * [ Configuration Applicative](#dockeriser_config_App) 
+       * [ Visualisation des logs Apache](#dockeriser_apache_logs) 
+       * [ Correctif d'urgence](#dockeriser_fix_tempo) 
+       * [ Docker-Compose pour simplifier](#dockeriser_dockercompose) 
 
 # <a name="dockeriser" /> Dockeriser Apache
 
@@ -974,14 +989,83 @@ On utilise le passage d'argument pour démarrer le conteneur
         AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.10. Set the 'ServerName' directive globally to suppress this message
 
 
-Nous allons à L'URL : http://172.17.0.10/config.conf et là ... Heu heu ... Ça n'a pas changé !! Le __daemon__ apache est assez intelligent pour prendre en charge les variables d'environnement malheureusement ce n'est pas natif pour l'ensemble des applications . Nous allons devoir mettre un mécanisme supplémentaire. 
+Nous allons à L'URL : http://172.17.0.10/config.conf et là ... Heu heu ... Ça n'a pas changé !! Le __daemon__ apache est assez intelligent pour prendre en charge les variables d'environnement malheureusement ce n'est pas natif pour l'ensemble des applications . Nous allons devoir mettre un mécanisme supplémentaire. Lors du démarrage du conteneur je vais extraire les variables d'environnement et réaliser un petit **sed** (__search and replace__) afin de définir les bonnes valeurs.
 
-        for cust_env in $( env | grep ^DB | cut -d "=" -f 1) ; do sed "s/\${$cust_env}/$cust_env/g" docroot/config.conf ; done
+Commençons par l'écriture du script :
+
+        $ mkdir scripts
+        $ vim scripts/sed_var.sh
+        $ cat scripts/sed_var.sh
+        #!/bin/bash
+
+        LST_VAR=$(env | grep ^DB)
+
+        for env_2_change in $LST_VAR ; do
+            ENV_NAME=$(echo $env_2_change | cut -d "=" -f 1)
+            ENV_VAL=$(echo $env_2_change | cut -d "=" -f 2-)
+            sed -i "s/\${$ENV_NAME}/$ENV_VAL/g" docroot/config.conf
+        done
+
+Rapidement, je met toute les variables débutant par les lettres __DB__ et je met ça dans une liste. Je parcours à l'aide d'une boucle cette liste et sépare le nom de la variable (__ENV\_NAME__) avec la valeur  (__ENV\_VAL__). Je réalise un **sed** qui modifiera le fichier grâce à l'option **-i** .  Je présente le concept , à vous de l'adapter pour vos besoins la complexité de ce scripts peut augmenter il serai possible aussi d'utiliser __ansible__ ou __puppet__ à vous de voir :D.
+
+Donc ce script doit être exécuté lors du démarrage du conteneur , en plus de l'exécution du processus apache bien entendu . Le changement de variable devrait être réalisé préférablement avec le démarrage.
+Nous allons modifier le __DockerFile__ afin de permettre cette opération.
+
+Je vais donc écrire un autre script de démarrage __start.sh__ qui réalisera ces deux opérations.
+
+        $ vim scripts/start.sh
+        $ cat scripts/start.sh
+        #!/bin/bash
+
+        # Changement des variables 
+        /usr/local/sbin/sed_var.sh
+            
+        # Démarrage du processus apache 
+        /usr/sbin/apache2 -DFOREGROUND
+
+On modifie le __DockerFile__ :
+
+        $ cat DockerFile
+        [ ... OUTPUT COUPÉ ...]
+        # Mise en place du site
+        RUN rm -rf $SITE_DOCROOT  &&  git clone $SITE_REPO -b $SITE_VERSION $SITE_DOCROOT && \
+            chown $APACHE_RUN_USER:$APACHE_RUN_GROUP $SITE_DOCROOT/docroot/data
+
+        RUN cp $SITE_DOCROOT/apacheConf/* /etc/apache2/sites-available/ && \
+            a2dissite 000-default && a2ensite siteA 
+
+        # Copy SCRIPTS
+        COPY scripts/*.sh /usr/local/sbin/ 
+        RUN chmod a+x /usr/local/sbin/*.sh
+
+        # Port exposer 
+        EXPOSE 80
+
+        CMD ["/usr/local/sbin/start.sh"]
+
+Donc j'ai ajouté la __COPY__ des nouveaux scripts , j'ai modifié les permissions __RUN__ et j'ai changer la commande d'exécution du conteneur afin d'utiliser le script __start.sh__.
+
+On lance le __build__ (on va chercher éventuellement un petit café :) ), et on va exécuter le conteneur :
+
+        $ docker build -t apache-train:3.1 .
+        $ docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER="user admin" --env DB_HOST=db.x3rus.com --env DB_USER=toto --env DB_PASS=password --env DB_DB=mydb  apache-train:3.1
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.4. Set the 'ServerName' directive globally to suppress this message
+
+
+Si nous allons à l'URL __http://172.17.0.4/config.conf__ l'ensemble des valeurs furent modifier !!! **WOOT**.
+
+Grâce à cette solution vous avez **UNE** images de référence et lors de son utilisation le contexte est passé pour distingué les spécificité , telle que l'environnement de __DEV__ ou autre.
 
 
 ## <a name="dockeriser_apache_logs" /> Visualisation des logs Apache
 
-## <a name="dockeriser_reuse_imgs" /> Réutilisation des images docker
+Continuons le processus d'amélioration de la solution ;-), en fait même à la fin de cette présentation il y aura des améliorations encore possible mais faut savoir s'arrêter parfois .
+
+Donc nous avons une image contenant notre site et une configuration de base qui est configurer au démarrage du conteneur. Bien entendu comme tous système en fonction, il est à prévoir des problème d'opération, nous serons donc dans l'obligation de consulter les logs applicatifs. La meilleur solution est d'avoir un serveur __syslog__ centralisé permettant la récupération de l'ensemble des logs du réseaux ce qui permet de réaliser une analyse , avec génération de graphique , etc... 
+
+Bon ceci étant dit si vous avez quelque conteneur vous avez pas envie de rajouter cette couche de complexité, nous allons donc voir pour visualiser les logs d'apache avec l'instruction __docker logs__.
+
+Actuellement si nous réalisons l'instruction __docker logs__ nous avons ce que la commande __/usr/sbin/apache2 -DFOREGROUND__ fournit à l'écran . Il est probable que vous préfériez voir les messages d'erreurs et / ou éventuellement les logs d'accès au site. 
 
 ## <a name="dockeriser_fix_tempo" /> Correctif d'urgence
 
