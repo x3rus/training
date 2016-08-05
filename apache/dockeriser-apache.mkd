@@ -1067,7 +1067,127 @@ Bon ceci étant dit si vous avez quelque conteneur vous avez pas envie de rajout
 
 Actuellement si nous réalisons l'instruction __docker logs__ nous avons ce que la commande __/usr/sbin/apache2 -DFOREGROUND__ fournit à l'écran . Il est probable que vous préfériez voir les messages d'erreurs et / ou éventuellement les logs d'accès au site. 
 
+Il faut savoir que l'instruction __docker logs__ peut être exécuté à distance ou certaine application permette d'afficher cette information via une page web ... Par exemple __docker UI__ si je ne me trompe pas :D.
+
+Réalisons la modification du Docker afin d'avoir cette fonctionnalité pour ce faire nous allons modifier le script de démarrage. 
+
+        $ vim scripts/start.sh
+        $ cat scripts/start.sh
+        #!/bin/bash
+
+        # Changement des variables 
+        /usr/local/sbin/sed_var.sh
+
+        # Démarrage du processus apache 
+        /usr/sbin/apache2 
+
+        # Affichage des logs 
+        tail -f  /var/log/apache2/error.log /var/log/apache2/access.log
+
+Nous __buildons__ le conteneur et on l'exécute  :
+
+        $ docker build -t apache-train:3.1 .
+        $ docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER="user admin" --env DB_HOST=db.x3rus.com --env DB_USER=toto --env DB_PASS=password --env DB_DB=mydb  apache-train:3.1
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.3. Set the 'ServerName' directive globally to suppress this message
+        ==> /var/log/apache2/error.log <==
+        [Mon Aug 01 21:39:05.645683 2016] [mpm_event:notice] [pid 2581:tid 3074931328] AH00489: Apache/2.4.7 (Ubuntu) configured -- resuming normal operations
+        [Mon Aug 01 21:39:05.645902 2016] [core:notice] [pid 2581:tid 3074931328] AH00094: Command line: '/usr/sbin/apache2'
+        [Mon Aug 01 21:39:11.891689 2016] [mpm_event:notice] [pid 2581:tid 3074931328] AH00491: caught SIGTERM, shutting down
+        [Mon Aug 01 21:39:12.080570 2016] [mpm_prefork:notice] [pid 3709] AH00163: Apache/2.4.7 (Ubuntu) configured -- resuming normal operations
+        [Mon Aug 01 21:39:12.083256 2016] [core:notice] [pid 3709] AH00094: Command line: '/usr/sbin/apache2'
+        [Mon Aug 01 21:39:13.577065 2016] [mpm_prefork:notice] [pid 3709] AH00169: caught SIGTERM, shutting down
+        [Mon Aug 01 21:39:14.838949 2016] [mpm_prefork:notice] [pid 3785] AH00163: Apache/2.4.7 (Ubuntu) PHP/5.5.9-1ubuntu4.17 configured -- resuming normal operations
+        [Mon Aug 01 21:39:14.839074 2016] [core:notice] [pid 3785] AH00094: Command line: '/usr/sbin/apache2'
+
+        ==> /var/log/apache2/access.log <==
+
+        ==> /var/log/apache2/error.log <==
+        [Fri Aug 05 17:07:36.342459 2016] [mpm_prefork:notice] [pid 40] AH00163: Apache/2.4.7 (Ubuntu) PHP/5.5.9-1ubuntu4.17 configured -- resuming normal operations
+        [Fri Aug 05 17:07:36.342649 2016] [core:notice] [pid 40] AH00094: Command line: '/usr/sbin/apache2'
+
+
+Si vous allez à la page web du conteneur, vous verrez défiler  le contenu du fichier d'accès.
+
 ## <a name="dockeriser_fix_tempo" /> Correctif d'urgence
+
+Bon pour les environnements en utilisation ça va bien , mais que faire s'il y a une modification d'urgence à réalisé , en effet vous devez effectuer une modification d'urgence sur une configuration voir un fichier applicatif. La réponse est **normalement** de refaire une version contenu dans __git__ et de refaire l'image pour la redéployer. 
+
+Si vous suggérer cette solution pour changer l'adresse courriel par exemple il est possible que les personnes en charge soit très frileuse d'effectuer cette opération. Nous allons donc couvrir une possibilité qui ne suit pas les bonnes pratique, mais la réalité opérationnel fait en sorte qu'il est parfois difficile de suivre toujours les bonnes pratique.
+
+Il possible d'effectuer une modification sur un conteneur en exécution sans devoir refaire le __build__, je vais faire un exemple je vais rajouter une option dans le fichier de configuration qui contiendra le type de chiffrement à utiliser. 
+
+        Fichier : $DOC_ROOT/docroot/config.conf
+        database_crypt = TLS
+
+Si je regarde le conteneur en exécution si je fais l'ajout simplement et que je stop et redémarre le conteneur je vais perdre la modification .
+
+        $ docker  ps
+        CONTAINER ID   IMAGE            COMMAND                CREATED         STATUS         PORTS   NAMES
+        2ced572f0476   apache-train:3.1 "/usr/local/sbin/sta   12 minutes ago  Up 12 minutes  80/tcp  jolly_blackwell5
+        $ docker exec -it jolly_blackwell5 bash
+        root@2ced572f0476:/# echo "database_crypt = TLS" >> /var/www/html/docroot/config.conf
+        root@2ced572f0476:/# cat /var/www/html/docroot/config.conf
+        database_host = db.x3rus.com
+        database_user = toto
+        database_pass = password
+        database_db   = mydb
+        database_crypt = TLS
+
+Je stop et redémarre 
+
+        $ docker stop jolly_blackwell5
+        $ docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER="user admin" --env DB_HOST=db.x3rus.com --env DB_USER=toto --env DB_PASS=password --env DB_DB=mydb  apache-train:3.1
+        
+
+        $ docker ps
+        CONTAINER ID  IMAGE            COMMAND                CREATED         STATUS         PORTS   NAMES
+        62f90667a188  apache-train:3.1 "/usr/local/sbin/sta   16 seconds ago  Up 15 seconds  80/tcp  silly_hodgkin
+        $ docker exec -it silly_hodgkin bash
+        root@62f90667a188:/# cat /var/www/html/docroot/config.conf 
+        database_host = db.x3rus.com
+        database_user = toto
+        database_pass = password
+        database_db   = mydb
+
+Maintenant le "__Fix__" , je refais la modification mais en plus je **COMMIT** le changement.
+
+        root@62f90667a188:/# echo "database_crypt = TLS" >> /var/www/html/docroot/config.conf
+        root@62f90667a188:/# exit
+        exit
+
+        $ docker  commit -m " Ajout option database_crypt = TLS " silly_hodgkin apache-train:3.1
+        b118bcb68f95723e4e004ea6ba6a36ac8f4078eaf2bcd35a591e1e6f1a1851ba
+
+Avec l'instruction __docker commit__ je brule la nouvelle configuration dans le conteneur, l'option **-m** me permet de définir un message afin de connaître la modification réalisé . Validons le résultat en arrêtant le conteneur et on le redémarre.
+
+         $ docker  stop silly_hodgkin
+         silly_hodgkin
+         $ docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER="user admin" --env DB_HOST=db.x3rus.com --env DB_USER=toto --env DB_PASS=password --env DB_DB=mydb  apache-train:3.1
+
+         $ docker  ps
+         CONTAINER ID  IMAGE            COMMAND                CREATED         STATUS         PORTS   NAMES
+         713d27ebc826  apache-train:3.1 "/usr/local/sbin/sta   12 seconds ago  Up 10 seconds  80/tcp  lonely_wozniak
+         $ docker  exec -it lonely_wozniak bash
+         root@713d27ebc826:/# cat /var/www/html/docroot/config.conf                             
+         database_host = db.x3rus.com
+         database_user = toto
+         database_pass = password
+         database_db   = mydb
+         database_crypt = TLS
+
+**YEAHH** ça fonctionne réellement ;-), avec la commande __docker history__ vous pouvez revoir le changement qui fut réalisé.
+
+        $ docker  history apache-train:3.1
+        IMAGE          CREATED         CREATED BY                     SIZE        COMMENT
+        b118bcb68f95   3 minutes ago   /usr/local/sbin/start.sh       1.48 kB     Ajout option database_crypt = TLS 
+        5127cb299161   21 minutes ago  /bin/sh -c #(nop) CMD ["/usr/local/sbin/start   0 B                 
+        12d36e660e8f   21 minutes ago  /bin/sh -c #(nop) EXPOSE 80/tcp                 0 B                 
+        1c669168c35f   21 minutes ago  /bin/sh -c chmod a+x /usr/local/sbin/*.sh       679 B
+        [ ... OUTPUT COUPÉ ... ]
+
+J'aurais du mettre l'option **-a** pour spécifier l'auteur ... Lors du **docker commit** mais vous voyez le résultat.
+
+**ATTENTION** : vous devez modifier le dépôt **GIT** pour conservé la nouvelle configuration pour lors du prochain __build__ de l'image !!!
 
 ## <a name="dockeriser_dockercompose" /> Docker-Compose pour simplifier
 
