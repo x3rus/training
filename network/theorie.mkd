@@ -1,0 +1,36 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+TODO corriger les \_
+
+# Index 
+
+# <a name="clarification" /> Clarifications du réseau
+
+Avant de parler routage ouverture de ports j'aimerai clarifier certain aspect du réseau , pas de panique je ne planifie pas faire 3 jours sur la [couche OSI](https://fr.wikipedia.org/wiki/Mod%C3%A8le_OSI). Nous allons voir un peu cette théorie mais dans un but précis permettre de diagnostiquer un problème. Avoir une meilleur compréhension de l'ensemble du processus et des différentes étapes nous aide a mieux identifier la source des problèmes. De nous jours le réseau est essentiel allumé une machine qui n'est pas connecter et rapidement on ne sait plus quoi faire avec ... 
+
+Pour commencer, j'aimerai vous donner ma vision du réseau au risque de contrarier certain administrateur réseaux :P. Personnellement je perçois le trafic réseaux comme de l'eau. Le trafic coule entre les différents équipement qui soit le laisse passer soit le bloque. Parfois le courant est redirigé vers un autre point , parfois il est légèrement modifier pour ajouter plus d'information ... Mais à la fin c'est aussi simple que ça , je ne suis peut-être pas le plus grand fan du réseau voilà pourquoi j'ai cette vision peut-être simpliste.
+
+## <a name="clarification_Protocol_internet" /> Théorie sur le protocole d'Internet
+
+Nous nous concentrerons sur le protocole le plus utilisé aujourd'hui soit celui d'Internet, pour débuter voici une représentation du __flow__ (courant) sur Internet. 
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/c/c4/IP_stack_connections.svg"  width="700px" />
+
+J'aime beaucoup cette image qui représente très bien chaque étape du processus de communication entre 2 applications. 
+
+* **[Application](https://en.wikipedia.org/wiki/Application_layer)** : L'application peut être n'importe quoi un fureteur communiquant avec un serveur apache. Un client courriel communiquant avec un serveur __imaps__ ou __smtp__ , un jeu communiquant avec un serveur peu importe . L'application génère des données (__data__) qui doit être communiqué à l'autre application. L'application utilisera d'une librairie qui lui permettra de communiquer sur le réseau. En théorie ce pourrait être une librairie pour les réseaux [X.25](https://en.wikipedia.org/wiki/X.25) ou [TCP/IP](https://fr.wikipedia.org/wiki/Transmission_Control_Protocol) ou [UDP/IP](https://fr.wikipedia.org/wiki/User_Datagram_Protocol). Donc l'application génère des données !
+* **[Transport](https://en.wikipedia.org/wiki/Transport_layer)** : La couche transport prend les données de l'application et l'encapsule dans un format qui sera utilisé pour transporter les données . À ce stade nous avons 2 protocole actuellement très utilisé [TCP](https://fr.wikipedia.org/wiki/Transmission_Control_Protocol) ou [UDP](https://fr.wikipedia.org/wiki/User_Datagram_Protocol), nous allons voir plus en détail ce principe d'encapsulation et ce qu'il contient. À ce stade du processus les données sont formaté pour être transmis cependant la couche transport ne sait pas comment les transmettre. Est-ce que les paquets  doit être transmit à une passerelle ? Est-ce que la machine est sur le même réseau ? Comment les paquets doit être fragmenté (coupé en morceau) afin de pouvoir passer sur le file ? ...
+* **[Internet](https://en.wikipedia.org/wiki/Internet_layer)** : La couche __Internet__ s'occupe de définir le chemin que devra prendre les paquets, à savoir utilisé une passerelle de communication pour accéder au autre réseau. Voilà la partie **IP** de **TCP/IP**, cette couche s'assure de l'ensemble du chemin que devra prendre les données formaté selon le standard définie dans la couche précédente. 
+
+
+       ICI ICI ICI << continuer  
+
+
+* **Application** : Vous qui écrivait une lettre , vous êtes l'application et vous écrivez sur du papier
+* **Transport** : Ceci pourrait être représenter par l'enveloppe , cette dernière contient les données applicatif , dans notre cas la lettre. Nous avons écrit sur l'enveloppe les informations du destinataire , nous avons aussi écrit d'où provient la lettre en cas de problème. Pour finir nous fermons cette dernier, telle que le veut la convention / procédure. À ce stade nous ne savons pas comment la lettre sera transmise, par bateau , par avion ... Est-ce que la lettre sera transmis à un bureau centrale puis redistribué ? Ce que nous avons est que les données sont préparés selon la convention .
+
+
+
