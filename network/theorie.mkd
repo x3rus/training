@@ -23,14 +23,44 @@ J'aime beaucoup cette image qui représente très bien chaque étape du processu
 
 * **[Application](https://en.wikipedia.org/wiki/Application_layer)** : L'application peut être n'importe quoi un fureteur communiquant avec un serveur apache. Un client courriel communiquant avec un serveur __imaps__ ou __smtp__ , un jeu communiquant avec un serveur peu importe . L'application génère des données (__data__) qui doit être communiqué à l'autre application. L'application utilisera d'une librairie qui lui permettra de communiquer sur le réseau. En théorie ce pourrait être une librairie pour les réseaux [X.25](https://en.wikipedia.org/wiki/X.25) ou [TCP/IP](https://fr.wikipedia.org/wiki/Transmission_Control_Protocol) ou [UDP/IP](https://fr.wikipedia.org/wiki/User_Datagram_Protocol). Donc l'application génère des données !
 * **[Transport](https://en.wikipedia.org/wiki/Transport_layer)** : La couche transport prend les données de l'application et l'encapsule dans un format qui sera utilisé pour transporter les données . À ce stade nous avons 2 protocole actuellement très utilisé [TCP](https://fr.wikipedia.org/wiki/Transmission_Control_Protocol) ou [UDP](https://fr.wikipedia.org/wiki/User_Datagram_Protocol), nous allons voir plus en détail ce principe d'encapsulation et ce qu'il contient. À ce stade du processus les données sont formaté pour être transmis cependant la couche transport ne sait pas comment les transmettre. Est-ce que les paquets  doit être transmit à une passerelle ? Est-ce que la machine est sur le même réseau ? Comment les paquets doit être fragmenté (coupé en morceau) afin de pouvoir passer sur le file ? ...
-* **[Internet](https://en.wikipedia.org/wiki/Internet_layer)** : La couche __Internet__ s'occupe de définir le chemin que devra prendre les paquets, à savoir utilisé une passerelle de communication pour accéder au autre réseau. Voilà la partie **IP** de **TCP/IP**, cette couche s'assure de l'ensemble du chemin que devra prendre les données formaté selon le standard définie dans la couche précédente. 
+* **[Internet](https://en.wikipedia.org/wiki/Internet_layer)** : La couche __Internet__ s'occupe de définir le chemin que devra prendre les paquets, à savoir utilisé une passerelle de communication pour accéder au autre réseau. Voilà la partie **IP** de **TCP/IP**, cette couche s'assure de l'ensemble du chemin que devra prendre les données formatées selon le standard définie dans la couche précédente. Si vous regardez le diagramme précédent vous voyez clairement que le chemin pris par les données ne n'utilise que la couche **Internet** et **link** lors de la transition entre l'ensemble des équipements jusqu'au __host__ final.
+* **[Link](https://en.wikipedia.org/wiki/Link_layer)** : La couche __Link__ ou de Liaison est utiliser pour convertir les données selon le lien utilisé , cette couche permettra de faire la conversion vers le câble Ethernet ou un port sériel . Grâce à cette abstraction entre la couche **Internet** et la couche **Link** nous pouvons transmettre des données sur différent type de lien (__RJ45__, Fibre Optique, port sériel, ...). Chaque point de traitement , __router__ récupérera l'information transmise sur le câble et analysera la contenu de la couche **Internet** afin de savoir à qui transmettre les données , etc jusqu'à la réception de la machine destinataire.
 
 
-       ICI ICI ICI << continuer  
-
+Voici la même représentation du traitement mais cette fois non plus avec une machine mais lors de l'écriture d'une lettre.
 
 * **Application** : Vous qui écrivait une lettre , vous êtes l'application et vous écrivez sur du papier
-* **Transport** : Ceci pourrait être représenter par l'enveloppe , cette dernière contient les données applicatif , dans notre cas la lettre. Nous avons écrit sur l'enveloppe les informations du destinataire , nous avons aussi écrit d'où provient la lettre en cas de problème. Pour finir nous fermons cette dernier, telle que le veut la convention / procédure. À ce stade nous ne savons pas comment la lettre sera transmise, par bateau , par avion ... Est-ce que la lettre sera transmis à un bureau centrale puis redistribué ? Ce que nous avons est que les données sont préparés selon la convention .
+* **Transport** : Ceci pourrait être représenter par l'enveloppe , cette dernière contient les données applicatif , dans notre cas la lettre. Nous avons écrit sur l'enveloppe les informations du destinataire , nous avons aussi écrit d'où provient la lettre en cas de problème. Pour finir nous fermons cette dernier, telle que le veut la convention / procédure. À ce stade nous ne savons pas comment la lettre sera transmise, par bateau , par avion ... Est-ce que la lettre sera transmis à un bureau centrale puis redistribué ? Ce que nous savons est que les données sont préparés selon la convention .
+* **Internet** : Nous avons les données (application), nous avons le format approprié , la couche internet peut être perçu comme la poste cette dernière sait comment traiter l'adresse que nous lui avons donnés. Car nous avons fournit le bon format , adresse ainsi que le code postal, de vous a moi peut importe le mécanisme utilisé pour transmettre mes données le chemin à peut d'importance nous espérons qu'il soit optimal afin de réduit le délais de livraison. 
+* **Link** : La couche de Liaison est l'ensemble des intervenants qui transmettrons ma lettre , le postier , le camion , l'avion , le bateau , ... L'ensemble des intervenants sont en mesure de traiter l'information contenu dans la couche **Internet** afin de connaître le prochain intervenant qui traitera notre enveloppe afin de la livrer. 
+
+
+Ceci est à haut niveau voyons plus en détail le processus de création de chaque couche afin de mieux visualisé le processus de connexion et d'échange de données. Mon objectif est de voir le processus de création du flux de données nous resterons jusqu'à un certain point à un haut niveau pour encore descendre au fur et a mesure que nous serons confortable avec les concepts.
+
+
+### <a name="clarification_diff_tcp_udp" /> Différence entre TCP et UDP (Transport)
+
+Inutile de prendre du temps pour la couche applicative vous aurez compris que c'est l'ensemble des applications communiquant sur le réseau que ce soit client ou serveur. L'ensemble des exemples à venir clarifierons l'ambiguïté qui peut être encore présent. Nous allons nous attaquer à la couche **Transport** nous allons la décortiqué mais avant tous clarifions la différence entre __TCP__ et __UDP__. 
+
+Afin voir le processus nous allons réalisé une connexion avec l'application __telnet__ vers un serveur __Apache__ l'opération sera simplement l'extraction de la page d'accueil. Si nous réalisons l'opération manuellement et regardons le résultat ceci donne : 
+
+        $ telnet 172.17.0.1 80
+        Trying 172.17.0.1...
+        Connected to 172.17.0.1.
+        Escape character is '^]'.
+        GET /
+        <html>
+            <body>
+                  <h3> Le site du mouton dessins </h3>
+                  <img src=./dessin_mouton.jpg />
+            </body>
+        </html>
+
+        Connection closed by foreign host.
+
+        # coté serveur , les logs donnent :
+        ==> /var/log/apache2/access.log <==
+        172.17.42.1 - - [08/Aug/2016:17:17:08 -0400] "GET /" 200 126 "-" "-"
 
 
 
