@@ -111,6 +111,8 @@ Nous allons voir dans la pratique / sur le terrain ce que ça donne réellement,
 Référence : [https://fr.wikipedia.org/wiki/Transmission_Control_Protocol#Structure_d.27un_segment_TCP](https://fr.wikipedia.org/wiki/Transmission_Control_Protocol#Structure_d.27un_segment_TCP)
 
 
+Voici la structure d'un paquet **TCP**
+
 <p><b>En bits</b></p>
 <table bgcolor="#AAAAEE" border="1" cellspacing="1" cellpadding="1" style="font-size: 9pt;">
 <tr>
@@ -226,6 +228,37 @@ Référence : [https://fr.wikipedia.org/wiki/Transmission_Control_Protocol#Struc
 </tr>
 </table>
 
+Voyons ce que l'ensemble le détail pour chaque champs :
+
+* **Port source** : numéro du port source
+* **Port destination** : numéro du port destination
+* **Numéro de séquence** : numéro de séquence du premier octet de ce segment
+* **Numéro d'acquittement** : numéro de séquence du prochain octet attendu
+* **Taille de l'en-tête** : longueur de l'en-tête en mots de 32 bits (les options font partie de l'en-tête)
+* __Flags__ :
+    * **Réservé** : réservé pour un usage futur
+    * **ECN/NS** : signale la présence de congestion, voir RFC 3168 ; ou Nonce Signaling, voir RFC 3540
+    * **CWR** : Congestion Window Reduced : indique qu'un paquet avec ECE a été reçu et que la congestion a été traitée
+    * **ECE** : ECN-Echo : si SYN=1 indique la capacité de gestion ECN, si SYN=0 indique une congestion signalé par IP (voir RFC 3168)
+    * **URG** : Signale la présence de données urgentes
+    * **ACK** : signale que le paquet est un accusé de réception (acknowledgement)
+    * **PSH** : données à envoyer tout de suite (push)
+    * **RST** : rupture anormale de la connexion (reset)
+    * **SYN** : demande de synchronisation ou établissement de connexion
+    * **FIN** : demande la fin de la connexion
+* **Fenêtre** : taille de fenêtre demandée, c'est-à-dire le nombre d'octets que le récepteur souhaite recevoir sans accusé de réception
+* **Somme de contrôle/CRC** : somme de contrôle calculée sur l'ensemble de l'en-tête TCP et des données, mais aussi sur un pseudo en-tête (extrait de l'en-tête IP)
+* **Pointeur de données urgentes** : position relative des dernières données urgentes
+* **Options** : facultatives
+* **Remplissage** : zéros ajoutés pour aligner les champs suivants du paquet sur 32 bits, si nécessaire
+* **Données** : séquences d'octets transmis par l'application (par exemple : __GET /__)
+
+On voit que c'est pas mal complet en plus des données (à la fin) il y a beaucoup de champs qui peuvent être remplie en plus des __flags__.
+
+**MAIS où sont les adresses ip ?** , très bonne question :D, le protocole __TCP__ n'a aucune idée de l'adresse __IP__ où établir la connexion , ce n'est pas son travail ceci est fait par la couche **Internet** . L'ensemble du trajet pour établir une connexion entre 2 machines est réalisé par la par **IP** dans __TCP__/**IP**. Ceci peut semblé être un détail mais lors de l'analyse de problème de connexion ceci peut être très important. Comme nous (__aka__ moi) avons décidé  de partir de l'application nous verrons ceci plus tard :), gardons en tête pour le moment que la couche __Internet__ fonctionne par magie :D.
+Le protocole __TCP__ est donc indépendant du chemin c'est pour ça que l'on peut changé la couche __IP__ pour passé de __IPv4__ à __IPv6__ sans changer le protocole __TCP__. Nous pourrions en théorie avoir un autre protocole pour la couche __Internet__ et avoir une communication __TCP/tboutry__ :D , mais bon c'est pas pour demain que je vais le faire ;-).
+
+
 Afin voir le processus nous allons réalisé une connexion avec l'application __telnet__ vers un serveur __Apache__ l'opération sera simplement l'extraction de la page d'accueil. Si nous réalisons l'opération manuellement et regardons le résultat ceci donne : 
 
         $ telnet 172.17.0.1 80
@@ -245,6 +278,24 @@ Afin voir le processus nous allons réalisé une connexion avec l'application __
         # coté serveur , les logs donnent :
         ==> /var/log/apache2/access.log <==
         172.17.42.1 - - [08/Aug/2016:17:17:08 -0400] "GET /" 200 126 "-" "-"
+
+Maintenant nous allons sniffer le trafic réseau afin de voir les paquets __TCP__ qui sont passés, nous utiliserons [wireshark](https://wireshark.org/) et __TCPDUMP__.
+
+Démarrage de __wireshark__, je le démarre comme __root__ afin d'avoir l'ensemble des permissions de lire le trafic sur la carte ceci est évidement réservé à l'administrateur de la machine.
+
+        $ sudo wireshark-gtk 
+
+Je sélectionne l'interface réseau que je désire capturer , dans mon cas je choisie l'interface docker, car mon serveur apache est dans un docker (quelle surprise ;-) ).
+
+![wireshark_select_interface_01.png](./imgs/wireshark_select_interface_01.png)
+
+Maintenant je vais définir un filtre car si vous avez beaucoup de trafic vous serez vite noyé dans la quantité de données reçu. Nous allons donc limité les paquets pour le __host__ 172.17.0.1 et le port 80. 
+
+![wireshark_select_interface_et_define_filter_02.png](./imgs/wireshark_select_interface_et_define_filter_02.png)
+
+Voici le résultat du filtre :
+
+        ip.dst == 172.17.0.1 && tcp.dstport == 80
 
 
 
