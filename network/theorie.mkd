@@ -13,7 +13,7 @@ Avant de parler routage ouverture de ports j'aimerai clarifier certain aspect du
 
 Pour commencer, j'aimerai vous donner ma vision du réseau au risque de contrarier certain administrateur réseaux :P. Personnellement je perçois le trafic réseaux comme de l'eau. Le trafic coule entre les différents équipement qui soit le laisse passer soit le bloque. Parfois le courant est redirigé vers un autre point , parfois il est légèrement modifier pour ajouter plus d'information ... Mais à la fin c'est aussi simple que ça , je ne suis peut-être pas le plus grand fan du réseau voilà pourquoi j'ai cette vision peut-être simpliste.
 
-## <a name="clarification_Protocol_internet" /> Théorie sur le protocole d'Internet
+# <a name="clarification_Protocol_internet" /> Théorie sur le protocole d'Internet
 
 Nous nous concentrerons sur le protocole le plus utilisé aujourd'hui soit celui d'Internet, pour débuter voici une représentation du __flow__ (courant) sur Internet. 
 
@@ -38,9 +38,193 @@ Voici la même représentation du traitement mais cette fois non plus avec une m
 Ceci est à haut niveau voyons plus en détail le processus de création de chaque couche afin de mieux visualisé le processus de connexion et d'échange de données. Mon objectif est de voir le processus de création du flux de données nous resterons jusqu'à un certain point à un haut niveau pour encore descendre au fur et a mesure que nous serons confortable avec les concepts.
 
 
-### <a name="clarification_diff_tcp_udp" /> Différence entre TCP et UDP (Transport)
+## <a name="clarification_diff_tcp_udp" /> Différence entre TCP et UDP (Transport)
 
-Inutile de prendre du temps pour la couche applicative vous aurez compris que c'est l'ensemble des applications communiquant sur le réseau que ce soit client ou serveur. L'ensemble des exemples à venir clarifierons l'ambiguïté qui peut être encore présent. Nous allons nous attaquer à la couche **Transport** nous allons la décortiqué mais avant tous clarifions la différence entre __TCP__ et __UDP__. 
+Inutile de prendre du temps pour la couche applicative vous aurez compris que c'est l'ensemble des applications communiquant sur le réseau que ce soit client ou serveur. L'ensemble des exemples à venir clarifierons l'ambiguïté qui peut encore présent. Nous allons nous attaquer à la couche **Transport** nous allons la décortiqué mais avant tous clarifions la différence entre __TCP__ et __UDP__. 
+
+**Port TCP et UDP**
+
+TCP, comme UDP, utilise le numéro de port pour identifier les applications. À chaque extrémité (client/serveur) de la connexion TCP est associé un numéro de port sur 16 bits (de 1 à 65535) assigné à l'application émettrice ou réceptrice. Ces ports sont classés en trois catégories :
+
+* Les __ports bien connus__ sont assignés par l'IANA (Internet Assigned Numbers Authority) dans la plage 0-1023, et sont souvent utilisés par des processus système ou ayant des droits privilégiés. Les applications bien connues qui fonctionnent en tant que serveur et sont en attente de connexions utilisent généralement ces types de ports. Exemples : FTP (21), SSH (22), Telnet (23), SMTP (25), HTTP (80), POP3 (110).
+* Les __ports enregistrés__ sont généralement utilisés par des applications utilisateur comme ports sources éphémères pour se connecter à un serveur, mais ils peuvent aussi identifier des services non enregistrés par l'IANA.
+* Les __ports dynamiques/privés__ peuvent aussi être utilisés par des applications utilisateur, mais plus rarement. Ils n'ont pas de sens en dehors d'une connexion TCP particulière.
+
+
+### <a name="clarification_tcp" /> Transmission Control Protocol (TCP) (protocole de contrôle de transmissions)
+
+Une session TCP fonctionne en trois phases :
+
+* l'établissement de la connexion ;
+* les transferts de données ;
+* la fin de la connexion.
+
+L'établissement de la connexion se fait par un [handshaking en trois temps](https://fr.wikipedia.org/wiki/Three-way_handshake). La rupture de connexion, elle, utilise un [handshaking](https://fr.wikipedia.org/wiki/Handshaking) en quatre temps. Pendant la phase d'établissement de la connexion, des paramètres comme le numéro de séquence sont initialisés afin d'assurer la transmission fiable (sans perte et dans l'ordre) des données.
+
+En d'autre mot lorsque lors que 2 application désire communiquer entre elle avec le protocole __TCP__ :
+
+* Elles se saluent , en ce serrant la main ( établissement de connexion , 3 __way handshake__)
+* Elles communiquent, en échangeant des données ( transfert de données )
+* Elles se disent au revoir , en ce serrant encore la main ( fin de connexion , 4 __way handshake__)
+
+Dit comme ça on peut pas dire que ce soit compliqué :D.
+
+Voyons à présent comment se réalise chacune des étapes , nous utiliserons un serveur apache et un client __telnet__. Afin de visualiser les communications client serveur nous utiliserons __tcpdump__ et __wireshark__ (disponible sous l'ensemble des OS).
+
+
+#### <a name="clarification_tcp_3way_handshake" /> TCP établissement de connexion (3 way handshake)
+
+Le côté client de la connexion effectue une ouverture active en 3 temps :
+
+1. Le client envoie un segment SYN au serveur,
+2. Le serveur lui répond par un segment SYN/ACK,
+3. Le client confirme par un segment ACK.
+
+Maintenant on décrit la même opération en changeant __SYN__ par "salut" et __ACK__ par "ça va "
+
+1. Le client dit **Salut**
+2. Le serveur répond **Salut/Ça va ?**
+3. Le client confirme **ça va** 
+
+J'aime vulgarisé le processus afin de montrer la simplicité du processus :D.
+
+Durant cet échange initial, les numéros de séquence des deux parties sont synchronisés :
+
+1. Le client utilise son numéro de séquence initial dans le champ "Numéro de séquence" du segment SYN (x par exemple),
+2. Le serveur utilise son numéro de séquence initial dans le champ "Numéro de séquence" du segment SYN/ACK (y par exemple) et ajoute le numéro de séquence du client plus un (x+1) dans le champ "Numéro d'acquittement" du segment,
+3. Le client confirme en envoyant un ACK avec un numéro de séquence augmenté de un (x+1) et un numéro d'acquittement correspondant au numéro de séquence du serveur plus un (y+1).
+
+Voici une représentation graphique du processus : 
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Tcp_connect.svg" width="700px" />
+
+Par <a href="//commons.wikimedia.org/w/index.php?title=User:Skc&amp;action=edit&amp;redlink=1" class="new" title="User:Skc (page does not exist)">Sébastien Koechlin</a> — <span class="int-own-work" lang="fr">Travail personnel</span>, <a title="Creative Commons Attribution-Share Alike 3.0" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a>, https://commons.wikimedia.org/w/index.php?curid=16887424
+
+Je vais revenir dans quelques instant lors d'un exemple de communication sur l'aspect du numéro de séquence voici rapidement un avant goût : 
+
+* Pendant la phase de transferts de données, certains mécanismes clefs permettent d'assurer la robustesse et la fiabilité de TCP. En particulier, les numéros de séquence sont utilisés afin d'ordonner les segments TCP reçus et de détecter les données perdues, les sommes de contrôle permettent la détection d'erreurs, et les acquittements ainsi que les temporisations permettent la détection des segments perdus ou retardés.
+
+Nous allons voir dans la pratique / sur le terrain ce que ça donne réellement, mais avant j'aimerai présenter un paquet __TCP__ ceci nous aidera pour le lire.
+
+#### <a name="clarification_tcp_structure" /> Structure d'un segment TCP
+
+Référence : [https://fr.wikipedia.org/wiki/Transmission_Control_Protocol#Structure_d.27un_segment_TCP](https://fr.wikipedia.org/wiki/Transmission_Control_Protocol#Structure_d.27un_segment_TCP)
+
+
+<p><b>En bits</b></p>
+<table bgcolor="#AAAAEE" border="1" cellspacing="1" cellpadding="1" style="font-size: 9pt;">
+<tr>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+<td>3</td>
+<td>4</td>
+<td>5</td>
+<td>6</td>
+<td>7</td>
+<td>8</td>
+<td>9</td>
+<td>10</td>
+<td>11</td>
+<td>12</td>
+<td>13</td>
+<td>14</td>
+<td>15</td>
+<td>16</td>
+<td>17</td>
+<td>18</td>
+<td>19</td>
+<td>20</td>
+<td>21</td>
+<td>22</td>
+<td>23</td>
+<td>24</td>
+<td>25</td>
+<td>26</td>
+<td>27</td>
+<td>28</td>
+<td>29</td>
+<td>30</td>
+<td>31</td>
+</tr>
+<tr>
+<td bgcolor="#F7F8FF" colspan="16">
+<center>Port Source 2 octets</center>
+</td>
+<td bgcolor="#F7F8FF" colspan="16">
+<center>Port destination 2 octets</center>
+</td>
+</tr>
+<tr>
+<td bgcolor="#F7F8FF" colspan="32">
+<center>Numéro de séquence</center>
+</td>
+</tr>
+<tr>
+<td bgcolor="#F7F8FF" colspan="32">
+<center>Numéro d'acquittement</center>
+</td>
+</tr>
+<tr>
+<td bgcolor="#F7F8FF" colspan="4">
+<center>Taille de l'en-tête</center>
+</td>
+<td bgcolor="#F7F8FF" colspan="3">
+<center>Réservé</center>
+</td>
+<td bgcolor="#F7F8FF">
+<center>ECN / NS</center>
+</td>
+<td bgcolor="#F7F8FF">
+<center>CWR</center>
+</td>
+<td bgcolor="#F7F8FF">
+<center>ECE</center>
+</td>
+<td bgcolor="#F7F8FF">
+<center>URG</center>
+</td>
+<td bgcolor="#F7F8FF">
+<center>ACK</center>
+</td>
+<td bgcolor="#F7F8FF">
+<center>PSH</center>
+</td>
+<td bgcolor="#F7F8FF">
+<center>RST</center>
+</td>
+<td bgcolor="#F7F8FF">
+<center>SYN</center>
+</td>
+<td bgcolor="#F7F8FF">
+<center>FIN</center>
+</td>
+<td bgcolor="#F7F8FF" colspan="16">
+<center>Fenêtre</center>
+</td>
+</tr>
+<tr>
+<td bgcolor="#F7F8FF" colspan="16">
+<center>Somme de contrôle</center>
+</td>
+<td bgcolor="#F7F8FF" colspan="16">
+<center>Pointeur de données urgentes</center>
+</td>
+</tr>
+<tr>
+<td bgcolor="#F7F8FF" colspan="22">
+<center>Options</center>
+</td>
+<td bgcolor="#F7F8FF" colspan="10">
+<center>Remplissage</center>
+</td>
+</tr>
+<tr>
+<td bgcolor="#F7F8FF" colspan="32">
+<center>Données</center>
+</td>
+</tr>
+</table>
 
 Afin voir le processus nous allons réalisé une connexion avec l'application __telnet__ vers un serveur __Apache__ l'opération sera simplement l'extraction de la page d'accueil. Si nous réalisons l'opération manuellement et regardons le résultat ceci donne : 
 
@@ -64,3 +248,7 @@ Afin voir le processus nous allons réalisé une connexion avec l'application __
 
 
 
+## <a name="clarification_diff_tcp_udp" /> Autre protocole
+
+*     [SCTP](https://fr.wikipedia.org/wiki/Stream_Control_Transmission_Protocol) (Stream Control Transmission Protocol), protocole fournissant des services similaires à TCP (fiabilité, remise en ordre des séquences, et contrôle de congestion), tout en offrant la possibilité de communications multi-cibles comme avec UDP.
+*     [MPTCP](https://fr.wikipedia.org/wiki/Multipath_TCP) (Multipath TCP) est une surcouche à TCP qui rassemble diverses connexions TCP (à travers différentes interfaces réseau: GSM, Wifi etc.), au sein d'une même méta-connexion (RFC 6824). Ce fonctionnement permet d'exploiter tous les chemins disponibles en parallèle, et donc améliorer significativement les performances et la fiabilité d'une connexion.
