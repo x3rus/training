@@ -259,6 +259,8 @@ On voit que c'est pas mal complet en plus des données (à la fin) il y a beauco
 Le protocole __TCP__ est donc indépendant du chemin c'est pour ça que l'on peut changé la couche __IP__ pour passé de __IPv4__ à __IPv6__ sans changer le protocole __TCP__. Nous pourrions en théorie avoir un autre protocole pour la couche __Internet__ et avoir une communication __TCP/tboutry__ :D , mais bon c'est pas pour demain que je vais le faire ;-).
 
 
+##### <a name="visualisation_connexion" /> Visualisation d'une communication TCP
+
 Afin voir le processus nous allons réalisé une connexion avec l'application __telnet__ vers un serveur __Apache__ l'opération sera simplement l'extraction de la page d'accueil. Si nous réalisons l'opération manuellement et regardons le résultat ceci donne : 
 
         $ telnet 172.17.0.1 80
@@ -289,14 +291,91 @@ Je sélectionne l'interface réseau que je désire capturer , dans mon cas je ch
 
 ![wireshark_select_interface_01.png](./imgs/wireshark_select_interface_01.png)
 
-Maintenant je vais définir un filtre car si vous avez beaucoup de trafic vous serez vite noyé dans la quantité de données reçu. Nous allons donc limité les paquets pour le __host__ 172.17.0.1 et le port 80. 
+Maintenant je vais définir un filtre car si vous avez beaucoup de trafic vous serez vite noyé dans la quantité de données reçu. Nous allons donc limité les paquets pour le __host__ 172.17.0.2 et le port 80. 
 
 ![wireshark_select_interface_et_define_filter_02.png](./imgs/wireshark_select_interface_et_define_filter_02.png)
 
 Voici le résultat du filtre :
 
-        ip.dst == 172.17.0.1 && tcp.dstport == 80
+        ip.dst == 172.17.0.2 && tcp.dstport == 80 && ip.proto == TCP
 
+Pour rappel voici le processus d'établissement de connexion :
+
+* l'établissement de la connexion ;
+* les transferts de données ;
+* la fin de la connexion.
+
+Le serveur à l'IP 172.17.0.2 
+Le client à l'IP 172.17.42.1
+
+###### <a name="visualisation_connexion_conn" /> Établissement de la connexion
+
+Nous allons donc établir la connexion vers le serveur avec la commande __telnet__
+
+        $ telnet 172.17.0.2  80
+        Trying 172.17.0.1...
+        Connected to 172.17.0.1.
+        Escape character is '^]'.
+
+**STOP** on ne fait rien d'autre , on regarde maintenant ce que l'application d'analyse du trafic indique :
+
+Nous pouvons voir l'établissement de connexion en trois temps (__3 way handshake__) :
+
+![wireshark_visualisation_3way_handshake_03.png](./imgs/wireshark_visualisation_3way_handshake_03.png)
+
+Si vous regardez dans la section du bas vous pouvez voir le détail du paquet __TCP__:
+
+![wireshark_visualisation_detail_paquet_tcp_04.png](./imgs/wireshark_visualisation_detail_paquet_tcp_04.png)
+
+La connexion est donc établie à cette étape mais aucune donnée n'est transmis , le temps d'écrire ou d'expliquer l'ensemble de la communication j'ai dû couper la communication je vais donc la reprendre mais cette fois en transmettant des données.
+
+###### <a name="visualisation_transfert_data" /> Transferts de données 
+
+La connexion est donc établie , le client __Telnet__ une fois la connexion établie envoyer des données dans notre cas : 
+
+        GET /
+
+Dans le but de récupérer la page d'accueil , le fureteur fait sensiblement la même , mais il transmet plus d'information , cependant l'idée reste la même . Une fois que le serveur va recevoir ces données / cette instruction il va transmettre la page d'accueil.
+
+C'est parti :)
+
+        $ telnet 172.17.0.2 80
+        Trying 172.17.0.2...
+        Connected to 172.17.0.2.
+        Escape character is '^]'.
+        GET /
+        <html>
+            <body>
+                <h3> Le site du mouton dessins </h3>
+                <img src=./dessin_mouton.jpg />
+            </body>
+        </html>
+
+        Connection closed by foreign host.
+
+
+Une fois l'information de la page reçu , le serveur web (__foreign host__) à coupé la communication nous y reviendrons dans la prochaine étape. Visualisons dans __wireshark__ le processus de transfert de données :
+
+![wireshark_visualisation_transfert_data_paquet_tcp_05.png](./imgs/wireshark_visualisation_transfert_data_paquet_tcp_05.png)
+
+J'ai volontairement caché la partie de la coupure de connexion , pour ne pas perdre notre objectif de vue :0.
+
+Donc les 3 premières lignes est l'établissement de connexion entre le client et le serveur.
+
+* ligne 4 : Nous voyons le client (Source) qui envoie au serveur la requête 
+* ligne 5 : Le serveur confirme la réception du paquet / de la demande 
+* ligne 6 : Le serveur envoie les données de la page __index.html__ conformément à la requête du client 
+* ligne 7 : Le client confirme qu'il a bien reçu l'information
+
+Bien entendu ici nous avons des petites communication qui rentre dans 1 paquet __TCP__, lors de l'envoie de fichier il est probable que la communication s'étende sur plusieurs paquet et seront reconstruit par l'application par la suite . Nous réaliserons la même opération avec le fureteur afin de voir le comportement.
+
+
+ICI ICI ICI
+ajout fin comm:
+
+![wireshark_visualisation_fin_conn_tcp_06.png](./imgs/wireshark_visualisation_fin_conn_tcp_06.png)
+
+ICI ICI ICI
 
 
 ## <a name="clarification_diff_tcp_udp" /> Autre protocole
