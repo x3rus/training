@@ -369,14 +369,61 @@ Donc les 3 premières lignes est l'établissement de connexion entre le client e
 
 Bien entendu ici nous avons des petites communication qui rentre dans 1 paquet __TCP__, lors de l'envoie de fichier il est probable que la communication s'étende sur plusieurs paquet et seront reconstruit par l'application par la suite . Nous réaliserons la même opération avec le fureteur afin de voir le comportement.
 
+###### <a name="visualisation_connexion_fin" /> Fin de la connexion.
 
-ICI ICI ICI
-ajout fin comm:
+Comme nous avons pu le voir lors de la visualisation de l'opération via __telnet__ c'est le serveur apache qui coupe la connexion. Voici le processus de fermeture de connexion :
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/4/42/Tcp_close.svg" width="700px" />
+
+Par <a href="//commons.wikimedia.org/w/index.php?title=User:Skc&amp;action=edit&amp;redlink=1" class="new" title="User:Skc (page does not exist)">Sébastien Koechlin</a> — <span class="int-own-work" lang="fr">Travail personnel</span>, <a title="Creative Commons Attribution-Share Alike 3.0" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a>, https://commons.wikimedia.org/w/index.php?curid=16887424
+
+La phase de terminaison d'une connexion utilise un handshaking en quatre temps, chaque extrémité de la connexion effectuant sa terminaison de manière indépendante. Ainsi, la fin d'une connexion nécessite une paire de segments FIN et ACK pour chaque extrémité.
+
+Regardons maintenant  l'information dans __wiresharke__ :
 
 ![wireshark_visualisation_fin_conn_tcp_06.png](./imgs/wireshark_visualisation_fin_conn_tcp_06.png)
 
-ICI ICI ICI
 
+* ligne 8 : Le serveur apache transmet un __FIN__ / __ACK__
+* ligne 9 : Le client envoie la même information __FIN__ / __ACK__
+* ligne 10 : Le serveur confirme la réception est termine la connexion __ACK__
+
+##### <a name="visualisation_connexion_fureteur" /> Visualisation d'une communication TCP réalisé par le fureteur
+
+Ceci est une version très simple nous avons réduit au maximum les intervenants pour bien voir les paquets et pouvoir les étudier facilement. Voyons le même processus avec le fureteur, lors de l'utilisation de la commande __telnet__ nous avons vu uniquement la récupération du __HTML__ cependant nous n'avions pas récupérer le contenu de la page réellement en effet nous n'avions pas extrait l'image du mouton.
+
+Voici ce qui est afficher à l'écran : 
+
+![screenshot_siteweb.png](./imgs/screenshot_siteweb.png)
+
+Lors de la communication voici ce qui est afficher dans __wireshark__ , prendre note que l'IP du serveur web est 172.17.0.1 maintenant :
+
+![wireshark_visualisation_fureteur_07.png](./imgs/wireshark_visualisation_fureteur_07.png)
+
+Donc les explications :
+
+* ligne 1 à 3 : l'établissement de connexion __TCP__ __3 way handshake__
+* ligne 4 : Envoie de l'instruction __GET / HTTP/1.1__ qui est relativement la même commande qu'avec __telnet__ cependant il utilise le protocole __http__ 1.1 spécifiquement . Ceci est définie dans la couche applicative par dessus __TCP__ , car c'est les données transmise pour communiquer
+* ligne 5 : Le serveur confirme la réception
+* ligne 6 : Le serveur selon le protocole __HTTP 1.1__ transmet une confirmation que la requête est bonne. Nous verrons le détail du contenu tous de suite après les explications par ligne . Ceci est purement du protocole __HTTP__ est ne concerne que très peu le __TCP__
+* ligne 7 : Le client confirme la réception de l'information 
+* ligne 8 : Le client demande l'image du mouton , car ce dernier fut traiter lors de l'interprétation de la page d'index __html__
+* ligne 9 et 10 : Le serveur transmet l'image du mouton , comme l'image du mouton ne peut pas être transmise dans 1 paquet, car il est trop gros, il le transmet dans 2 paquets 
+* ligne 11 et 12 : Le client confirme la réception des 2 paquets , donc l'ensemble de l'image du mouton
+* ligne 13 à 15 : Fermeture par le serveur et le client de la connexion __TCP__
+
+On peut pas dire que ce soit extrêmement compliqué, bien entendu nous voyons un site TRÈS simple. Nous pourrons faire le même exercice avec un site plus complexe la quantité de donnée sera plus impressionnante, mais le processus sera identique.
+
+__WireShark__ nous offre une belle fonctionnalité, comme le protocole __HTTP__ est connu il est possible d'extraire l'information des paquets __TCP__ pour le protocole __HTTP__ afin de voir simplement le contenu . Sélectionné un paquet, cliquez le bouton droit de la souris et sélectionnez **Follow TCP stream**.
+
+![wireshark_visualisation_fureteur_follow_tcpstream_08.png](./imgs/wireshark_visualisation_fureteur_follow_tcpstream_08.png)
+
+Voici le résultat :
+
+![wireshark_visualisation_fureteur_follow_tcpstream_09.png](./imgs/wireshark_visualisation_fureteur_follow_tcpstream_09.png)
+
+Nous voyons plus clairement maintenant l'échange qui fut réalisé à la ligne 4 et à la ligne 6 , j'avais mentionné que le client envoie __GET / HTTP/1.1__ et le serveur l'accusé de validation pour la racine mais c'était pour faire simple :P.
+En réalité , le serveur et le client échange les protocoles supporté pour le reste des communications :P , c'est la version compliqué mais au niveau de la touche __Transport__ ça na pas d'importance car c'est uniquement du protocole __HTTP__.
 
 ## <a name="clarification_diff_tcp_udp" /> Autre protocole
 
