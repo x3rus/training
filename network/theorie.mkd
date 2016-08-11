@@ -424,6 +424,59 @@ Voici le résultat :
 
 Nous voyons plus clairement maintenant l'échange qui fut réalisé à la ligne 4 et à la ligne 6 , j'avais mentionné que le client envoie __GET / HTTP/1.1__ et le serveur l'accusé de validation pour la racine mais c'était pour faire simple :P.
 En réalité , le serveur et le client échange les protocoles supporté pour le reste des communications :P , c'est la version compliqué mais au niveau de la touche __Transport__ ça na pas d'importance car c'est uniquement du protocole __HTTP__.
+Bien entendu si vous analysez un problème de communication du serveur apache, ceci est très intéressant, mais pour le besoin de la formation ici c'est en dehors de la matière.
+
+##### <a name="visualisation_conn_fureteur_ext" /> Visualisation d'une communication TCP réalisé par le fureteur avec site complet
+
+Prenons quelques minutes pour voir la même opération sur un autre site, pas trop gros pour pouvoir visualiser facilement le résultat, cependant ceci nous montrera clairement les même opérations. 
+
+Je vais utiliser mon fureteur afin de communiquer avec le site : http://x3rus.com/moodle .
+
+Dans cette situation je ne vais pas prendre l'interface __docker__, mais l'interface externe soit __wlan0__ dans mon cas !
+
+![wireshark_configue_all_http_comm_10.png](./imgs/wireshark_configue_all_http_comm_10.png)
+
+Voici le résultat :
+
+![wireshark_visualisation_comm_x3rus_moodle_full_11.png](./imgs/wireshark_visualisation_comm_x3rus_moodle_full_11.png)
+
+Le fichier de données est aussi disponible ICI : 
+
+Comme vous pouvez le voir il y a plus de donnée , premièrement il y a la requête __DNS__ , puis il y a la requête __TCP__ sur le port 80 . 
+
+Nous pouvons suivre la communication __TCP__ en sélectionnant cette communication :
+
+![wireshark_visualisation_comm_x3rus_moodle_12.png](./imgs/wireshark_visualisation_comm_x3rus_moodle_12.png)
+
+Analysons rapidement :
+
+* Paquets 5 , 10 et 11 : représente la connexion __TCP__ __3 way handshake__ sur le port 80
+* Paquets 12 à 25 : Les données qui sont transférés entre le client et le serveur
+* Paquets 34 , 35 et 36 : La fermeture de la connexion __TCP__
+
+Mais il y a un autre flux __TCP__ un flux vers le port 443 donc le service communique en __SSL__, bon honnêtement j'ai pas tout de suite compris pourquoi :P. J'ai du analyser pourquoi il y avait cette communication, car il n'y a rien dans la page de __moodle__ en __https__. Regardons la communication :
+
+![wireshark_visualisation_comm_x3rus_moodle_comm_ssl_12.png](./imgs/wireshark_visualisation_comm_x3rus_moodle_comm_ssl_12.png)
+
+Je ne vais pas prendre le temps d'analyser le protocole **httpS** , mais je veux vous montrer la partie __TCP__ autant en profiter :D, c'était pas prévue mais autant d'amuser ... 
+
+* Ligne 36, 37 et 38 :  Nous avons la connexion __TCP__ __3 way handshake__ sur le port 443
+* Ligne 40 à 47 : Le transfert de données en utilisant le protocole **httpS** , comme l'information est chiffré je ne vois pas la communication clairement comme lors des échanges sur le port 80 :-/
+* Ligne 48 , 49 et 50 : Fermeture de la connexion
+
+Comme nous pouvons le voir peut importe la communication réalisé selon le protocole au niveau de la couche __TCP__ il n'y a pas de différence. Bon pour information, maintenant c'est quoi ce trafic :-), j'ai du allé sur le serveur pour voir les logs du serveur apache :P, finalement c'est simplement mon agent __owncloud__ qui communique en __background__ sur mon __laptop__.
+Résultat ça à fait du bruit sur le file réseau , je l'avais oublié , mais on a capitalisé sur l'erreur :D.
+
+
+#### <a name="clarification_tcp_conclusion" /> Conclusion sur le TCP 
+
+Ceci est donc une introduction pour les communications __TCP__ , nous avons couvert la base quand tous va bien :D , lorsque nous allons faire la couche __Internet__ nous allons voir comment le protocole __TCP__ se comporte en cas de problème de communication. Ceci nous permettra d'approfondir le sujet et voir les mécanismes en place pour valider les communications.
+
+L'important de comprendre avec le protocole __TCP__ est que le client et le serveur établisse un lien de communication et échange les données par ce canal. Une fois la communication terminé, il se salut et ferme le canal de communication.
+
+### <a name="clarification_udp" /> User Datagram Protocol (UDP) (protocole de contrôle de transmissions)
+
+ICI
 
 ## <a name="clarification_diff_tcp_udp" /> Autre protocole
 
