@@ -476,7 +476,84 @@ L'important de comprendre avec le protocole __TCP__ est que le client et le serv
 
 ### <a name="clarification_udp" /> User Datagram Protocol (UDP) (protocole de contrôle de transmissions)
 
-ICI
+
+Contrairement au protocole __TCP__, il fonctionne sans négociation : il n'existe pas de procédure de connexion préalable à l'envoi des données (le __handshaking__). Donc __UDP__ ne garantit pas la bonne livraison des paquets à destination, ni leur ordre d'arrivée. Il est également possible que des paquets soient reçus en plusieurs exemplaires.
+
+Si nous reprenons une communication __TCP__ , vous vous rappelez à chaque paquet transmit par un __host__ l'autre répondait par une confirmation __ACK__ de réception , ce mécanisme n'est pas présent avec __UDP__. Nous l'avons pas vu nous allons le faire par la suite , mais le protocole __TCP__ renvoie le paquet s'il n'a pas reçu la confirmation de réception. Dans le cas de __UDP__ comme il n'y a pas d'accusé de réception , l'hôte ne peut pas savoir si le paquet est reçu.
+
+Pourquoi utiliser __UDP__ alors si nous avons un risque de perte de paquets ?? La transmission d'accusé de réception à un coup sur le trafic réseau et sur le temps de traitement. Si nous prenons le cas d'un transfert de fichier il est important d'avoir l'ensemble des paquets pour avoir l'intégrité du fichier. Si nous prenons un cas où __l'UDP__  est très utilisé les jeux vidéos en ligne, S'il y a eu un problème sur le lien et que certain paquet ne sont pas passé quelle est la pertinence de les retransmettre ? Si tu joue à __Quake__ , de toute manière t'es déjà mort :P. Sans farce , les jeux sont assez rapide l'état il y a quelques seconde n'est plus pertinente s'il y a renvoie des paquets, de plus s'il y  a un nombre important de joueurs il est important que la communication soit le plus rapidement possible. 
+
+Le service __DNS__ utilise aussi le protocole __UDP__, ceci permet de réduire la charge sur le serveur et le client s'il n'a pas reçu la réponse peut refaire la requête.
+
+#### <a name="clarification_udp_structure" /> Structure d'un segment UDP
+
+Référence : [https://fr.wikipedia.org/wiki/User\_Datagram\_Protocol](https://fr.wikipedia.org/wiki/User_Datagram_Protocol)
+
+Comme vous pouvez le constater , la structure est beaucoup plus simple que le paquet __TCP__, comme il n'y a pas toute la gestion de connexion et de communication, nous nous retrouvons simplement avec le contenu des données. Tous comme pour le protocole __TCP__ il y a la notion de port pour l'envoie de communication.
+
+<table class="wikitable" style="margin: 0 auto; text-align: center;">
+<tr>
+<td width="35%" bgcolor="#00DDDD">Port Source (<span class="nowrap">16&#160;bits</span>)</td>
+<td width="35%" bgcolor="#00DDDD">Port Destination (<span class="nowrap">16&#160;bits</span>)</td>
+</tr>
+<tr>
+<td width="35%" bgcolor="#00DDDD">Longueur (<span class="nowrap">16&#160;bits</span>)</td>
+<td width="35%" bgcolor="#00DDDD">Somme de contrôle (<span class="nowrap">16&#160;bits</span>)</td>
+</tr>
+<tr>
+<td width="70%" colspan="2">Données (longueur variable)</td>
+</tr>
+</table>
+
+
+* **Port Source** : indique depuis quel port le paquet a été envoyé.
+* **Port de Destination** : indique à quel port le paquet doit être envoyé.
+* **Longueur** : indique la longueur totale (exprimée en octets) du paquet __UDP__ (en-tête et données). La longueur minimale est donc de 8 octets (taille de l'en-tête).
+* **Somme de contrôle** : celle-ci permet de s'assurer de l'intégrité du paquet reçu quand elle est différente de zéro. Elle est calculée sur l'ensemble de l'en-tête __UDP__ et des données, mais aussi sur un pseudo en-tête (extrait de l'en-tête IP)
+
+Tout comme pour la communication __TCP__ il n'y a pas de notion d'__IP__ à ce niveau car ceci est géré par la couche __Internet__! 
+
+##### <a name="visualisation_connexion_udp" /> Visualisation d'une communication UDP
+
+Afin voir le processus nous allons réalisé une requête __DNS__ au serveur google (8.8.8.8) , pour ce faire nous utiliserons la commande **dig**. Voici le résultat à l'écran :
+
+        $ dig lequipe.fr @8.8.8.8
+
+        ; <<>> DiG 9.10.3 <<>> lequipe.fr @8.8.8.8
+        ;; global options: +cmd
+        ;; Got answer:
+        ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 32099
+        ;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+        ;; OPT PSEUDOSECTION:
+        ; EDNS: version: 0, flags:; udp: 512
+        ;; QUESTION SECTION:
+        ;lequipe.fr.                    IN      A
+
+        ;; ANSWER SECTION:
+        lequipe.fr.             222     IN      A       160.92.167.203
+
+        ;; Query time: 71 msec
+        ;; SERVER: 8.8.8.8#53(8.8.8.8)
+        ;; WHEN: Fri Aug 12 17:30:25 EDT 2016
+        ;; MSG SIZE  rcvd: 55
+
+Démarrons **Wireshark** pour sniffé le trafic :
+
+        $ sudo wireshark-gtk
+
+![wireshark_visualisation_requete_dns_14.png](./imgswireshark_visualisation_requete_dns_14.png)
+
+Nous voyons lors de l'utilisation ceci  :
+
+![wireshark_visualisation_requete_dns_lequipe_fr_14.png](./imgs/wireshark_visualisation_requete_dns_lequipe_fr_14.png)
+
+Comme vous pouvez voir il n'y a vraiment pas le __3 way handshake__, nous voyons l'envoie de la requête et la réception. AUCUNE présence d'accusé de réception si le paquet se perd le client ne le sait pas. 
+
+
+
+ 
+#### <a name="clarification_udp_conclusion" /> Conclusion sur le UDP
 
 ## <a name="clarification_diff_tcp_udp" /> Autre protocole
 
