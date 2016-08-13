@@ -548,8 +548,16 @@ Nous voyons lors de l'utilisation ceci  :
 
 ![wireshark_visualisation_requete_dns_lequipe_fr_14.png](./imgs/wireshark_visualisation_requete_dns_lequipe_fr_14.png)
 
-Comme vous pouvez voir il n'y a vraiment pas le __3 way handshake__, nous voyons l'envoie de la requête et la réception. AUCUNE présence d'accusé de réception si le paquet se perd le client ne le sait pas. 
+Comme vous pouvez voir il n'y a vraiment pas le __3 way handshake__, nous voyons l'envoie de la requête et la réception. AUCUNE présence d'accusé de réception si le paquet se perd le client ne le sait pas. La communication est petite , une demande , une réponse rien d'autre , voyons maintenant une communication contenant plus d'information .
 
+
+##### <a name="visualisation_connexion_snmp" /> Visualisation d'une communication UDP avec l'application snmp
+
+Nous allons utiliser le système __snmp__ pour réalisé la démonstration , nous avons un nombre important de donnée qui peut être transférer tout en restant simple. Ceci aura aussi la chance de présenté ce protocole qui n'est pas connu de tous . Bien entendu nous aurions pu faire la démonstration avec un jeu en ligne aussi , mais il y aurait eu beaucoup de bruit sur la communication. 
+
+Description d'__SNMP__ : __SNMP__ est protocole qui permet de collecter des informations d'un système ou d'un équipement , nous retrouvons des informations de monitoring telle que l'utilisation de la mémoire ou du CPU , la liste des packages présent sur le système , les processes qui sont en execution , des informations sur la carte réseaux ... Il est aussi possible d'éxecuter des commandes à distances. Présent aussi bien pour les systèmes d'exploitation ( GNU/Linux, Windows , ...) que pour les switchs et firewall ( cisco , HP , jenniper , ...) . [https://en.wikipedia.org/wiki/Simple_Network_Management_Protocol](https://en.wikipedia.org/wiki/Simple_Network_Management_Protocol)
+
+TODO : Vous pourrez retrouvé la configuration du serveur snmpd que je vais utilisé sur hub.docker.com/x3nejfhe
 
 
  
