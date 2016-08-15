@@ -38,7 +38,7 @@ Voici la même représentation du traitement mais cette fois non plus avec une m
 Ceci est à haut niveau voyons plus en détail le processus de création de chaque couche afin de mieux visualisé le processus de connexion et d'échange de données. Mon objectif est de voir le processus de création du flux de données nous resterons jusqu'à un certain point à un haut niveau pour encore descendre au fur et a mesure que nous serons confortable avec les concepts.
 
 
-## <a name="clarification_diff_tcp_udp" /> Différence entre TCP et UDP (Transport)
+## <a name="couche_transport" /> Couche Transport (UDP et TCP)
 
 Inutile de prendre du temps pour la couche applicative vous aurez compris que c'est l'ensemble des applications communiquant sur le réseau que ce soit client ou serveur. L'ensemble des exemples à venir clarifierons l'ambiguïté qui peut encore présent. Nous allons nous attaquer à la couche **Transport** nous allons la décortiqué mais avant tous clarifions la différence entre __TCP__ et __UDP__. 
 
@@ -555,15 +555,174 @@ Comme vous pouvez voir il n'y a vraiment pas le __3 way handshake__, nous voyons
 
 Nous allons utiliser le système __snmp__ pour réalisé la démonstration , nous avons un nombre important de donnée qui peut être transférer tout en restant simple. Ceci aura aussi la chance de présenté ce protocole qui n'est pas connu de tous . Bien entendu nous aurions pu faire la démonstration avec un jeu en ligne aussi , mais il y aurait eu beaucoup de bruit sur la communication. 
 
-Description d'__SNMP__ : __SNMP__ est protocole qui permet de collecter des informations d'un système ou d'un équipement , nous retrouvons des informations de monitoring telle que l'utilisation de la mémoire ou du CPU , la liste des packages présent sur le système , les processes qui sont en execution , des informations sur la carte réseaux ... Il est aussi possible d'éxecuter des commandes à distances. Présent aussi bien pour les systèmes d'exploitation ( GNU/Linux, Windows , ...) que pour les switchs et firewall ( cisco , HP , jenniper , ...) . [https://en.wikipedia.org/wiki/Simple_Network_Management_Protocol](https://en.wikipedia.org/wiki/Simple_Network_Management_Protocol)
+Description d'__SNMP__ : __SNMP__ est protocole qui permet de collecter des informations d'un système ou d'un équipement , nous retrouvons des informations de monitoring telle que l'utilisation de la mémoire ou du CPU , la liste des packages présent sur le système , les processus qui sont en exécution , des informations sur la carte réseaux ... Il est aussi possible d'exécuter des commandes à distances. Présent aussi bien pour les systèmes d'exploitation ( GNU/Linux, Windows , ...) que pour les __switchs__ et __firewall__ ( __cisco__ , __HP__ , __jenniper__ , ...) . [https://en.wikipedia.org/wiki/Simple_Network_Management_Protocol](https://en.wikipedia.org/wiki/Simple_Network_Management_Protocol)
 
 TODO : Vous pourrez retrouvé la configuration du serveur snmpd que je vais utilisé sur hub.docker.com/x3nejfhe
 
+TODO : ICI ICI completer.
 
- 
 #### <a name="clarification_udp_conclusion" /> Conclusion sur le UDP
+
+Nous venons de voir le comportement du protocole __UDP__ quand tous fonctionne bien nous verrons un peu plus tard le comportement en cas de problème de communication. Comme le client et le serveur n'établisse pas de connexion contrairement au protocole __TCP__ il y a moins de mécanisme de validation. 
+Il est important de comprendre que le protocole __UDP__ ne réalise pas de validation de réception de la communication transmise . L'avantage de l'__UDP__ est qu'il est moins gourmand que le protocole __TCP__ justement à cause de validation moins  importante.
 
 ## <a name="clarification_diff_tcp_udp" /> Autre protocole
 
 *     [SCTP](https://fr.wikipedia.org/wiki/Stream_Control_Transmission_Protocol) (Stream Control Transmission Protocol), protocole fournissant des services similaires à TCP (fiabilité, remise en ordre des séquences, et contrôle de congestion), tout en offrant la possibilité de communications multi-cibles comme avec UDP.
 *     [MPTCP](https://fr.wikipedia.org/wiki/Multipath_TCP) (Multipath TCP) est une surcouche à TCP qui rassemble diverses connexions TCP (à travers différentes interfaces réseau: GSM, Wifi etc.), au sein d'une même méta-connexion (RFC 6824). Ce fonctionnement permet d'exploiter tous les chemins disponibles en parallèle, et donc améliorer significativement les performances et la fiabilité d'une connexion.
+
+
+
+## <a name="couche_Internet" /> Couche Internet (IP)
+
+Passons maintenant à la partie **IP** de __TCP__/**IP**, comme nous avons vu lors de la présentation du protocole __TCP__ ou __UDP__ les en-têtes des paquets ne contienne pas d'information sur la source du __host__ ou la destination  du __host__. J'avais mentionné que ceci est normal car cette opération est réalisé par l'autre couche , la couche __Internet__ . Nous allons voir maintenant cette couche, l'objectif de la couche __Internet__ et dans notre cas le protocole IP est de transmettre les paquets d'un point A à B.
+
+Si nous reprenons notre exemple de la lettre que l'on poste la couche **Transport** s'occupe de livrer la livre à son destinataire , du côté de l'application ou même de la couche **Transport** peut importe la méthode. 
+
+Voici une représentation graphique de la structure d'un paquet __TCP__ ici, mais ceci est la même chose pour les paquets __UDP__ ce n'est que les en tête qui change :
+
+![Osi-encapsulation.gif](./imgs/Osi-encapsulation.gif)
+
+Nous voyons clairement qu'à chaque couche, il y a un ajout d'information qui est réalisé, nous partons des données de l'application , le tous enveloppé dans une trame __TCP__ , par la suite , il y a ajout des informations __IP__ pour la destination du __host__ et pour finir les informations de la carte réseau dans notre cas.
+
+### <a name="clarification_IP_structure" /> Structure du paquet IP
+
+Nous avons vu les en-tête des paquets __TCP__ et __UDP__ prenons quelques minutes pour regarder la partie __IP__ de la communication  :
+
+<table class="wikitable" style="width: 750px">
+<caption>En-tête IPv4</caption>
+<tr>
+<td width="3.125%">0</td>
+<td width="3.125%">1</td>
+<td width="3.125%">2</td>
+<td width="3.125%">3</td>
+<td width="3.125%">4</td>
+<td width="3.125%">5</td>
+<td width="3.125%">6</td>
+<td width="3.125%">7</td>
+<td width="3.125%">8</td>
+<td width="3.125%">9</td>
+<td width="3.125%">10</td>
+<td width="3.125%">11</td>
+<td width="3.125%">12</td>
+<td width="3.125%">13</td>
+<td width="3.125%">14</td>
+<td width="3.125%">15</td>
+<td width="3.125%">16</td>
+<td width="3.125%">17</td>
+<td width="3.125%">18</td>
+<td width="3.125%">19</td>
+<td width="3.125%">20</td>
+<td width="3.125%">21</td>
+<td width="3.125%">22</td>
+<td width="3.125%">23</td>
+<td width="3.125%">24</td>
+<td width="3.125%">25</td>
+<td width="3.125%">26</td>
+<td width="3.125%">27</td>
+<td width="3.125%">28</td>
+<td width="3.125%">29</td>
+<td width="3.125%">30</td>
+<td width="3.125%">31</td>
+</tr>
+<tr>
+<td bgcolor="#F7F8FF" colspan="4">
+<center>Version d'IP</center>
+</td>
+<td bgcolor="#F7F8FF" colspan="4">
+<center>Longueur de l'en-tête</center>
+</td>
+<td bgcolor="#F7F8FF" colspan="8">
+<center>Type de service</center>
+</td>
+<td bgcolor="#F7F8FF" colspan="16">
+<center>Longueur totale</center>
+</td>
+</tr>
+<tr>
+<td bgcolor="#F7F8FF" colspan="16">
+<center>Identification</center>
+</td>
+<td bgcolor="#F7F8FF" colspan="3">
+<center>Indicateur</center>
+</td>
+<td bgcolor="#F7F8FF" colspan="13">
+<center><span class="lang-en" lang="en">Fragment offset</span></center>
+</td>
+</tr>
+<tr>
+<td bgcolor="#F7F8FF" colspan="8">
+<center>Durée de vie</center>
+</td>
+<td bgcolor="#F7F8FF" colspan="8">
+<center>Protocole</center>
+</td>
+<td bgcolor="#F7F8FF" colspan="16">
+<center>Somme de contrôle de l'en-tête</center>
+</td>
+</tr>
+<tr>
+<td bgcolor="#F7F8FF" colspan="32">
+<center>Adresse source</center>
+</td>
+</tr>
+<tr>
+<td bgcolor="#F7F8FF" colspan="32">
+<center>Adresse destination</center>
+</td>
+</tr>
+<tr>
+<td bgcolor="#F7F8FF" colspan="32">
+<center>Option(s) + remplissage</center>
+</td>
+</tr>
+</table>
+
+Il y a pas mal d'option, nous ne retrouvons pas uniquement l'adresse __ip__ source et la destination , listons le détail :
+
+* **Version** (4 bits) : Version d'IP utilisée (IPv4 , IPv6)
+* **Longueur de l'en-tête ou IHL** (pour Internet Header Length) (4 bits) : Nombre de mots de 32 bits, soit 4 octets (ou nombre de lignes du schéma). La valeur est comprise entre 5 et 15, car il y a 20 octets minimum et on ne peut dépasser 40 octets d'option
+* **Type de service ou ToS** (pour Type of Service) (8 bits) : Ce champ permet de distinguer différentes qualités de service différenciant la manière dont les paquets sont traités. Composé de 3 bits de priorité (donc 8 niveaux) et trois indicateurs permettant de différencier le débit, le délai ou la fiabilité. Il se décline au fil des RFC. Au départ ([RFC 791](https://tools.ietf.org/html/rfc791)), [RFC 2474](https://tools.ietf.org/html/rfc2474), [RFC 3168](https://tools.ietf.org/html/rfc3168)
+* **Longueur totale** en octets ou Total Length (16 bits) : Nombre total d'octets du datagramme, en-tête IP comprise. Donc, la valeur maximale est (216)-1 octets.
+* **Identification** (16 bits): Numéro permettant d'identifier les fragments d'un même paquet.
+* **Indicateurs** ou Flags (3 bits): 
+    * (Premier bit) actuellement inutilisé.
+    * (Deuxième bit) DF (Don't Fragment) : lorsque ce bit est positionné à 1, il indique que le paquet ne peut pas être fragmenté. Si le routeur ne peut acheminer ce paquet (taille du paquet supérieure à la MTU), il est alors rejeté.
+    * (Troisième bit) MF (More Fragments) : quand ce bit est positionné à 1, on sait que ce paquet est un fragment de données et que d'autres doivent suivre. Quand il est à 0, soit le fragment est le dernier, soit le paquet n'a pas été fragmenté.
+* **Fragment offset** (13 bits) :Position du fragment par rapport au paquet de départ, en nombre de mots de 8 octets. 
+* **Durée de vie** ou __TTL__ (pour __Time To Live__) (8 bits) : Initialisé par l'émetteur, ce champ est décrémenté d'une unité généralement à chaque saut de routeur. Quand TTL = 0, le paquet est abandonné et un message ICMP est envoyé à l'émetteur pour information. 
+* **Protocole** (8 bits) : Numéro du protocole au-dessus de la couche réseau : TCP = 6, UDP = 17, ICMP = 1.
+    Ce champ permet d'identifier le protocole utilisé par le niveau supérieur :
+    * Internet Control Message Protocol ou ICMP est repéré par les bits 00000001, qu'on écrit souvent en hexadécimal avec 01
+    * Transmission Control Protocol ou TCP par les bits 00000110, soit 06
+    * User Datagram Protocol ou UDP par les bits 00010001, soit 17 en décimal
+* **Somme de contrôle de l'en-tête** ou Header Checksum (16 bits) : Complément à un de la somme complémentée à un de tout le contenu de l'en-tête afin de détecter les erreurs de transfert. Si la somme de contrôle est invalide, le paquet est abandonné sans message d'erreur.
+* **Adresse source** (32 bits) : Adresse IP de l'émetteur sur 32 bits.
+* **Adresse destination** (32 bits) : Adresse IP du récepteur 32 bits.
+* **Options** (0 à 40 octets par mots de 4 octets) : Facultatif. 
+* **Remplissage** ou Padding : Champ de taille variable comprise entre 0 et 7 bits. Il permet de combler le champ option afin d'obtenir un en-tête IP multiple de 32 bits. La valeur des bits de bourrage est 0. 
+
+
+Bon à ce stade de la formation on va pas tous voir , je voulais principalement démontré l'aspect complet du paquet, ce qui nous aidera par la suite afin de comprendre le comportement surtout dans la deuxième partie quand nous causerons des problèmes de communication :D.
+
+À ce stade nous allons nous soucier de :
+* Identification
+* Durée de vie
+* Protocole
+* Adresse source
+* Adresse destination
+
+### <a name="clarification_adressage_ip" /> Adresses IP et sous-réseau
+
+### <a name="clarification_routage_IP" /> Routage des paquets IP
+
+### <a name="clarification_reliability_ip" /> Services délivrés / Fiabilité du protocole
+
+### <a name="clarification_NAT_IP" /> Manipulation des adresses IP (NAT)
+
+### Route
+### NAT
+### BGP ?!?!
+
+
+
