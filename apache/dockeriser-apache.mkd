@@ -25,6 +25,7 @@ TODO corriger les \_
        * [ Docker-Compose pour simplifier](#dockeriser_dockercompose) 
            * [ Introduction](#dockeriser_dockercompose_introduction)
            * [ docker-compose.yml](#dockeriser_dockercompose_format)
+           * [ Build](#dockeriser_dockercompose_build)
 
 # <a name="dockeriser" /> Dockeriser Apache
 
@@ -1318,6 +1319,10 @@ services:
       DB_DB: "mydb"
 ```
 
+*Note* : Nous pourrions définir des volumes, comme nous avons utilisé
+précédemment. docker-compose supporte toute ou presque les arguments que docker
+supporte.
+
 Sauvegarder ce fichier en le nommant *docker-compose.yml* et voila, vous voila
 avec votre premier docker-compose file.
 
@@ -1337,3 +1342,61 @@ Et voila, votre conteneur est up and running, prêt a être utilisé. Et la
 prochaine fois que vous allez travailler sur le projet, qui sait, quelques mois
 plus tard peut-être, vous aurez un format structuré et standard pour re-run
 l'application. Fini les start.sh script non-standard et en bordel, woot!
+
+### <a name="dockeriser_dockercompose_build" /> Build avec docker-compose
+
+Docker-compose nous permet de faire plusieurs choses. Il peut utiliser plusieurs
+commandes que docker lui même utilise. Pour une list des commandes, entré cette
+commande dans le terminal:
+
+```bash
+$ docker-compose --help
+```
+
+Un autre chose possible avec docker-compose est le build de l'image. Pour le
+moment,  nous n'avons plus besoin de nous rappeler de la ligne de commande pour
+run un conteneur. Nous n'avons aussi plus besoin d'un script comme *start.sh*.
+
+Il serait bien de faire demême pour le build de l'image ainsi que le *build.sh*
+script que nous aurions besoin de faire pour avoir une tracabilité.
+
+Nous allons donc rajouter une section pour build l'image à l'aide de
+docker-compose.
+
+Voici la commande utilisé avant.
+
+```bash
+$ docker build -t apache-train:3.1 .
+```
+
+Voici notre fichier *docker-compose.yml* avec le build ajouté.
+
+```yaml
+version: '2'
+services:
+  apache_custom:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    image: apache-train:3.1
+    environment:
+      SERVER_ADMIN: "toto@x3rus.com"
+      VALIDE_USER: "user admin"
+      DB_HOST: "db.x3rus.com"
+      DB_USER: "toto"
+      DB_PASS: "password"
+      DB_DB: "mydb"
+```
+
+Cool. L'image lors du build sera nommé selon la valeur de *image*. Essayons
+maintenant de build notre image avec docker-compose et de démarrer le conteneur.
+
+```bash
+$ docker-compose build
+[... OUTPUT COUPÉ ...]
+
+$ docker-compose up
+```
+
+Wow. Trop cool. Plus besoin de se casser la tête pour build et run des images
+docker. Tout est la, dans un fichier standard.
