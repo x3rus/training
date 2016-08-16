@@ -714,15 +714,73 @@ Bon à ce stade de la formation on va pas tous voir , je voulais principalement 
 
 ### <a name="clarification_adressage_ip" /> Adresses IP et sous-réseau
 
+L'ensemble du protocole IP se base sur les adresses IP, nous ne couvrirons que le protocoles **IPv4**, __l'IPv6__ est disponible mais pas encore répandu sur l'ensemble des réseaux. __L'IPv6__ a un comportement similaire avec quelques particularité et amélioration , je vous invite fortement à en prendre connaissance pour le future. 
+
+Chaque Hôte sur le réseau doit avoir une adresse IP pour que la communication fonctionne , il y a plusieurs classe d'adresse IP, certaines adresses IP sont réservé pour des usages particulier: [Plages d'adresses IP spéciales](https://fr.wikipedia.org/wiki/Adresse_IP#Plages_d.27adresses_IP_sp.C3.A9ciales). 
+Je vais faire un raccourci , je ne vais présenter que les adresses IP à utilisé pour un réseau privé / réseau local (**LAN**).
+
+
+<table class="wikitable">
+<tr>
+<th>Nom</th>
+<th>Fourchettes d'adresses IP</th>
+<th>Nombre d'adresses</th>
+<th><i><a href="/wiki/Classful_network" title="Classful network">Classe</a></i> description</th>
+<th>Large <a href="/wiki/Classless_Inter-Domain_Routing" title="Classless Inter-Domain Routing">CIDR</a> bloque</th>
+</tr>
+<tr>
+<td>24-bit block</td>
+<td>10.0.0.0 – 10.255.255.255</td>
+<td><span style="white-space:nowrap">16<span style="margin-left:0.2em">777</span><span style="margin-left:0.2em">216</span></span></td>
+<td>Classe A simple</td>
+<td>10.0.0.0/8</td>
+</tr>
+<tr>
+<td>20-bit block</td>
+<td>172.16.0.0 – 172.31.255.255</td>
+<td><span style="white-space:nowrap">1<span style="margin-left:0.2em">048</span><span style="margin-left:0.2em">576</span></span></td>
+<td>range de classe 16 du  bloque B</td>
+<td>172.16.0.0/12</td>
+</tr>
+<tr>
+<td>16-bit block</td>
+<td>192.168.0.0 – 192.168.255.255</td>
+<td><span style="white-space:nowrap">65<span style="margin-left:0.2em">536</span></span></td>
+<td>range de 256 du bloque de classe C</td>
+<td>192.168.0.0/16</td>
+</tr>
+</table>
+
+L'idée de ses adresses IP est que ces dernière ne sont utilisé que pour un réseaux local et peuvent être alloué par n'importe qui pour son propre réseau. Le plus classique reste : 192.168.0.XX ou 192.168.1.XX principalement à cause des routeurs grand publique qui sont vendu dans le commerce pour partager votre connexion internet et permettre l'interconnexion entre vos équipements. 
+
+Voyons un exemple d'un réseau simple ce que nous retrouvons à nos domicile :
+
+![exemple_network_couche_ip.png](./imgs/exemple_network_couche_ip.png)
+
+Le réseau "privé" est 192.168.0.0/24 donc si une machine avec l'adresse IP : 192.168.0.10 veut rejoindre la machine 192.168.0.42 , lors de la communication le paquet va être transmis  au router . Ce dernier va voir grâce à l'adresse IP que c'est pour la communication interne donc il va chercher la machine dans le réseau local. Bien entendu si le client 192.168.0.10 veut rejoindre le site http://x3rus.com/moodle qui correspond à l'IP 199.100.146.119 n'étant pas sur le réseau local et va renvoyer la demande sur internet.
+
+Bon ça c'est la version courte :D et simplifié. Allons un peu plus loin en complexifiant la structure. 
+
+#### <a name="clarification_adressage_ip_sous-reseau" /> Netmask et sous-réseau
+
+Malheureusement nous n'avons pas beaucoup de temps je suis donc dans l'obligation de réduire cette section au minimum, nous pourrions approfondir cette section ultérieurement s'il y a de la demande. 
+
+Si vous avez un peu lu de la littérature réseau vous avez probablement régulièrement vu des annotations dur style :
+
+* 192.168.10.0/24 ou 192.168.10.0 255.255.255.0
+* 172.17.0.0/16 ou 172.17.0.0 255.255.0.0
+* 192.168.42.8/29 ou 192.168.42.8 255.255.255.248
+* 172.30.25.32/27 ou 172.30.25.32 255.255.255.224
+
+Pour beaucoup cette écriture ne veut pas dire grand chose, nous allons la démystifier 
+
+
+
 ### <a name="clarification_routage_IP" /> Routage des paquets IP
 
 ### <a name="clarification_reliability_ip" /> Services délivrés / Fiabilité du protocole
 
 ### <a name="clarification_NAT_IP" /> Manipulation des adresses IP (NAT)
 
-### Route
-### NAT
-### BGP ?!?!
 
-
-
+# <a name="clarification_workflow_connection" /> Processus d'établissement de connexion
