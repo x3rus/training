@@ -23,6 +23,7 @@ TODO corriger les \_
        * [ Visualisation des logs Apache](#dockeriser_apache_logs) 
        * [ Correctif d'urgence](#dockeriser_fix_tempo) 
        * [ Docker-Compose pour simplifier](#dockeriser_dockercompose) 
+           * [ Introduction](#dockeriser_dockercompose_introduction)
 
 # <a name="dockeriser" /> Dockeriser Apache
 
@@ -1191,3 +1192,56 @@ J'aurais du mettre l'option **-a** pour spécifier l'auteur ... Lors du **docker
 
 ## <a name="dockeriser_dockercompose" /> Docker-Compose pour simplifier
 
+### <a name="dockeriser_dockercompose_introduction" /> Introduction
+Nous allons maintenant introduire docker-compose. Avant toute chose, je vais
+expliquer pourquoi l'outil docker-compose est né et pourquoi il est nécessaire
+et ensuite j'irai en détail sur l'outil lui même.
+
+Tout d'abord, il est important de noter que depuis le début du tutoriel, nous
+utilisons la ligne de commande pour interagir avec docker. Nous l'utilisons pour
+*build* les images, pour les *run*, pour les arrêter, etc.
+
+Cette méthode de travail est correcte, elle fait la job lorsque nous sommes en
+plein developpement. Par contre, qu'arrive-t-il lorsque cela fait plusieurs
+jours, ou pire, plusieurs semaines que vous n'avez plus travaillé sur un travail
+nécessitant docker ?
+
+Il est relativement simple de se rappeler des commandes docker. La où la
+difficulté arrive est lorsqu'il faut se rappeler quelles arguments devaient être
+passé pour construire l'image, ou encore quelles variables d'environnements
+étaient utilisées lors du *run*.
+
+Prenons par example la dernière commande utilisée pour run notre image.
+
+```bash
+$ docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER="user admin" --env DB_HOST=db.x3rus.com --env DB_USER=toto --env DB_PASS=password --env DB_DB=mydb  apache-train:3.1
+```
+
+Bonne chance pour vous rappeler de tous les variables d'environnements et autres
+arguments commme le port-forward, etc.
+
+Biensur, il serait très simple de créer un fichier contenant les commandes avec
+leurs arguments.
+
+```bash
+$ echo "docker build -t apache-train:3.1 ." > build.sh
+$ chmod +x build.sh
+
+$ echo "docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER="user admin" --env DB_HOST=db.x3rus.com --env DB_USER=toto --env DB_PASS=password --env DB_DB=mydb  apache-train:3.1" > start.sh
+$ chmod +x start.sh
+```
+
+Voila. Par contre, la commande peut devenir extrèmement longue et laide de cette
+manière. Aucune structure n'est imposé.
+
+Et c'est encore pire lorsqu'on décide d'utiliser plusieurs conteneurs lié entre
+eux. Plus il y a de conteneurs lié, plus le script devient gros, lourd et sans
+structure.
+
+Docker-compose est un outil pour régler ce problème. Il permet d'avoir une
+structure pour garder une traçabilité sur ce que un ou plusieurs conteneurs
+nécessite pour bien fonctionner (ports, volumes, variables d'environnement,
+etc). Docker-compose est deux choses:
+
+* Un *command line utility*
+* Un format pour définir l'utilisation de conteneur.
