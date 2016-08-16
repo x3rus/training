@@ -772,9 +772,97 @@ Si vous avez un peu lu de la littérature réseau vous avez probablement réguli
 * 192.168.42.8/29 ou 192.168.42.8 255.255.255.248
 * 172.30.25.32/27 ou 172.30.25.32 255.255.255.224
 
-Pour beaucoup cette écriture ne veut pas dire grand chose, nous allons la démystifier 
+Pour beaucoup cette écriture ne veut pas dire grand chose, nous allons la démystifier, bon pour les personnes qui se disent : "Oh non on va calculer des __netmask__ j'ai horreur de ça !!" Pas de panique ! J'ai pas l'intention de passer la prochaine heure sur ce sujet :D , moi aussi j'ai horreur de ça :P. 
+
+Le système de __netmask__ (/24 ou 255.255.255.0) permet de segmenter une plage d'adresse __IP__ , en fait ça permet de regroupé des machines étant dans le même segment réseau. Commençons par comprendre c'est quoi que ceci veut dire et voyons l'utilisation possible. Vous comprendrez peut-être pourquoi votre administrateur réseau vous réponds parfois qu'il n'y a plus d'adresse IP disponible même si vous êtes dans un réseau privé .
+
+On va commencé par le plus simple le **/24** ou **255.255.255.0** , sous GNU/Linux vous avez une jolie ligne de commande pour vous fournir l'information **ipcalc** :
+Pour les personnes qui n'ont pas la chance d'être sous Linux vous pouvez utiliser ce site web : [http://jodies.de/ipcalc](http://jodies.de/ipcalc)
 
 
+        $ ipcalc 192.168.1.0/24 
+        Address:   192.168.1.0          11000000.10101000.00000001. 00000000
+        Netmask:   255.255.255.0 = 24   11111111.11111111.11111111. 00000000
+        Wildcard:  0.0.0.255            00000000.00000000.00000000. 11111111
+        =>
+        Network:   192.168.1.0/24       11000000.10101000.00000001. 00000000
+        HostMin:   192.168.1.1          11000000.10101000.00000001. 00000001
+        HostMax:   192.168.1.254        11000000.10101000.00000001. 11111110
+        Broadcast: 192.168.1.255        11000000.10101000.00000001. 11111111
+        Hosts/Net: 254                   Class C, Private Internet
+
+
+Bon dans l'exemple ci-dessus, nous analysons le segment réseau : 192.168.1.0/24 , réseau très répandu chez les particuliers, regardons les 2 premières ligne :
+
+* Address:   192.168.1.0          11000000.10101000.00000001. 00000000
+* Netmask:   255.255.255.0 = 24   11111111.11111111.11111111. 00000000
+
+Nous avons l'IP 192.168.1.0 affiché en binaire 11000000 == 192, 10101000 == 168 , ...
+Nous avons aussi le __NetMask__ 255.255.255.0 affiché en binaire 11111111 == 255 , 00000000 == 0 
+
+Donc si nous y allons **simplement** lorsque que le système doit valider si l'adresse __IP__ fait partie du réseau il appose le __netmask__ définie. Quand nous regardons le __netmask__ nous voyons une série de **1** et **0**. Lorsque je dit que le __netmask__ est apposé partout où il y a des **1** la valeurs ne doit pas changer avec l'IP d'origine quand il y a **0** la valeur peut varier. 
+Voilà pourquoi dans la démonstration plus haut , nous pouvons avoir des valeurs différente pour le dernier chiffre et que ceci donne entre 192.168.1.1 à 192.168.1.254. En d'autre mot les derniers 8 binaires peuvent être changé.
+
+Restons dans le simple et regardons un **/16** ou **255.255.0.0** :
+
+        $ ipcalc 172.17.0.0/16
+        Address:   172.17.0.0           10101100.00010001. 00000000.00000000
+        Netmask:   255.255.0.0 = 16     11111111.11111111. 00000000.00000000
+        Wildcard:  0.0.255.255          00000000.00000000. 11111111.11111111
+        =>
+        Network:   172.17.0.0/16        10101100.00010001. 00000000.00000000
+        HostMin:   172.17.0.1           10101100.00010001. 00000000.00000001
+        HostMax:   172.17.255.254       10101100.00010001. 11111111.11111110
+        Broadcast: 172.17.255.255       10101100.00010001. 11111111.11111111
+        Hosts/Net: 65534                 Class B, Private Internet
+
+Dans le cas présent ce n'est plus 8 binaires qui peuvent être changé mais 16 chiffres donc , nous nous retrouvons à avoir une possibilité sur le réseau de 65534 hôtes sur le même segment réseau. Soit dis en passant le __netmask__ peut être utilisé aussi pour la définition de règles de __firewall__ mais nous y reviendrons peut-être...
+
+Telle que mentionné nous ne ferons qu'un survole de cette aspect par manque de temps si vous désirez aller un peu plus loin , je vous invite à lire le livre : [TCP illustrated par Richard Stevens](https://books.google.ca/books/about/TCP_IP_Illustrated_Volume_1.html?id=a23OAn5i8R0C&source=kp_cover&redir_esc=y&hl=en), mais c'est un autre niveau :D.
+
+Bon juste pour s'amuser on va en faire 2 / 3  autres, rapide , car quand on s'amuse le temps passe vite ;-).
+
+Voyons un tous petit réseau peut-être que ceci aidera à la compréhension :
+
+        $ ipcalc 192.168.1.1/29
+        Address:   192.168.1.1          11000000.10101000.00000001.00000 001
+        Netmask:   255.255.255.248 = 29 11111111.11111111.11111111.11111 000
+        Wildcard:  0.0.0.7              00000000.00000000.00000000.00000 111
+        =>
+        Network:   192.168.1.0/29       11000000.10101000.00000001.00000 000
+        HostMin:   192.168.1.1          11000000.10101000.00000001.00000 001
+        HostMax:   192.168.1.6          11000000.10101000.00000001.00000 110
+        Broadcast: 192.168.1.7          11000000.10101000.00000001.00000 111
+        Hosts/Net: 6                     Class C, Private Internet
+
+Dans l'exemple ci-dessus je définie un tout petit réseau car uniquement 3 chiffre (binaire) peuvent être altéré , si nous prenons le dernier chiffre uniquement 192.168.1.  **0** ==  00000000 , comme les 5 premiers chiffre binaire ne peuvent pas changé la valeur maximal pour le segment est : 00000111 soit 7. Nous avons donc un segment réseau comprenant uniquement 6 hôtes !!
+
+        $ ipcalc 192.168.1.8/29
+        Address:   192.168.1.8          11000000.10101000.00000001.00001 000
+        Netmask:   255.255.255.248 = 29 11111111.11111111.11111111.11111 000
+        Wildcard:  0.0.0.7              00000000.00000000.00000000.00000 111
+        =>
+        Network:   192.168.1.8/29       11000000.10101000.00000001.00001 000
+        HostMin:   192.168.1.9          11000000.10101000.00000001.00001 001
+        HostMax:   192.168.1.14         11000000.10101000.00000001.00001 110
+        Broadcast: 192.168.1.15         11000000.10101000.00000001.00001 111
+        Hosts/Net: 6                     Class C, Private Internet
+
+On continue, je définie un réseau 192.168.1.8/29 avec le même __netmask__ 8 == 00001000 comme le 1 est compris dans les 5 chiffres binaire qui ne sont pas modifiable ceci m'offre un nouveau segment réseau qui à pour valeur minimal : 192.168.1.  **9** == 00001**001** et 00001**111**.
+
+J'espère que je suis claire :-/ , la pratique à venir nous permettra de clarifier ce point.
+
+Dernier moins utilisé mais qui peut poser des question lorsqu'on le voit pour la première fois : 192.168.1.10/32 
+
+        $ ipcalc 192.168.1.10/32
+        Address:   192.168.1.10         11000000.10101000.00000001.00001010 
+        Netmask:   255.255.255.255 = 32 11111111.11111111.11111111.11111111 
+        Wildcard:  0.0.0.0              00000000.00000000.00000000.00000000 
+        =>
+        Hostroute: 192.168.1.10         11000000.10101000.00000001.00001010 
+        Hosts/Net: 1                     Class C, Private Internet
+
+Comme vous pouvez le 
 
 ### <a name="clarification_routage_IP" /> Routage des paquets IP
 
