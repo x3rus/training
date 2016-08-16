@@ -24,6 +24,7 @@ TODO corriger les \_
        * [ Correctif d'urgence](#dockeriser_fix_tempo) 
        * [ Docker-Compose pour simplifier](#dockeriser_dockercompose) 
            * [ Introduction](#dockeriser_dockercompose_introduction)
+           * [ docker-compose.yml](#dockeriser_dockercompose_format)
 
 # <a name="dockeriser" /> Dockeriser Apache
 
@@ -1245,3 +1246,94 @@ etc). Docker-compose est deux choses:
 
 * Un *command line utility*
 * Un format pour définir l'utilisation de conteneur.
+
+
+### <a name="dockeriser_dockercompose_format" /> dockercompose.yml
+
+Le format utilisé par docker-compose est le format [yaml](http://yaml.org/). Le
+format yaml est un format principalement utilisé pour des fichiers de
+configuration. La structure est semblable a celle d'un fichier JSON, mais avec
+une syntax beaucoup plus lisible pour l'être humain.
+
+Voici un example d'un fichier yaml avec au dessous, sa version JSON.
+
+```yaml
+database:
+  host: database.example.com
+  port: 3142
+  admin:
+    username: toto
+    password: password
+  moutons:
+    - mouton1:
+        name: Thomas
+    - mouton2:
+        name: Bèèèèè
+
+```
+
+```json
+{
+  "database": {
+    "host": "database.example.com",
+    "port": "3142",
+    "admin": {
+      "username": "admin",
+      "password": "hello_from_the_other_side"
+    },
+    "moutons": [
+      {
+        "mouton1": {
+          "name": "Thomas"
+        }
+      },
+      {
+        "mouton2": {
+          "name": "Bèèèèè"
+        }
+      }
+    ]
+  }
+}
+```
+
+Vous pouvez aller voir les possibilités que nous offrent le fichier
+docker-compose.yml [ici](https://docs.docker.com/compose/compose-file/).
+
+Nous allons prendre notre dernière commande de pour run notre conteneur utilisé
+et la mettre en format pour docker-compose. Nous allons utilisé la version 2 de
+docker-compose, soit la nouvelle.
+
+```yaml
+version: '2'
+services:
+  apache_custom:
+    image: apache-train:3.1
+    environment:
+      SERVER_ADMIN: "toto@x3rus.com"
+      VALIDE_USER: "user admin"
+      DB_HOST: "db.x3rus.com"
+      DB_USER: "toto"
+      DB_PASS: "password"
+      DB_DB: "mydb"
+```
+
+Sauvegarder ce fichier en le nommant *docker-compose.yml* et voila, vous voila
+avec votre premier docker-compose file.
+
+Alors, c'est tout ? Comment on l'utilise ?
+
+Premièrement, il faut installer docker-compose. Docker-compose n'est pas inclu
+avec le docker-engine. Il y a plusieurs méthodes pour l'installer que vous
+pouvez trouver [ici](https://docs.docker.com/compose/install/).
+
+Ensuite, il suffit de run cette commande:
+
+```bash
+$ docker-compose up
+```
+
+Et voila, votre conteneur est up and running, prêt a être utilisé. Et la
+prochaine fois que vous allez travailler sur le projet, qui sait, quelques mois
+plus tard peut-être, vous aurez un format structuré et standard pour re-run
+l'application. Fini les start.sh script non-standard et en bordel, woot!
