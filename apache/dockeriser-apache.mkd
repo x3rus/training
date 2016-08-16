@@ -1323,6 +1323,13 @@ services:
 précédemment. docker-compose supporte toute ou presque les arguments que docker
 supporte.
 
+Pour information, ce fichier définis la version a utiliser. Ici nous utilisons la
+version 2 comme indiqué plus haut. Ensuite, il y a le label *services*. C'est le
+term que docker-compose utilise pour désigner un image ou conteneur. Sous
+services, nous donnons un nom à ce service. Ce nom peut être n'importe quoi, sa
+valeur n'est pas important **pour l'instant**. Finalement, le nom de l'image et
+des variables d'environnement.
+
 Sauvegarder ce fichier en le nommant *docker-compose.yml* et voila, vous voila
 avec votre premier docker-compose file.
 
