@@ -890,7 +890,13 @@ Dernier moins utilisé mais qui peut poser des question lorsqu'on le voit pour l
         Hostroute: 192.168.1.10         11000000.10101000.00000001.00001010 
         Hosts/Net: 1                     Class C, Private Internet
 
-Comme vous pouvez le 
+Comme vous pouvez le voir le __Netmask__ ne comprend QUE des 1 donc c'est un réseau avec uniquement 1 hôte.
+
+##### <a name="clarification_ip_regroupement" /> Regroupement de réseau
+
+Pour beaucoup l'application et l'utilisation du __Netmask__ reste très ambigüe , le masque réseau est vraiment une méthode pour représenter un ensemble de machine. Si vous êtes confortable avec l'utilisation de plage de port (__port range__), l'utilisation du masque réseau est la même chose. L'utilisation du __Netmask__ est peut-être moins évident au début , mais comme tous on s'habitue. La raison de l'utilisation du __netmask__ est simple l'application d'un masque binaire est beaucoup plus performant de l'interprétation d'une nomenclature "humaine".
+
+
 
 ### <a name="clarification_routage_IP" /> Routage des paquets IP
 
