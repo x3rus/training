@@ -896,7 +896,51 @@ Comme vous pouvez le voir le __Netmask__ ne comprend QUE des 1 donc c'est un ré
 
 Pour beaucoup l'application et l'utilisation du __Netmask__ reste très ambigüe , le masque réseau est vraiment une méthode pour représenter un ensemble de machine. Si vous êtes confortable avec l'utilisation de plage de port (__port range__), l'utilisation du masque réseau est la même chose. L'utilisation du __Netmask__ est peut-être moins évident au début , mais comme tous on s'habitue. La raison de l'utilisation du __netmask__ est simple l'application d'un masque binaire est beaucoup plus performant de l'interprétation d'une nomenclature "humaine".
 
+Voyons un schéma réseau afin d'avoir une représentation d'un organisation d'un réseau fictif:
 
+![netmask_network.png](./imgs/netmask_network.png)
+
+Petite explication textuel , nous avons un réseau à gauche qui comprend 254 hôte possible (192.168.10.0/24) c'est le réseau local. À droite nous avons une machine avec une adresse IP pour le serveur X3rus (198.100.146.119/32) et un réseau de 14 IP publique soit (74.222.97.32/28), avec 3 machines identifiées (74.222.97.40 , 74.222.97.35 et 74.222.97.44 ) .
+
+Donc voyons un peu comment comment les masques réseaux peuvent nous aidée dans la situation présente . Comme vous pouvez le voir dans la section de gauche (192.168.10.0/24), j'ai des machines avec un OS privatif , donc non libre. C'est machines sont sur le même réseau local que l'ensemble de mes machines (192.168.10.0/24) . Cependant ce n'est pas des logiciels libre dessus, donc si je ne leur fait pas confiance si je ne désire pas qu'elle aille sur internet par exemple , comment puis je faire pour les bloquer dans le __firewall__. 
+
+J'ai regrouper l'ensemble des machines avec le système d'exploitation privatif sous le segment réseau "fictif" (192.168.10.248/29 ) , faisons le calcule ... nahh exécutons __ipcalc__ pour faire le calcule :
+
+        $ ipcalc 192.168.10.248/29
+        Address:   192.168.10.248       11000000.10101000.00001010.11111 000
+        Netmask:   255.255.255.248 = 29 11111111.11111111.11111111.11111 000
+        Wildcard:  0.0.0.7              00000000.00000000.00000000.00000 111
+        =>
+        Network:   192.168.10.248/29    11000000.10101000.00001010.11111 000
+        HostMin:   192.168.10.249       11000000.10101000.00001010.11111 001
+        HostMax:   192.168.10.254       11000000.10101000.00001010.11111 110
+        Broadcast: 192.168.10.255       11000000.10101000.00001010.11111 111
+        Hosts/Net: 6                     Class C, Private Internet
+
+Donc je peux avoir 6 hôtes pour ce segment, je vois pas pourquoi j'aurais autant de machine fermé , mais bon :P. 
+Résultat si je dis dans le firewall toutes les communications provenant dans 192.168.10.248/29 BLOQUE, n'envoie rien sur Internet. Nous voyons une utilisation pratique du regroupement de machine, ceci m'évite d'avoir une ligne par machine dans le __firewall__ pour bloquer la communication.
+
+Prenons un autre exemple, presque le même réseau mais une petite modification avec un regroupement des machines applicative :
+
+![netmask_network-v2.png](./imgs/netmask_network-v2.png)
+
+Le changement est au niveau de la partie à droite, j'ai regroupé encore "fictivement" les machines applicative sous 74.222.97.32/29 . Donc reprenons une situation fictive, je désire :
+
+Fournir l'accès au Opérateur des services applicatif , donc leur machines est sous 192.168.10.0/24 pour qu'il puisse accéder aux serveurs applicatif (74.222.97.32/29) sur le port 22. 
+L'option que j'ai pris est de regrouper les machines des développeurs sous le segment 192.168.10.0/25 , ... heu ça donne quoi ça ?? :P , **ipcalc** me voilà :D 
+
+        $ ipcalc 192.168.10.0/25
+        Address:   192.168.10.0         11000000.10101000.00001010.0 0000000
+        Netmask:   255.255.255.128 = 25 11111111.11111111.11111111.1 0000000
+        Wildcard:  0.0.0.127            00000000.00000000.00000000.0 1111111
+        =>
+        Network:   192.168.10.0/25      11000000.10101000.00001010.0 0000000
+        HostMin:   192.168.10.1         11000000.10101000.00001010.0 0000001
+        HostMax:   192.168.10.126       11000000.10101000.00001010.0 1111110
+        Broadcast: 192.168.10.127       11000000.10101000.00001010.0 1111111
+        Hosts/Net: 126                   Class C, Private Internet
+
+Donc avec cette segmentation je peux avoir disons 125 hôtes pour les développeurs.
 
 ### <a name="clarification_routage_IP" /> Routage des paquets IP
 
