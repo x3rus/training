@@ -7,6 +7,34 @@ TODO corriger les \_
 
 # Index 
 
+* [ Clarifications du réseau](#clarification) 
+* [ Théorie sur le protocole d'Internet](#clarification_Protocol_internet) 
+       * [ Couche Transport (UDP et TCP)](#couche_transport) 
+           * [ Transmission Control Protocol (TCP) (protocole de contrôle de transmissions)](#clarification_tcp) 
+               * [ TCP établissement de connexion (3 way handshake)](#clarification_tcp_3way_handshake) 
+               * [ Structure d'un segment TCP](#clarification_tcp_structure) 
+                   * [ Visualisation d'une communication TCP](#visualisation_connexion) 
+                       * [ Établissement de la connexion](#visualisation_connexion_conn) 
+                       * [ Transferts de données ](#visualisation_transfert_data) 
+                       * [ Fin de la connexion.](#visualisation_connexion_fin) 
+                   * [ Visualisation d'une communication TCP réalisé par le fureteur](#visualisation_connexion_fureteur) 
+                   * [ Visualisation d'une communication TCP réalisé par le fureteur avec site complet](#visualisation_conn_fureteur_ext) 
+               * [ Conclusion sur le TCP ](#clarification_tcp_conclusion) 
+           * [ User Datagram Protocol (UDP) (protocole de contrôle de transmissions)](#clarification_udp) 
+               * [ Structure d'un segment UDP](#clarification_udp_structure) 
+                   * [ Visualisation d'une communication UDP](#visualisation_connexion_udp) 
+                   * [ Visualisation d'une communication UDP avec l'application snmp](#visualisation_connexion_snmp) 
+               * [ Conclusion sur le UDP](#clarification_udp_conclusion) 
+       * [ Autre protocole](#clarification_diff_tcp_udp) 
+       * [ Couche Internet (IP)](#couche_Internet) 
+           * [ Structure du paquet IP](#clarification_IP_structure) 
+           * [ Adresses IP et sous-réseau](#clarification_adressage_ip) 
+               * [ Netmask et sous-réseau](#clarification_adressage_ip_sous-reseau) 
+           * [ Routage des paquets IP](#clarification_routage_IP) 
+           * [ Services délivrés / Fiabilité du protocole](#clarification_reliability_ip) 
+           * [ Manipulation des adresses IP (NAT)](#clarification_NAT_IP) 
+* [ Processus d'établissement de connexion](#clarification_workflow_connection) 
+
 # <a name="clarification" /> Clarifications du réseau
 
 Avant de parler routage ouverture de ports j'aimerai clarifier certain aspect du réseau , pas de panique je ne planifie pas faire 3 jours sur la [couche OSI](https://fr.wikipedia.org/wiki/Mod%C3%A8le_OSI). Nous allons voir un peu cette théorie mais dans un but précis permettre de diagnostiquer un problème. Avoir une meilleur compréhension de l'ensemble du processus et des différentes étapes nous aide a mieux identifier la source des problèmes. De nous jours le réseau est essentiel allumé une machine qui n'est pas connecter et rapidement on ne sait plus quoi faire avec ... 
