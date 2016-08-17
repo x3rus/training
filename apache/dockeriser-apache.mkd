@@ -23,6 +23,9 @@ TODO corriger les \_
        * [ Visualisation des logs Apache](#dockeriser_apache_logs) 
        * [ Correctif d'urgence](#dockeriser_fix_tempo) 
        * [ Docker-Compose pour simplifier](#dockeriser_dockercompose) 
+           * [ Introduction](#dockeriser_dockercompose_introduction)
+           * [ docker-compose.yml](#dockeriser_dockercompose_format)
+           * [ Build](#dockeriser_dockercompose_build)
 
 # <a name="dockeriser" /> Dockeriser Apache
 
@@ -1191,3 +1194,216 @@ J'aurais du mettre l'option **-a** pour spécifier l'auteur ... Lors du **docker
 
 ## <a name="dockeriser_dockercompose" /> Docker-Compose pour simplifier
 
+### <a name="dockeriser_dockercompose_introduction" /> Introduction
+Nous allons maintenant introduire docker-compose. Avant toute chose, je vais
+expliquer pourquoi l'outil docker-compose est né et pourquoi il est nécessaire
+et ensuite j'irai en détail sur l'outil lui même.
+
+Tout d'abord, il est important de noter que depuis le début du tutoriel, nous
+utilisons la ligne de commande pour interagir avec docker. Nous l'utilisons pour
+*build* les images, pour les *run*, pour les arrêter, etc.
+
+Cette méthode de travail est correcte, elle fait la job lorsque nous sommes en
+plein developpement. Par contre, qu'arrive-t-il lorsque cela fait plusieurs
+jours, ou pire, plusieurs semaines que vous n'avez plus travaillé sur un travail
+nécessitant docker ?
+
+Il est relativement simple de se rappeler des commandes docker. La où la
+difficulté arrive est lorsqu'il faut se rappeler quelles arguments devaient être
+passé pour construire l'image, ou encore quelles variables d'environnements
+étaient utilisées lors du *run*.
+
+Prenons par example la dernière commande utilisée pour run notre image.
+
+```bash
+$ docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER="user admin" --env DB_HOST=db.x3rus.com --env DB_USER=toto --env DB_PASS=password --env DB_DB=mydb  apache-train:3.1
+```
+
+Bonne chance pour vous rappeler de tous les variables d'environnements et autres
+arguments commme le port-forward, etc.
+
+Biensur, il serait très simple de créer un fichier contenant les commandes avec
+leurs arguments.
+
+```bash
+$ echo "docker build -t apache-train:3.1 ." > build.sh
+$ chmod +x build.sh
+
+$ echo "docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER="user admin" --env DB_HOST=db.x3rus.com --env DB_USER=toto --env DB_PASS=password --env DB_DB=mydb  apache-train:3.1" > start.sh
+$ chmod +x start.sh
+```
+
+Voila. Par contre, la commande peut devenir extrèmement longue et laide de cette
+manière. Aucune structure n'est imposé.
+
+Et c'est encore pire lorsqu'on décide d'utiliser plusieurs conteneurs lié entre
+eux. Plus il y a de conteneurs lié, plus le script devient gros, lourd et sans
+structure.
+
+Docker-compose est un outil pour régler ce problème. Il permet d'avoir une
+structure pour garder une traçabilité sur ce que un ou plusieurs conteneurs
+nécessite pour bien fonctionner (ports, volumes, variables d'environnement,
+etc). Docker-compose est deux choses:
+
+* Un *command line utility*
+* Un format pour définir l'utilisation de conteneur.
+
+
+### <a name="dockeriser_dockercompose_format" /> dockercompose.yml
+
+Le format utilisé par docker-compose est le format [yaml](http://yaml.org/). Le
+format yaml est un format principalement utilisé pour des fichiers de
+configuration. La structure est semblable a celle d'un fichier JSON, mais avec
+une syntax beaucoup plus lisible pour l'être humain.
+
+Voici un example d'un fichier yaml avec au dessous, sa version JSON.
+
+```yaml
+database:
+  host: database.example.com
+  port: 3142
+  admin:
+    username: toto
+    password: password
+  moutons:
+    - mouton1:
+        name: Thomas
+    - mouton2:
+        name: Bèèèèè
+
+```
+
+```json
+{
+  "database": {
+    "host": "database.example.com",
+    "port": "3142",
+    "admin": {
+      "username": "admin",
+      "password": "hello_from_the_other_side"
+    },
+    "moutons": [
+      {
+        "mouton1": {
+          "name": "Thomas"
+        }
+      },
+      {
+        "mouton2": {
+          "name": "Bèèèèè"
+        }
+      }
+    ]
+  }
+}
+```
+
+Vous pouvez aller voir les possibilités que nous offrent le fichier
+docker-compose.yml [ici](https://docs.docker.com/compose/compose-file/).
+
+Nous allons prendre notre dernière commande de pour run notre conteneur utilisé
+et la mettre en format pour docker-compose. Nous allons utilisé la version 2 de
+docker-compose, soit la nouvelle.
+
+```yaml
+version: '2'
+services:
+  apache_custom:
+    image: apache-train:3.1
+    environment:
+      SERVER_ADMIN: "toto@x3rus.com"
+      VALIDE_USER: "user admin"
+      DB_HOST: "db.x3rus.com"
+      DB_USER: "toto"
+      DB_PASS: "password"
+      DB_DB: "mydb"
+```
+
+*Note* : Nous pourrions définir des volumes, comme nous avons utilisé
+précédemment. docker-compose supporte toute ou presque les arguments que docker
+supporte.
+
+Pour information, ce fichier définis la version a utiliser. Ici nous utilisons la
+version 2 comme indiqué plus haut. Ensuite, il y a le label *services*. C'est le
+term que docker-compose utilise pour désigner un image ou conteneur. Sous
+services, nous donnons un nom à ce service. Ce nom peut être n'importe quoi, sa
+valeur n'est pas important **pour l'instant**. Finalement, le nom de l'image et
+des variables d'environnement.
+
+Sauvegarder ce fichier en le nommant *docker-compose.yml* et voila, vous voila
+avec votre premier docker-compose file.
+
+Alors, c'est tout ? Comment on l'utilise ?
+
+Premièrement, il faut installer docker-compose. Docker-compose n'est pas inclu
+avec le docker-engine. Il y a plusieurs méthodes pour l'installer que vous
+pouvez trouver [ici](https://docs.docker.com/compose/install/).
+
+Ensuite, il suffit de run cette commande:
+
+```bash
+$ docker-compose up
+```
+
+Et voila, votre conteneur est up and running, prêt a être utilisé. Et la
+prochaine fois que vous allez travailler sur le projet, qui sait, quelques mois
+plus tard peut-être, vous aurez un format structuré et standard pour re-run
+l'application. Fini les start.sh script non-standard et en bordel, woot!
+
+### <a name="dockeriser_dockercompose_build" /> Build avec docker-compose
+
+Docker-compose nous permet de faire plusieurs choses. Il peut utiliser plusieurs
+commandes que docker lui même utilise. Pour une list des commandes, entré cette
+commande dans le terminal:
+
+```bash
+$ docker-compose --help
+```
+
+Un autre chose possible avec docker-compose est le build de l'image. Pour le
+moment,  nous n'avons plus besoin de nous rappeler de la ligne de commande pour
+run un conteneur. Nous n'avons aussi plus besoin d'un script comme *start.sh*.
+
+Il serait bien de faire demême pour le build de l'image ainsi que le *build.sh*
+script que nous aurions besoin de faire pour avoir une tracabilité.
+
+Nous allons donc rajouter une section pour build l'image à l'aide de
+docker-compose.
+
+Voici la commande utilisé avant.
+
+```bash
+$ docker build -t apache-train:3.1 .
+```
+
+Voici notre fichier *docker-compose.yml* avec le build ajouté.
+
+```yaml
+version: '2'
+services:
+  apache_custom:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    image: apache-train:3.1
+    environment:
+      SERVER_ADMIN: "toto@x3rus.com"
+      VALIDE_USER: "user admin"
+      DB_HOST: "db.x3rus.com"
+      DB_USER: "toto"
+      DB_PASS: "password"
+      DB_DB: "mydb"
+```
+
+Cool. L'image lors du build sera nommé selon la valeur de *image*. Essayons
+maintenant de build notre image avec docker-compose et de démarrer le conteneur.
+
+```bash
+$ docker-compose build
+[... OUTPUT COUPÉ ...]
+
+$ docker-compose up
+```
+
+Wow. Trop cool. Plus besoin de se casser la tête pour build et run des images
+docker. Tout est la, dans un fichier standard.
