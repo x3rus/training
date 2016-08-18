@@ -974,10 +974,56 @@ Regardons les routes définie sur ma machine actuellement :
         172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
         192.168.43.0    0.0.0.0         255.255.255.0   U     600    0        0 wlan0
 
+Sous Windows si je ne me trompe pas la commande __dos__ est :
+
+        > netstat -r -n
+        [ PAS DE OUTPUT PAS TESTE ]
+
+Ici j'ai 2 interface (carte réseau) :
+
+* **wlan0** : carte réseau sans fil 
+* **docker0** : carte virtuel pour mes (conteneurs docker)[TODO : ajouter lien vers explication / videos]
+
+Voici les adresses __IP__ :
+
+* **wlan0** : 192.168.43.191/24
+* **docker0** : 172.17.42.1/16
+
+Si nous regardons la table de routage :
+
+* Ligne 3 :
+    * La ligne indique que si la destination est contenu dans le réseau 192.168.43.0/24 envoie la requête à l'interface **wlan0**
+
+            Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+            192.168.43.0    0.0.0.0         255.255.255.0   U     600    0        0 wlan0
+* Ligne 2 :
+    * La ligne indique que si la destination est contenu dans le réseau 172.17.0.0/16 envoie la requête sur l'interface **docker0**
+
+            Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+            172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
+* Ligne 1 :
+    * Sinon transmet la requête à la route par défaut ici **192.168.42.1** sur l'interface **wlan0**
+
+            Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+            0.0.0.0         192.168.43.1    0.0.0.0         UG    600    0        0 wlan0
+
+Le système est aussi simple que ça à la base !! Après les administrateurs ont compliqué tous ça pour assurer leur emploie :P, non je rigole. En mettant un système de base simple et compréhensible, un ensemble de mécanisme furent mis en place afin d'assurer une disponibilité constante du réseau, malgré le fait de perdre des nœuds dans l'infrastructure.
+
+L'ensemble des propagations des informations des routes sur internet , la mise à jour des routes automatique , ... 
+
+* [BGP](https://fr.wikipedia.org/wiki/Border_Gateway_Protocol) **Border Gateway Protocol**  est un protocole d'échange de route utilisé notamment sur le réseau Internet. Son objectif est d'échanger des informations de routage et d'accessibilité de réseaux (appelés préfixes) entre Autonomous Systems (AS).)
+* [OSPF](https://fr.wikipedia.org/wiki/Open_Shortest_Path_First) **Open Shortest Path First** est un protocole de routage interne IP de type « à état de liens ». Il a été développé au sein de l'Internet Engineering Task Force (IETF) à partir de 1987
 
 ### <a name="clarification_reliability_ip" /> Services délivrés / Fiabilité du protocole
 
+Le réseau IP basé sur le [principe de bout-à-bout](https://fr.wikipedia.org/wiki/Principe_de_bout-%C3%A0-bout) (en anglais : [end-to-end principle](https://en.wikipedia.org/wiki/End-to-end_principle) : Il énonce que « plutôt que d’installer l’intelligence au cœur du réseau, il faut la situer aux extrémités : les ordinateurs au sein du réseau n’ont à exécuter que les fonctions très simples qui sont nécessaires pour les applications les plus diverses, alors que les fonctions qui sont requises par certaines applications spécifiques seulement doivent être exécutées en bordure de réseau. Ainsi, la complexité et l’intelligence du réseau sont repoussées vers ses lisières. Des réseaux simples pour des applications intelligentes. »
+
+L'infrastructure de réseau est considéré comme intrinsèquement peu fiable à tout le niveau du réseau ou de transmission unique et suppose qu'il est dynamique en termes de disponibilité de liens et de nœuds. Aucune installation de surveillance ou de mesure de la performance centrale existe que les pistes ou maintient l'état du réseau.
+
 ### <a name="clarification_NAT_IP" /> Manipulation des adresses IP (NAT)
 
-
 # <a name="clarification_workflow_connection" /> Processus d'établissement de connexion
+
+* dns
+* Établissement de la connexion TCP (3 way handshake)
+* encapsulation de la requete
