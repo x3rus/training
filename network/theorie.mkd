@@ -940,9 +940,40 @@ L'option que j'ai pris est de regrouper les machines des développeurs sous le s
         Broadcast: 192.168.10.127       11000000.10101000.00001010.0 1111111
         Hosts/Net: 126                   Class C, Private Internet
 
-Donc avec cette segmentation je peux avoir disons 125 hôtes pour les développeurs.
+Donc avec cette segmentation je peux avoir disons 125 hôtes pour les développeurs, en d'autre mot , j'ai segmenté la première partie de mon réseau pour le dédier aux développeurs. Résultat dans les règles de __firewall__  je pourrais mentionné ceci :
+
+__Devs__ (192.168.10.0/25) peuvent accéder sur le port 22 vers le réseau 74.222.97.32/29 , donc les uniquement les serveurs applicatif. 
+
+Prendre note que je fais mes exemples en parlant de __firewall__ , cependant cette nomenclature est aussi applicable dans les fichiers de configuration d'apache pour limiter l'accès à une section d'administration, le service de base de donnée telle que __Postgress__ pour l'accès , ... Donc ceci ne s'applique pas uniquement pour les équipements réseaux.
 
 ### <a name="clarification_routage_IP" /> Routage des paquets IP
+
+Le protocole IP est sans connexion établie (__connexion less__), en d'autre mot chaque paquet est traité indépendamment pour la livraison. En d'autre mot même si nous reprenons le concept du protocole __TCP__ qui établie une connexion entre les 2 hôtes au niveau __IP__ les paquets qui sont transmis entre les 2 machines peuvent prendre des chemins différents à chaque transmission de paquet.
+
+Si nous prenons au haut niveau l'algorithme de livraison des paquets voici ce que ça donne :
+
+1. Si le **réseau de destination** est directement connecté sur la machine 
+    * Livraison à l'**hôte de destination** direction sur l'interface .
+2. Sinon si la table de routage comprend une entré pour le **réseau de destination** 
+    * Envoie du paquet au router de destination (__next-hop__) pour que lui réalise la redirection vers l'**hôte de destination**
+3. Sinon validation qu'il y a une route par défaut
+    * Envoie du paquet vers la route par défaut
+4. Sinon pas de route par défaut
+    * Retour d'un message d'erreur à l'expéditeur
+
+Ce n'est pas très compliquer , bien entendu plus nous avons de réseaux disponible plus ce simple algorithme peut être très complexe , par contre j'aimerai surtout souligner un point. 
+**Le protocole IP ne réalise le routage QUE sur la destination , la source du paquet n'est pas pris en considération !!!**
+Cette phrase est importante pour bien comprendre le chemin des paquets !
+
+Regardons les routes définie sur ma machine actuellement :
+
+        $ route -n
+        Kernel IP routing table
+        Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+        0.0.0.0         192.168.43.1    0.0.0.0         UG    600    0        0 wlan0
+        172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
+        192.168.43.0    0.0.0.0         255.255.255.0   U     600    0        0 wlan0
+
 
 ### <a name="clarification_reliability_ip" /> Services délivrés / Fiabilité du protocole
 
