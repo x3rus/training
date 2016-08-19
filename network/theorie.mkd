@@ -1009,6 +1009,7 @@ Si nous regardons la table de routage :
 
 Le système est aussi simple que ça à la base !! Après les administrateurs ont compliqué tous ça pour assurer leur emploie :P, non je rigole. En mettant un système de base simple et compréhensible, un ensemble de mécanisme furent mis en place afin d'assurer une disponibilité constante du réseau, malgré le fait de perdre des nœuds dans l'infrastructure.
 
+
 L'ensemble des propagations des informations des routes sur internet , la mise à jour des routes automatique , ... 
 
 * [BGP](https://fr.wikipedia.org/wiki/Border_Gateway_Protocol) **Border Gateway Protocol**  est un protocole d'échange de route utilisé notamment sur le réseau Internet. Son objectif est d'échanger des informations de routage et d'accessibilité de réseaux (appelés préfixes) entre Autonomous Systems (AS).)
@@ -1022,6 +1023,10 @@ L'infrastructure de réseau est considéré comme intrinsèquement peu fiable à
 
 Afin d'avoir la flexibilité d'avoir une gestion dynamique du trajet des communications , le protocole IP est __stateless__ sans connexion forte , chaque paquet est géré indépendamment. Ceci peut semblé en contradiction avec la couche supérieur __TCP__ qui lui est __statefull__ (orienté connexion) entre deux hôtes, ceci mérite une petite explication. Le canal entre 2 hôtes est établie par le protocole __TCP__ pour s'assurer qu'il y est un lien , cependant le chemin parcouru par un paquet par varié d'une transmission à l'autre. J'ai sauté volontairement un aspect du protocole __TCP__ , je vais rajouter l'information maintenant .Le protocole __TCP__ ne s'attend pas à recevoir les paquets dans le bonne ordre en effet comme chaque transmission peut prendre un chemin différent il est possible que parfois la transmission d'un paquet soit plus rapide ou plus lent.
 Si nous reprenons allons voir l'en tête du paquet __TCP__ le numéro de séquence est utilisé à cette effet.
+
+Voici une représentation graphique du routage :
+
+![Routing_schema.png](./imgs/Routing_schema.png)
 
 Voyons un exemple avec l'application **traceroute** qui nous permet de visualiser le chemin parcouru par un paquet afin de voir son cheminement. Je vais faire 2 requête pour le service __www.google.com__ :
 
@@ -1069,18 +1074,32 @@ Voyons un exemple avec l'application **traceroute** qui nous permet de visualise
          16  72.14.252.27 (72.14.252.27)  56.370 ms 209.85.252.243 (209.85.252.243)  55.958 ms 216.239.48.210 (216.239.48.210)  76.785 ms
          17  lga15s48-in-f4.1e100.net (172.217.4.196)  55.954 ms  58.893 ms *
 
-Analysons le résultat à l'écran :
+Analysons le résultat à l'écran , lors que ma machine 192.168.43.191 essaye de rejoindre 172.217.4.196 (__google__): 
 
-        Three probes (by default) are sent at each ttl setting
-         and a line is printed showing the ttl, address of the gateway and round trip time of each probe. The address can be
-        followed by additional information when requested. If the probe answers come from different gateways,  the  address
-        of  each responding system will be printed.  If there is no response within a certain timeout, an "*" (asterisk) is
-        printed for that probe.
+* Ligne 1 : Comme je sort de ma machine vers Internet , le système transmet la requête à ma passerelle par défaut __192.168.43.1__  les trois chiffre qui suive l'adresse __IP__ correspond au __TTL__ (__Time To Leave__) que __traceroute__ à reçu lors du transfert des paquets __ICMP__ (un __ping__ :P )
+* Ligne 2 : **\* \* \*** , la passerelle  qui suit la passerelle par défaut refuse les requêtes __ICMP__ , __traceroute__ en a transmis 3, les 3 furent sans réponse, donc pas d'information .
+* Ligne 3 : Première différence lors de la première requête nous avons une réponse lors du premier teste de 2 __routeurs__ 192.168.142.66 et 192.168.142.2 , l'IP 66 à répondu au 2 premières requêtes __ICMP__ et l'IP .2 à répondu à la dernière.
+* Ligne 4 : Ce n'est pas 2 __routeurs__ mais 3 routes différentes 10.118.50.165 45.352ms ,10.118.50.173 45.205ms, 10.118.50.165 45.297ms . Nous voyons déjà clairement le côté dynamique des route , nous voyons que plusieurs chemin s'offre au paquet selon le moment de la demande et la disponibilité des infrastructures. Ceci permet en d'autre d'assurer la disponibilité des service mais aussi de distribué la charge entre plusieurs équipement.
+* Ligne suivante : Si vous regardez attentivement vous constaterez que le chemin n'est pas exactement identique lors des 2 requêtes qui furent réalisé avec 10 secondes d'écart.
 
+Pour les personnes qui veulent avoir un résultat pour un film de __IT__ avec plein d'effet visuel :P , car la ligne de commande c'est pas très sexy pour __Hollywood__ vous avez :
+* [https://sourceforge.net/projects/openvisualtrace/](https://sourceforge.net/projects/openvisualtrace/)
 
-REF: [https://sourceforge.net/projects/openvisualtrace/](https://sourceforge.net/projects/openvisualtrace/)
+#### <a name="clarification_ip_best_effort" /> Qualité du service IP (Best Effort)
+
+Nous disons toujours que l'Internet à une vitesse variable, nous le voyons régulièrement parfois un service répond très bien et parfois il est plus lent car il y a plus de congestion. Comme l'ensemble de l'infrastructure d'Internet repose sur la configuration en périphérie il est important de réaliser une configuration adéquat, mais nous pouvons toujours être affecté.
+
+Avec la démocratisation de la voix sur IP , nous sommes confronté à un problème de taille, si vous avez un service de voix sur IP il est important que votre communication ne soit pas impacté . En d'autre mot si vous parlez au téléphone et que vous téléchargez la dernière distribution avec le protocole de __torrent__ il ne faut pas que la voix soit coupé ou hachuré.
+Le système de [QOS](https://fr.wikipedia.org/wiki/Qualit%C3%A9_de_service) vient répondre à ce besoin, il garantie une quantité de bande passante disponible et réservé pour la voix , ceci assurant qu'aucune autre communication impacte les transferts.
+
+L'identification des paquets prioritaire peut être réalisé par l'application mais plus souvent par les équipements réseau en ajoutant des __flags__ aux paquets, afin de les identifier.
 
 ### <a name="clarification_NAT_IP" /> Manipulation des adresses IP (NAT)
+
+Nous avons parlé de routage des paquets qui transige d'une machine à l'autre, mais j'ai volontaire remis une information importante, j'ai uniquement indiquer le cheminement d'un paquet vers la machine extérieur et non le retour. Lors de la présentation des couches Transport __TCP__ ou __UDP__ nous avons vu que la réponses doit revenir :0. 
+
+Regardons le schéma suivant qui représente une topologie très classique :
+
 
 ## <a name="couche_Link" /> Couche Link (switch , ...)
 
