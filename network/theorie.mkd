@@ -1022,6 +1022,11 @@ L'infrastructure de réseau est considéré comme intrinsèquement peu fiable à
 
 ### <a name="clarification_NAT_IP" /> Manipulation des adresses IP (NAT)
 
+## <a name="couche_Link" /> Couche Link (switch , ...)
+
+### Arp
+### Vlan
+
 # <a name="clarification_workflow_connection" /> Processus d'établissement de connexion
 
 * dns
