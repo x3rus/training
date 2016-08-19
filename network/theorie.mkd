@@ -1020,6 +1020,66 @@ Le réseau IP est basé sur le [principe de bout-à-bout](https://fr.wikipedia.o
 
 L'infrastructure de réseau est considéré comme intrinsèquement peu fiable à tout le niveau du réseau ou d'une transmission , ceci suppose que le réseau est dynamique en termes de disponibilité de liens et de nœuds. Aucune installation de surveillance ou de mesure de la performance centrale existe que les pistes ou maintient l'état du réseau.
 
+Afin d'avoir la flexibilité d'avoir une gestion dynamique du trajet des communications , le protocole IP est __stateless__ sans connexion forte , chaque paquet est géré indépendamment. Ceci peut semblé en contradiction avec la couche supérieur __TCP__ qui lui est __statefull__ (orienté connexion) entre deux hôtes, ceci mérite une petite explication. Le canal entre 2 hôtes est établie par le protocole __TCP__ pour s'assurer qu'il y est un lien , cependant le chemin parcouru par un paquet par varié d'une transmission à l'autre. J'ai sauté volontairement un aspect du protocole __TCP__ , je vais rajouter l'information maintenant .Le protocole __TCP__ ne s'attend pas à recevoir les paquets dans le bonne ordre en effet comme chaque transmission peut prendre un chemin différent il est possible que parfois la transmission d'un paquet soit plus rapide ou plus lent.
+Si nous reprenons allons voir l'en tête du paquet __TCP__ le numéro de séquence est utilisé à cette effet.
+
+Voyons un exemple avec l'application **traceroute** qui nous permet de visualiser le chemin parcouru par un paquet afin de voir son cheminement. Je vais faire 2 requête pour le service __www.google.com__ :
+
+        $ date && traceroute www.google.com
+        Fri Aug 19 08:46:20 EDT 2016
+        traceroute to www.google.com (172.217.4.196), 30 hops max, 60 byte packets
+         1  gateway (192.168.43.1)  1.594 ms  1.732 ms  2.680 ms
+         2  * * *  
+         3  192.168.142.66 (192.168.142.66)  77.497 ms  249.147 ms 192.168.142.2 (192.168.142.2)  77.465 ms
+         4  10.118.50.165 (10.118.50.165)  45.352 ms 10.118.50.173 (10.118.50.173)  45.205 ms 10.118.50.165 (10.118.50.165)  45.297 ms
+         5  10.118.48.61 (10.118.48.61)  45.363 ms  45.551 ms 10.118.48.57 (10.118.48.57)  45.401 ms
+         6  24.156.157.157 (24.156.157.157)  48.882 ms  26.435 ms 24.156.157.153 (24.156.157.153)  37.600 ms
+         7  gw03.strfrd.phub.net.cable.rogers.com (66.185.82.38)  33.332 ms  37.719 ms 24.156.146.42 (24.156.146.42)  36.887 ms
+         8  24.156.146.42 (24.156.146.42)  37.205 ms  37.701 ms 24.156.157.133 (24.156.157.133)  44.984 ms
+         9  24.156.157.133 (24.156.157.133)  45.072 ms van58-9-231-85.dynamic.rogerstelecom.net (209.148.231.85)  44.711 ms 24.156.157.133 (24.156.157.133)  36.733 ms
+         10  van58-9-231-85.dynamic.rogerstelecom.net (209.148.231.85)  47.896 ms  50.824 ms  43.826 ms
+         11  van58-9-230-10.dynamic.rogerstelecom.net (209.148.230.10)  44.126 ms  44.013 ms  44.030 ms
+         12  72.14.222.87 (72.14.222.87)  43.151 ms  43.605 ms  36.525 ms
+         13  216.239.47.114 (216.239.47.114)  47.308 ms 72.14.222.87 (72.14.222.87)  51.792 ms  54.456 ms
+         14  72.14.236.224 (72.14.236.224)  55.834 ms 72.14.236.226 (72.14.236.226)  56.012 ms 72.14.236.224 (72.14.236.224)  56.054 ms
+         15  216.239.49.236 (216.239.49.236)  55.969 ms 72.14.236.226 (72.14.236.226)  60.465 ms 216.239.49.236 (216.239.49.236)  60.116 ms
+         16  72.14.236.209 (72.14.236.209)  63.569 ms 72.14.252.27 (72.14.252.27)  63.689 ms  63.841 ms
+         17  lga15s48-in-f4.1e100.net (172.217.4.196)  61.269 ms 72.14.252.27 (72.14.252.27)  56.460 ms *
+
+16 secondes plus tard on relance la requête :
+
+        $ date && traceroute www.google.com
+        Fri Aug 19 08:46:36 EDT 2016
+        traceroute to www.google.com (172.217.4.196), 30 hops max, 60 byte packets
+         1  gateway (192.168.43.1)  2.177 ms  2.394 ms  2.617 ms
+         2  * * *
+         3  192.168.142.2 (192.168.142.2)  241.469 ms  93.143 ms  93.188 ms
+         4  10.118.50.165 (10.118.50.165)  41.892 ms 10.118.50.173 (10.118.50.173)  41.902 ms 10.118.50.165 (10.118.50.165)  78.194 ms
+         5  10.118.48.61 (10.118.48.61)  41.916 ms 10.118.48.57 (10.118.48.57)  42.654 ms 10.118.48.61 (10.118.48.61)  41.951 ms
+         6  24.156.157.153 (24.156.157.153)  44.796 ms  31.740 ms  42.273 ms
+         7  24.156.146.42 (24.156.146.42)  33.924 ms  26.713 ms  38.678 ms
+         8  24.156.146.42 (24.156.146.42)  38.714 ms 24.156.157.133 (24.156.157.133)  42.379 ms  42.017 ms
+         9  van58-9-231-85.dynamic.rogerstelecom.net (209.148.231.85)  44.496 ms 24.156.157.133 (24.156.157.133)  34.496 ms  31.558 ms
+         10  van58-9-231-85.dynamic.rogerstelecom.net (209.148.231.85)  57.536 ms  59.568 ms van58-9-229-229.dynamic.rogerstelecom.net (209.148.229.229)  62.109 ms
+         11  van58-9-229-229.dynamic.rogerstelecom.net (209.148.229.229)  60.080 ms van58-9-230-10.dynamic.rogerstelecom.net (209.148.230.10)  56.135 ms *
+         12  van58-9-230-10.dynamic.rogerstelecom.net (209.148.230.10)  55.680 ms  51.846 ms  51.602 ms
+         13  * 216.239.47.114 (216.239.47.114)  47.791 ms 72.14.222.87 (72.14.222.87)  43.863 ms
+         14  216.239.47.114 (216.239.47.114)  45.678 ms 72.14.236.224 (72.14.236.224)  92.370 ms  56.359 ms
+         15  72.14.236.226 (72.14.236.226)  59.623 ms 216.239.49.236 (216.239.49.236)  52.860 ms 72.14.236.224 (72.14.236.224)  56.581 ms
+         16  72.14.252.27 (72.14.252.27)  56.370 ms 209.85.252.243 (209.85.252.243)  55.958 ms 216.239.48.210 (216.239.48.210)  76.785 ms
+         17  lga15s48-in-f4.1e100.net (172.217.4.196)  55.954 ms  58.893 ms *
+
+Analysons le résultat à l'écran :
+
+        Three probes (by default) are sent at each ttl setting
+         and a line is printed showing the ttl, address of the gateway and round trip time of each probe. The address can be
+        followed by additional information when requested. If the probe answers come from different gateways,  the  address
+        of  each responding system will be printed.  If there is no response within a certain timeout, an "*" (asterisk) is
+        printed for that probe.
+
+
+REF: [https://sourceforge.net/projects/openvisualtrace/](https://sourceforge.net/projects/openvisualtrace/)
+
 ### <a name="clarification_NAT_IP" /> Manipulation des adresses IP (NAT)
 
 ## <a name="couche_Link" /> Couche Link (switch , ...)
@@ -1032,3 +1092,6 @@ L'infrastructure de réseau est considéré comme intrinsèquement peu fiable à
 * dns
 * Établissement de la connexion TCP (3 way handshake)
 * encapsulation de la requete
+
+
+REF : http://www.tcpipguide.com/free/t_toc.htm
