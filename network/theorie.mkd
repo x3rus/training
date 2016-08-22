@@ -1096,9 +1096,25 @@ L'identification des paquets prioritaire peut être réalisé par l'application 
 
 ### <a name="clarification_NAT_IP" /> Manipulation des adresses IP (NAT)
 
-Nous avons parlé de routage des paquets qui transige d'une machine à l'autre, mais j'ai volontaire remis une information importante, j'ai uniquement indiquer le cheminement d'un paquet vers la machine extérieur et non le retour. Lors de la présentation des couches Transport __TCP__ ou __UDP__ nous avons vu que la réponses doit revenir :0. 
+Nous avons parlé de routage des paquets qui transige d'une machine à l'autre, mais j'ai volontaire omis une information importante, j'ai uniquement indiquer le cheminement d'un paquet vers la machine extérieur et non le retour. Lors de la présentation des couches Transport __TCP__ ou __UDP__ nous avons vu que la réponses doit revenir :0. 
 
 Regardons le schéma suivant qui représente une topologie très classique :
+
+![network_schema_nat.png](./imgs/network_schema_nat.png)
+
+Ceci ressemble énormément à un réseau domestique , un réseau local **192.168.10.0/24** avec une connexion Internet dont l'IP est : **64.154.19.124/32** . 
+
+Prenons l'exemple de la machine **dark** avec l'IP __192.168.10.44/32__ qui tente de communiquer avec la machine **kazak** qui a une adresse IP publique sur internet __140.99.45.130/32__.
+
+Lors de la transmission du paquet , peut importe le protocole (__TCP__ , __UDP__, ...) nous nous concentrons uniquement sur le chemin parcouru par le paquet donc la couche **Internet**.
+Voici à quoi ressemble l'en-tête IP lors de l'envoie de paquet ainsi que le retour :
+
+![network_schema_nat-with-header-IP.png](./imgs/network_schema_nat-with-header-IP.png)
+
+1. **Dark** construit son paquet IP en définissant son adresse IP source ainsi que l'IP du serveur distance , jusqu'ici tous va bien
+2. En théorie , le serveur **Kazak** va recevoir la communication , et va répondre peut importe le protocole utilisé
+3. Il utilisera l'IP **source** du paquet reçu soit __192.168.10.44__ pour répondre.
+4. Malheureusement l'IP __192.168.10.44__ fait partie des adresses IP dédié pour les réseaux privées , voir explication 
 
 
 ## <a name="couche_Link" /> Couche Link (switch , ...)
