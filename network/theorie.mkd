@@ -1114,19 +1114,74 @@ Voici à quoi ressemble l'en-tête IP lors de l'envoie de paquet ainsi que le re
 1. **Dark** construit son paquet IP en définissant son adresse IP source ainsi que l'IP du serveur distance , jusqu'ici tous va bien
 2. En théorie , le serveur **Kazak** va recevoir la communication , et va répondre peut importe le protocole utilisé
 3. Il utilisera l'IP **source** du paquet reçu soit __192.168.10.44__ pour répondre.
-4. Malheureusement l'IP __192.168.10.44__ fait partie des adresses IP dédié pour les réseaux privées , voir explication 
+4. Malheureusement l'IP __192.168.10.44__ fait partie des adresses IP dédié pour les réseaux privées , voir explication [ Adresses IP et sous-réseau](#clarification_adressage_ip). 
+5. **Kazak** n'a donc pas l'information pour rejoindre la machine **Dark** 
+
+Pour corriger ce problème nous avons besoin d'un **NAT** (__Network Address Translation__) en d'autre mot quand le paquet va transiger par le routeur Internet (64.154.19.124) ce dernier va modifier le paquet IP afin de modifier l'adresse IP source.
+
+Voici une représentation visuelle de l'opération :
+
+![network_schema_nat-with-header-IP-et-NAT.png](./imgs/network_schema_nat-with-header-IP-et-NAT.png)
+
+Comme vous pouvez le voir le routeur à mis l'adresse IP externe d'Internet lors de l'envoie du paquet , quand **Kazar** voudra répondre à la machine **Dark** il utilisera l'adresse IP publique **routable** sur Internet pour répondre. Le routeur Internet réalisera la même opération de changement d'adresse IP mais au lieu de changer la source, il changera l'IP de destination afin de mettre l'IP Interne de **Dark** soit : 192.168.10.44.
+
+Le routeur Internet qui réalise du **NAT** conserve une table de conversion pour savoir quelles machine interne à communiquer avec l'externe lui permettant de refaire les conversions lors que les paquets reviennent.
+
+Pourquoi le __NATting__: 
+
+* Afin de permettre à plusieurs machines d'avoir internet avec une seul adresse IP publique
+* Permet de protéger le réseau internet en limitant les paquets , car sinon toutes les machines auraient une adresses publique directement sur internet.
+* Réduit le nombre d'adresse IP publique requise , comme le nombre d'adresse __IPv4__ sont limité
 
 
 ## <a name="couche_Link" /> Couche Link (switch , ...)
 
-### Arp
-### Vlan
+Je n'avais pas prévue couvrir cette couche cependant il y a au moins 2 sujets que je désire adresser donc je vais encore étendre un peu plus la formation :P . Comme toujours mon gros défis est de ne pas trop en faire mais c'est plus fort que moi :P.
 
-# <a name="clarification_workflow_connection" /> Processus d'établissement de connexion
+Nous allons voir "rapidement" la couche **Link** , cette couche comprend le traitement qui est réalisé au niveau des __switchs__ , point d'accès sans-fil , ... En d'autre mot ce sont les équipements qui permettent l'interconnexion des équipements, contrairement à la couche physique qui est la carte réseau de la machine (__wifi__ ou filaire )
 
-* dns
-* Établissement de la connexion TCP (3 way handshake)
-* encapsulation de la requete
+Voyons quelques point de configuration possible au niveau des équipements qui est très répandu dans l'industrie et que je pense mérite d'être mentionné, car parfois ceci cause des problèmes :P.
+
+### <a name="couche_Link_vlan" /> Vlan (Virtual LAN)
+
+Lors de la présentation de la segmentation des réseaux j'ai fait mention qu'il est possible de définir des règles d'accès selon l'adresse IP et le __netmask__. Pour les petits malin peut-être vous vous êtes dis , cool j'ai juste à prendre l'adresse IP d'un administrateur de la compagnie et BINGO j'aurais l'ensemble de leur droit !!!
+
+En théorie oui , ceci est vraie cependant dans la réalité vous ne pouvez pas vous connecter sur n'importe quelle sous réseaux, il y a des mécanismes de "protection" qui limite les prises réseaux. 
+Si vous aviez accès à la configuration de la __switch__ de votre entreprise, vous pourriez constater que chaque port est associé à un __VLAN__. 
+
+Un __VLAN__ possède un numéro et est associé à un segment réseau définie , ceci permet: 
+* à une __switch__ de fournir plusieurs  réseaux tous en limitant les communications entre les ports
+* Optimiser la bande passante
+* Séparer virtuellement les flux
+* Ajouter de la sécurité afin de ne dédié un port qu'à un ou plusieurs __VLAN__ / réseaux
+
+Voici une représentation du paquet incluant un __VLAN__ :
+
+![VLAN_-_Trama_802.1Q.jpg](./imgs/VLAN_-_Trama_802.1Q.jpg)
+
+Si vous utilisez une autre adresse IP qui est associé au __VLAN__ ce dernier ne routera tous simplement pas vos paquets, car le segment réseau ne sera pas convenable !!
+
+### <a name="couche_Link_arp" /> ARP (Address Resolution Protocol)
+
+Dernier point rapide pour terminer la théorie du réseau , pour les plus vieux ils vont probablement ce rappeler du bon vieux temps des __HUB__ avant que les __switchs__ fassent leur apparition .
+Le __HUB__ quand il recevait un paquet IP, il le __broadcasté__ à l'ensemble des ordinateurs branchés sur le __HUB__ , en d'autre mot si la machine **Dark** recevait un paquet l'ensemble des machines (__yoda__,__r2d2__,__C-3PO__) recevait le paquet . L'idée était que uniquement la machine qui avait la bonne IP traitait la communication.
+Je vous dis pas comme c'était génial quand tu voulais sniffer ce qui se passé sur l'ensemble du réseau ou au moins les machines à coté de toi.
+
+Ce bon temps est révolue :P, afin de limité le __noise__ sur le réseau les __switchs__ conserve une table des mac adresses des machines branché dans les ports. Nous ne l'avons pas bien vu mais si nous reprenons la représentation suivante vous pouvez voir que dans la couche **data Link** il y a une en-tête pour la MAC.
+
+![Osi-encapsulation.gif](./imgs/Osi-encapsulation.gif)
+
+Donc de nos jours la __switch__ n'envoie les paquets que pour la bonne machine :-(. Ceci peut avoir un effet de bord lors de vos testes par exemple .
+
+1. J'ai une machine **A** avec l'IP 192.168.10.44 , qui est branché et communique sur le réseau. Je désire changer cette dernière cependant je veux valider avant que mon "serveur" ou que les applications fonctionne .
+2. Je débranche uniquement le fil réseaux de la machine **A** et le branche dans la machine **B** , je lui assigne l'IP 192.168.10.44.
+3. Il est à parier que vous n'aurez pas de réseau , pourquoi ? Car l'adresse MAC physique de la carte réseau à changé et la __switch__ a conservé, dans sa table de MAC la correspondance IP (192.168.10.44) et la MAC de la machine **A**. Il faut enlever l'entrée de la l'IP et MAC.
+
+Si nous avions éteint la machine **A** avant de brancher le câble dans **B** , **A** aurait envoyer un signal à la __switch__ lui signalant que le système va s'éteindre et que la __MAC__ va peut-être changer.
+
+
+# <a name="Conclusion"/> Conclusion 
+
 
 
 REF : http://www.tcpipguide.com/free/t_toc.htm
