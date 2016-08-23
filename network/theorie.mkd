@@ -3,21 +3,20 @@
 pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 </style>
 
-TODO corriger les \_
 
 # Index 
 
-* [ Clarifications du réseau](#clarification) 
-* [ Théorie sur le protocole d'Internet](#clarification_Protocol_internet) 
-       * [ Couche Transport (UDP et TCP)](#couche_transport) 
-           * [ Transmission Control Protocol (TCP) (protocole de contrôle de transmissions)](#clarification_tcp) 
-               * [ TCP établissement de connexion (3 way handshake)](#clarification_tcp_3way_handshake) 
-               * [ Structure d'un segment TCP](#clarification_tcp_structure) 
-                   * [ Visualisation d'une communication TCP](#visualisation_connexion) 
-                       * [ Établissement de la connexion](#visualisation_connexion_conn) 
-                       * [ Transferts de données ](#visualisation_transfert_data) 
-                       * [ Fin de la connexion.](#visualisation_connexion_fin) 
-                   * [ Visualisation d'une communication TCP réalisé par le fureteur](#visualisation_connexion_fureteur) 
+* [ Clarifications du réseau](#clarification)
+* [ Théorie sur le protocole d'Internet](#clarification_Protocol_internet)
+       * [ Couche Transport (UDP et TCP)](#couche_transport)
+           * [ Transmission Control Protocol (TCP) (protocole de contrôle de transmissions)](#clarification_tcp)
+               * [ TCP établissement de connexion (3 way handshake)](#clarification_tcp_3way_handshake)
+               * [ Structure d'un segment TCP](#clarification_tcp_structure)
+                   * [ Visualisation d'une communication TCP](#visualisation_connexion)
+                       * [ Établissement de la connexion](#visualisation_connexion_conn)
+                       * [ Transferts de données ](#visualisation_transfert_data)
+                       * [ Fin de la connexion.](#visualisation_connexion_fin)
+                   * [ Visualisation d'une communication TCP réalisé par le fureteur](#visualisation_connexion_fureteur)
                    * [ Visualisation d'une communication TCP réalisé par le fureteur avec site complet](#visualisation_conn_fureteur_ext) 
                * [ Conclusion sur le TCP ](#clarification_tcp_conclusion) 
            * [ User Datagram Protocol (UDP) (protocole de contrôle de transmissions)](#clarification_udp) 
@@ -30,10 +29,16 @@ TODO corriger les \_
            * [ Structure du paquet IP](#clarification_IP_structure) 
            * [ Adresses IP et sous-réseau](#clarification_adressage_ip) 
                * [ Netmask et sous-réseau](#clarification_adressage_ip_sous-reseau) 
+                   * [ Regroupement de réseau](#clarification_ip_regroupement) 
            * [ Routage des paquets IP](#clarification_routage_IP) 
            * [ Services délivrés / Fiabilité du protocole](#clarification_reliability_ip) 
+               * [ Qualité du service IP (Best Effort)](#clarification_ip_best_effort) 
            * [ Manipulation des adresses IP (NAT)](#clarification_NAT_IP) 
-* [ Processus d'établissement de connexion](#clarification_workflow_connection) 
+       * [ Couche Link (switch , ...)](#couche_Link) 
+           * [ Vlan (Virtual LAN)](#couche_Link_vlan) 
+           * [ ARP (Address Resolution Protocol)](#couche_Link_arp) 
+* [ Conclusion ](#Conclusion) 
+
 
 # <a name="clarification" /> Clarifications du réseau
 
@@ -585,9 +590,26 @@ Nous allons utiliser le système __snmp__ pour réalisé la démonstration , nou
 
 Description d'__SNMP__ : __SNMP__ est protocole qui permet de collecter des informations d'un système ou d'un équipement , nous retrouvons des informations de monitoring telle que l'utilisation de la mémoire ou du CPU , la liste des packages présent sur le système , les processus qui sont en exécution , des informations sur la carte réseaux ... Il est aussi possible d'exécuter des commandes à distances. Présent aussi bien pour les systèmes d'exploitation ( GNU/Linux, Windows , ...) que pour les __switchs__ et __firewall__ ( __cisco__ , __HP__ , __jenniper__ , ...) . [https://en.wikipedia.org/wiki/Simple_Network_Management_Protocol](https://en.wikipedia.org/wiki/Simple_Network_Management_Protocol)
 
-TODO : Vous pourrez retrouvé la configuration du serveur snmpd que je vais utilisé sur hub.docker.com/x3nejfhe
+Vous pourrez retrouvé la configuration du serveur snmpd que je vais utilisé sur [https://hub.docker.com/r/x3rus/x3-snmpd/](https://hub.docker.com/r/x3rus/x3-snmpd/)
 
-TODO : ICI ICI completer.
+Récupération du conteneur __snmpd__ et démarrage
+
+        $ docker run x3rus/x3-snmpd
+
+Communication avec le service __snmpd__ grâce à la commande __snmpwalk__
+
+        $ snmpwalk -v 2c -c public 172.17.0.9
+
+TODO: Ajouter une image du résultat du __wireshark__
+
+Visualisation avec __wireshark__ , comme vous pouvez le voir le client réalise la requête et le serveur répond avec plusieurs retour. Si nous reprenons la même requête mais nous réalisons une erreur de configuration en modifiant la communauté .
+
+
+        $ snmpwalk -v 2c -c publique 172.17.0.9
+
+TODO: Ajouter une image du résultat du __wireshark__
+
+Comme nous pouvons le voir il y a bien l'envoie de communication du client mais AUCUN retour du serveur à cette étape nous nous ne savons pas si le serveur est disponible ou simplement éteint , c'est le problème du protocole __UDP__.
 
 #### <a name="clarification_udp_conclusion" /> Conclusion sur le UDP
 
@@ -982,7 +1004,7 @@ Sous Windows si je ne me trompe pas la commande __dos__ est :
 Ici j'ai 2 interface (carte réseau) :
 
 * **wlan0** : carte réseau sans fil 
-* **docker0** : carte virtuel pour mes (conteneurs docker)[TODO : ajouter lien vers explication / videos]
+* **docker0** : carte virtuel pour mes (conteneurs docker)[Explication de docker disponible en vidéo](https://www.youtube.com/playlist?list=PLrspRZ5MjONxxp4gr_6I3otYOlKkSFunL)
 
 Voici les adresses __IP__ :
 
@@ -1182,6 +1204,12 @@ Si nous avions éteint la machine **A** avant de brancher le câble dans **B** ,
 
 # <a name="Conclusion"/> Conclusion 
 
+1. L'application définie le data / requête qui sera transmise au serveur selon un protocole établie ( HTTP, __FTP__, __DNS__, ...)
+2. Cette requête est encapsulé selon un protocole
+    1. __TCP__ (ex. HTTP): réalisation d'un lien entre le client et le serveur , connexion "forte" pour le transfert des communications. Le tous ce fini avec une fermeture de connexion.
+    2. __UDP__ (ex. __DNS__) : Aucune connexion entre le client et le serveur , le client envoie la requête et attend le retour du serveur
+3. Le cheminement sur le réseau est réaliser avec le protocole IP , qui s'assure de rejoindre la machine **B** depuis le point **A**. Chaque paquet peuvent prendre un chemin différent pour rejoindre la destination selon la disponibilité de l'infrastructure. Certaine adresse IP sont réservé pour un usage "interne" (__LAN__)  il est possible de réaliser de la manipulation de paquet exemple __NAT__
+4. La segmentation du réseau peut être réaliser aussi au niveau des équipements de connexion telle que __switchs__ via le système de __VLAN__
 
 
-REF : http://www.tcpipguide.com/free/t_toc.htm
+Référence : [http://www.tcpipguide.com/free/t\_toc.htm](http://www.tcpipguide.com/free/t_toc.htm)
