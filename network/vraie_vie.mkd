@@ -14,6 +14,91 @@ Bien entendu je ne serai jamais en mesure de couvrir l'ensemble des problèmes q
 
 # <a name="couche_IP"/> Communication entre 2 systèmes
 
+Commençons par la couche inférieur donc la couche IP puis nous monterons tranquillement , vers la couche applicative. Nous aurons l'occasion par la suite de voir les protocoles applicatifs telle que __HTTP__**S** avec __wireshark__.
+
+## <a name="ip_probleme_route"/> Problème de routage de paquets
+
+Nous allons maintenant voir un problème de communication entre 2 machines , voici le schéma :
+
+![dia_network_docker_plus_roger.png](./imgs/dia_network_docker_plus_roger.png)
+
+Donc nous avons 2 cartes réseau:
+
+* **wlan0** : la carte sans file avec l'adresse IP 192.168.43.191
+* **docker0** : carte virtuelle docker avec l'IP  172.17.0.1
+
+Sous l'interface **docker0** il y a un sous réseau connecté directement sur la carte qui comprend l'ensemble du réseau 172.17.0.0/16 . Dans le réseau 172.17.0.0/16 , nous avons une machine 172.17.0.4 de disponible .
+
+Si j'essaye de réaliser un **PING** de la machine voici le retour : 
+
+        $ ping 172.17.0.4
+        PING 172.17.0.4 (172.17.0.4) 56(84) bytes of data.
+        From 192.168.142.2 icmp_seq=1 Packet filtered
+        From 192.168.142.2 icmp_seq=2 Packet filtered
+        From 192.168.142.2 icmp_seq=3 Packet filtered
+        ^C
+        --- 172.17.0.4 ping statistics ---
+        3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 2002ms
+
+Nous avons le message que le paquet fut filtré par le routeur 192.168.142.2 , ce qui est étrange , voyons ce que la commande **traceroute** nous retourne  :
+
+        $ traceroute 172.17.0.4
+        traceroute to 172.17.0.4 (172.17.0.4), 30 hops max, 60 byte packets
+         1  gateway (192.168.43.1)  3.181 ms  2.724 ms  3.004 ms
+         2  * * *
+         3  192.168.142.2 (192.168.142.2)  415.969 ms !X 192.168.142.66 (192.168.142.66)  463.790 ms !X  463.809 ms !X
+
+Reprenons le schéma réseau un peu plus haut, ce n'est PAS normale que le paquet soit dirigé var le routeur **192.168.43.1** , selon le schéma ceci devrait être dirigé vers l'interface **docker0** .
+
+Je vais démarrer **wireshark** sur l'interface **wlan0** pour voir le comportement et refaire le __ping__:
+
+![prob_route_wireshark_wlan0_filtered.png](./imgs/prob_route_wireshark_wlan0_filtered.png)
+
+Nous voyons clairement que sur l'interface **wlan0** il y a du trafic et le message est très explicite : __Destination unreachable (Communication administratively filtered)__
+
+Si je réalise le même filtrage sur l'interface **docker0** je n'ai aucun trafic , aucun paquet RIEN !!!
+
+Essayons peut-être un accès SSH après tous juste un problème de __ping__ ce n'est pas la fin du monde :P  :
+
+        $ telnet 172.17.0.4 22
+        Trying 172.17.0.4...
+        telnet: Unable to connect to remote host: No route to host
+
+Et au niveau du __wireshark__ :
+
+![prob_route_wireshark_wlan0_filtered_telnet_22.png](./imgs/prob_route_wireshark_wlan0_filtered_telnet_22.png)
+
+Humm, c'est pas mieux :p , __nice try__ :)
+Visualisons  les routes à présent indiquant le chemin que doit prendre les communications IP 
+
+        $ route -n
+        Kernel IP routing table
+        Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+        0.0.0.0         192.168.43.1    0.0.0.0         UG    600    0        0 wlan0
+        192.168.43.0    0.0.0.0         255.255.255.0   U     600    0        0 wlan0
+
+Effectivement il n'y a aucune instruction pour l'interface **docker0** . Je vais donc faire l'ajout de l'instruction à la table de routage :
+
+        $ sudo route add -net 172.17.0.0 netmask 255.255.0.0 dev docker0
+        $ route -n
+        Kernel IP routing table
+        Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+        0.0.0.0         192.168.43.1    0.0.0.0         UG    600    0        0 wlan0
+        172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
+        192.168.43.0    0.0.0.0         255.255.255.0   U     600    0        0 wlan0
+
+ENCORE , comme dirait mon fils :D  :
+
+        $  ping 172.17.0.4
+        PING 172.17.0.4 (172.17.0.4) 56(84) bytes of data.
+        64 bytes from 172.17.0.4: icmp_seq=1 ttl=64 time=0.176 ms
+        64 bytes from 172.17.0.4: icmp_seq=2 ttl=64 time=0.114 ms
+
+
+Et voilà , quand on prend le bon chemin ça va mieux :D 
+
+# <a name="couche_TCP"/> Communication entre 2 systèmes
+
 # Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
 
 * Comme nous avions vu avec le timeout du TCP keep alive 
