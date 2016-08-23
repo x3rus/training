@@ -1,0 +1,59 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+
+# Index 
+
+
+# <a name="Introduction" /> Introduction 
+
+Nous avons vue dans la première partie la théorie des protocoles réseaux __TCP__ , __UDP__ et __IP__. Lors des différentes démonstration tous fonctionnait sans problème. Dans la vie ce n'est pas aussi jolie , quand on vous demande de réaliser une analyse sur un problème, il faut être en mesure d'identifier les problèmes. Nous allons donc maintenant passer à l'étape quand tous ne fonctionne pas afin d'avoir des indices pour identifier les problématiques .
+Bien entendu je ne serai jamais en mesure de couvrir l'ensemble des problèmes que vous pouvez rencontrer, cependant j'espère en couvrir assez afin de vous offrir les outils pour diagnostiquer la source du problème . Vous pourrez par la suite identifier l'équipement et la méthode de résolution approprié.
+
+# <a name="couche_IP"/> Communication entre 2 systèmes
+
+# Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
+
+* Comme nous avions vu avec le timeout du TCP keep alive 
+* TODO voir comment faire la démo :(.
+
+# Problème DNS IP  externe VS ip interne
+
+* Visualisation d'une problématique de DNS qui utilise l'IP externe VS l'ip interne pour la communication.
+
+# Visualisation d'une coupure de communication lors d'un transfert de paquet
+
+* Faire l'envoie d'un paquet coupé la comme (iptables)
+* Reprendre la communication et visualiser le comportement.
+
+# Faire attention au netmask 
+
+* Voir que parfois on a l'impression que c le même network mais le netmask est important
+
+# Explication rapide VLAN trunk pour ESX
+
+* Expliquer pourquoi un ESX peut avoir plusieurs réseaux alors qu'il n'a que 2 prises
+
+# Utilisation de TcPdump pour visualiser la communication serveur
+
+* Utilisation de snmp afin de visualiser la communication sur le serveur
+* Récupération du fichier de data
+
+# Problème de communication avec un service SSL 
+
+* réalisation script python , communication avec le service https normale + un 404 sans msg bien
+* Prendre la clef prive du srv https et déchiffrer le contenu de la communication
+
+# Calcule taille de la communication
+
+* Faire une communication normale avec un serveur http, avec calcule size communication
+* Activer le mod deflate
+* Refaire la meme communication et faire le calcule de la taille des paquet de la communications
+
+# TIMEout VS Drop
+
+* Visualisation d'un timeout apache avec un sleep de fou
+* Visualisation d'une communication avec un DROP iptables
+* Identification c quoi le problème entre timeout application vs drop, grâce à telnet
