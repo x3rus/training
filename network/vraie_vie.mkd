@@ -139,7 +139,81 @@ Maintenant, je vais ajouter une règle de __firewall__ qui bloque la communicati
 
 Je met ici les instructions __iptables__ cependant ceci est en dehors de la formation, je ne veux pas faire de Linux ici. Par contre si vous avez des questions n'hésitez pas à communiquer avec moi en dehors :).
 
-TODO: A completer
+Comme j'utilise docker j'installe __iptables__ si requis et j'active la règle pour bloquer l'accès en entré :
+
+        $ iptables -I INPUT -p tcp --destination-port 80 -j DROP
+        Chain INPUT (policy ACCEPT)
+        target     prot opt source               destination
+        DROP       tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+
+        Chain FORWARD (policy ACCEPT)
+        target     prot opt source               destination
+
+        Chain OUTPUT (policy ACCEPT)
+        target     prot opt source               destination
+
+Reprenons la requête avec le fureteur afin de voir le comportement ...  Le résultat est que la roulette tourne , tourne , tourne ... Sans retour . Le premier réflexe que je vous conseil est d'enlever le fureteur de l'équation afin de valider si la communication __TCP__ fonctionne :
+
+        $ telnet 172.17.0.8 80
+        Trying 172.17.0.8...
+        telnet: Unable to connect to remote host: Connection timed out
+
+Nous avons aussi un __timeout__ , visualisons le comportement avec __wireshark__ :
+
+![proc_tcp_drop_firewall.png](./imgs/proc_tcp_drop_firewall.png)
+
+Donc nous voyons les 3 tentatives du protocole __TCP__ qui sont transmis ainsi que les retransmissions , ceci fut réalisé avec le fureteur . Comme le protocole __TCP__ sait que le réseau IP est non fiables il essaye plusieurs fois :P , peut-être que le paquet fut perdu lors du transfert.
+Voici la même opération avec __telnet__ :
+
+![proc_tcp_telnet_drop_firewall.png](./imgs/proc_tcp_telnet_drop_firewall.png)
+
+Nous voyons que ce dernier est moins agressif. 
+
+Nous pouvons aussi constater que lorsqu'il y a un __Firewall__ la méthode "classique" est de **droppé** les paquets donc de ne pas y répondre . Si le service apache n'écoutais pas  sur le port comme c'est le cas pour le port 8080 par exemple nous aurions un comportement différent .
+
+        $ telnet 172.17.0.8 8080
+        Trying 172.17.0.8...
+        telnet: Unable to connect to remote host: Connection refused
+
+Et au niveau de __wireshark__ :
+
+![connexion_refused_no_process.png](./imgs/connexion_refused_no_process.png)
+
+Au risque de me tromper je vous suggère cette règle : 
+
+* Si vous avez une connexion refusé alors le processus n'est pas en exécution 
+* S'il y a un __timeout__ , il y a possiblement un __firewall__ entre les 2 :P
+
+Mais pourquoi utiliser __telnet__ et pas mon __fureteur__ il fonctionne aussi bien , la réponse est NON :P . L'avantage de __telnet__ est qu'il vous indique si la connexion __TCP__ (__3 way handshake__) à fonctionné et après traite les données , votre fureteur ne fait pas la distinction. 
+
+Je vais désactivé la règle de __firewall__ :
+
+        $ iptables -D INPUT -p tcp --destination-port 80 -j DROP
+
+Maintenant j'accède à l'URL : http://172.17.0.8/time.php
+
+Vous pouvez voir mon fureteur tourne dans le beurre encore une fois ... Si je fais la commande avec __telnet__
+
+        $ telnet 172.17.0.8 80
+        Trying 172.17.0.8...
+        Connected to 172.17.0.8.
+        Escape character is '^]'.
+        ^]
+        telnet> q
+        Connection closed.
+
+Je vois clairement que la communication __TCP__ à fonctionné , donc le problème n'est PAS au niveau réseau, mais au niveau de l'application ! Bon effectivement __time.php__ fait plein de __sleep__ pour mettre une éternité pour répondre :P.
+Voilà pourquoi vous me voyez toujours utiliser __telnet__ pour analyser si j'ai la ligne **Connected to 172.17.0.8.** donc voir si le lien réseau fonctionne !!
+
+
+#### <a name="tcp_timout_firewall_loc"/> Quelle firewall me bloque ?
+
+Je vais partir du principe que vous êtes le client ET que vous avez accès au serveur. Vous avez identifier qu'il y a une règle de firewall qui bloque. Vous avez analyser votre serveur mais de votre point de vue par de problème et vous ne voyez pas de règle de firewall en place . Nous allons voir comment identifier la source du problème, du moins avoir une idée .
+
+Nous allons établir une connexion vers le serveur , je n'utiliserai QUE __telnet__ car le reste peut me porter à confusion :).
+
+
+
 
 # Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
 
