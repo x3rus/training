@@ -99,6 +99,48 @@ Et voilà , quand on prend le bon chemin ça va mieux :D
 
 # <a name="couche_TCP"/> Communication entre 2 systèmes
 
+## <a name="tcp_timeout_drop"/> Analyse d'un problème de communication TCP ou UDP
+
+Un problème classique avec le protocole __TCP__ est un problème de connexion entre le client et le serveur, nous avons un problème et le réflexe est de blâmé le __firewall__ ou le réseau. Ce réflexe est naturel, car souvent cette partie est géré par une autre équipe et nous n'avons pas le contrôle. Nous allons donc voir comment identifier le problème afin de faire la demande approprié pour solutionné le problème . 
+
+Si j'ai un problème de communication entre le client et le serveur il y a 3 possibilités :
+
+* La connectivité est problématique : __Firewall__ bloque les communications ou le paquets n'arrive pas a destination 
+* Le serveur ne traite pas la communication adéquatement ne fournissant la de réponse adéquate 
+* Le client n'envoie pas la requête au bon serveur ou la requête est mal formé
+
+Je vais partir du principe que vous avez accès au 2 équipements suivant :
+
+* La machine client 
+* Le serveur 
+
+Pour les besoins de la démonstration je vais utiliser 2 services __snmpd__ pour __l'UDP__ et __apache__ pour la partie __TCP__ . Nous utiliserons 2 utilitaires __netcat (nc)__ pour simulé un client/serveur __UDP__ et __TCP__ ainsi que __telnet__ car je l'aime bien pour la partie __TCP__
+
+### <a name="tcp_timout"/> Visualisation d'un problème de communication à cause du firewall pour TCP
+
+Pour commencé nous allons voir comment identifier s'il y a un problème de __firewall__ . Voyons le comportement quand il y a une indisponibilité de connexion dû au __firewall__.
+
+J'ai :
+
+* client : 172.17.42.1 
+* serveur (apache) : 172.17.0.1 
+
+Pour rappel quand tous va bien lors de l'établissement de connexion entre le client et le serveur je doit avoir :
+
+* Établissement de connexion  ( __3 way handshake__ ) / __SYN__, __SYN-ACK__ , __ACK__
+* Transfert de données avec accusé de réception (__ACK__)
+* Fermeture de connexion  (__FIN-ACK__, __FIN-ACK__, __ACK__)
+
+Voici un rappel de la copie d'écran de __wireshark__ :
+
+![wireshark_visualisation_fureteur_07.png](./imgs/wireshark_visualisation_fureteur_07.png)
+
+Maintenant, je vais ajouter une règle de __firewall__ qui bloque la communication , je vais utilisé un **DROP** ce qui fait en sorte que le paquet est mis à la poubelle sans avertissement au client .
+
+Je met ici les instructions __iptables__ cependant ceci est en dehors de la formation, je ne veux pas faire de Linux ici. Par contre si vous avez des questions n'hésitez pas à communiquer avec moi en dehors :).
+
+TODO: A completer
+
 # Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
 
 * Comme nous avions vu avec le timeout du TCP keep alive 
@@ -137,8 +179,6 @@ Et voilà , quand on prend le bon chemin ça va mieux :D
 * Activer le mod deflate
 * Refaire la meme communication et faire le calcule de la taille des paquet de la communications
 
-# TIMEout VS Drop
+# Avec time.php montré le keep-alive lors du tcpdump
 
-* Visualisation d'un timeout apache avec un sleep de fou
-* Visualisation d'une communication avec un DROP iptables
-* Identification c quoi le problème entre timeout application vs drop, grâce à telnet
+* Pour visualisé l'opération du browser lors d'un traitement trop long.
