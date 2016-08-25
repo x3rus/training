@@ -247,6 +247,8 @@ Nous allons établir une connexion vers le serveur , je n'utiliserai QUE __telne
 * réalisation script python , communication avec le service https normale + un 404 sans msg bien
 * Prendre la clef prive du srv https et déchiffrer le contenu de la communication
 
+https://wiki.wireshark.org/SSL
+
 # Calcule taille de la communication
 
 * Faire une communication normale avec un serveur http, avec calcule size communication
