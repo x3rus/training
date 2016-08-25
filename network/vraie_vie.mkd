@@ -214,6 +214,56 @@ Nous allons établir une connexion vers le serveur , je n'utiliserai QUE __telne
 
 
 
+## <a name="tcp_drop_restart"/> Visualisation d'une coupure de communication lors d'un transfert de paquet
+
+Maintenant que nous avons identifié un problème de connexion qui ne fonctionne pas passons à un problème intermittent .
+Ceci est le plus compliqué à identifier , je ne dis pas que j'ai la solution exacte, cependant vous permettra d'avoir un aperçu concret lorsque la situation ce produit. Chaque problème étant particulier à vous de l'adapter dans votre réalité .
+
+Je vais utilisé le protocole SSH afin de faire la démonstration , j'ai une machine avec l'IP : __172.17.0.2__ qui a le service SSH présent nous allons faire un transfert de fichier avec __SCP__ pour le transfert.
+
+Voici l'opération quand tous vas bien :
+
+        $ scp bob@172.17.0.2:./usr-share-vim.tar /tmp/
+        bob@172.17.0.2's password: 
+        usr-share-vim.tar                              100%   25MB  25.2MB/s   00:01
+
+Voici le résultat vue dans __wireshark__ :
+
+
+Bon si nous regardons nous avons bien le __3 way handshake__ (__SYN , SYN/ACK, ACK__) , nous avons du transfert et la fin de connexion ( __FIN/ACK , ACK, FIN/ACK, ACK__). Si vous regardez attentivement vous constaterez qu'il y a aussi des messages étrange que nous n'avions encore jamais vu : **TCP Full Window** et **TCP ZeroWindows** , puis ils sont en noir et rouge , ça sonne PAS bon pourtant nous n'avons pas encore créer de __noise__ sur la ligne.
+
+![transfert_scp_msg_windows_full.png](./imgs/transfert_scp_msg_windows_full.png)
+
+Référence du problème __wireshark__ :  [https://ask.wireshark.org/questions/24501/why-would-tcp-full-window-happen](https://ask.wireshark.org/questions/24501/why-would-tcp-full-window-happen)
+
+Premièrement ce n'est PAS une erreur ceci est simplement un avertissement , si vous avez le message **TCP Full Window** et que vous avez après **TCP ZeroWindows** il n'y a PAS de problème. Ok cool mais POURQUOI ?
+
+Regardons cette nouvelle copie d'écran :
+
+![transfert_scp_msg_windows_full_2.png](./imgs/transfert_scp_msg_windows_full_2.png)
+
+Afin d'optimiser le transfert __TCP__ entre le client et le serveur négocie un nombre de paquet (__windows size__) qui peut être transféré entre le client et le serveur sans que le client soit obligé de confirmer la réception. 
+
+Voici un exemple :
+
+* Le client (récepteur) ssh avise qu'il va prendre une fenêtre TCP de 5000 bytes
+* Le serveur (émetteur) envoie 5 paquets TCP d'une longueurs de 1000 chaque
+* Il n'y a AUCUN accusé de réception des paquets pour ces 5 .
+* __Wireshark__ mark le 5ieme paquet avec l'identifiant __TCP WINDOWS FULL__ afin d'indiquer qu'il n'y a pas eu de __ACK__ pour ces dernier.
+
+Le client à 3 possibilités :
+
+* Transmettre le message __\[Zero Windows\]__ : indiquant que son __buffer__ est plein et d'attendre que ce dernier est fini de traiter les données
+* Transmettre le message __\[TCP Window Update\]__ : indiquant qu'il traite encore des données mais que ça fenêtre est un peu libre donc que le serveur peut remplir N bytes
+* Transmettre le __ACK__ : Afin d'indiquer au serveur que l'on peut reprendre le transfert .
+
+    
+        $ scp bob@172.17.0.2:./usr-share-vim.tar /tmp/
+        bob@172.17.0.2's password:
+        usr-share-vim.tar                                           35% 9088KB   2.8MB/s - stalled -
+
+
+
 
 # Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
 
@@ -224,10 +274,8 @@ Nous allons établir une connexion vers le serveur , je n'utiliserai QUE __telne
 
 * Visualisation d'une problématique de DNS qui utilise l'IP externe VS l'ip interne pour la communication.
 
-# Visualisation d'une coupure de communication lors d'un transfert de paquet
 
-* Faire l'envoie d'un paquet coupé la comme (iptables)
-* Reprendre la communication et visualiser le comportement.
+
 
 # Faire attention au netmask 
 
