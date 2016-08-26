@@ -221,13 +221,14 @@ Ceci est le plus compliqué à identifier , je ne dis pas que j'ai la solution e
 
 Je vais utilisé le protocole SSH afin de faire la démonstration , j'ai une machine avec l'IP : __172.17.0.2__ qui a le service SSH présent nous allons faire un transfert de fichier avec __SCP__ pour le transfert.
 
+* client : 172.17.42.1
+* serveur : 172.17.0.2
+
 Voici l'opération quand tous vas bien :
 
         $ scp bob@172.17.0.2:./usr-share-vim.tar /tmp/
         bob@172.17.0.2's password: 
         usr-share-vim.tar                              100%   25MB  25.2MB/s   00:01
-
-Voici le résultat vue dans __wireshark__ :
 
 
 Bon si nous regardons nous avons bien le __3 way handshake__ (__SYN , SYN/ACK, ACK__) , nous avons du transfert et la fin de connexion ( __FIN/ACK , ACK, FIN/ACK, ACK__). Si vous regardez attentivement vous constaterez qu'il y a aussi des messages étrange que nous n'avions encore jamais vu : **TCP Full Window** et **TCP ZeroWindows** , puis ils sont en noir et rouge , ça sonne PAS bon pourtant nous n'avons pas encore créer de __noise__ sur la ligne.
@@ -257,12 +258,35 @@ Le client à 3 possibilités :
 * Transmettre le message __\[TCP Window Update\]__ : indiquant qu'il traite encore des données mais que ça fenêtre est un peu libre donc que le serveur peut remplir N bytes
 * Transmettre le __ACK__ : Afin d'indiquer au serveur que l'on peut reprendre le transfert .
 
-    
+
+Maintenant que nous avons vu le comportement quand tous va "bien" malgré les messages d'avertissement de __wireshark__ sur la question de la fenêtre de transmission reprenons l'opération. Cette fois ci, je vais faire le transfert mais en plein milieu je vais bloquer la communication avec une règle de __firewall__ afin de simuler une coupure de connexion. La coupure sera temporaire quelques secondes afin de voir le comportement quand la communication reprend.
+La règle de __firewall__ fut mis en place pour coupé les communications sur le port 22 du __client__ **vers** le __serveur__.
+
+Voici le résultat à l'écran:
+
         $ scp bob@172.17.0.2:./usr-share-vim.tar /tmp/
         bob@172.17.0.2's password:
         usr-share-vim.tar                                           35% 9088KB   2.8MB/s - stalled -
+        [... COUPURE PUIS la reprise ...]
+        usr-share-vim.tar                                           100%   25MB  25.2MB/s   00:01
 
+Si nous regardons le résultat au niveau de __wireshark__ :
 
+![transfert_scp_bloque_with_iptables.png](./imgs/transfert_scp_bloque_with_iptables.png)
+
+C'est partie :D :D , le plaisir commence :D , pour bien comprendre le mécanisme de récupération et retransmission il faut ce concentré sur les numéros de séquence des paquets (**seq**) qui permet de suivre le numéro de chaque paquet , ainsi que les confirmation de réception (**ACK**) qui sont en relation avec séquence de transmission. Au lieu décrire un long texte difficile à comprendre nous allons le voir avec le cas pratique : 
+
+* #1583 : Le client transmet __ACK__ pour confirmer la réception du transfert (malheureusement la règle de __firewall__ bloque la transmission vers serveur, mais le client ne le sais pas encore) (__seq=5046, Ack=9337176__)
+* #1584 : Le client transmet un paquet chiffré au serveur ( mais ce dernier ne le recevra PAS à cause du __firewall__) (__seq=5046, Ack=9337176__)
+* #1585 : Le serveur transmet un paquet car lui n'a aucun problème de communication avec le client (__seq=9337176,Ack=5046__)
+* #1586 : Le client transmet un paquet chiffré toujours (__seq=5082,ack=9338624__)
+* #1587 : Le client transmet un autre paquet chiffré (__seq=5118,ack=9338624__)
+* #1588 : Le client retransmet le dernier paquet(__seq=5118,ack=9338624__), pourquoi ? Car il à attendu un certain temps mais le serveur n'a pas continuer à retransmettre des paquets. Si vous regarder la colonne __time__ le chiffre est significativement plus haut que lors du transfert régulier de paquet. Bien entendu ce paquet n'arrivera JAMAIS au serveur
+* #1589 : Le client transmet un paquet , car comme nous avons activé le mode __drop__ dans le __firewall__ le client croit que le paquet est arrivé RIEN ne lui indique qu'il y a eu un problème il doit attendre la confirmation de réception du serveur ou l'absence de confirmation pour savoir qu'il y a eu un problème (__seq=5154,ack=9338624__)
+* #1590 : Le client transmet un paquet car il croit que les 2 derniers furent reçu (__seq=5190,ack=9338624__)
+* #1591 : Le serveur ne recevant pas d'accusé de réception refait l'envoie : (__seq=9261596,ack=5046__)
+
+TODO 
 
 
 # Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
