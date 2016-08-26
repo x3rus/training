@@ -284,9 +284,20 @@ C'est partie :D :D , le plaisir commence :D , pour bien comprendre le mécanisme
 * #1588 : Le client retransmet le dernier paquet(__seq=5118,ack=9338624__), pourquoi ? Car il à attendu un certain temps mais le serveur n'a pas continuer à retransmettre des paquets. Si vous regarder la colonne __time__ le chiffre est significativement plus haut que lors du transfert régulier de paquet. Bien entendu ce paquet n'arrivera JAMAIS au serveur
 * #1589 : Le client transmet un paquet , car comme nous avons activé le mode __drop__ dans le __firewall__ le client croit que le paquet est arrivé RIEN ne lui indique qu'il y a eu un problème il doit attendre la confirmation de réception du serveur ou l'absence de confirmation pour savoir qu'il y a eu un problème (__seq=5154,ack=9338624__)
 * #1590 : Le client transmet un paquet car il croit que les 2 derniers furent reçu (__seq=5190,ack=9338624__)
-* #1591 : Le serveur ne recevant pas d'accusé de réception refait l'envoie : (__seq=9261596,ack=5046__)
+* #1591 : Le serveur ne recevant pas d'accusé de réception refait l'envoie : (__seq=9261396,ack=5046__)
+* #1592 : Le client à reçu la demande du serveur , car la communication n'est pas bloqué dans ce sens il renvoie donc le __ACK__ en fait il dit qu'il a de la disponibilité dans la fenêtre __TCP__ (__seq=5226,ack=9338624__)
+* #1593 : Le client retransmet  (__seq=5046,ack=9338624__)
+* #1594 : Le serveur retransmet le paquet **#1591** (__seq=9261396,ack=5046__)
+* #1595 : Le client retransmet le paquet **#1592** (__seq=5226,ack=9338624__)
+* #1596 : Le client retransmet le paquet (__seq=5046,ack=9338624__)
+* #1597 : Le serveur retransmet le paquet **#1578** (__seq=9261396,ack=5046__)
+* #1598 : Le client retransmet un autre __ACK__ équivalent au paquet **#1595** et **#1592** (__seq=5226,ack=9338624__)
+* #1599 : Le client retransmet le paquet **#1596**(__seq=5046,ack=9338624__)
+* #1600 : Le serveur renvoie le paquet **#1594** ou **#1591**(__seq=9261396,ack=5046__)
 
-TODO 
+Le jeu va continuer comme ça jusqu'au moment ou le __timeout__ de communication sera atteint et que le serveur coupe la communication, car il ne reçoit plus d'information du client.
+
+
 
 
 # Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
