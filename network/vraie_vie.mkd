@@ -274,7 +274,39 @@ Si nous regardons le résultat au niveau de __wireshark__ :
 
 ![transfert_scp_bloque_with_iptables.png](./imgs/transfert_scp_bloque_with_iptables.png)
 
-C'est partie :D :D , le plaisir commence :D , pour bien comprendre le mécanisme de récupération et retransmission il faut ce concentré sur les numéros de séquence des paquets (**seq**) qui permet de suivre le numéro de chaque paquet , ainsi que les confirmation de réception (**ACK**) qui sont en relation avec séquence de transmission. Au lieu décrire un long texte difficile à comprendre nous allons le voir avec le cas pratique : 
+C'est partie :D :D , le plaisir commence :D , pour bien comprendre le mécanisme de récupération et retransmission il faut ce concentré sur les numéros de séquence des paquets (**seq**) qui permet de suivre le numéro de chaque paquet , ainsi que les confirmation de réception (**ACK**) qui sont en relation avec séquence de transmission. Un petit rattrapage sur la théorie, car j'avais mis de coté cette aspect dans l'attente d'avoir un exemple concret.
+Avec __wireshark__ vous pouvez visualiser la séquence d'échange **seq** et **ack** , pour ce faire ouvrez un fichier de trace et sélectionnez dans le menu **statistics --> Flow graph**.
+
+Voici un exemple de résultat:
+
+![tcp_flow.png](./imgs/tcp_flow.png)
+
+* Client : 192.168.1.2
+* Serveur : 174.143.213.18
+
+Voici une petite explication quand tous fonctionne bien ;-) :
+
+1. Établissement de connexion
+    1. Client : **Syn** (__seq=0,ack=94856056__) , le premier paquet , le numéro de __ack__ est aléatoire dans ce cas il sera réinitialisé à zéro par la suite une fois le dialogue établie.
+    2. Serveur : **Syn,Ack** (__seq=0,ack=1__) Le client débute ça séquence aussi à 0, mais la valeur de __ack__ est à 1 , lors de la présence d'un **SYN** ou **FIN** le numéro de **ACK** est incrémenté.
+    3. Client : **Ack** (__seq=1,ack=1__) Le client transmet le **ack** de fin d'établissement de connexion , il prend la valeur du __ACK__ reçu et l'assigne au numéro de séquence.
+2. Transfert de donnée du client vers le serveur 
+    * Client : **Psh,Ack len(725)** (__seq=1,ack=1__) Le client transfert un paquet d'une longueur de 725 au serveur
+3. Réponse du serveur des données reçu
+    * Serveur : **ACK** (__seq=1,ack=726__) , le serveur confirme la réception du paquet précédent , lors du __ack__ il incrément la valeur **1** original de son coté et l'incrément de la longueur du dernier paquet reçu soit **725** . Résultat lors de ça réponse la valeur de __ack__ est (1+725=726). C'est comme si le serveur répondais j'ai bien reçu un paquet de 725.
+4. Transfert du serveur vers le client
+    * Serveur : **ACK len(1448)** (__seq=1,ack=726__), le serveur transmet un paquet __ack__ d'une taille de 1448. 
+5. Réponse du client après la réception des données du serveur
+    * Client : **ACK** (__seq=726,ack=1449__), donc de la séquence du client à augmenté représentant la quantité de données déjà transmisse. Tous comme le serveur il incrémente la valeur de __ack__ avec la quantité de donnée reçu du serveur
+6. Serveur retransmet des données
+    * Serveur : **ACK len(1448)** (__seq=1449,ack=726__) le serveur retransmet un paquet de 1448, le numéro de séquence est 1449 car le serveur n'a transmit pour le moment qu'un paquet de 1448 + 1 , le numéro de confirmation (__ack__) correspond à 1 + 725 (quantité de donnée transmise par le client)
+7. Le client confirme la réception
+    * Client : **ACK** (__seq=726,ack=2897__) , le client à transmit un paquet paquet d'une taille de 1 + 725 donc sont numéro de séquence n'augmente PAS, uniquement le numéro de confirmation __ack__ qui représente (1+1448+1448).
+8. Etc jusque la fin de la connexion :P...
+
+Référence : [http://packetlife.net/blog/2010/jun/7/understanding-tcp-sequence-acknowledgment-numbers/](http://packetlife.net/blog/2010/jun/7/understanding-tcp-sequence-acknowledgment-numbers/)
+
+Bon après se long texte quand tous va bien maintenant on revient à notre problème :P :
 
 * #1583 : Le client transmet __ACK__ pour confirmer la réception du transfert (malheureusement la règle de __firewall__ bloque la transmission vers serveur, mais le client ne le sais pas encore) (__seq=5046, Ack=9337176__)
 * #1584 : Le client transmet un paquet chiffré au serveur ( mais ce dernier ne le recevra PAS à cause du __firewall__) (__seq=5046, Ack=9337176__)
@@ -298,8 +330,6 @@ C'est partie :D :D , le plaisir commence :D , pour bien comprendre le mécanisme
 Le jeu va continuer comme ça jusqu'au moment ou le __timeout__ de communication sera atteint et que le serveur coupe la communication, car il ne reçoit plus d'information du client.
 
 
-
-
 # Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
 
 * Comme nous avions vu avec le timeout du TCP keep alive 
@@ -308,8 +338,6 @@ Le jeu va continuer comme ça jusqu'au moment ou le __timeout__ de communication
 # Problème DNS IP  externe VS ip interne
 
 * Visualisation d'une problématique de DNS qui utilise l'IP externe VS l'ip interne pour la communication.
-
-
 
 
 # Faire attention au netmask 
