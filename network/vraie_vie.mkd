@@ -97,6 +97,35 @@ ENCORE , comme dirait mon fils :D  :
 
 Et voilà , quand on prend le bon chemin ça va mieux :D 
 
+## <a name="ip_probleme_nat"/> Problème de cheminement de paquet
+
+Regardons cette infrastructure :
+
+![infra_demo_formaton.png](./imgs/infra_demo_formaton.png)
+
+Nous avons le réseau réseau 172.30.0.0/16 qui est le réseau utilisé dans l'infrastructure , nous avons aussi 2 réseaux en dehors du réseau 192.168.42.0/24 et 192.168.43.0/24 . Les 2 réseaux 192 sont routé sur le réseau globale par la machine 172.30.4.48 , ce qui leur permet de communiquer avec les autres machines . 
+
+Nous allons voir une situation particulière qui fait en sorte que la machine 192.168.42.10 n'est pas en mesure de communiquer avec la machine 172.30.38.38. 
+
+Si je suis sur la machine 172.30.4.48 donc le routeur des réseaux 192.168.42.0/24 , je suis en mesure de réaliser un __ping__ de la machine.
+
+        $  ping 172.30.38.38
+        PING 172.30.38.38 (172.30.38.38) 56(84) bytes of data.
+        64 bytes from 172.30.38.38: icmp_seq=1 ttl=64 time=0.176 ms
+        64 bytes from 172.30.38.38: icmp_seq=2 ttl=64 time=0.114 ms
+
+
+Si j établie une connexion sur la machine 192.168.42.10 et que je réalise la même opération :
+
+
+        $  ping 172.30.38.38
+
+Je n'ai pas de résultat , POURQUOI ?
+
+Analysons la situation , nous allons utiliser la commande __tcpdump__ pour réaliser l'analyse de la situation .
+
+TODO
+
 # <a name="couche_TCP"/> Communication entre 2 systèmes
 
 ## <a name="tcp_timeout_drop"/> Analyse d'un problème de communication TCP ou UDP
@@ -206,13 +235,90 @@ Je vois clairement que la communication __TCP__ à fonctionné , donc le problè
 Voilà pourquoi vous me voyez toujours utiliser __telnet__ pour analyser si j'ai la ligne **Connected to 172.17.0.8.** donc voir si le lien réseau fonctionne !!
 
 
-#### <a name="tcp_timout_firewall_loc"/> Quelle firewall me bloque ?
+### <a name="tcp_validation_comm"/> Validation de la communication sans application
 
-Je vais partir du principe que vous êtes le client ET que vous avez accès au serveur. Vous avez identifier qu'il y a une règle de firewall qui bloque. Vous avez analyser votre serveur mais de votre point de vue par de problème et vous ne voyez pas de règle de firewall en place . Nous allons voir comment identifier la source du problème, du moins avoir une idée .
+Mise en situation , vous avez une mise en production planifier en pleine nuit, vous avez transmis votre demande à l'équipe de réseau pour l'ouverture de flux entre 2 système malheureusement votre application n'est pas encore déployer. De prime à bord, vous ne pouvez pas valider la communication avant la mise en production qui est en pleine nuit.
+Vous êtes stressé, car la fenêtre de maintenance est très courte et vous avez déjà des inquiétudes sur le déploiement applicatif, vous vous dites que s'il y a un problème de flux vous n'arriverez jamais dans le temps. Même si l'équipe de réseau est disponible sur appel __7x24__. 
 
-Nous allons établir une connexion vers le serveur , je n'utiliserai QUE __telnet__ car le reste peut me porter à confusion :).
+Comme nous n'aimons pas le stress voici une solution pour vous , nous allons utiliser la commande **nc** et **netcat** le couteau suisse du réseau. Non ce n'est pas comme le fromage suisse il n'y a pas de trou dedans :P.
 
+J'ai :
+* client : 172.17.42.1
+* serveur : 172.17.0.1
 
+Si j établie une connexion sur le serveur et que je réalise la commande __netstat__ afin de visualiser les ports disponible:
+
+        server$ sudo netstat -lntp
+        Active Internet connections (only servers)
+        Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+        tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      8/sshd      
+
+Donc je n'ai que le port 22 de disponible , mais mon application qui sera déployée utilise le port 31337 :P. Normalement l'ensemble du flux est ouvert mais si je réalise la commande __telnet__ sur ce port bien entendu j'aurais le résultat suivant :
+
+        client$ telnet 172.17.0.1 31337
+        Trying 172.17.0.1...
+        telnet: Unable to connect to remote host: Connection refused
+
+Bon si je fais un raccourci , je sais que le __firewall__ est ouvert car j'ai un refus de connexion  et non un __timeout__ mais si c'était avec le protocole **udp** ?!?!
+
+        client$ nc -u 172.17.0.1 31337
+        blabla
+        read(net): Connection refused
+
+Bon ma démonstration marche pas :P , je voulais une absence de connexion , mais bon ça change peu de chose à ce stade on n'a pas la CONFIRMATION que la communication fonctionne ...
+
+Je vais démarrer sur le serveur l'application **nc** pour qu'il écoute sur le port 31337 en __TCP__.
+
+        server$ nc -l -p 31337
+
+Sur le coté client j'établis la connexion 
+
+        client$ telnet 172.17.0.1 31337
+        Trying 172.17.0.1...
+        Connected to 172.17.0.1.
+        Escape character is '^]'.
+        SUPER COOL
+        blabla
+        ^]
+        telnet> q
+        Connection closed.
+
+Voici le résultat coté serveur 
+
+        server$  nc -l -p 31337
+        SUPER COOL
+        blabla
+
+Nous pouvons réaliser la même opération avec le protocole __UDP__:
+au niveau serveur , je change la commande pour avoir l'option **-u** pour __UDP__
+
+        server$ nc  -u -l -p 31337
+
+Si j'essaye une communication __TCP__ nous aurons une connexion refusée :
+
+        client$ telnet 172.17.0.1 31337
+        Trying 172.17.0.1...
+        telnet: Unable to connect to remote host: Connection refused
+
+Avec **nc** en mode __UDP__
+
+        client$ nc -u 172.17.0.1 31337
+        bonjour
+        blabla en UDP
+
+Côté serveur : 
+
+        server$ nc  -u -l -p 31337
+        bonjour
+        blabla en UDP
+        ^C
+
+Voici quelques utilisation très courante de **nc** :
+
+* Désire valider la communication avec un service __UDP__ , principalement avec le service __snmp__ quand je ne sais pas si la communication arrive au serveur ou s'il y a un problème avec ma configuration __snmpd__ . L'utilisation de l'option en __UDP__ est particulièrement intéressante, car ceci me permet d'enlever l'application serveur de l'équation
+* Quand je désire ouvrir un port pour un service dynamique , exemple j'utilise le protocole FTP , le protocole utilise des ports pour l'échange des données malheureusement ces ports ne sont pas ouvert de manière constante , ceci est uniquement lors de l'utilisation. Avec __nc__ ceci me permet d'ouvrir le port et de valider que la communication transige bien par le __firewall__.
+
+Voilà c'est déjà pas mal :D.
 
 ## <a name="tcp_drop_restart"/> Visualisation d'une coupure de communication lors d'un transfert de paquet
 
@@ -338,7 +444,6 @@ Le jeu va continuer comme ça jusqu'au moment ou le __timeout__ de communication
 # Problème DNS IP  externe VS ip interne
 
 * Visualisation d'une problématique de DNS qui utilise l'IP externe VS l'ip interne pour la communication.
-
 
 # Faire attention au netmask 
 
