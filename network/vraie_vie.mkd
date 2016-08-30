@@ -243,6 +243,7 @@ Vous êtes stressé, car la fenêtre de maintenance est très courte et vous ave
 Comme nous n'aimons pas le stress voici une solution pour vous , nous allons utiliser la commande **nc** et **netcat** le couteau suisse du réseau. Non ce n'est pas comme le fromage suisse il n'y a pas de trou dedans :P.
 
 J'ai :
+
 * client : 172.17.42.1
 * serveur : 172.17.0.1
 
@@ -436,14 +437,51 @@ Bon après se long texte quand tous va bien maintenant on revient à notre probl
 Le jeu va continuer comme ça jusqu'au moment ou le __timeout__ de communication sera atteint et que le serveur coupe la communication, car il ne reçoit plus d'information du client.
 
 
+## <a name="dns_problem"/> Problème DNS IP  externe VS ip interne
+
+Une problématique que j'ai rencontré de manière récurrente est l'utilisation des adresses IP externe pour l'accès à des service Interne voyons le diagramme suivant :
+
+|[Dia_network_DNS-ip_interne_externe.png](./imgs/Dia_network_DNS-ip_interne_externe.png)
+
+Environnement classique un réseau __LAN__ (192.168.10.0/24) et une __DMZ__ (192.168.66.0/24) , la __DMZ__ permet de fournir des service sur internet tous en limitant l'accès depuis internet vers le réseau local (__LAN__).
+
+Le serveur web à une adresse IP interne 192.168.66.20 et écoute sur le port 80. Le serveur web peut aussi être rejoint depuis internet le __Firewall__ réalise une redirection de port / __port forward__ (__PNAT, port Nat__)  vers l'IP internet.
+Donc quand il y a une requête sur l'IP 64.73.4.82:80 ceci est redirigé vers l'IP 192.168.66.20:80. Nous voyons clairement le cheminement avec la flèche **BLEU**.
+
+Si nous prenons la configuration __DNS__ pour le nom __mouton.x3rus.com__ par exemple depuis l'extérieure les __DNS__ retournerons l'IP 64.73.4.82. 
+
+Arrivons maintenant à la situation problématique, quand le client interne désire communiquer avec le serveur web dans la __DMZ__ ? Si le client interne réalise la même requête qu'à l'externe et qu'il récupère l'IP externe . (voir flèche **ROUGE**).
+
+Le client (IP : 192.168.10.30) transmet le paquet __TCP__ au :
+
+1. __firewall__ donc vers l'Internet, car la table de routage, indique que c'est une IP qui n'est pas sur le réseaux donc passerelle par défaut . 
+2. Lors de la réception de la requête le __firewall__ analyse le paquet dont la destination est __64.73.4.82:80__ provenant de la carte réseau **LAN**. (Prendre note que l'adresse IP externe est configurer sur la carte **WAN**)  
+3. Le __firewall__ **NAT** la requête avec l'adresse IP extérieur car l'IP dans le paquet __TCP__ stipule une destination publique.
+    * Résultat :
+        * de : **src:** 192.168.10.30:87367 | **dst:** 64.73.4.82:80 
+        * à : **src:** 64.73.4.81:87367 | **dst:** 64.73.4.82:80 
+4. Le paquet __NAT__ est prêt à sortir de la carte **WAN** , malheureusement la destination est lui même , le paquet ne revient pas dans le __firewall__ car il est sortie de la séquence de traitement.
+
+À l'URL suivant vous aurez le chemin des paquets pour le  __TCP__ : [https://commons.wikimedia.org/wiki/File:Netfilter-packet-flow.svg](https://commons.wikimedia.org/wiki/File:Netfilter-packet-flow.svg) 
+
+Si nous reprenons la même situation lors de la connexion depuis l'externe :
+
+1. __Firewall__ reçoit la requête depuis le client externe (204.73.29.72:9837) pour l'IP __64.73.4.82:80__
+2. La requête arrive sur le port **WAN** et le traitement du **PNAT** (redirection de port) est réalisé dans le traitement de __pre-ROUTING__ .
+    * Résultat :
+        * de : **src** 204.73.29.72:9837 | **dst** 64.73.4.82:80
+        * à : **src** 204.73.29.72:9837 | **dst** 192.168.66.20:80
+3. Le traitement de routage est fait **après** le __prerouting__ , le paquet est transmis à l'interface __DMZ__
+4. Le paquet est transmis à la machine 192.168.66.20 soit le serveur WEB.
+
+La solution au problème est d'avoir un système de __split-DNS__ en d'autre mot lors que le client réalise des requêtes depuis l'interne au lieu d'avoir comme réponse l'IP externe (Internet) il reçoit l'adresse IP interne corrigeant le problème de double __Nating__ problématique. 
+
+**ATTENTION**: Je ne dis pas qu'il est impossible de faire en sorte que le __firewall__ réussisse à faire un tour de passe passe pour que ça fonctionne . Le problème est que ça complexifie **énormément** la configuration et encore plus l'analyse de problème !! De plus certain __firewall__ privatif ne le permette pas !
+
 # Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
 
 * Comme nous avions vu avec le timeout du TCP keep alive 
 * TODO voir comment faire la démo :(.
-
-# Problème DNS IP  externe VS ip interne
-
-* Visualisation d'une problématique de DNS qui utilise l'IP externe VS l'ip interne pour la communication.
 
 # Faire attention au netmask 
 
