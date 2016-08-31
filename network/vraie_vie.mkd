@@ -478,6 +478,100 @@ La solution au problème est d'avoir un système de __split-DNS__ en d'autre mot
 
 **ATTENTION**: Je ne dis pas qu'il est impossible de faire en sorte que le __firewall__ réussisse à faire un tour de passe passe pour que ça fonctionne . Le problème est que ça complexifie **énormément** la configuration et encore plus l'analyse de problème !! De plus certain __firewall__ privatif ne le permette pas !
 
+## <a name="prob_comm_ssl" /> Problème de communication avec un service SSL 
+
+Voyons le cas du déchiffrage d'une communication **SSL** , nous avons 2 produits disponible pour réaliser l'opération :
+
+* [ssldump](http://ssldump.sourceforge.net/) : Personnellement je ne le connais pas , ce qui m'ennuie est que la dernière mise à jour date : 2013-04-17
+* [wireshark](http://www.wireshark.org) : Logiciel que nous utilisons déjà pour capturer le trafic réseau de plus il est __multi-platforme__
+
+__Wireshark__ est en mesure de déchiffré plusieurs protocole __SSL__ très bien , si votre service n'est pas présent ce ne veut pas dire que ça marchera pas mais il y a moins de garantie :
+
+* 443 https
+* 636 ldaps
+* 989 ftps-data
+* 990 ftps
+* 992 telnets
+* 993 imaps
+* 994 ircs
+* 995 pop3s
+* 5061 sips 
+
+Pour les besoins de la démonstration, je vais prendre le plus populaire soit __httpS__, voici un site web disponible :
+
+**https//172.17.0.1/**
+
+![site_demo_https.png](./imgs/site_demo_https.png)
+
+Nous voyons qu'il y a le petit cadenas de présent , bon j'ai pas payé un certificat valide pour la formation , donc c'est un __self signe__
+
+Nous pouvons utiliser la commande **openssl** , qui je crois est aussi disponible sous Windows ... Je vous laisse valider ce dernier point :P. 
+
+Voici le résultat : 
+
+        $ openssl s_client -connect 172.17.0.1:443
+        CONNECTED(00000003)
+        depth=0 C = CA, ST = Quebec, L = Montreal, O = X3rus, OU = training, CN = www.linux202-sitea.com
+        verify error:num=18:self signed certificate
+        verify return:1
+        depth=0 C = CA, ST = Quebec, L = Montreal, O = X3rus, OU = training, CN = www.linux202-sitea.com
+        verify return:1
+        ---
+        Certificate chain
+         0 s:/C=CA/ST=Quebec/L=Montreal/O=X3rus/OU=training/CN=www.linux202-sitea.com
+           i:/C=CA/ST=Quebec/L=Montreal/O=X3rus/OU=training/CN=www.linux202-sitea.com
+           ---
+           Server certificate
+           -----BEGIN CERTIFICATE-----
+           MIIDvTCCAqWgAwIBAgIJAPeQILfjif9uMA0GCSqGSIb3DQEBCwUAMHUxCzAJBgNV
+           BAYTAkNBMQ8wDQYDVQQIDAZRdWViZWMxETAPBgNVBAcMCE1vbnRyZWFsMQ4wDAYD
+           VQQKDAVYM3J1czERMA8GA1UECwwIdHJhaW5pbmcxHzAdBgNVBAMMFnd3dy5saW51
+           eDIwMi1zaXRlYS5jb20wHhcNMTYwNDIwMTI0MDA4WhcNMTcwNDIwMTI0MDA4WjB1
+           MQswCQYDVQQGEwJDQTEPMA0GA1UECAwGUXVlYmVjMREwDwYDVQQHDAhNb250cmVh
+           bDEOMAwGA1UECgwFWDNydXMxETAPBgNVBAsMCHRyYWluaW5nMR8wHQYDVQQDDBZ3
+           d3cubGludXgyMDItc2l0ZWEuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
+           CgKCAQEA6U/3KzAdczpJ/zLWqYHFOkS0QnTY5u402mMvtyyUprSRC1hZbqYJakhn
+           tkC/pvOni5BoAxXEPJCI84XQXbYq0mKH67GOq4Qu1VxEOuot+bIQ8qy92Srp/a9O
+           uIwYa8cRwi5r/j6BgeXaN6yErtLJ5Ll+M7Aoamxs3gMcf4dZ3dc1t+evS8c5SAWg
+           jLFnBNfLJrbKO4cPhwTHVARpwPGzRzBr8o/L1RmSnM3pr5wunsC258FOwJyBTrdk
+           LXf7ggq4bd6eew+eW0GhTgykRH9ZgSaLY7/IeFnmggXqyoz3BJI9cMdfCVhUnKom
+           wO1DAeVxKqiA++qm7Obbw9gxB2C/gwIDAQABo1AwTjAdBgNVHQ4EFgQUuEPXOcv7
+           idBBIVrmexvpELETU78wHwYDVR0jBBgwFoAUuEPXOcv7idBBIVrmexvpELETU78w
+           DAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAN5uY7FQrQNF1j7TyKrLl
+           6WPu1+rsOADtNOKLoPANMRUvlhGkObjbVfzIyDOw7yUtEFsmEmTPkZ6jKbbDfS55
+           Elf3kOFFICrZaxjQlkPpwEaMlommJCKDOsraDRYNGSLo7aSw2zSCEUZm0QluDtx2
+           VnJ82drvlc8YcFVpOJLW89lHzczV3hHmyo6i7H1x/eSryBL/m08OPMar89iQnoHl
+           T190I2xduWYFrGMuhYn3xpQVzxWJHhgDpwoK58zE9zaRdapt/P0kS+A8HgMw8qZP
+           Wa0QrUtDqtc884lY2UsFKSweiTGoRmWOw0eRHyg1+q0+pPXTT/YvChKwFOsXlmds
+           CA==
+           -----END CERTIFICATE-----
+
+Ceci me permet de récupérer le certificat (clé publique) du serveur et de confirmer que la communication fonctionne bien :P que le port 443 de l'IP 172.17.0.1 respecte bien le protocole __SSL__ car il m'a répondu avec le certificat :D.
+
+Afin de garder l'intérêt de tous je vais utiliser 2 scripts python :
+
+* __py-connect.py__ : qui fonctionne , lors de la communication avec le serveur
+
+        $ python2 py-connect.py
+        Super ca marche
+        
+* __py-connect-BAD.py__ : qui retourne une erreur mais le Dev (moi :P ) n'a pas fournit un message très claire 
+
+        $ python2 py-connect-BAD.py
+        Nope, bonne chance :D
+
+Pour conserver le plaisir nous ne regarderons pas le contenu des scripts et nous ne regarderons pas les logs sur le serveur.
+Pour faire l'analyse nous commencerons par le système qui fonctionne bien :D.
+
+Débutons **wireshark** afin de voir le trafic lors de l'exécution de __py-connect.py__ 
+
+
+
+* réalisation script python , communication avec le service https normale + un 404 sans msg bien
+* Prendre la clef prive du srv https et déchiffrer le contenu de la communication
+
+https://wiki.wireshark.org/SSL
+
 # Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
 
 * Comme nous avions vu avec le timeout du TCP keep alive 
