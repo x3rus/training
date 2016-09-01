@@ -548,6 +548,49 @@ Voici le résultat :
 
 Ceci me permet de récupérer le certificat (clé publique) du serveur et de confirmer que la communication fonctionne bien :P que le port 443 de l'IP 172.17.0.1 respecte bien le protocole __SSL__ car il m'a répondu avec le certificat :D.
 
+Pour les personnes qui désire comprendre comment fonctionne protocole httpS je vous invite à consulter la vidéo que j'ai réalisé : [Linux 202 ( Cours 17 - Apache SSL - suite 4 )](https://www.youtube.com/watch?v=Hsg3TgG9azM)
+
+Pour les personnes qui veulent uniquement faire fonctionné __wireshark__ sans les explications allé voir l'URL suivante :
+[jimshaver:decrypting tls browser traffic with wireshark the easy way](https://jimshaver.net/2015/02/11/decrypting-tls-browser-traffic-with-wireshark-the-easy-way/)
+
+Vous êtes encore là ?? Alors on commence les autres passez à la prochaine section :D, y a pas de malaise :) !
+
+
+### <a name="prob_comm_ssl_decrypt_firefox" /> Déchiffrement de la communication avec un fureteur
+
+Je vais commencer la démonstration du déchiffrement , c'est le chemin long, mais ce chemin à l'avantage de nous offrir l'ensemble de l'explication et de la connaissance. 
+Je vais vous démontré les problèmes que j'ai eu lors de la préparation de cette formation , ceci m'a permit de vraiment mieux comprendre la partie théorique que j'avais réalisé sur le protocole **httpS**.
+
+Premièrement j'ai récupérer la clé **privé** sur serveur web [www\_linux202-siteA\_com.key](https://raw.githubusercontent.com/x3rus/training/master/network/data/www_linux202-siteA_com.key). J'ai bien dit **privé** avec le certificat vous ne pouvez RIEN faire.
+
+#### <a name="premier_prob_decrypt_ssl" /> 
+
+J'étais partie du principe que si j'avais la clé privé du serveur c'était bon j'étais en business !! Et bien nous la démonstration suivant est **non fonctionnelle** , mais dans tous problème il y a quelque chose à apprendre .
+
+Voyons comment j'ai réalisé la configuration de __wireshark__ :
+
+* **Edit** __-->__ **preferences** 
+* **protocole** __-->__ **HTTP** : j'ai valider que les ports que j'utilise est bien listé pour la section SSL
+* **protocole** __-->__ **SSL** : 
+    * __SSL debug file__ :  __/tmp/wireshark-ssl-debug.log__  (Ceci me permettra de visualiser les logs du traitement de __wireshark__
+    * **RSA keys list** : 
+    ![setup_wireshark_rsa_key.png](./imgs/setup_wireshark_rsa_key.png)
+
+* https://ask.wireshark.org/questions/34393/how-to-decrypt-ssl-traffic-using-wireshark
+__Be aware of some possible limitations. In particular the choice of cipher suites, PFS cipher suites (the (EC)DHE ones) cannot be decrypted even if you posess the private key. If you have access to the Pre-Master secrets, then you do not have this limitation, but it will require cooperation from the application to get these keys.__
+
+* http://packetpushers.net/using-wireshark-to-decode-ssltls-packets/
+__Wireshark can only decrypt SSL/TLS packet data if RSA keys are used to encrypt the data. If a Diffie-Hellman Ephemeral (DHE) or RSA ephemeral cipher suite is used, the RSA keys are only used to secure the DH or RSA exchange, not encrypt the data. Thus, even if you have the correct RSA private key, you will not be able to decrypt the data with Wireshark or any other tool. You can check which cipher suite is being used by examining the Server Hello packet sent by the host that holds the private key, if the cipher suite specified begins TLS_DHE or SSL_DHE, you will not be able to decrypt the data. If the server sends a ServerKeyExchange message, you will not be able to decrypt the data. I’ve no idea how to prevent RSA ephemeral use. For DHE, your only option (if possible) is to modify either the client or server configuration so that DHE cipher suites are not used.__
+
+__For Firefox, enter this URL in the address bar: about:config, click the warning button and then enter this in the filter bar: security.ssl3.dhe. Set each preference displayed to: false and then filter again for security.ssl3.ecdhe and do the same again.__
+__Server side (not recommended), if using OpenSSL you could also change any configured cipher strings to include !DHE and !ECDHE__
+__With Java something like jdk.TLS.disabledALGORITHMS=DHE, ECDHE in the relevant place should suffice__
+
+
+
+
+### <a name="prob_comm_ssl_decrypt_myapp" /> Déchiffrement de la communication avec une application X
+
 Afin de garder l'intérêt de tous je vais utiliser 2 scripts python :
 
 * __py-connect.py__ : qui fonctionne , lors de la communication avec le serveur
@@ -567,10 +610,15 @@ Débutons **wireshark** afin de voir le trafic lors de l'exécution de __py-conn
 
 
 
+
 * réalisation script python , communication avec le service https normale + un 404 sans msg bien
 * Prendre la clef prive du srv https et déchiffrer le contenu de la communication
 
-https://wiki.wireshark.org/SSL
+Référence :
+
+* https://wiki.wireshark.org/SSL
+* https://jimshaver.net/2015/02/11/decrypting-tls-browser-traffic-with-wireshark-the-easy-way/
+* http://support.citrix.com/article/CTX116557
 
 # Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
 
