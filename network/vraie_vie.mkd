@@ -565,16 +565,37 @@ Premièrement j'ai récupérer la clé **privé** sur serveur web [www\_linux202
 
 #### <a name="premier_prob_decrypt_ssl" /> 
 
-J'étais partie du principe que si j'avais la clé privé du serveur c'était bon j'étais en business !! Et bien nous la démonstration suivant est **non fonctionnelle** , mais dans tous problème il y a quelque chose à apprendre .
+J'étais partie du principe que si j'avais la clé privé du serveur c'était bon j'étais en business !! Et bien non ! La démonstration suivant est **non fonctionnelle** , mais dans tous problème il y a quelque chose à apprendre .
 
 Voyons comment j'ai réalisé la configuration de __wireshark__ :
 
 * **Edit** __-->__ **preferences** 
-* **protocole** __-->__ **HTTP** : j'ai valider que les ports que j'utilise est bien listé pour la section SSL
+* **protocole** __-->__ **HTTP** : j'ai valider que les ports que j'utilise est bien listé pour la section __SSL__
 * **protocole** __-->__ **SSL** : 
     * __SSL debug file__ :  __/tmp/wireshark-ssl-debug.log__  (Ceci me permettra de visualiser les logs du traitement de __wireshark__
     * **RSA keys list** : 
     ![setup_wireshark_rsa_key.png](./imgs/setup_wireshark_rsa_key.png)
+
+Voyons le résultat avec cette configuration : 
+
+* Nous voyons le trafic dans __wireshark__ :
+    * ![wireshark-tls-prob-cipher-1.png](./imgs/wireshark-tls-prob-cipher-1.png)
+* Si nous essayons de déchiffrer le contenu **bouton droit de la souris** __-->__ **Follow SSL stream**:
+    * ![wireshark-tls-prob-cipher-2-follow-stream.png](./imgs/wireshark-tls-prob-cipher-2-follow-stream.png) 
+
+Humm mais pourquoi ?? Afin de répondre à cette question nous allons regarder le fichier __log__ de __wireshark__ (__/tmp/wireshark-ssl-debug.log__). Vous trouverez les informations suivante dans le fichier de __log__:
+
+        dissect_ssl3_record: content_type 20 Change Cipher Spec
+        ssl_load_keyfile dtls/ssl.keylog_file is not configured!
+        ssl_finalize_decryption state = 0x17
+        ssl_restore_master_key can't find master secret by Session ID
+        ssl_restore_master_key can't find master secret by Session Ticket
+        ssl_restore_master_key can't find master secret by Client Random
+
+Cool , mais encore :P ? Effectivement nous avons la clé privé du serveur , mais le [cipher suite](https://fr.wikipedia.org/wiki/Suite_cryptographique) utilisé pour chiffré les données fait en sorte que nous n'avons pas les données . Un petit schéma / rappel du protocole __SSL__ :
+
+![SSLHandshake-v1.png](./imgs/SSLHandshake-v1.png)
+
 
 * https://ask.wireshark.org/questions/34393/how-to-decrypt-ssl-traffic-using-wireshark
 __Be aware of some possible limitations. In particular the choice of cipher suites, PFS cipher suites (the (EC)DHE ones) cannot be decrypted even if you posess the private key. If you have access to the Pre-Master secrets, then you do not have this limitation, but it will require cooperation from the application to get these keys.__
