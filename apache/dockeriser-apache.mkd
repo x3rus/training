@@ -1215,9 +1215,7 @@ passé pour construire l'image, ou encore quelles variables d'environnements
 
 Prenons par example la dernière commande utilisée pour run notre image.
 
-```bash
-$ docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER="user admin" --env DB_HOST=db.x3rus.com --env DB_USER=toto --env DB_PASS=password --env DB_DB=mydb  apache-train:3.1
-```
+        $ docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER="user admin" --env DB_HOST=db.x3rus.com --env DB_USER=toto --env DB_PASS=password --env DB_DB=mydb  apache-train:3.1
 
 Bonne chance pour vous rappeler de tous les variables d'environnements et autres
 arguments commme le port-forward, etc.
@@ -1225,13 +1223,11 @@ arguments commme le port-forward, etc.
 Biensur, il serait très simple de créer un fichier contenant les commandes avec
 leurs arguments.
 
-```bash
-$ echo "docker build -t apache-train:3.1 ." > build.sh
-$ chmod +x build.sh
-
-$ echo "docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER="user admin" --env DB_HOST=db.x3rus.com --env DB_USER=toto --env DB_PASS=password --env DB_DB=mydb  apache-train:3.1" > start.sh
-$ chmod +x start.sh
-```
+        $ echo "docker build -t apache-train:3.1 ." > build.sh
+        $ chmod +x build.sh
+        
+        $ echo "docker run  --env SERVER_ADMIN=toto@x3rus.com --env VALIDE_USER="user admin" --env DB_HOST=db.x3rus.com --env DB_USER=toto --env DB_PASS=password --env DB_DB=mydb  apache-train:3.1" > start.sh
+        $ chmod +x start.sh
 
 Voila. Par contre, la commande peut devenir extrèmement longue et laide de cette
 manière. Aucune structure n'est imposé.
@@ -1258,45 +1254,42 @@ une syntax beaucoup plus lisible pour l'être humain.
 
 Voici un example d'un fichier yaml avec au dessous, sa version JSON.
 
-```yaml
-database:
-  host: database.example.com
-  port: 3142
-  admin:
-    username: toto
-    password: password
-  moutons:
-    - mouton1:
-        name: Thomas
-    - mouton2:
-        name: Bèèèèè
+        database:
+          host: database.example.com
+          port: 3142
+          admin:
+            username: toto
+            password: password
+          moutons:
+            - mouton1:
+                name: Thomas
+            - mouton2:
+                name: Bèèèèè
 
-```
+Json 
 
-```json
-{
-  "database": {
-    "host": "database.example.com",
-    "port": "3142",
-    "admin": {
-      "username": "admin",
-      "password": "hello_from_the_other_side"
-    },
-    "moutons": [
-      {
-        "mouton1": {
-          "name": "Thomas"
+        {
+          "database": {
+            "host": "database.example.com",
+            "port": "3142",
+            "admin": {
+              "username": "admin",
+              "password": "hello_from_the_other_side"
+            },
+            "moutons": [
+              {
+                "mouton1": {
+                  "name": "Thomas"
+                }
+              },
+              {
+                "mouton2": {
+                  "name": "Bèèèèè"
+                }
+              }
+            ]
+          }
         }
-      },
-      {
-        "mouton2": {
-          "name": "Bèèèèè"
-        }
-      }
-    ]
-  }
-}
-```
 
 Vous pouvez aller voir les possibilités que nous offrent le fichier
 docker-compose.yml [ici](https://docs.docker.com/compose/compose-file/).
@@ -1305,19 +1298,18 @@ Nous allons prendre notre dernière commande de pour run notre conteneur utilis�
 et la mettre en format pour docker-compose. Nous allons utilisé la version 2 de
 docker-compose, soit la nouvelle.
 
-```yaml
-version: '2'
-services:
-  apache_custom:
-    image: apache-train:3.1
-    environment:
-      SERVER_ADMIN: "toto@x3rus.com"
-      VALIDE_USER: "user admin"
-      DB_HOST: "db.x3rus.com"
-      DB_USER: "toto"
-      DB_PASS: "password"
-      DB_DB: "mydb"
-```
+        version: '2'
+        services:
+          apache_custom:
+            image: apache-train:3.1
+            environment:
+              SERVER_ADMIN: "toto@x3rus.com"
+              VALIDE_USER: "user admin"
+              DB_HOST: "db.x3rus.com"
+              DB_USER: "toto"
+              DB_PASS: "password"
+              DB_DB: "mydb"
+
 
 *Note* : Nous pourrions définir des volumes, comme nous avons utilisé
 précédemment. docker-compose supporte toute ou presque les arguments que docker
@@ -1341,9 +1333,7 @@ pouvez trouver [ici](https://docs.docker.com/compose/install/).
 
 Ensuite, il suffit de run cette commande:
 
-```bash
-$ docker-compose up
-```
+        $ docker-compose up
 
 Et voila, votre conteneur est up and running, prêt a être utilisé. Et la
 prochaine fois que vous allez travailler sur le projet, qui sait, quelques mois
@@ -1356,9 +1346,7 @@ Docker-compose nous permet de faire plusieurs choses. Il peut utiliser plusieurs
 commandes que docker lui même utilise. Pour une list des commandes, entré cette
 commande dans le terminal:
 
-```bash
-$ docker-compose --help
-```
+        $ docker-compose --help
 
 Un autre chose possible avec docker-compose est le build de l'image. Pour le
 moment,  nous n'avons plus besoin de nous rappeler de la ligne de commande pour
@@ -1372,38 +1360,39 @@ docker-compose.
 
 Voici la commande utilisé avant.
 
-```bash
-$ docker build -t apache-train:3.1 .
-```
+        $ docker build -t apache-train:3.1 .
 
 Voici notre fichier *docker-compose.yml* avec le build ajouté.
 
-```yaml
-version: '2'
-services:
-  apache_custom:
-    build:
-      dockerfile: Dockerfile
-      context: .
-    image: apache-train:3.1
-    environment:
-      SERVER_ADMIN: "toto@x3rus.com"
-      VALIDE_USER: "user admin"
-      DB_HOST: "db.x3rus.com"
-      DB_USER: "toto"
-      DB_PASS: "password"
-      DB_DB: "mydb"
-```
+        version: '2'
+        services:
+          apache_custom:
+            build:
+              dockerfile: Dockerfile
+              context: .
+            image: apache-train:3.1
+            environment:
+              SERVER_ADMIN: "toto@x3rus.com"
+              VALIDE_USER: "user admin"
+              DB_HOST: "db.x3rus.com"
+              DB_USER: "toto"
+              DB_PASS: "password"
+              DB_DB: "mydb"
+
 
 Cool. L'image lors du build sera nommé selon la valeur de *image*. Essayons
 maintenant de build notre image avec docker-compose et de démarrer le conteneur.
 
-```bash
-$ docker-compose build
-[... OUTPUT COUPÉ ...]
-
-$ docker-compose up
-```
+        $ docker-compose build
+        [... OUTPUT COUPÉ ...]
+        
+        $ docker-compose up
 
 Wow. Trop cool. Plus besoin de se casser la tête pour build et run des images
 docker. Tout est la, dans un fichier standard.
+
+## <a name="dockeriser_avantage" /> Dockeriser POURQUOI ?
+
+J'aurais peut-être du commencer par ça .... voici quelque point pourquoi __Dockerisé__ est un plus. :
+
+* 
