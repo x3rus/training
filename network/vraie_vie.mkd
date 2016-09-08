@@ -747,6 +747,12 @@ Passons à la partie du serveur , c'est aussi simple :
 Bon c'est pas dans le fichier mais j'y croyais encore :P ...
 
 Je suis passé à l'étape de chercher la **pre-master key**, c'est la que le problème commence !
+L'échange de la __pre-master key__ est réalisé lors de la séquence **Client Key Exchange** :
+
+![wireshark_get_preshare-key_client.png](./imgs/wireshark_get_preshare-key_client.png)
+
+Si nous regardons nous constatons que ceci est une clé publique :-/ , donc ceci vient avec une clé privé, regardons un schéma  du protocole [Diffie-Hellman](https://en.wikipedia.org/wiki/Elliptic_curve_Diffie%E2%80%93Hellman)
+
 
 * https://ask.wireshark.org/questions/34393/how-to-decrypt-ssl-traffic-using-wireshark
 __Be aware of some possible limitations. In particular the choice of cipher suites, PFS cipher suites (the (EC)DHE ones) cannot be decrypted even if you posess the private key. If you have access to the Pre-Master secrets, then you do not have this limitation, but it will require cooperation from the application to get these keys.__
