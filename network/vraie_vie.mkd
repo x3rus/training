@@ -6,6 +6,30 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Index 
 
+* [ Introduction ](#Introduction)
+* [ Communication entre 2 systèmes](#couche_IP)
+       * [ Problème de routage de paquets](#ip_probleme_route)
+       * [ Problème de cheminement de paquet](#ip_probleme_nat)
+* [ Communication entre 2 systèmes](#couche_TCP)
+       * [ Analyse d'un problème de communication TCP ou UDP](#tcp_timeout_drop)
+           * [ Visualisation d'un problème de communication à cause du firewall pour TCP](#tcp_timout)
+           * [ Validation de la communication sans application](#tcp_validation_comm)
+       * [ Visualisation d'une coupure de communication lors d'un transfert de paquet](#tcp_drop_restart)
+       * [ Problème DNS IP  externe VS ip interne](#dns_problem)
+       * [ Problème de communication avec un service SSL ](#prob_comm_ssl)
+           * [ Déchiffrement de la communication avec un fureteur](#prob_comm_ssl_decrypt_firefox)
+               * [ Tentative de déchiffrement avec uniquement la clé privé du SERVEUR](#premier_prob_decrypt_ssl)
+               * [ Configuration du fureteur pour avoir la master key](#premier_prob_decrypt_ssl_setup_browser)
+               * [ Méthode pour d'autre application](#premier_prob_decrypt_ssl_other_than_browser)
+                   * [ Configure application avec le bon cipher](#premier_prob_decrypt_ssl_change_app)
+               * [ Pour les guerriers  !! Vraiment optionnel !!](#premier_prob_decrypt_warrior_part)
+*Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
+*Faire attention au netmask
+*Explication rapide VLAN trunk pour ESX
+*Utilisation de TcPdump pour visualiser la communication serveur
+*Calcule taille de la communication
+*Avec time.php montré le keep-alive lors du tcpdump
+
 
 # <a name="Introduction" /> Introduction 
 
@@ -751,52 +775,28 @@ L'échange de la __pre-master key__ est réalisé lors de la séquence **Client 
 
 ![wireshark_get_preshare-key_client.png](./imgs/wireshark_get_preshare-key_client.png)
 
-Si nous regardons nous constatons que ceci est une clé publique :-/ , donc ceci vient avec une clé privé, regardons un schéma  du protocole [Diffie-Hellman](https://en.wikipedia.org/wiki/Elliptic_curve_Diffie%E2%80%93Hellman)
+Si nous regardons nous constatons que ceci est une clé publique :-/ , donc ceci vient avec une clé privé, regardons un schéma  du protocole [Diffie-Hellman](https://en.wikipedia.org/wiki/Elliptic_curve_Diffie%E2%80%93Hellman).
 
+![DH-diagramme-explication.png](./imgs/DH-diagramme-explication.png)
 
-* https://ask.wireshark.org/questions/34393/how-to-decrypt-ssl-traffic-using-wireshark
-__Be aware of some possible limitations. In particular the choice of cipher suites, PFS cipher suites (the (EC)DHE ones) cannot be decrypted even if you posess the private key. If you have access to the Pre-Master secrets, then you do not have this limitation, but it will require cooperation from the application to get these keys.__
+Le problème avec le __cipher__ Courbe Elliptique __Diffie Hellman__ (__ECDH__) est que nous n'avons pas de clé master qui est transféré mais uniquement la clé publique. Ceci est la raison pourquoi avec UNIQUEMENT le certificat du client nous ne sommes pas en mesure de déchiffré le contenu de la communication. Car le certificat n'est utilisé que lors de l'échange de clé , par la suite pour réduire la charge __CPU__ de déchiffrement une clé symétrique est échangé . C'est ce que l'on voit dans le diagramme juste avant le paragraphe.
 
-* http://packetpushers.net/using-wireshark-to-decode-ssltls-packets/
-__Wireshark can only decrypt SSL/TLS packet data if RSA keys are used to encrypt the data. If a Diffie-Hellman Ephemeral (DHE) or RSA ephemeral cipher suite is used, the RSA keys are only used to secure the DH or RSA exchange, not encrypt the data. Thus, even if you have the correct RSA private key, you will not be able to decrypt the data with Wireshark or any other tool. You can check which cipher suite is being used by examining the Server Hello packet sent by the host that holds the private key, if the cipher suite specified begins TLS_DHE or SSL_DHE, you will not be able to decrypt the data. If the server sends a ServerKeyExchange message, you will not be able to decrypt the data. I’ve no idea how to prevent RSA ephemeral use. For DHE, your only option (if possible) is to modify either the client or server configuration so that DHE cipher suites are not used.__
+Afin de visualisé l'échange lorsqu'il y a transfère de la __pre-master key__  j'ai refait la lecture de la communication avec le protocole __RSA__ "classique" comme indiqué plus tôt.
 
-__For Firefox, enter this URL in the address bar: about:config, click the warning button and then enter this in the filter bar: security.ssl3.dhe. Set each preference displayed to: false and then filter again for security.ssl3.ecdhe and do the same again.__
-__Server side (not recommended), if using OpenSSL you could also change any configured cipher strings to include !DHE and !ECDHE__
-__With Java something like jdk.TLS.disabledALGORITHMS=DHE, ECDHE in the relevant place should suffice__
+![wireshark-get_pre-master-key_RSA.png](./imgs/wireshark-get_pre-master-key_RSA.png)
 
+Nous voyons clairement la clé présente , le calcule est donc possible pour avoir la **MASTER KEY**
 
+Voilà j'espère que ça vous a permis de mieux comprendre comme moi l'ensemble du mécanisme :D.
 
+* Référence 
+    * [https://ask.wireshark.org/questions/34393/how-to-decrypt-ssl-traffic-using-wireshark](https://ask.wireshark.org/questions/34393/how-to-decrypt-ssl-traffic-using-wireshark)
 
-### <a name="prob_comm_ssl_decrypt_myapp" /> Déchiffrement de la communication avec une application X
+    * [http://packetpushers.net/using-wireshark-to-decode-ssltls-packets/](http://packetpushers.net/using-wireshark-to-decode-ssltls-packets/)
 
-Afin de garder l'intérêt de tous je vais utiliser 2 scripts python :
-
-* __py-connect.py__ : qui fonctionne , lors de la communication avec le serveur
-
-        $ python2 py-connect.py
-        Super ca marche
-        
-* __py-connect-BAD.py__ : qui retourne une erreur mais le Dev (moi :P ) n'a pas fournit un message très claire 
-
-        $ python2 py-connect-BAD.py
-        Nope, bonne chance :D
-
-Pour conserver le plaisir nous ne regarderons pas le contenu des scripts et nous ne regarderons pas les logs sur le serveur.
-Pour faire l'analyse nous commencerons par le système qui fonctionne bien :D.
-
-Débutons **wireshark** afin de voir le trafic lors de l'exécution de __py-connect.py__ 
-
-
-
-
-* réalisation script python , communication avec le service https normale + un 404 sans msg bien
-* Prendre la clef prive du srv https et déchiffrer le contenu de la communication
-
-Référence :
-
-* https://wiki.wireshark.org/SSL
-* https://jimshaver.net/2015/02/11/decrypting-tls-browser-traffic-with-wireshark-the-easy-way/
-* http://support.citrix.com/article/CTX116557
+    * https://wiki.wireshark.org/SSL
+    * https://jimshaver.net/2015/02/11/decrypting-tls-browser-traffic-with-wireshark-the-easy-way/
+    * http://support.citrix.com/article/CTX116557
 
 # Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
 
@@ -815,13 +815,6 @@ Référence :
 
 * Utilisation de snmp afin de visualiser la communication sur le serveur
 * Récupération du fichier de data
-
-# Problème de communication avec un service SSL 
-
-* réalisation script python , communication avec le service https normale + un 404 sans msg bien
-* Prendre la clef prive du srv https et déchiffrer le contenu de la communication
-
-https://wiki.wireshark.org/SSL
 
 # Calcule taille de la communication
 
