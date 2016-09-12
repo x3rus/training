@@ -28,7 +28,6 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 *Explication rapide VLAN trunk pour ESX
 *Utilisation de TcPdump pour visualiser la communication serveur
 *Calcule taille de la communication
-*Avec time.php montré le keep-alive lors du tcpdump
 
 
 # <a name="Introduction" /> Introduction 
