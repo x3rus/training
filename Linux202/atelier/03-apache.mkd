@@ -1,0 +1,31 @@
+
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+# Index 
+
+# <a name="Desction" /> Description
+
+Petit exercice pour apache , afin de mettre en pratique l'ensemble de ce que l'on a appris .
+Afin de facilité l'exercice nous allons utiliser __Docker__ pour l'environnement initial , ainsi que **git**
+pour avoir tout le monde les mêmes fichier / erreur :)
+
+# <a name="requis" /> Réalisons l'installation des pré requis
+
+* Installer Docker 
+
+
+* Référence :
+    * [docker install ubuntu ](https://docs.docker.com/engine/installation/linux/ubuntulinux/) 
+    * [docker install centos ](https://docs.docker.com/engine/installation/linux/centos/)
+
+* Récupération de l'image pour l'exercice 
+
+# <a name="exercices" /> Début de l'exercice.
+
+## <a name="installation_dapache" /> Réaliser l'installation d'apache sur un de vos système
+
+Bon maintenant que vous maitrisez apache vous pouvez l'installer en dehors de **docker** , car j'avais fait l'exercice initiale pour vous dans __docker__. Trouvez une machine ou démarrer un conteneur peu importe le distribution et réalisé l'installation d'apache .
+
