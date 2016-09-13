@@ -6,29 +6,31 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Index 
 
-* [ Introduction ](#Introduction)
-* [ Communication entre 2 systèmes](#couche_IP)
-       * [ Problème de routage de paquets](#ip_probleme_route)
-       * [ Problème de cheminement de paquet](#ip_probleme_nat)
-* [ Communication entre 2 systèmes](#couche_TCP)
-       * [ Analyse d'un problème de communication TCP ou UDP](#tcp_timeout_drop)
-           * [ Visualisation d'un problème de communication à cause du firewall pour TCP](#tcp_timout)
-           * [ Validation de la communication sans application](#tcp_validation_comm)
-       * [ Visualisation d'une coupure de communication lors d'un transfert de paquet](#tcp_drop_restart)
-       * [ Problème DNS IP  externe VS ip interne](#dns_problem)
-       * [ Problème de communication avec un service SSL ](#prob_comm_ssl)
-           * [ Déchiffrement de la communication avec un fureteur](#prob_comm_ssl_decrypt_firefox)
-               * [ Tentative de déchiffrement avec uniquement la clé privé du SERVEUR](#premier_prob_decrypt_ssl)
-               * [ Configuration du fureteur pour avoir la master key](#premier_prob_decrypt_ssl_setup_browser)
-               * [ Méthode pour d'autre application](#premier_prob_decrypt_ssl_other_than_browser)
-                   * [ Configure application avec le bon cipher](#premier_prob_decrypt_ssl_change_app)
-               * [ Pour les guerriers  !! Vraiment optionnel !!](#premier_prob_decrypt_warrior_part)
-*Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
-*Faire attention au netmask
-*Explication rapide VLAN trunk pour ESX
-*Utilisation de TcPdump pour visualiser la communication serveur
-*Calcule taille de la communication
-
+* [ Introduction ](#Introduction) 
+* [ Communication entre 2 systèmes](#couche_IP) 
+       * [ Problème de routage de paquets](#ip_probleme_route) 
+       * [ Problème de cheminement de paquet](#ip_probleme_nat) 
+* [ Communication entre 2 systèmes](#couche_TCP) 
+       * [ Analyse d'un problème de communication TCP ou UDP](#tcp_timeout_drop) 
+           * [ Visualisation d'un problème de communication à cause du firewall pour TCP](#tcp_timout) 
+           * [ Validation de la communication sans application](#tcp_validation_comm) 
+       * [ Problème DNS IP  externe VS ip interne](#dns_problem) 
+       * [ Problème de communication avec un service SSL ](#prob_comm_ssl) 
+           * [ Déchiffrement de la communication avec un fureteur](#prob_comm_ssl_decrypt_firefox) 
+               * [ Tentative de déchiffrement avec uniquement la clé privé du SERVEUR](#premier_prob_decrypt_ssl) 
+               * [ Configuration du fureteur pour avoir la master key](#premier_prob_decrypt_ssl_setup_browser) 
+               * [ Méthode pour d'autre application](#premier_prob_decrypt_ssl_other_than_browser) 
+                   * [ Configure application avec le bon cipher](#premier_prob_decrypt_ssl_change_app) 
+               * [ Pour les guerriers  !! Vraiment optionnel !!](#premier_prob_decrypt_warrior_part) 
+       * [ Visualisation d'une coupure de communication lors d'un transfert de paquet](#tcp_drop_restart) 
+*  [ Statistique sous Wireshark](#wireshark-stats) 
+       * [ Visualisation du sommaire de statistique](#wireshark-stats-sommary) 
+       * [ Visualisation des protocoles utiliser % et quantité](#wireshark-stats-proto-use) 
+       * [ Extraction des statistiques par systèmes lors d'échange](#wireshark-stats-between-host) 
+       * [ Visualisation graphique de la communication](#wireshark-stats-graph-io) 
+* [ Processus d'analyse d'un problème réseaux](#processus_analyse) 
+       * [ Visualisation graphique de la communication](#processus_analyse_user) 
+       * [ Analyse du problème au niveau de l'administrateur réseaux](#processus_analyse_admin) 
 
 # <a name="Introduction" /> Introduction 
 
@@ -871,25 +873,34 @@ Comme vous pouvez le voir il y a 3 informations
 Les possibilités de représentation et de réaliser des __Trend__ est clairement intéressant .
 
 
-# Faire attention au netmask 
+# <a name="processus_analyse" /> Processus d'analyse d'un problème réseaux
 
-* Voir que parfois on a l'impression que c le même network mais le netmask est important
+Lors de mon expérience bien souvent, démontre à quelqu'un comment analyser le problème réseau, malheureusement lorsqu'un problème similaire revient 1 ou 2 mois plus tard la personne ne se souvient plus de la méthode que j'ai appliquer. 
+Ceci est tout à fait normale suite à des problèmes répété je me suis développé un processus d'analyse de la situation. 
 
-# Explication rapide VLAN trunk pour ESX
+Voici donc 2 processus que j'ai mis sur papier afin de vous aider à analyser des problèmes réseaux :
 
-* Expliquer pourquoi un ESX peut avoir plusieurs réseaux alors qu'il n'a que 2 prises
+* Premier : plus au niveau utilisateur qui réalise l'analyse d'un problème , probablement moins de droit sur le serveur, ainsi que peu d'accès au __firewall__
+* Deuxième : plus orienté administrateur réseaux, afin de facilité le processus d'analyse du problème.
 
-# Utilisation de TcPdump pour visualiser la communication serveur
+Je ne prétend pas que le __flow__ est complet cependant ceci sera aussi pour moi un point de départ pour nourrir la description du  processus.
 
-* Utilisation de snmp afin de visualiser la communication sur le serveur
-* Récupération du fichier de data
+## <a name="processus_analyse_user" /> Visualisation graphique de la communication
 
-# Calcule taille de la communication
+Premier __processus__ pour l'analyse d'un problème pour un utilisateur "normal" , nous voyons le processus d'analyse de base. Un minimum que même l'administrateur réseau devrai faire en premier lieu.
 
-* Faire une communication normale avec un serveur http, avec calcule size communication
-* Activer le mod deflate
-* Refaire la meme communication et faire le calcule de la taille des paquet de la communications
+<img src="https://raw.githubusercontent.com/x3rus/training/master/network/imgs/setp_analyse_prob_network.png" width="700px" />
 
-# Avec time.php montré le keep-alive lors du tcpdump
 
-* Pour visualisé l'opération du browser lors d'un traitement trop long.
+## <a name="processus_analyse_admin" /> Analyse du problème au niveau de l'administrateur réseaux
+
+Cette section touche principalement au administrateur réseau afin de réaliser l'analyse du __firewall__ au déférent point d'entré ainsi que les manipulations possible sur les paquets (NAT, ...)
+
+<img src="https://raw.githubusercontent.com/x3rus/training/master/network/imgs/validation_FW_local_iptables.png" width="700px" />
+
+
+Je me suis beaucoup inspiré du diagramme de __flow__ du __firewall iptables__ de GNU/Linux  qui est très sensiblement le même processus que les autres __firewalls__.
+
+
+<img src="https://raw.githubusercontent.com/x3rus/training/master/network/imgs/iptables-packet-flow-ng.png" width="700px" />
+
