@@ -351,7 +351,7 @@ Voilà c'est déjà pas mal :D.
 
 Une problématique que j'ai rencontré de manière récurrente est l'utilisation des adresses IP externe pour l'accès à des service Interne voyons le diagramme suivant :
 
-|[Dia_network_DNS-ip_interne_externe.png](./imgs/Dia_network_DNS-ip_interne_externe.png)
+![Dia_network_DNS-ip_interne_externe.png](./imgs/Dia_network_DNS-ip_interne_externe.png)
 
 Environnement classique un réseau __LAN__ (192.168.10.0/24) et une __DMZ__ (192.168.66.0/24) , la __DMZ__ permet de fournir des service sur internet tous en limitant l'accès depuis internet vers le réseau local (__LAN__).
 
