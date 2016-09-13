@@ -149,7 +149,7 @@ Je n'ai pas de résultat , POURQUOI ?
 
 Analysons la situation , nous allons utiliser la commande __tcpdump__ pour réaliser l'analyse de la situation .
 
-TODO
+TODO à complété ou voir la vidéo qui inclut l'information
 
 # <a name="couche_TCP"/> Communication entre 2 systèmes
 
@@ -458,7 +458,7 @@ Voici le résultat :
 
 Ceci me permet de récupérer le certificat (clé publique) du serveur et de confirmer que la communication fonctionne bien :P que le port 443 de l'IP 172.17.0.1 respecte bien le protocole __SSL__ car il m'a répondu avec le certificat :D.
 
-Pour les personnes qui désire comprendre comment fonctionne protocole httpS je vous invite à consulter la vidéo que j'ai réalisé : [Linux 202 ( Cours 17 - Apache SSL - suite 4 )](https://www.youtube.com/watch?v=Hsg3TgG9azM)
+Pour les personnes qui désire comprendre comment fonctionne protocole httpS je vous invite à consulter la vidéo que j'ai réalisé : [Comprendre httpS (certificat et échange avec le serveur)](https://www.youtube.com/watch?v=DilZTPJFVH4)
 
 Pour les personnes qui veulent uniquement faire fonctionné __wireshark__ sans les explications allé voir l'URL suivante :
 [jimshaver:decrypting tls browser traffic with wireshark the easy way](https://jimshaver.net/2015/02/11/decrypting-tls-browser-traffic-with-wireshark-the-easy-way/)
@@ -627,14 +627,14 @@ Alors je me suis dit , que si j'ai l'ensemble des 3 éléments , je vois pas pou
 
 Je suis donc partie d'une communication avec __firefox__ et le fichier de clé ou j'ai essayer de récupérer l'information . Si ça vous motive continué , mais je vous avise tous de suite , **ÇA FONCTIONNE PAS** :P . Je crois cependant que la connaissance est intéressante :D. 
 
-Commençons par extraire l'information du fichier __ssllog__ que vous pourrez trouver sur __github__ ici : TODO 
+Commençons par extraire l'information du fichier __ssllog__ que vous pourrez trouver sur __github__ ici : [ssl-log](https://raw.githubusercontent.com/x3rus/training/master/network/data/sslkeylog_firefox_https_dhe.log) 
 
         $ cat sslkeylog_firefox_https_dhe.log
         CLIENT_RANDOM eaba2ab12a4b3312da88a244beab1db493687d7946ff2583e6960d2d4d2ba9b6 04a1b54e353b28afcb64e1380d3c049a9662f53340b1fb91a0734287cd92327a0cb4da8d5bb3148b3873bd2fb00fd7e5
         CLIENT_RANDOM 4800c1d2126559f3e610ae217f0c5fa99a123a9a4f0232a7352f9a315ed6b9d7 a3f2325ff9f8606d33d4fd8ae2bf3e0f63ac7977e0829a494d1f88ed74173aa69455866c8b58ac714c84d950be3a130b
         CLIENT_RANDOM 187ed56c312cab9fce0a3540e06d3e427885ed3ed94b8338ba3ab53a3ffba855 04a1b54e353b28afcb64e1380d3c049a9662f53340b1fb91a0734287cd92327a0cb4da8d5bb3148b3873bd2fb00fd7e5
 
-Vous trouverez aussi le fichier __wireshark__ de la communication sur __github__ ici : TODO 
+Vous trouverez aussi le fichier __wireshark__ de la communication sur __github__ ici : [wireshark-data](https://raw.githubusercontent.com/x3rus/training/master/network/data/firefox_https_with_dhe.pcapng) 
 
 J'ai d'abord cherché le numéro aléatoire du client contenu dans la communication **client hello**, j'ai extrait les numéros voici la copie d'écran de l'opération :
 
@@ -808,7 +808,7 @@ Une grande quantité d'information peut être extrait depuis le menu statistique
 
 ## <a name="wireshark-stats-sommary" /> Visualisation du sommaire de statistique
 
-J'ai réalisé une capture de communication disponible sous le dépôt git : TODO 
+J'ai réalisé une capture de communication disponible sous le dépôt git : [wireshark-demo](https://raw.githubusercontent.com/x3rus/training/master/network/data/wireshark-demo-stats.pcapng)
 
 J'ai filtré le résultat pour n'avoir que le protocole __UDP__ bien entendu j'aurais pu limité par IP , etc 
 
