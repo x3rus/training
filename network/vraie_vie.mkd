@@ -344,121 +344,6 @@ Voici quelques utilisation très courante de **nc** :
 
 Voilà c'est déjà pas mal :D.
 
-## <a name="tcp_drop_restart"/> Visualisation d'une coupure de communication lors d'un transfert de paquet
-
-Maintenant que nous avons identifié un problème de connexion qui ne fonctionne pas passons à un problème intermittent .
-Ceci est le plus compliqué à identifier , je ne dis pas que j'ai la solution exacte, cependant vous permettra d'avoir un aperçu concret lorsque la situation ce produit. Chaque problème étant particulier à vous de l'adapter dans votre réalité .
-
-Je vais utilisé le protocole SSH afin de faire la démonstration , j'ai une machine avec l'IP : __172.17.0.2__ qui a le service SSH présent nous allons faire un transfert de fichier avec __SCP__ pour le transfert.
-
-* client : 172.17.42.1
-* serveur : 172.17.0.2
-
-Voici l'opération quand tous vas bien :
-
-        $ scp bob@172.17.0.2:./usr-share-vim.tar /tmp/
-        bob@172.17.0.2's password: 
-        usr-share-vim.tar                              100%   25MB  25.2MB/s   00:01
-
-
-Bon si nous regardons nous avons bien le __3 way handshake__ (__SYN , SYN/ACK, ACK__) , nous avons du transfert et la fin de connexion ( __FIN/ACK , ACK, FIN/ACK, ACK__). Si vous regardez attentivement vous constaterez qu'il y a aussi des messages étrange que nous n'avions encore jamais vu : **TCP Full Window** et **TCP ZeroWindows** , puis ils sont en noir et rouge , ça sonne PAS bon pourtant nous n'avons pas encore créer de __noise__ sur la ligne.
-
-![transfert_scp_msg_windows_full.png](./imgs/transfert_scp_msg_windows_full.png)
-
-Référence du problème __wireshark__ :  [https://ask.wireshark.org/questions/24501/why-would-tcp-full-window-happen](https://ask.wireshark.org/questions/24501/why-would-tcp-full-window-happen)
-
-Premièrement ce n'est PAS une erreur ceci est simplement un avertissement , si vous avez le message **TCP Full Window** et que vous avez après **TCP ZeroWindows** il n'y a PAS de problème. Ok cool mais POURQUOI ?
-
-Regardons cette nouvelle copie d'écran :
-
-![transfert_scp_msg_windows_full_2.png](./imgs/transfert_scp_msg_windows_full_2.png)
-
-Afin d'optimiser le transfert __TCP__ entre le client et le serveur négocie un nombre de paquet (__windows size__) qui peut être transféré entre le client et le serveur sans que le client soit obligé de confirmer la réception. 
-
-Voici un exemple :
-
-* Le client (récepteur) ssh avise qu'il va prendre une fenêtre TCP de 5000 bytes
-* Le serveur (émetteur) envoie 5 paquets TCP d'une longueurs de 1000 chaque
-* Il n'y a AUCUN accusé de réception des paquets pour ces 5 .
-* __Wireshark__ mark le 5ieme paquet avec l'identifiant __TCP WINDOWS FULL__ afin d'indiquer qu'il n'y a pas eu de __ACK__ pour ces dernier.
-
-Le client à 3 possibilités :
-
-* Transmettre le message __\[Zero Windows\]__ : indiquant que son __buffer__ est plein et d'attendre que ce dernier est fini de traiter les données
-* Transmettre le message __\[TCP Window Update\]__ : indiquant qu'il traite encore des données mais que ça fenêtre est un peu libre donc que le serveur peut remplir N bytes
-* Transmettre le __ACK__ : Afin d'indiquer au serveur que l'on peut reprendre le transfert .
-
-
-Maintenant que nous avons vu le comportement quand tous va "bien" malgré les messages d'avertissement de __wireshark__ sur la question de la fenêtre de transmission reprenons l'opération. Cette fois ci, je vais faire le transfert mais en plein milieu je vais bloquer la communication avec une règle de __firewall__ afin de simuler une coupure de connexion. La coupure sera temporaire quelques secondes afin de voir le comportement quand la communication reprend.
-La règle de __firewall__ fut mis en place pour coupé les communications sur le port 22 du __client__ **vers** le __serveur__.
-
-Voici le résultat à l'écran:
-
-        $ scp bob@172.17.0.2:./usr-share-vim.tar /tmp/
-        bob@172.17.0.2's password:
-        usr-share-vim.tar                                           35% 9088KB   2.8MB/s - stalled -
-        [... COUPURE PUIS la reprise ...]
-        usr-share-vim.tar                                           100%   25MB  25.2MB/s   00:01
-
-Si nous regardons le résultat au niveau de __wireshark__ :
-
-![transfert_scp_bloque_with_iptables.png](./imgs/transfert_scp_bloque_with_iptables.png)
-
-C'est partie :D :D , le plaisir commence :D , pour bien comprendre le mécanisme de récupération et retransmission il faut ce concentré sur les numéros de séquence des paquets (**seq**) qui permet de suivre le numéro de chaque paquet , ainsi que les confirmation de réception (**ACK**) qui sont en relation avec séquence de transmission. Un petit rattrapage sur la théorie, car j'avais mis de coté cette aspect dans l'attente d'avoir un exemple concret.
-Avec __wireshark__ vous pouvez visualiser la séquence d'échange **seq** et **ack** , pour ce faire ouvrez un fichier de trace et sélectionnez dans le menu **statistics --> Flow graph**.
-
-Voici un exemple de résultat:
-
-![tcp_flow.png](./imgs/tcp_flow.png)
-
-* Client : 192.168.1.2
-* Serveur : 174.143.213.18
-
-Voici une petite explication quand tous fonctionne bien ;-) :
-
-1. Établissement de connexion
-    1. Client : **Syn** (__seq=0,ack=94856056__) , le premier paquet , le numéro de __ack__ est aléatoire dans ce cas il sera réinitialisé à zéro par la suite une fois le dialogue établie.
-    2. Serveur : **Syn,Ack** (__seq=0,ack=1__) Le client débute ça séquence aussi à 0, mais la valeur de __ack__ est à 1 , lors de la présence d'un **SYN** ou **FIN** le numéro de **ACK** est incrémenté.
-    3. Client : **Ack** (__seq=1,ack=1__) Le client transmet le **ack** de fin d'établissement de connexion , il prend la valeur du __ACK__ reçu et l'assigne au numéro de séquence.
-2. Transfert de donnée du client vers le serveur 
-    * Client : **Psh,Ack len(725)** (__seq=1,ack=1__) Le client transfert un paquet d'une longueur de 725 au serveur
-3. Réponse du serveur des données reçu
-    * Serveur : **ACK** (__seq=1,ack=726__) , le serveur confirme la réception du paquet précédent , lors du __ack__ il incrément la valeur **1** original de son coté et l'incrément de la longueur du dernier paquet reçu soit **725** . Résultat lors de ça réponse la valeur de __ack__ est (1+725=726). C'est comme si le serveur répondais j'ai bien reçu un paquet de 725.
-4. Transfert du serveur vers le client
-    * Serveur : **ACK len(1448)** (__seq=1,ack=726__), le serveur transmet un paquet __ack__ d'une taille de 1448. 
-5. Réponse du client après la réception des données du serveur
-    * Client : **ACK** (__seq=726,ack=1449__), donc de la séquence du client à augmenté représentant la quantité de données déjà transmisse. Tous comme le serveur il incrémente la valeur de __ack__ avec la quantité de donnée reçu du serveur
-6. Serveur retransmet des données
-    * Serveur : **ACK len(1448)** (__seq=1449,ack=726__) le serveur retransmet un paquet de 1448, le numéro de séquence est 1449 car le serveur n'a transmit pour le moment qu'un paquet de 1448 + 1 , le numéro de confirmation (__ack__) correspond à 1 + 725 (quantité de donnée transmise par le client)
-7. Le client confirme la réception
-    * Client : **ACK** (__seq=726,ack=2897__) , le client à transmit un paquet paquet d'une taille de 1 + 725 donc sont numéro de séquence n'augmente PAS, uniquement le numéro de confirmation __ack__ qui représente (1+1448+1448).
-8. Etc jusque la fin de la connexion :P...
-
-Référence : [http://packetlife.net/blog/2010/jun/7/understanding-tcp-sequence-acknowledgment-numbers/](http://packetlife.net/blog/2010/jun/7/understanding-tcp-sequence-acknowledgment-numbers/)
-
-Bon après se long texte quand tous va bien maintenant on revient à notre problème :P :
-
-* #1583 : Le client transmet __ACK__ pour confirmer la réception du transfert (malheureusement la règle de __firewall__ bloque la transmission vers serveur, mais le client ne le sais pas encore) (__seq=5046, Ack=9337176__)
-* #1584 : Le client transmet un paquet chiffré au serveur ( mais ce dernier ne le recevra PAS à cause du __firewall__) (__seq=5046, Ack=9337176__)
-* #1585 : Le serveur transmet un paquet car lui n'a aucun problème de communication avec le client (__seq=9337176,Ack=5046__)
-* #1586 : Le client transmet un paquet chiffré toujours (__seq=5082,ack=9338624__)
-* #1587 : Le client transmet un autre paquet chiffré (__seq=5118,ack=9338624__)
-* #1588 : Le client retransmet le dernier paquet(__seq=5118,ack=9338624__), pourquoi ? Car il à attendu un certain temps mais le serveur n'a pas continuer à retransmettre des paquets. Si vous regarder la colonne __time__ le chiffre est significativement plus haut que lors du transfert régulier de paquet. Bien entendu ce paquet n'arrivera JAMAIS au serveur
-* #1589 : Le client transmet un paquet , car comme nous avons activé le mode __drop__ dans le __firewall__ le client croit que le paquet est arrivé RIEN ne lui indique qu'il y a eu un problème il doit attendre la confirmation de réception du serveur ou l'absence de confirmation pour savoir qu'il y a eu un problème (__seq=5154,ack=9338624__)
-* #1590 : Le client transmet un paquet car il croit que les 2 derniers furent reçu (__seq=5190,ack=9338624__)
-* #1591 : Le serveur ne recevant pas d'accusé de réception refait l'envoie : (__seq=9261396,ack=5046__)
-* #1592 : Le client à reçu la demande du serveur , car la communication n'est pas bloqué dans ce sens il renvoie donc le __ACK__ en fait il dit qu'il a de la disponibilité dans la fenêtre __TCP__ (__seq=5226,ack=9338624__)
-* #1593 : Le client retransmet  (__seq=5046,ack=9338624__)
-* #1594 : Le serveur retransmet le paquet **#1591** (__seq=9261396,ack=5046__)
-* #1595 : Le client retransmet le paquet **#1592** (__seq=5226,ack=9338624__)
-* #1596 : Le client retransmet le paquet (__seq=5046,ack=9338624__)
-* #1597 : Le serveur retransmet le paquet **#1578** (__seq=9261396,ack=5046__)
-* #1598 : Le client retransmet un autre __ACK__ équivalent au paquet **#1595** et **#1592** (__seq=5226,ack=9338624__)
-* #1599 : Le client retransmet le paquet **#1596**(__seq=5046,ack=9338624__)
-* #1600 : Le serveur renvoie le paquet **#1594** ou **#1591**(__seq=9261396,ack=5046__)
-
-Le jeu va continuer comme ça jusqu'au moment ou le __timeout__ de communication sera atteint et que le serveur coupe la communication, car il ne reçoit plus d'information du client.
-
 
 ## <a name="dns_problem"/> Problème DNS IP  externe VS ip interne
 
@@ -797,10 +682,194 @@ Voilà j'espère que ça vous a permis de mieux comprendre comme moi l'ensemble 
     * https://jimshaver.net/2015/02/11/decrypting-tls-browser-traffic-with-wireshark-the-easy-way/
     * http://support.citrix.com/article/CTX116557
 
-# Visualisation du cheminement du paquet afin d'identifier les équipements potentiellement problématique
 
-* Comme nous avions vu avec le timeout du TCP keep alive 
-* TODO voir comment faire la démo :(.
+
+## <a name="tcp_drop_restart"/> Visualisation d'une coupure de communication lors d'un transfert de paquet
+
+Maintenant que nous avons identifié un problème de connexion qui ne fonctionne pas passons à un problème intermittent .
+Ceci est le plus compliqué à identifier , je ne dis pas que j'ai la solution exacte, cependant vous permettra d'avoir un aperçu concret lorsque la situation ce produit. Chaque problème étant particulier à vous de l'adapter dans votre réalité .
+
+Je vais utilisé le protocole SSH afin de faire la démonstration , j'ai une machine avec l'IP : __172.17.0.2__ qui a le service SSH présent nous allons faire un transfert de fichier avec __SCP__ pour le transfert.
+
+* client : 172.17.42.1
+* serveur : 172.17.0.2
+
+Voici l'opération quand tous vas bien :
+
+        $ scp bob@172.17.0.2:./usr-share-vim.tar /tmp/
+        bob@172.17.0.2's password: 
+        usr-share-vim.tar                              100%   25MB  25.2MB/s   00:01
+
+
+Bon si nous regardons nous avons bien le __3 way handshake__ (__SYN , SYN/ACK, ACK__) , nous avons du transfert et la fin de connexion ( __FIN/ACK , ACK, FIN/ACK, ACK__). Si vous regardez attentivement vous constaterez qu'il y a aussi des messages étrange que nous n'avions encore jamais vu : **TCP Full Window** et **TCP ZeroWindows** , puis ils sont en noir et rouge , ça sonne PAS bon pourtant nous n'avons pas encore créer de __noise__ sur la ligne.
+
+![transfert_scp_msg_windows_full.png](./imgs/transfert_scp_msg_windows_full.png)
+
+Référence du problème __wireshark__ :  [https://ask.wireshark.org/questions/24501/why-would-tcp-full-window-happen](https://ask.wireshark.org/questions/24501/why-would-tcp-full-window-happen)
+
+Premièrement ce n'est PAS une erreur ceci est simplement un avertissement , si vous avez le message **TCP Full Window** et que vous avez après **TCP ZeroWindows** il n'y a PAS de problème. Ok cool mais POURQUOI ?
+
+Regardons cette nouvelle copie d'écran :
+
+![transfert_scp_msg_windows_full_2.png](./imgs/transfert_scp_msg_windows_full_2.png)
+
+Afin d'optimiser le transfert __TCP__ entre le client et le serveur négocie un nombre de paquet (__windows size__) qui peut être transféré entre le client et le serveur sans que le client soit obligé de confirmer la réception. 
+
+Voici un exemple :
+
+* Le client (récepteur) ssh avise qu'il va prendre une fenêtre TCP de 5000 bytes
+* Le serveur (émetteur) envoie 5 paquets TCP d'une longueurs de 1000 chaque
+* Il n'y a AUCUN accusé de réception des paquets pour ces 5 .
+* __Wireshark__ mark le 5ieme paquet avec l'identifiant __TCP WINDOWS FULL__ afin d'indiquer qu'il n'y a pas eu de __ACK__ pour ces dernier.
+
+Le client à 3 possibilités :
+
+* Transmettre le message __\[Zero Windows\]__ : indiquant que son __buffer__ est plein et d'attendre que ce dernier est fini de traiter les données
+* Transmettre le message __\[TCP Window Update\]__ : indiquant qu'il traite encore des données mais que ça fenêtre est un peu libre donc que le serveur peut remplir N bytes
+* Transmettre le __ACK__ : Afin d'indiquer au serveur que l'on peut reprendre le transfert .
+
+
+Maintenant que nous avons vu le comportement quand tous va "bien" malgré les messages d'avertissement de __wireshark__ sur la question de la fenêtre de transmission reprenons l'opération. Cette fois ci, je vais faire le transfert mais en plein milieu je vais bloquer la communication avec une règle de __firewall__ afin de simuler une coupure de connexion. La coupure sera temporaire quelques secondes afin de voir le comportement quand la communication reprend.
+La règle de __firewall__ fut mis en place pour coupé les communications sur le port 22 du __client__ **vers** le __serveur__.
+
+Voici le résultat à l'écran:
+
+        $ scp bob@172.17.0.2:./usr-share-vim.tar /tmp/
+        bob@172.17.0.2's password:
+        usr-share-vim.tar                                           35% 9088KB   2.8MB/s - stalled -
+        [... COUPURE PUIS la reprise ...]
+        usr-share-vim.tar                                           100%   25MB  25.2MB/s   00:01
+
+Si nous regardons le résultat au niveau de __wireshark__ :
+
+![transfert_scp_bloque_with_iptables.png](./imgs/transfert_scp_bloque_with_iptables.png)
+
+C'est partie :D :D , le plaisir commence :D , pour bien comprendre le mécanisme de récupération et retransmission il faut ce concentré sur les numéros de séquence des paquets (**seq**) qui permet de suivre le numéro de chaque paquet , ainsi que les confirmation de réception (**ACK**) qui sont en relation avec séquence de transmission. Un petit rattrapage sur la théorie, car j'avais mis de coté cette aspect dans l'attente d'avoir un exemple concret.
+Avec __wireshark__ vous pouvez visualiser la séquence d'échange **seq** et **ack** , pour ce faire ouvrez un fichier de trace et sélectionnez dans le menu **statistics --> Flow graph**.
+
+Voici un exemple de résultat:
+
+![tcp_flow.png](./imgs/tcp_flow.png)
+
+* Client : 192.168.1.2
+* Serveur : 174.143.213.18
+
+Voici une petite explication quand tous fonctionne bien ;-) :
+
+1. Établissement de connexion
+    1. Client : **Syn** (__seq=0,ack=94856056__) , le premier paquet , le numéro de __ack__ est aléatoire dans ce cas il sera réinitialisé à zéro par la suite une fois le dialogue établie.
+    2. Serveur : **Syn,Ack** (__seq=0,ack=1__) Le client débute ça séquence aussi à 0, mais la valeur de __ack__ est à 1 , lors de la présence d'un **SYN** ou **FIN** le numéro de **ACK** est incrémenté.
+    3. Client : **Ack** (__seq=1,ack=1__) Le client transmet le **ack** de fin d'établissement de connexion , il prend la valeur du __ACK__ reçu et l'assigne au numéro de séquence.
+2. Transfert de donnée du client vers le serveur 
+    * Client : **Psh,Ack len(725)** (__seq=1,ack=1__) Le client transfert un paquet d'une longueur de 725 au serveur
+3. Réponse du serveur des données reçu
+    * Serveur : **ACK** (__seq=1,ack=726__) , le serveur confirme la réception du paquet précédent , lors du __ack__ il incrément la valeur **1** original de son coté et l'incrément de la longueur du dernier paquet reçu soit **725** . Résultat lors de ça réponse la valeur de __ack__ est (1+725=726). C'est comme si le serveur répondais j'ai bien reçu un paquet de 725.
+4. Transfert du serveur vers le client
+    * Serveur : **ACK len(1448)** (__seq=1,ack=726__), le serveur transmet un paquet __ack__ d'une taille de 1448. 
+5. Réponse du client après la réception des données du serveur
+    * Client : **ACK** (__seq=726,ack=1449__), donc de la séquence du client à augmenté représentant la quantité de données déjà transmisse. Tous comme le serveur il incrémente la valeur de __ack__ avec la quantité de donnée reçu du serveur
+6. Serveur retransmet des données
+    * Serveur : **ACK len(1448)** (__seq=1449,ack=726__) le serveur retransmet un paquet de 1448, le numéro de séquence est 1449 car le serveur n'a transmit pour le moment qu'un paquet de 1448 + 1 , le numéro de confirmation (__ack__) correspond à 1 + 725 (quantité de donnée transmise par le client)
+7. Le client confirme la réception
+    * Client : **ACK** (__seq=726,ack=2897__) , le client à transmit un paquet paquet d'une taille de 1 + 725 donc sont numéro de séquence n'augmente PAS, uniquement le numéro de confirmation __ack__ qui représente (1+1448+1448).
+8. Etc jusque la fin de la connexion :P...
+
+Référence : [http://packetlife.net/blog/2010/jun/7/understanding-tcp-sequence-acknowledgment-numbers/](http://packetlife.net/blog/2010/jun/7/understanding-tcp-sequence-acknowledgment-numbers/)
+
+Bon après se long texte quand tous va bien maintenant on revient à notre problème :P :
+
+* #1583 : Le client transmet __ACK__ pour confirmer la réception du transfert (malheureusement la règle de __firewall__ bloque la transmission vers serveur, mais le client ne le sais pas encore) (__seq=5046, Ack=9337176__)
+* #1584 : Le client transmet un paquet chiffré au serveur ( mais ce dernier ne le recevra PAS à cause du __firewall__) (__seq=5046, Ack=9337176__)
+* #1585 : Le serveur transmet un paquet car lui n'a aucun problème de communication avec le client (__seq=9337176,Ack=5046__)
+* #1586 : Le client transmet un paquet chiffré toujours (__seq=5082,ack=9338624__)
+* #1587 : Le client transmet un autre paquet chiffré (__seq=5118,ack=9338624__)
+* #1588 : Le client retransmet le dernier paquet(__seq=5118,ack=9338624__), pourquoi ? Car il à attendu un certain temps mais le serveur n'a pas continuer à retransmettre des paquets. Si vous regarder la colonne __time__ le chiffre est significativement plus haut que lors du transfert régulier de paquet. Bien entendu ce paquet n'arrivera JAMAIS au serveur
+* #1589 : Le client transmet un paquet , car comme nous avons activé le mode __drop__ dans le __firewall__ le client croit que le paquet est arrivé RIEN ne lui indique qu'il y a eu un problème il doit attendre la confirmation de réception du serveur ou l'absence de confirmation pour savoir qu'il y a eu un problème (__seq=5154,ack=9338624__)
+* #1590 : Le client transmet un paquet car il croit que les 2 derniers furent reçu (__seq=5190,ack=9338624__)
+* #1591 : Le serveur ne recevant pas d'accusé de réception refait l'envoie : (__seq=9261396,ack=5046__)
+* #1592 : Le client à reçu la demande du serveur , car la communication n'est pas bloqué dans ce sens il renvoie donc le __ACK__ en fait il dit qu'il a de la disponibilité dans la fenêtre __TCP__ (__seq=5226,ack=9338624__)
+* #1593 : Le client retransmet  (__seq=5046,ack=9338624__)
+* #1594 : Le serveur retransmet le paquet **#1591** (__seq=9261396,ack=5046__)
+* #1595 : Le client retransmet le paquet **#1592** (__seq=5226,ack=9338624__)
+* #1596 : Le client retransmet le paquet (__seq=5046,ack=9338624__)
+* #1597 : Le serveur retransmet le paquet **#1578** (__seq=9261396,ack=5046__)
+* #1598 : Le client retransmet un autre __ACK__ équivalent au paquet **#1595** et **#1592** (__seq=5226,ack=9338624__)
+* #1599 : Le client retransmet le paquet **#1596**(__seq=5046,ack=9338624__)
+* #1600 : Le serveur renvoie le paquet **#1594** ou **#1591**(__seq=9261396,ack=5046__)
+
+Le jeu va continuer comme ça jusqu'au moment ou le __timeout__ de communication sera atteint et que le serveur coupe la communication, car il ne reçoit plus d'information du client.
+
+#  <a name="wireshark-stats"/> Statistique sous Wireshark
+
+__WireShark__ nous offre la possibilité d'extraire des statistiques de la capture de paquet . 
+Une grande quantité d'information peut être extrait depuis le menu statistique, vous pourrez explorer les possibilités , voici quelques exemple .
+
+## <a name="wireshark-stats-sommary" /> Visualisation du sommaire de statistique
+
+J'ai réalisé une capture de communication disponible sous le dépôt git : TODO 
+
+J'ai filtré le résultat pour n'avoir que le protocole __UDP__ bien entendu j'aurais pu limité par IP , etc 
+
+![wireshark-summary-stats.png](./imgs/wireshark-summary-stats.png)
+
+Comme vous pouvez le voir nous avons :
+
+* Nombre de paquets total et affiché
+* Le temps entre les paquets total et affiché
+* Moyenne des paquets par secondes
+* Taille moyenne des paquets
+* Le total de paquets
+* moyenne de bytes par seconde
+
+Ceci peut être TRÈS pratique pour valider un système de cache entre le client ou le serveur, dans le cas d'une utilisation de __mod\_deflate__ par exemple pour compressé les communications entre le client et le serveur. Ils est possible de voir concrètement le quantité de donnée économisé.
+
+
+## <a name="wireshark-stats-proto-use" /> Visualisation des protocoles utiliser % et quantité
+
+Il est possible aussi d'avoir l'information sur les protocoles et de voir le pourcentage utilisé :
+
+![wireshark-summary-hierarchie-proto.png](./imgs/wireshark-summary-hierarchie-proto.png)
+
+Particulièrement intéressant pour une utilisation massive de __wireshark__ sur une longue période afin d'identifier les protocoles et la quantité de donnée échangé.
+
+## <a name="wireshark-stats-between-host" /> Extraction des statistiques par systèmes lors d'échange
+
+Il est aussi possible d'avoir des statistiques par __host__ des échanges , vitesse de transfert, nombre de paquets , ...
+
+* **Statistics** __-->__ **Conversation** 
+
+![wireshark-stats-echange.png](./imgs/wireshark-stats-echange.png)
+
+
+Comme vous pouvez voir , vous pouvez y allé par protocole pour sélectionner ce que vous cherchez. Ceci est particulièrement intéressant si vous avez capturer une communication sur une routeur , car il y a beaucoup de trafic. 
+
+J'aimerai porter votre attention sur l'option , qui permet de visualiser l'information mais uniquement ce qui est filtrer et non l'ensemble ... Ça peut être pratique :p
+
+* **Statistics** __-->__ **Endpoints** 
+
+Information similaire mais comme critère uniquement la destination
+
+## <a name="wireshark-stats-graph-io" /> Visualisation graphique de la communication
+
+Bon les chiffres c'est bien mais pour démontré un point lors d'une présentation c'est toujours plus compliqué alors qu'un graphe parle de lui même .
+
+Si nous allons dans
+
+* **Statistics** __-->__ **Io Graphs**
+
+
+Nous avons la possibilité d'extraire des graphiques et de le manipuler :
+
+![wireshark-stats-io-graph.png](./imgs/wireshark-stats-io-graph.png)
+
+Comme vous pouvez le voir il y a 3 informations 
+
+* La ligne noir représente les communications __TCP__
+* Les points rouges les communications __UDP__
+* Et le vert remplis les communications au serveur __x3rus.com__
+
+Les possibilités de représentation et de réaliser des __Trend__ est clairement intéressant .
+
 
 # Faire attention au netmask 
 
