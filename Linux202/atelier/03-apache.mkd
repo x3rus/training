@@ -16,6 +16,33 @@ pour avoir tout le monde les mêmes fichier / erreur :)
 
 * Installer Docker 
 
+         sudo apt-get update
+         sudo apt-get install apt-transport-https ca-certificates
+
+         sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E
+
+         sudo vim /etc/apt/sources.list.d/docker.list
+
+* Ajouter l'entré suivante :
+    * Pour  Ubuntu Precise 12.04 (LTS)
+
+            deb https://apt.dockerproject.org/repo ubuntu-precise main
+
+    * Pour  Ubuntu Trusty 14.04 (LTS)
+
+            deb https://apt.dockerproject.org/repo ubuntu-trusty main
+
+    * Pour Ubuntu Xenial 16.04 (LTS)
+
+            deb https://apt.dockerproject.org/repo ubuntu-xenial main
+
+* Réaliser l'installation de docker 
+
+        sudo apt-get update 
+        sudo apt-get install  docker-engine
+        sudo service docker start
+
+J'espère que ce sera correct :P
 
 * Référence :
     * [docker install ubuntu ](https://docs.docker.com/engine/installation/linux/ubuntulinux/) 
@@ -23,7 +50,66 @@ pour avoir tout le monde les mêmes fichier / erreur :)
 
 * Récupération de l'image pour l'exercice 
 
+TODO : compléter la commande docker pull
+
+        $ sudo docker pull .....
+
+Ou si vous désirez le builder vous même récupérer le Dockerfile ICI : TODO fournit le dockerfile
+
+# <a name="start_init_and_validate" /> Démarrage initial du conteneur et validation que ceci fonctionne 
+
+* Démarrer le conteneur 
+
+        $ sudo docker  run -d --hostname atelier.x3rus.com --name atelier_apache linux202_atelier_apache
+
+* NOTE : la prochaine fois que vous voudrez le démarrer utiliser uniquement l'instruction
+
+        $ sudo docker start atelier_apache
+
+* Récupérer l'adresse du conteneur , dans l'exemple ci-dessous 172.17.0.9
+
+        $ sudo docker  inspect atelier_apache | grep IPAddress
+                "IPAddress": "172.17.0.9",
+                 "SecondaryIPAddresses": null,
+
+* Accéder au conteneur de manière interactif 
+
+        $ sudo docker exec -it atelier_apache bash
+        root@atelier:/# ip addr show eth0
+        21: eth0@if22: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+            link/ether 02:42:ac:11:00:09 brd ff:ff:ff:ff:ff:ff
+             inet 172.17.0.9/16 scope global eth0
+
+
+* Démarrez apache et valider la page web , dans mon cas : http://172.17.0.9
+
+        root@atelier:/# /etc/init.d/apache2 start     
+         * Starting web server apache2
+         /usr/sbin/apache2ctl: 87: ulimit: error setting limit (Operation not permitted)
+         * Setting ulimit failed. See README.Debian for more information.
+         * 
+        root@atelier:/# netstat -lntp
+        Active Internet connections (only servers)
+        Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+        tcp6       0      0 :::80                   :::*                    LISTEN      39/apache2   
+
+* Vous devriez avoir la page par défaut
+
+
+# <a name="start" /> Démarrage du conteneur les prochaines fois
+
+Si vous ne réalisez pas l'exercice en un coup, voici les étapes pour la prochaine fois . Ce sera moins long
+
+        $ sudo docker start atelier_apache
+        $ sudo docker exec -it atelier_apache bash
+        root@atelier:/# /etc/init.d/apache2 start
+        root@atelier:/# ip addr show eth0 # pour avoir l'IP du conteneur
+
 # <a name="exercices" /> Début de l'exercice.
+
+## 
+
+## problème de certificat qui mistmatch 
 
 ## <a name="installation_dapache" /> Réaliser l'installation d'apache sur un de vos système
 
