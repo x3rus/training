@@ -12,6 +12,8 @@ Petit exercice pour apache , afin de mettre en pratique l'ensemble de ce que l'o
 Afin de facilité l'exercice nous allons utiliser __Docker__ pour l'environnement initial , ainsi que **git**
 pour avoir tout le monde les mêmes fichier / erreur :)
 
+Le concepts de l'atelier sera la détection d'erreur et le mise en place de configuration 
+
 # <a name="requis" /> Réalisons l'installation des pré requis
 
 * Installer Docker 
@@ -107,9 +109,120 @@ Si vous ne réalisez pas l'exercice en un coup, voici les étapes pour la procha
 
 # <a name="exercices" /> Début de l'exercice.
 
-## 
+## <a name="refresh_conf"/> Rafraichir la configuration et les données
 
-## problème de certificat qui mistmatch 
+L'ensemble du répertoire **/etc** et **/var/www/html** est sous __git__ depuis les dépôts définie chez __github__
+
+* **/etc** : https://github.com/x3rus/exo-apache-conf.git
+* **/var/www/html** : https://github.com/x3rus/exo-apache-data.git
+
+Nous allons donc rafraîchir les informations afin de réalisé les correctifs qui ont pu être apporté depuis la création du conteneur __docker__. Nous allons récupéré la branche **step0** au fur et à mesure de l'exercice nous récupérerons les autres branches.
+
+        root@atelier:/# cd /etc
+        root@atelier:/etc# git pull origin step0
+        root@atelier:/etc# cd /var/www/
+        root@atelier:/var/www/# git pull origin step0
+
+
+Démarrer apache et valider que vous voyez toujours la page par défaut .
+
+## <a name="create_vhost"/> Création d'un serveur Virtuel 
+
+Pour débuté du bon pied nous allons mettre en place un serveur virtuel (__Virtual host__).
+
+1. Désactiver le serveur virtuel par défaut 
+
+2. Définir votre serveur virtuel et s'assurer qu'il sera chargé comme Serveur Virtuel par défaut
+
+Voici les informations à définir pour le serveur virtuel :
+
+* Répertoire racine du site : **/var/www/vhosts/toto/website**
+* Définition des logs : **/var/www/vhosts/toto/logs**
+* Nom primaire du site web : **toto.example.com**
+* Nom secondaire du site web : **titi.example.com**
+* Email de l'administrateur : **admin@example.com**
+* Port d'écoute : **80**
+
+Bien entendu utiliser le système Debian avec les liens symboliques pour l'activation des sites :D, merci.
+
+Mettre le fichier __index.html__ suivant dans le répertoire racine : 
+
+        <h2> Woot , toto.example.com </h2>
+        <br>
+        ca fonctionne et de 1 !!
+
+Prendre note que la configuration en place définie dans **step0** comporte un problème pour la mise en place de cette configuration :D ... Faut la trouver :D.
+
+### <a name="create_vhost_solution" /> Solution: Création d'un serveur Virtuel
+
+Pour avoir la solution vous pouvez récupérer la branche __step0\_solution__ vous pourrez voir les changements des fichiers qui fut réalisé.
+
+Pour l'ensemble des commandes réalisé consultez les fichiers :
+
+* **/etc/CMD\_USE** : commande plus système , comprend les installations de pacquage si requis ,...
+* **/var/www/CMD\_USE** : Commande requis pour la section site web
+
+## <a name="limitation_dun_repertoire"/> Limitation du répertoire admin
+
+Premièrement Bravo, pour les personnes qui ont réalisé l'étape 0 :D , on continue :) . 
+À ce stade vous avez 2 choix ou vous continuer avec votre configuration actuelle qui probablement fonctionne ou vous récupérez la branche **step1**. Libre à vous selon votre confort et surtout la différence de solution mise en place lors de l'étape 0 :D.
+
+Voici l'instruction pour passé en mode __step1__:
+
+        $ cd /etc
+        $ git reset --hard origin/step1
+        $ git pull origin step1
+        $ cd /var/www
+        $ git reset --hard origin/step1
+        $ git pull origin step1
+
+Bon on peut maintenant passer à l'exercice :D , pour cette section nous allons limité l'accès au répertoire **admins** et **users** contenu dans le site web toto. 
+
+* Créez un répertoire **admins** dans le répertoire racine du site toto
+* Créez 4 utilisateurs avec des mots de passe nom des utilisateurs : __robert__, __nesta__ , __bob__, __bonny__
+* Créez 2 groupes :
+    * __admins__ , voici les membres __robert__ et __nesta__
+
+* Faire en sorte que les membres du groupe __admins__ puissent consulter le répertoire __admins__
+* Faire en sorte que toutes personne authentifié puisse consulter le contenu du répertoire __users__
+* Le système apache dois lister le contenu du répertoire , pas besoin de fichier __index__
+* **La configuration doit être réaliser dans le virtualhost , fichier sous /etc**
+
+Vous pouvez utilisez la commande suivante pour créer de faux fichier :
+
+        $ cd LE_REPERTOIRE_DU_SITE/admins
+        $ touch secret ultra_secret mega_secret FaireSaMarque
+
+        $ cd LE_REPERTOIRE_DU_SITE/valeurs
+        $ touch nos_valeurs tes_valeurs SuperFormation
+
+* Idéalement s'assurer que le fichier de groupe ET de mot de passe soit inaccessible depuis internet.
+
+### <a name="limitation_dun_repertoire_solution" /> Solution: Limitation du répertoire admin
+
+Pour avoir la solution vous pouvez récupérer la branche __step1\_solution__ vous pourrez voir les changements des fichiers qui fut réalisé.
+
+Pour l'ensemble des commandes réalisé consultez les fichiers :
+
+* **/etc/CMD\_USE** : commande plus système , comprend les installations de pacquage si requis ,...
+* **/var/www/CMD\_USE** : Commande requis pour la section site web , comprend l'installation de pacquage requis pour le site
+
+## <a name=""/> Limitation du répertoire admin
+
+* Redirection d'URL afin de déplacer le contenu des images , changement d'URL (statique.toto.com) + changement de répertoire
+  mettre des images dans git pour ca de moins a faire.
+* Mise en place d'un alias ... peut-etre meme avec redirection
+* Bloquer les vieux IE non green .. machins
+* Setup du site en SSL
+* passez en mode workers
+
+
+* Créer des erreur avec un .htaccess !!
+
+## <a name=""/> 
+## <a name=""/> 
+## <a name=""/> 
+## <a name=""/> 
 
 ## <a name="installation_dapache" /> Réaliser l'installation d'apache sur un de vos système
 
