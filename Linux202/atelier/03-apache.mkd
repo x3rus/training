@@ -207,7 +207,39 @@ Pour l'ensemble des commandes réalisé consultez les fichiers :
 * **/etc/CMD\_USE** : commande plus système , comprend les installations de pacquage si requis ,...
 * **/var/www/CMD\_USE** : Commande requis pour la section site web , comprend l'installation de pacquage requis pour le site
 
-## <a name=""/> Limitation du répertoire admin
+## <a name="redirect_imgs_static_vhost"/> Redirection du contenu images vers un autre site
+
+**Mise en context**:
+
+Nous avons le site web __toto.example.com__ qui est un gros site afin  de réduire la charge sur le serveur apache qui gère aussi les page dynamique il fut opté de transférer l'ensemble du contenu sous le site __medias.example.com__. Nous profiterons de l'opération pour passé du format de fichier __jpeg__ à __png__ afin d'avoir l'option de transparence des images non disponible sous le format __jpg__.
+
+1. Récupérer la nouvelle configuration depuis git . Il est important de réaliser l'opération au moins pour le répertoire **/var/www** car je vous ai mis un site web pré-formater pour l'exercice avec des images **libre** et une structure existante.
+
+        $ cd /etc
+        $ git reset --hard origin/step2
+        $ git pull origin step2
+        $ cd /var/www
+        $ git reset --hard origin/step2
+        $ git pull origin step2
+
+2. À ce stade si tous fonctionne bien vous devriez être en mesure de rejoindre les liens suivant ( je suis pas web designer ;) ), changez l'IP pour celle de votre conteneur.
+
+    * http://172.17.0.1/ : Avec image de post-it style mario bros
+    * http://172.17.0.1/services/index.html : Les service avec une images __do not panic__, et une représentation d'en tête de paquet IP pour le système de VLAN.
+    * http://172.17.0.1/contact/index.html : Page avec une carte "d'Internet".
+
+    * Vous avez aussi les répertoires __/var/www/vhosts/medias/__ pour la création du serveur virtuel qui suit (je suis gentil).
+3. Créez un nouveau serveur virtuel , qui écoutera sur le port 8080 (pour un peu de challenge :D ).
+    * Répertoire racine du site : **/var/www/vhosts/medias/website**
+    * Définition des logs : **/var/www/vhosts/medias/logs**
+    * Nom primaire du site web : **medias.example.com**
+    * Email de l'administrateur : **admin@example.com**
+    * Port d'écoute : **8080**
+    * Ne pas permettre de lister le contenu du répertoire quand il n'y a pas d'index
+
+4. 
+
+
 
 * Redirection d'URL afin de déplacer le contenu des images , changement d'URL (statique.toto.com) + changement de répertoire
   mettre des images dans git pour ca de moins a faire.
