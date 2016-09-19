@@ -224,8 +224,8 @@ Nous avons le site web __toto.example.com__ qui est un gros site afin  de rédui
 
 2. À ce stade si tous fonctionne bien vous devriez être en mesure de rejoindre les liens suivant ( je suis pas web designer ;) ), changez l'IP pour celle de votre conteneur.
 
-    * http://172.17.0.1/ : Avec image de post-it style mario bros
-    * http://172.17.0.1/services/index.html : Les service avec une images __do not panic__, et une représentation d'en tête de paquet IP pour le système de VLAN.
+    * http://172.17.0.1/ : Avec image de post-it style mario bros et un logo
+    * http://172.17.0.1/services/index.html : Les service avec une images __do not panic__, et une représentation d'en tête de paquet IP pour le système de VLAN. et un logo
     * http://172.17.0.1/contact/index.html : Page avec une carte "d'Internet".
 
     * Vous avez aussi les répertoires __/var/www/vhosts/medias/__ pour la création du serveur virtuel qui suit (je suis gentil).
@@ -237,19 +237,105 @@ Nous avons le site web __toto.example.com__ qui est un gros site afin  de rédui
     * Port d'écoute : **8080**
     * Ne pas permettre de lister le contenu du répertoire quand il n'y a pas d'index
 
-4. 
+4. L'étape 3 est pas trop difficile maintenant passons à l'étape de la redirection , pour rappel j'ai aussi fait mention de convertir les images de **jpg** à **png** . Donc mettez les fichiers d'images sous le site __medias.example.com:8080__ en les convertissant. Je vous laisse libre de la structure des fichiers à mettre en place ou nom des fichiers vous pourrez comparer avec ma solution par la suite. Voici l'instruction pour convertir l'image, c'est vraiment pas sorcier surtout quand on le sait :P :
+
+        $ apt-get update && apt-get install imagemagick
+        $ convert fichier.jpg fichier.png 
+
+5. Je vous conseille de faire un backup préalablement de la structure du site toto 
+6. Réaliser les instructions de re-écriture afin que les images soit fournit par __medias.example.com:8080__, pour vous assurez que ça fonctionne supprimer les images sous toto :). Voilà pourquoi je vous invite à faire un __backup__ avant. Un simple __tar__ fera le travail, bien entendu tiré une branche git c'est bien aussi :D.
+7. Mettre en place la redirection :-)
+8. Validation :
+    * allez sur le site web et valider que les images s'affiche toujours (Attention au Cache du fureteur)
+    * Valider que l'image "__no logo__" à la page d'accueil s'affiche bien , allez à la page __services__ et valider que vous avez bien une image différente pour le logo. Comme les 2 fichiers on le même nom , une erreur est possible à ce niveau ... 
+
+### <a name="redirect_imgs_static_vhost_solution"/> Solution :Redirection du contenu images vers un autre site
+
+Pour avoir la solution vous pouvez récupérer la branche __step2\_solution__ vous pourrez voir les changements des fichiers qui fut réalisé.
+
+Pour l'ensemble des commandes réalisé consultez les fichiers :
+
+* **/etc/CMD\_USE** : commande plus système , comprend les installations de pacquage si requis ,...
+* **/var/www/CMD\_USE** : Commande requis pour la section site web , comprend l'installation de pacquage requis pour le site
+
+## <a name="redirect_browser"/> Redirection de certain fureteur + section recherche
+
+Pendant que l'on est dans la redirection on va faire un exercice de plus :D.
+
+**Mise en context**:
+
+Vous êtes un fanatique de logiciel et afin de sensibilisé, la planète vous décidez de ne pas fournir votre site au fureteur non libre :P, ok ok faut bien s'amuser :). Nous allons bloquer les vieux fureteur __Internet Explorer__ de la version 6 à 8 , si vous n'avez pas __IE__ comme moi valider votre configuration en bloquant __chrome__ ou autre peu importe :D. De plus vous allez mettre une redirection quand les gens vont sur /recherche ils seront redirigé vers [http://lmgtfy.com/](http://lmgtfy.com/) __Let me google search for you__.
+
+1. Récupérer la nouvelle configuration depuis git. Pas obligatoire, mais ce sera plus simple pour valider la solution  :)
+
+        $ cd /etc
+        $ git reset --hard origin/step3
+        $ git pull origin step3
+        $ cd /var/www
+        $ git reset --hard origin/step3
+        $ git pull origin step3
+
+2. Mise en place de la redirection selon le fureteur, redirigez les personnes vers l'URL : [https://www.gnu.org/philosophy/free-sw.html](https://www.gnu.org/philosophy/free-sw.html)
+3. Mise en place de la redirection pour la section /recherche.
+
+### <a name="redirect_browser_solution"/> Solution : Redirection de certain fureteur + section recherche
+
+Pour avoir la solution vous pouvez récupérer la branche __step3\_solution__ vous pourrez voir les changements des fichiers qui fut réalisé.
+
+Pour l'ensemble des commandes réalisé consultez les fichiers :
+
+* **/etc/CMD\_USE** : commande plus système , comprend les installations de pacquage si requis ,...
+* **/var/www/CMD\_USE** : Commande requis pour la section site web , comprend l'installation de pacquage requis pour le site
+
+## <a name="setup_ssl_vhost"/> Mise en place d'un serveur virtuel en SSL
+
+**Mise en context**:
+Comme la sécurité est importante nous allons mettre en place un site web avec le support __SSL__.
+Nous allons donc mettre le site toto disponible en **httpS** en plus du support __http__ classique.
+
+1. Récupérer la nouvelle configuration depuis git. Pas obligatoire, mais ce sera plus simple pour valider la solution  :)
+
+        $ cd /etc
+        $ git reset --hard origin/step4
+        $ git pull origin step4
+        $ cd /var/www
+        $ git reset --hard origin/step4
+        $ git pull origin step4
+
+2. Générer une pair de clé publique (certificat) et la clé privé  associé . (attention au nom associé)
+
+3. Réaliser la configuration pour __toto-ssl__ , conservé l'ensemble de la configuration de toto non __SSL__
 
 
+### <a name="setup_ssl_vhost_solution"/> Solution : Mise en place d'un serveur virtuel en SSL
 
-* Redirection d'URL afin de déplacer le contenu des images , changement d'URL (statique.toto.com) + changement de répertoire
-  mettre des images dans git pour ca de moins a faire.
-* Mise en place d'un alias ... peut-etre meme avec redirection
-* Bloquer les vieux IE non green .. machins
-* Setup du site en SSL
-* passez en mode workers
+Pour avoir la solution vous pouvez récupérer la branche __step4\_solution__ vous pourrez voir les changements des fichiers qui fut réalisé.
+
+Pour l'ensemble des commandes réalisé consultez les fichiers :
+
+* **/etc/CMD\_USE** : commande plus système , comprend les installations de pacquage si requis ,...
+* **/var/www/CMD\_USE** : Commande requis pour la section site web , comprend l'installation de pacquage requis pour le site
 
 
 * Créer des erreur avec un .htaccess !!
+* Créer une erreur de clef qui matche pas avec le certificat :)
+
+## <a name="diagnostique_prob"/> Analyse de problème d'une configuration en place
+
+Dans cette partie de l'exercice, nous avons un site web __toto.example.com__ avec des problèmes , vous devez les identifies et les corriger :D. Bien entendu je vais vous indique la page qui ne fonctionne pas, mais comme un utilisateur donc avec peu d'information :0.
+
+1. Il est très important de réaliser la récupération de la branche __git__ afin d'avoir les erreurs en place :P.
+
+        $ cd /etc
+        $ git reset --hard origin/step4
+        $ git pull origin step4
+        $ cd /var/www
+        $ git reset --hard origin/step4
+        $ git pull origin step4
+
+2. Prob icons toto
+
+ICI ICI ICI
 
 ## <a name=""/> 
 ## <a name=""/> 
