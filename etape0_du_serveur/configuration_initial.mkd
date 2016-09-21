@@ -1,0 +1,15 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+TODO corriger les \_
+
+# Index 
+
+
+# <a name="intro" /> Introduction 
+
+Nous aurions probablement dû commencer la formation avec ce chapitre, mais comme cette formation est écrite selon l'envie et les demande , nous ne le couvrons que maintenant. Le bon côté est que vous avez pu déjà commencé à jouer un peu plus avec **apache** , **git** et **docker** :D. 
+Ce chapitre va couvrir les opérations importante à faire quand vous mettez un serveur en production , ceci s'applique à l'ensemble des serveurs , bien entendu si vous avez plusieurs serveurs je vous invite à standardisé vos installations.
+Nous allons donc voir les étapes à réaliser **avant** de mettre en place votre service , que nous parlions de __apache__, __mysql__ , __django__ , ... 

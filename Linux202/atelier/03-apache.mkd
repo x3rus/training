@@ -6,6 +6,25 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Index 
 
+* [ Description](#Desction) 
+* [ Réalisons l'installation des pré requis](#requis) 
+* [ Démarrage initial du conteneur et validation que ceci fonctionne ](#start_init_and_validate) 
+* [ Démarrage du conteneur les prochaines fois](#start) 
+* [ Début de l'exercice.](#exercices) 
+       * [ Rafraichir la configuration et les données](#refresh_conf) 
+       * [ Création d'un serveur Virtuel ](#create_vhost) 
+           * [ Solution: Création d'un serveur Virtuel](#create_vhost_solution) 
+       * [ Limitation du répertoire admin](#limitation_dun_repertoire) 
+           * [ Solution: Limitation du répertoire admin](#limitation_dun_repertoire_solution) 
+       * [ Redirection du contenu images vers un autre site](#redirect_imgs_static_vhost) 
+           * [ Solution :Redirection du contenu images vers un autre site](#redirect_imgs_static_vhost_solution) 
+       * [ Redirection de certain fureteur + section recherche](#redirect_browser) 
+           * [ Solution : Redirection de certain fureteur + section recherche](#redirect_browser_solution) 
+       * [ Mise en place d'un serveur virtuel en SSL](#setup_ssl_vhost) 
+           * [ Solution : Mise en place d'un serveur virtuel en SSL](#setup_ssl_vhost_solution) 
+       * [ Analyse de problème d'une configuration en place](#diagnostique_prob) 
+       * [ Réaliser l'installation d'apache sur un de vos système](#installation_dapache) 
+
 # <a name="Desction" /> Description
 
 Petit exercice pour apache , afin de mettre en pratique l'ensemble de ce que l'on a appris .
