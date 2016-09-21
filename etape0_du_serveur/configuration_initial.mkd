@@ -13,3 +13,185 @@ TODO corriger les \_
 Nous aurions probablement dû commencer la formation avec ce chapitre, mais comme cette formation est écrite selon l'envie et les demande , nous ne le couvrons que maintenant. Le bon côté est que vous avez pu déjà commencé à jouer un peu plus avec **apache** , **git** et **docker** :D. 
 Ce chapitre va couvrir les opérations importante à faire quand vous mettez un serveur en production , ceci s'applique à l'ensemble des serveurs , bien entendu si vous avez plusieurs serveurs je vous invite à standardisé vos installations.
 Nous allons donc voir les étapes à réaliser **avant** de mettre en place votre service , que nous parlions de __apache__, __mysql__ , __django__ , ... 
+
+Nous parlerons un peu sécurité , mais très légèrement ...
+
+# <a name="first_step" /> Réception de la machine 
+
+Je vais partir du principe qu'une entité externe vous a fournit une machine , que ce soit une **VM** , un **VPS** , ou une machine physique. Le principe est le même si vous avez réalisé une nouvelle installation , si vous réalisez vous même l'installation d'une machine:
+
+* Installé le minimum , quand vous réaliserez les mise à jours du serveur vous serez très content que l'opération soit super rapide car il y aura pas une multitude d'application non utilisé à mettre à jours.
+* Vous limiterez en plus le nombre de faille de sécurité éventuelle du serveur.
+* N'installez pas de compilateur ceci ouvre un nombre de possibilité élevé au attaquant , a moins bien entendu que ce soit requis pour votre utilisation. Je doute que ce soit le cas dans la pratique.
+
+Voici les étapes à réaliser lors de la réception de la machine : 
+
+1. Établir une connexion sur la **box**, __Yep__ :P 
+2. Valide les informations de la machine selon les spécifications demandé :
+    * Mémoire
+        
+        $ Free -m 
+        total        used        free      shared  buff/cache   available
+        Mem:           2009         483        1127           7         398        1490
+        Swap:          5006           0        5006
+
+    * CPU
+
+        $ cat /proc/cpuinfo
+        [...OUTPUT COUPÉ...]
+        processor       : 1
+        vendor_id       : GenuineIntel
+        cpu family      : 6
+        model           : 15
+        model name      : Intel(R) Core(TM)2 CPU         U7600  @ 1.20GHz
+        stepping        : 2
+        microcode       : 0x57
+        cpu MHz         : 800.000
+        cache size      : 2048 KB
+        [...OUTPUT COUPÉ...]
+
+    * Taille du disque dur
+
+        $ df -h | grep sda
+        /dev/sda1        51G   33G   16G  68% /
+        $ cat /proc/scsi/scsi
+        Attached devices:
+        Host: scsi0 Channel: 00 Id: 00 Lun: 00
+          Vendor: ATA      Model: MCCOE64GEMPP     Rev: 03  
+          Type:   Direct-Access                    ANSI  SCSI revision: 05
+
+        $ dmesg  | grep sda
+        [    1.242858] sd 0:0:0:0: [sda] 117210240 512-byte logical blocks: (60.0 GB/55.8 GiB)
+        [    1.242968] sd 0:0:0:0: [sda] Write Protect is off
+        [    1.242975] sd 0:0:0:0: [sda] Mode Sense: 00 3a 00 00
+        [    1.243023] sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+        [    1.244227]  sda: sda1 sda2
+
+    * Partitionnement (si spécifié)
+        
+        $ df -h | grep ^/
+
+    * Système de configuration du __RAID__ si disponible 
+
+        $ cat /proc/mdstats
+
+3. Valider la distribution :
+
+        $ cat /etc/lsb-release 
+        DISTRIB_ID=Ubuntu
+        DISTRIB_RELEASE=14.04
+        DISTRIB_CODENAME=trusty
+        DISTRIB_DESCRIPTION="Ubuntu 14.04 LTS"
+
+        ou 
+
+        $ cat /etc/redhat-release
+
+4. Prendre un café, une petite bière ou un verre de vin pour de félicité de cette nouvelle machine
+5. Vous pouvez toujours remercier votre Sysadmin ou fournisseur du service :D, lui aussi aime les courriels gentils , surtout si c'est le sysadmin __Day__ :P
+
+
+Pour la suite des opérations je vous suggère d'utiliser un système de gestion de mot de passe par exemple :
+
+* __Keepass__
+* __Keepassx__
+* ou peu importe , sauf un post-it :P
+
+# <a name="take_controle" /> Prise de contrôle de la machine
+
+Bon c'est le temps de prendre en main la bête !!! C'est le moment de se l'approprier ! 
+
+1. Changer le mot de passe de l'utilisateur fournit, car connu du fournisseur de service , si vous utilisé **root** oublié la deuxième partie .
+
+        $ passwd
+
+2. Changer le mot de passe de l'utilisateur **root** 
+
+        $ su - 
+        # passwd 
+
+3. Création d'un utilisateur que vous utiliserez régulièrement , ici j'utiliserai __bob__
+
+        #  adduser bob
+        Adding user `bob' ...
+        Adding new group `bob' (1000) ...
+        Adding new user `bob' (1000) with group `bob' ...
+        Creating home directory `/home/bob' ...
+        Copying files from `/etc/skel' ...
+        Enter new UNIX password:
+        Retype new UNIX password: 
+        passwd: password updated successfully
+        Changing the user information for bob
+        Enter the new value, or press ENTER for the default
+                Full Name []: Robert Nesta Marley
+                Room Number []: 
+                Work Phone []: 
+                Home Phone []: 
+                Other []: 
+         Is the information correct? [Y/n] y
+         # id bob
+         uid=1000(bob) gid=1000(bob) groups=1000(bob)
+
+4. Je préconise l'utilisation **EXCLUSIVE** de la commande **sudo** pour toute opération administrative j'ai pour principe de ne **JAMAIS** établir de connexion sous l'utilisateur **root**. Pourquoi ? 
+    * Le mot de passe __root__ je ne l'utilise jamais il est stocké dans mon système de mot de passe et oublié
+    * S'il y a une erreur de manipulation , j'en fait aussi ,  l'ensemble des commandes **sudo** sont conservées dans le fichier de logs
+    * Comme il faut taper la commande **sudo** avant il y automatiquement réflexion avant de faire __ENTER__ sur la commande.
+
+5. Installation de l'application __sudo__ et configuration d'un groupe 
+
+        # apt-get install sudo
+        # getent group sudo 
+        sudo:x:27:
+        ## S'il n'y a pas de retour avec la commande getent group creer un groupe
+        # groupadd --system sudo 
+
+    * Pourquoi la création du groupe __sudo__ , vous constaterez que tous le long de la configuration je vais définir plusieurs groupe auquel il y aura 1 ou 2 utilisateurs , éventuellement plus . Je préconise l'utilisation de groupe plutôt que d'utiliser les noms d'utilisateurs dans les configurations . La raison est simple :
+        * La configuration s'exporte plus facilement d'un système à l'autre.
+        * S'il y a explosions d'utilisateurs la gestion est plus simple, et surtout je suis prêt.
+        * Mais **surtout** , lors de la suppression d'un utilisateur il est beaucoup plus simple de le supprimer des groupes plutôt que de parcourir plusieurs fichiers de configuration pour supprimé la définition de cette utilisateur. Il y a toujours des oublies malgré des __grep__ massif :P
+    * Donc les membres du groupe **sudo** aurons la permission d'utiliser la commande **sudo** avec l'ensemble des droits
+
+6. Configuration de __sudo__ , ajout de l'utilisateur **bob** dans le bon groupe et définition du __sudoers__
+
+        # usermod -a -G sudo bob
+        # id bob 
+        uid=1000(bob) gid=1000(bob) groups=1000(bob),27(sudo)
+
+        # visudo
+        [... OUTPUT COUPÉ ...]
+        # Members of the admin group may gain root privileges
+        #%admin ALL=(ALL) ALL
+
+        # Allow members of group sudo to execute any command
+        %sudo   ALL=(ALL:ALL) ALL
+        [... OUTPUT COUPÉ ...]
+
+7. Valider la connexion avec l'utilisateur **bob** au serveur et validation de la configuration __sudo__ (ATTENTION: conservez la connexion initiale en cas de problème, donc ouvrir une nouvelle connexion)
+
+        $ ssh bob@votre_serveur
+        bob $ sudo -l 
+        [sudo] password for bob:
+        Matching Defaults entries for bob on atelier:
+            env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+        User bob may run the following commands on atelier:
+            (ALL : ALL) ALL
+
+8. A partir ce moment plus **AUCUNE** opération ne sera réalisé avec l'utilisateur **root**.
+
+# <a name="configue_init_with_bob" /> Configuration initial avec votre utilisateur
+
+Donc vous êtes connecté avec votre utilisateur ici __bob__, nous allons pouvoir établir une première base de sécurité de la machine .
+
+* ssh
+* home
+* /data
+* Validation DNS
+* timeZone + NTP
+* Installation app de base 
+* Firewall in minimum
+* Analyse des crontab en place
+* visualisation des logs
+* Mise en place d'un système de validation de fichier tripwire
+* monitoring de base
+*
