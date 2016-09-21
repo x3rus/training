@@ -52,9 +52,7 @@ J'espère que ce sera correct :P
 
 * Récupération de l'image pour l'exercice 
 
-TODO : compléter la commande docker pull
-
-        $ sudo docker pull .....
+        $ sudo docker pull x3rus/atelier_apache
 
 Ou si vous désirez le builder vous même récupérer le Dockerfile ICI : TODO fournit le dockerfile
 
@@ -119,9 +117,11 @@ L'ensemble du répertoire **/etc** et **/var/www/html** est sous __git__ depuis 
 Nous allons donc rafraîchir les informations afin de réalisé les correctifs qui ont pu être apporté depuis la création du conteneur __docker__. Nous allons récupéré la branche **step0** au fur et à mesure de l'exercice nous récupérerons les autres branches.
 
         root@atelier:/# cd /etc
-        root@atelier:/etc# git pull origin step0
+        root@atelier:/etc# git fetch --all
+        root@atelier:/etc# git reset --hard origin/step0
         root@atelier:/etc# cd /var/www/
-        root@atelier:/var/www/# git pull origin step0
+        root@atelier:/var/www/# git fetch --all
+        root@atelier:/var/www/# git reset --hard origin/step0
 
 
 Démarrer apache et valider que vous voyez toujours la page par défaut .
@@ -336,7 +336,8 @@ Dans cette partie de l'exercice, nous avons un site web __toto.example.com__ ave
 2. Problème 1 : Problème avec le répertoire __d'icons__ sous le site toto , voici le message reçu du client : 
 
         Bonjour,
-        Mon site web ne fonctionne pas , rien ne marche :P , sans farce , j'ai mis des fichiers d'images dans mon sites web mais quand j'essaye d'y accéder je reçoit un message qu'il ne trouve pas ce derniers. Voici l'url que j'utilise : 
+        Mon site web ne fonctionne pas , rien ne marche :P , sans farce , j'ai mis des fichiers d'images dans mon sites web
+        mais quand j'essaye d'y accéder je reçoit un message qu'il ne trouve pas ce derniers. Voici l'url que j'utilise : 
         http://172.17.0.1/icons/Ubuntu.png  (message d'erreur : Not Found
         The requested URL /icons/Ubuntu.png was not found on this server. )
 
@@ -349,13 +350,15 @@ Dans cette partie de l'exercice, nous avons un site web __toto.example.com__ ave
 
         Bonjour,
         Nous désirons que la page originalement définie à l'URL  http://172.17.0.1/services/extra/index.html soit redirigé
-        vers la page http://172.17.0.1/services/extra.html . La nouvelle page marche mais quand on va sur l'ancienne page on a une erreur de redirection de page : (The page isn't redirecting properly) , pouvez vous nous aider
+        vers la page http://172.17.0.1/services/extra.html . La nouvelle page marche mais quand on va sur l'ancienne page
+        on a une erreur de redirection de page : (The page isn't redirecting properly) , pouvez vous nous aider
 
 
 4. Problème 3 :  Impossible d'accéder au répertoire de marketing
 
         Bonjour , ca va mal !!!
-        On a une grosse campagne de marketing puis l'URL : http://172.17.0.1/marketing/ fonctionne PAS , c quoi le problème :P 
+        On a une grosse campagne de marketing puis l'URL : http://172.17.0.1/marketing/ fonctionne PAS , c quoi le
+        problème :P 
 
 5. Problème 4 : Problème de démarrage lors de l'activation du site __titi-ssl__. 
     * Activez le site web __titi-ssl__ avec la commande : 
@@ -366,7 +369,8 @@ Dans cette partie de l'exercice, nous avons un site web __toto.example.com__ ave
 
 6. Problème 5 : Identifier la problématique et corrigé le problème !!
 
-        Bonjour, depuis ce matin la page http://172.17.0.1/contact/index.html est très bizarre il y a une liste d'utilisateur Unix afficher au debut de la page !! SVP remédier à la situation !
+        Bonjour, depuis ce matin la page http://172.17.0.1/contact/index.html est très bizarre il y a une liste
+        d'utilisateur Unix afficher au debut de la page !! SVP remédier à la situation !
 
 ## <a name="installation_dapache" /> Réaliser l'installation d'apache sur un de vos système
 
