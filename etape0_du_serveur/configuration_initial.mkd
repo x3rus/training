@@ -101,6 +101,59 @@ Pour la suite des opérations je vous suggère d'utiliser un système de gestion
 
 Bon c'est le temps de prendre en main la bête !!! C'est le moment de se l'approprier ! 
 
+0. Initialisation de la configuration dans un contrôleur de révision
+    * Avant de faire des modifications dans la configuration prenons une copie de la configuration en place dans le système de contrôleur de révision.
+    * J'utilise le système __GIT__ car ceci ne m'oblige pas à avoir un serveur de source telle que __subversion__ 
+    * Par contre ceci me permet de conserver une trace dans le temps et de revenir en arrière en cas de problème.
+
+    1. Installation de __git__ et initialisation du dépôt pour **/etc**
+            
+            # apt-get install git
+            # cd /etc
+            # git init .
+    2. Personnellement je n'active pas la révision sur l'ensemble des fichiers à tord ou à raison , chacun son plaisir , par exemple je ne désir pas que les mot de passe soit conservé , même chiffré , dans le dépôt. La raison principale est que je synchronise mon dépôt local sur un serveur et pour des considérations de sécurité je ne suis pas confortable. Je vais donc ajouter à la pièce les fichiers 
+
+            # git add passwd group network/interfaces crontab cron.* ssh/sshd_config ssh/ssh_config
+            # git config --global --edit   # pour faire la configuration de l'utilisateur avant de commiter
+            # git commit -a -m "Configuration initial"
+
+    3. Ajout d'un fichier **.gitignore** afin que le résultat de la commande **git status** ne montre pas une liste énorme de fichier non géré par __git__
+
+            # vim /etc/.gitignore
+            X11/
+            acpi/
+            adjtime
+            aliases.db
+            alternatives/
+            bash.bashrc
+            console-setup/
+            byobu/
+            dbus-1/
+            debconf.conf
+            debian_version
+            default/
+            deluser.conf
+            dhcp/
+            dpkg/
+            fuse.conf
+            gai.conf
+            groff/
+            group-
+            gshadow-
+            gss/
+            hddtemp.db   
+            ifplugd/
+            [ ... OUTPUT COUPÉ ...]
+            # template
+            *.swp
+            [ ... OUTPUT COUPÉ ...]
+
+    4. Ajout du fichier à __git__ et validation des fichiers oublié .
+
+            # cd /etc && git add .gitignore
+            # git commit -m "Ajout du fichier .gitignore"
+            # git status 
+
 1. Changer le mot de passe de l'utilisateur fournit, car connu du fournisseur de service , si vous utilisé **root** oublié la deuxième partie .
 
         $ passwd
@@ -179,6 +232,15 @@ Bon c'est le temps de prendre en main la bête !!! C'est le moment de se l'appro
 
 8. A partir ce moment plus **AUCUNE** opération ne sera réalisé avec l'utilisateur **root**.
 
+9. Ajout des fichiers et commit dans **git**
+    * Ajout des fichiers et commit les changements
+
+            # cd /etc
+            # git add /etc/sudoers
+            # git status         # Afin de visualiser les autres modifications
+            # git add Autre_fichier_si_requis
+            # git commit -m "Creation de l'utilisateur bob et ajout de ce dernier dans sudo "
+
 # <a name="configue_init_with_bob" /> Configuration initial avec votre utilisateur
 
 Donc vous êtes connecté avec votre utilisateur ici __bob__, nous allons pouvoir établir une première base de sécurité de la machine. Ici nous ne couvrirons pas de la sécurité optimal, mais un minimum "vital" .
@@ -219,7 +281,15 @@ Pour débuter nous allons modifier un peu la configuration du service __OpenSSH_
 
     4. Établir une nouvelle connexion avec votre utilisateur , et confirmer que tous fonctionne bien . Surtout ne pas fermer votre connexion __ssh__ avant un succès :P
 
-3. Validation des clés __OpenSSH__ possiblement présent.
+4. Commit les changements à __git__ suite au modification du service __OpenSSH__ et la création des groupes
+    * Ajout des fichiers et commit
+
+            # cd /etc
+            # git status         # Afin de visualiser les autres modifications
+            # git add Autre_fichier_si_requis
+            # git commit -m "Modification d'openssh afin de limite avec le groupe "
+
+5. Validation des clés __OpenSSH__ possiblement présent.
     * Bon pas que je fais pas confiance aux personnes qui m'ont fournit la machine , mais , mais ... Voilà quoi :P. Selon votre organisation ou entente de service il est possible que la compagnie veut se conservé une porte d'entré sur le serveur. Avant de procéder à une suppression de configuration assurez vous de l'entente :P.
     1. Recherche des clés __OpenSSH__ sur la machine , 2 méthodes , utilisation de la base de donné __locate__ ou un __find__ récursif, pour installer le __package locate__ **sudo apt-get install locate** .
 
@@ -237,7 +307,7 @@ Pour débuter nous allons modifier un peu la configuration du service __OpenSSH_
             /usr/share/augeas/lenses/dist/authorized_keys.aug
             /usr/share/augeas/lenses/dist/tests/test_authorized_keys.aug
             /usr/share/man/man5/authorized_keys.5.gz
-            
+
     2. Analyse du résultat
         * les seules fichiers "problématique" sont ceux contenu dans le répertoire **.ssh** , comme nous avons limité l'accès au groupe **permit-ssh** je présume que l'utilisateur __support__ n'est pas un risque . Pour l'utilisateur  __root__ si ce n'est pas votre clé :P , faut valider. Si nous venons de recevoir la machine personnellement je réaliserai l'opération suivante :
     3. Désactivation des clés, je ne supprime pas, car si un jour j'ai besoin du fournisseur de service ce sera plus rapide de lui re-fournir l'accès en changeant le nom du fichier plutôt qu'attendre qu'il me retransmette la clé.
@@ -246,15 +316,134 @@ Pour débuter nous allons modifier un peu la configuration du service __OpenSSH_
             $ sudo mv /root/.ssh/authorized_keys /root/.ssh/disabled_keys
 
 
-* ssh
-* home
-* /data
-* Validation DNS
+## <a name="securisation_directory" /> Sécurisation minimal des répertoires 
+
+1. Sécurisation du répertoire des utilisateurs .
+    * Chose étrange par défaut sous Ubuntu le répertoire personnelle des utilisateurs est créé avec les permissions à tous de lire le contenu. Moi ça me dérange un peu je connais mes utilisateurs mais bon c'est pas super propre :P. Nous allons donc corriger le problème pour ceux déjà créer 
+
+            $ cd /home
+            $ sudo chmod o= *
+
+    * Nous allons aussi faire en sorte que les prochains soit configurer convenablement , car c'est certain que nous oublierons de réaliser cette opération dans l'avenir.
+            
+            $ sudo vim /etc/adduser.conf
+            # Modifier la ligne suivante  :
+            DIR_MODE=0755 
+            pour 
+            DIR_MODE=0750
+
+2. Validation des répertoires où tous le monde peut lire le contenu
+    * Comme nous ne savons pas qui a monté la machine nous allons étendre l'analyse à l'ensemble du système, normalement à ce stade il n'y a pas beaucoup de fichier ce ne sera pas trop long .
+    * Recherche des répertoires :
+            
+            $ cd /
+            $ sudo find -perm -o=w  -type d 2>/dev/null| grep -v ^./proc            
+            ./run/lock
+            ./dev/mqueue
+            ./dev/shm
+            ./tmp
+            ./tmp/.X11-unix
+            ./tmp/.ICE-unix
+            ./var/lib/php5
+            ./var/tmp
+
+    * L'ensemble des répertoires ci-dessus sont **normale** il n'est pas possible de supprimé l'écriture à tous de ces derniers.
+    * Recherche des fichiers maintenant
+        
+            $ cd /
+            $ sudo find -perm -o=w  -type f 2>/dev/null| grep -v ^./proc
+
+## <a name="validation_dns" /> Validation de la configuration DNS en place
+
+Malheureusement trop souvent mis de côté les __DNS__ il est essentiels d'avoir de BON __DNS__, et de s'assurer qu'ils sont disponible nous allons donc réaliser la vérification qui s'impose. Mais pourquoi c'est si important, si vos __DNS__ sont invalide ou problématique voici l'impacte:
+* Ralentissement de l'ensemble du système : plusieurs processus vont réaliser une validation que ce soit __reverse dns__ (récupération de l'adresse IP et conversion en nom )  ou __DNS__ classique nom vers adresse IP. Si votre premier __DNS timeout__ ça veut dire que tous les processus qui réalise une requête doivent attendre le __timeout__ pour interroger le second.
+
+1. Analyse de la configuration des __DNS__ en place :
+
+        $ cat /etc/resolv.conf
+        domain X3rus.com
+        search x3rus.com
+        nameserver 213.186.33.99
+        nameserver 213.186.33.102
+        nameserver 8.8.4.4
+
+2. Dans le contexte actuelle comme vous pouvez le voir j'ai la configuration de 3 serveurs __DNS__ voyons c'est qui 
+
+        $ dig -x 213.186.33.99 | grep -A 1 "^;; ANS"
+        ;; ANSWER SECTION:
+        99.33.186.213.in-addr.arpa. 86352 IN    PTR     cdns.ovh.net.
+
+        $ dig -x 213.186.33.102 | grep -A 1 "^;; ANS"
+        ;; ANSWER SECTION:
+        102.33.186.213.in-addr.arpa. 86400 IN   PTR     dns.ovh.net.
+
+        $ dig -x 8.8.4.4 | grep -A 1 "^;; ANS"
+        ;; ANSWER SECTION:
+        4.4.8.8.in-addr.arpa.   82657   IN      PTR     google-public-dns-b.google.com.
+
+3. Nous allons valider que l'ensemble fonctionne , bon là on peut faire un __ping__ et voir le comportement , mais est-ce vraiment valide ?!? Si la résolution __dns__ est en cache nous aurons l'impression que tous fonctionne bien, mais nous n'aurons pas valider chaque serveur. Nous utiliserons la commande **dig** en forçant l'utilisation d'un serveur __DNS__.
+    *  Voici un exemple lors d'un problème 
+            
+            $ dig lequipe.fr @213.186.33.99
+
+            ; <<>> DiG 9.9.5-3ubuntu0.5-Ubuntu <<>> lequipe.fr @213.186.33.99
+            ;; global options: +cmd
+            ;; connection timed out; no servers could be reached
+
+    * Voici la bonne réponse :
+
+            $ dig lequipe.fr @213.186.33.99
+
+            ; <<>> DiG 9.10.3-P4-Ubuntu <<>> lequipe.fr @213.186.33.99
+            ;; global options: +cmd
+            ;; Got answer:
+            ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 51019
+            ;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 2, ADDITIONAL: 3
+
+            ;; OPT PSEUDOSECTION:
+            ; EDNS: version: 0, flags:; udp: 4096
+            ;; QUESTION SECTION:
+            ;lequipe.fr.                    IN      A
+
+            ;; ANSWER SECTION:
+            lequipe.fr.             300     IN      A       160.92.167.203
+
+            ;; AUTHORITY SECTION:
+            lequipe.fr.             79627   IN      NS      ns3.atos.net.
+            lequipe.fr.             79627   IN      NS      ns4.atos.net.
+
+            ;; ADDITIONAL SECTION:
+            ns3.atos.net.           90092   IN      A       160.92.121.6
+            ns4.atos.net.           90092   IN      A       193.56.46.248
+
+            ;; Query time: 110 msec
+            ;; SERVER: 213.186.33.99#53(213.186.33.99)
+            ;; WHEN: Thu Sep 22 17:19:50 EDT 2016
+            ;; MSG SIZE  rcvd: 131
+
+    * Faite l'exercice pour l'ensemble des __dns__ configurer , une fois réaliser analyser le temps de réponse **Query time** indiquer à la fin . 
+
+2. Modification du fichier **/etc/resolv.conf** 
+    * Selon le temps de réponse changer l'ordre ou supprimer l'entrée .
+
+            $ sudo vim /etc/resolv.conf
+
+3. Enregistrement de la modification dans **git**
+
+        $ cd /etc/
+        $ sudo git status 
+        $ sudo git add /etc/resolv.conf
+        $ sudo git commit -m "Changement de la configuration DNS pour une meilleur perf :P "
+
+## <a name="setup_timezone" /> Configuration du fuseau horaire et synchronisation du temps
+
+Ici bien souvent c'est une catastrophe :P , j'arrive souvent sur des machines dont l'heure est complètement érroné 
+
 * timeZone + NTP
-* Installation app de base 
-* Firewall in minimum
 * Analyse des crontab en place
 * visualisation des logs
+* Installation app de base 
+* Firewall in minimum
 * Mise en place d'un système de validation de fichier tripwire
 * monitoring de base
 *
