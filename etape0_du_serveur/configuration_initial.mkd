@@ -181,7 +181,70 @@ Bon c'est le temps de prendre en main la bête !!! C'est le moment de se l'appro
 
 # <a name="configue_init_with_bob" /> Configuration initial avec votre utilisateur
 
-Donc vous êtes connecté avec votre utilisateur ici __bob__, nous allons pouvoir établir une première base de sécurité de la machine .
+Donc vous êtes connecté avec votre utilisateur ici __bob__, nous allons pouvoir établir une première base de sécurité de la machine. Ici nous ne couvrirons pas de la sécurité optimal, mais un minimum "vital" .
+
+## <a name="configue_ssh" /> Configuration du service OpenSSH
+
+Pour débuter nous allons modifier un peu la configuration du service __OpenSSH__ , car ce dernier est le point d'entré à notre machine , nous désirons limité l'accès.
+
+1. Création d'un groupe d'accès , nous allons créer un groupe dont les membres seront le seule à pouvoir établir une connexion ssh à la machine.
+
+        $ sudo groupadd permit-ssh
+        $ sudo usermod -a -G permit-ssh bob
+
+    Donc nous avons maintenant le groupe **permit-ssh** et **bob** est maintenant membre de ce dernier
+
+2. Configuration du service __OpenSSH__ , nous allons éditer la configuration afin de valider quelques entré 
+
+        $ sudo vim /etc/ssh/sshd_config
+
+    Entré à prendre en considération
+    * **PermitRootLogin  without-password** : ceci indique que l'utilisateur __root__ ne peux pas établir de connexion avec un mot de passe. Il peut cependant établir une connexion au serveur via un système de clé SSH. J'active cette possibilité car mon système de backup utilisera ce mécanisme pour faire le transferts de fichier. Vous pouvez aussi définir à **NO** si non requis
+    * **PermitEmptyPasswords no** : Désactivation de la possibilité d'établir une connexion si l'utilisateur à pas de mot de passe . :D
+    * **Protocol 2** : Utilise uniquement le protocole 2 , qui est sécuritaire :D
+    * **UsePrivilegeSeparation yes** : Permet d'avoir le traitement des connexions entrante avec un processus sans droit , une fois l'authentification réalisée avec succès un autre processus avec les bon droit est créé.
+    * **AllowTcpForwarding yes** : Personnellement je laisse le défaut qui est à __YES__ , car j'utilise le système de __TCP forwarding__ qui permet d'utiliser SSH pour faire de la redirection de connexion __TCP__ . Cependant libre à vous de le désactiver
+    * **AllowGroups root permit-ssh** : Ici nous avons la limitation des personnes qui peut utiliser le service __d'OpenSSH__ pour établir une connexion. Donc uniquement les membres du groupe __root__ et __permit-ssh__ peuvent établir une connexion, le groupe __root__ est présent toujours pour mon système de backup :P.
+
+3. Redémarrage du service __OpenSSH__ pour activé la nouvelle configuration, pour cette étape faut un peu faire attention :P on veut pas de bloquer l'accès :P.
+    1. Conservé votre connexion actuelle !!
+    2. Redémarrer le service __Openssh__
+
+            $ sudo /etc/init.d/ssh restart
+
+    3. Juste pour être certain valider que votre serveur __SSHD__ a bien redémarrer en vérifiant l'heure, dans mon cas 8:31 c'est bon :D :
+
+            $ sudo ps aux | grep sshd
+            root         9  0.0  0.2   7812  4824 ?        S    08:31   0:00 /usr/sbin/sshd -D
+
+    4. Établir une nouvelle connexion avec votre utilisateur , et confirmer que tous fonctionne bien . Surtout ne pas fermer votre connexion __ssh__ avant un succès :P
+
+3. Validation des clés __OpenSSH__ possiblement présent.
+    * Bon pas que je fais pas confiance aux personnes qui m'ont fournit la machine , mais , mais ... Voilà quoi :P. Selon votre organisation ou entente de service il est possible que la compagnie veut se conservé une porte d'entré sur le serveur. Avant de procéder à une suppression de configuration assurez vous de l'entente :P.
+    1. Recherche des clés __OpenSSH__ sur la machine , 2 méthodes , utilisation de la base de donné __locate__ ou un __find__ récursif, pour installer le __package locate__ **sudo apt-get install locate** .
+
+            $ sudo updatedb    # mise à jour de la BD d'index pour locate
+            $ sudo locate authorized_keys   # Tres important de le faire avec sudo sinon vous ne verrez pas tous !
+            /home/support/.ssh/authorized_keys
+            /root/.ssh/authorized_keys
+            /usr/share/augeas/lenses/dist/authorized_keys.aug
+            /usr/share/augeas/lenses/dist/tests/test_authorized_keys.aug
+            /usr/share/man/man5/authorized_keys.5.gz
+
+            $ sudo find / -name "authorized_keys"  # Ce sera plus long ...
+            /home/support/.ssh/authorized_keys
+            /root/.ssh/authorized_keys
+            /usr/share/augeas/lenses/dist/authorized_keys.aug
+            /usr/share/augeas/lenses/dist/tests/test_authorized_keys.aug
+            /usr/share/man/man5/authorized_keys.5.gz
+            
+    2. Analyse du résultat
+        * les seules fichiers "problématique" sont ceux contenu dans le répertoire **.ssh** , comme nous avons limité l'accès au groupe **permit-ssh** je présume que l'utilisateur __support__ n'est pas un risque . Pour l'utilisateur  __root__ si ce n'est pas votre clé :P , faut valider. Si nous venons de recevoir la machine personnellement je réaliserai l'opération suivante :
+    3. Désactivation des clés, je ne supprime pas, car si un jour j'ai besoin du fournisseur de service ce sera plus rapide de lui re-fournir l'accès en changeant le nom du fichier plutôt qu'attendre qu'il me retransmette la clé.
+
+            $ sudo mv /home/support/.ssh/authorized_keys /home/support/.ssh/disabled_keys
+            $ sudo mv /root/.ssh/authorized_keys /root/.ssh/disabled_keys
+
 
 * ssh
 * home
