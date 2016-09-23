@@ -437,9 +437,101 @@ Malheureusement trop souvent mis de côté les __DNS__ il est essentiels d'avoir
 
 ## <a name="setup_timezone" /> Configuration du fuseau horaire et synchronisation du temps
 
-Ici bien souvent c'est une catastrophe :P , j'arrive souvent sur des machines dont l'heure est complètement érroné 
+Ici bien souvent c'est une catastrophe :P , j'arrive souvent sur des machines dont l'heure est complètement érroné , le fuseau horaire étant pré configurer c'est mieux mais encore :P. 
+Pourquoi l'heure est importante ?
+* Lors de l'analyse de problème , la lecture des logs si votre heures est mauvaise il est beaucoup plus dure de réaliser l'analyse de la séquence du problème.
+* Si votre fuseau horaire est erroné vous êtes obligé de faire un +5 ou -2 heures c'est franchement pénible 
+* Lors de l'analyse des fichiers qui furent créés , vous n'avez pas la bonne information, si votre heure se décale tranquillement vous avez quelques minutes de décalage encore une fois ça ne simplifie pas l'analyse
+* Si votre système à trop de décalage sur l'heure l'établissement de connexion avec le protocole __SSL__ risque de ne pas marché, car la date de validation du certificat causera des problèmes
+* Si vous utilisez un système d'authentification telle que **Kerberos** si votre système à plus de 15 minutes de décalage l'authentification ne fonctionnera pas
+* etc etc 
 
-* timeZone + NTP
+Comme vous pouvez le voir, l'heure est importante , comme quand vous dites à votre femme que vous rentrez à une certaine heure :P.
+Ceci s'applique pour **tous** les systèmes **VM** ou même les **conteneurs**.
+
+1. Configuration du fuseau horaire
+    * L'ensemble des fuseau sont contenu dans le répertoire : **/usr/share/zoneinfo/**
+
+            $ ls /usr/share/zoneinfo/
+            Africa      Australia  Cuba     Etc      GMT+0      Iceland  Kwajalein  NZ       Poland     Turkey     WET          right
+            America     Brazil     EET      Europe   GMT-0      Indian   Libya      NZ-CHAT  Portugal   UCT        Zulu         zone.tab
+            Antarctica  CET        EST      Factory  GMT0       Iran     MET        Navajo   ROC        US         iso3166.tab
+            Arctic      CST6CDT    EST5EDT  GB       Greenwich  Israel   MST        PRC      ROK        UTC        localtime
+            Asia        Canada     Egypt    GB-Eire  HST        Jamaica  MST7MDT    PST8PDT  Singapore  Universal  posix
+            Atlantic    Chile      Eire     GMT      Hongkong   Japan    Mexico     Pacific  SystemV    W-SU       posixrules
+
+    * Modification de la configuration pour avoir le bon fuseau horaire , dans mon cas je vais définir Montréal comme fuseau horaire, je vous laisse parcourir le répertoire afin d'identifier le plus proche de votre position :-)
+
+            $ sudo ln -sf /usr/share/zoneinfo/America/Montreal /etc/localtime
+
+    * Vous pouvez aussi utiliser la commande suivante qui permet d'avoir un menu vous aidant à faire la configuration
+
+             $ sudo dpkg-reconfigure tzdata
+
+2. Activation de la nouvelle configuration dans __git__
+
+        $ cd /etc
+        $ sudo git add localtime
+        $ sudo git commit -m "Correction du fuseau horaire "
+
+3. Redémarrage du système 
+    Je vous suggère très fortement de réaliser un redémarrage du système afin de s'assurer que l'ensemble des applications prenne en considération la nouvelle configuration ! 
+
+        $ sudo reboot
+
+4. Mise en place de la synchronisation de l'heure avec des serveurs de référence avec le protocole **NTP (Network Time Protocol)**
+
+    1. Installation de l'application et ajout du fichier de configuration par défaut dans git
+                
+                $ sudo apt-get install ntp ntpdate
+                $ cd /etc
+                $ sudo git add ntp.conf
+                $ sudo git commit -m "Ajout fichier original de ntp"
+
+    2. Configuration du service __ntp__ via le fichier **/etc/ntp.conf** , juste pour information je vais mettre en lumière 2 paramètre du fichier.
+
+                $ cat /etc/ntp.conf | egrep  "^[server|restric]" | grep -v "#" 
+                statistics loopstats peerstats clockstats
+                server 0.ubuntu.pool.ntp.org
+                server 1.ubuntu.pool.ntp.org
+                server 2.ubuntu.pool.ntp.org
+                server 3.ubuntu.pool.ntp.org
+                server ntp.ubuntu.com
+                restrict -4 default kod notrap nomodify nopeer noquery
+                restrict -6 default kod notrap nomodify nopeer noquery
+                restrict 127.0.0.1
+                restrict ::1
+
+       * l'instruction serveur est assez claire :P , vous pouvez avoir une liste différente sur le site de [ntp.org](http://support.ntp.org/bin/view/Servers/WebHome#Finding_A_Time_Server) . Je le met en lumière surtout si vous filtrez les communications en sortie
+       * Vous pouvez valider le fonctionnement avec les serveurs avec la commande **ntpq** 
+
+                $ sudo /etc/init.d/ntp start
+                $ sudo ntpq -pn
+                  remote           refid      st t when poll reach   delay   offset  jitter
+                  ==============================================================================
+                  211.233.40.78   131.107.13.100   2 u  151   64   14  390.465  -950167   1.659
+                  131.234.137.64  .DCF.            1 u   89   64   16  188.313  -950198   9.302
+                  24.122.14.21    .PPS.            1 u   18   64    7   89.726  -950193   5.180
+                  +194.71.144.71   192.36.144.22    2 u   26   64   17  360.986  -950143  55.067
+                  *91.189.94.4     193.79.237.14    2 u   23   64   17  169.261  -950200  14.560
+
+       * Il est possible si vous avez une trop grande différence de temps entre "le monde" et votre système que malgré le démarrage du service ntp , le temps reste à la mauvaise heure. Ceci est du au fait que le système ne veut pas faire un trop gros saut dans le temps . Pour corriger le problème vous devez effectué l'opération manuellement 
+      
+                $ sudo /etc/init.d/ntp stop
+                $ sudo ntpdate 91.189.94.4
+                23 Sep 08:36:10 ntpdate[8423]: step time server 91.189.94.4 offset -950.214027 sec
+                $ sudo /etc/init.d/ntp start
+
+
+5. C'est le temps d'un boisson réconfortante je pense :D ... 
+
+
+## <a name="checkup_crontab" /> Validation des tâches planifier mise en place
+
+Encore une fois pas que je ne fait pas confiance au prestataire de service, cependant je désire savoir s'il y a eu une configuration mise en place qui est exécuté régulièrement. Pour donner un exemple **ovh** avait mis en place un système de monitoring qui transmet l'information sur la consommation __CPU__ , mémoire, etc . Ceci est très pratique quand on va sur l'interface client pour voir l'utilisation de la machine, donc l'idée n'est pas d'arracher les configurations en place mais en prendre connaissance :)  et prendre action si requis .
+
+
+
 * Analyse des crontab en place
 * visualisation des logs
 * Installation app de base 
