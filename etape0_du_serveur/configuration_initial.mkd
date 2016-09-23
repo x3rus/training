@@ -97,9 +97,34 @@ Pour la suite des opérations je vous suggère d'utiliser un système de gestion
 * __Keepassx__
 * ou peu importe , sauf un post-it :P
 
+# <a name="Mise_a_jour" /> Mise à jour du système
+
+Je fais une section juste pour cette opération , car on est tellement excité , d'avoir la nouvelle machine que l'on oublie cette opération. Je sais que vous avez reçu la machine et on se dit la machine est à jour ... 
+
+HA HA HA HA HA **MORTEL** qui tu est drôle !!
+
+        La présomption est mère de tous les emmerdements du monde !!!! 
+
+Donc tous de suite réalisons la mise à jour du système afin de s'assurer que tous est bon et que le redémarrage du système fonctionnera encore après. 
+
+        # apt-get update
+        # apt-get dist-upgrade 
+
+Et pour compléter le tous un redémarrage 
+
+        # reboot
+
+Vous pouvez rétablir une connexion __ssh__ à la machine.
+
 # <a name="take_controle" /> Prise de contrôle de la machine
 
 Bon c'est le temps de prendre en main la bête !!! C'est le moment de se l'approprier ! 
+
+Si vous n'avez pas __vim__ de présent, je présume que vous n'avez pas attendu d'être à cette section pour l'installer, mais pour pas prendre de chance :
+
+        # apt-get install vim
+
+Ha on se sent mieux déjà :D, allez c'est partie.
 
 0. Initialisation de la configuration dans un contrôleur de révision
     * Avant de faire des modifications dans la configuration prenons une copie de la configuration en place dans le système de contrôleur de révision.
@@ -111,6 +136,7 @@ Bon c'est le temps de prendre en main la bête !!! C'est le moment de se l'appro
             # apt-get install git
             # cd /etc
             # git init .
+
     2. Personnellement je n'active pas la révision sur l'ensemble des fichiers à tord ou à raison , chacun son plaisir , par exemple je ne désir pas que les mot de passe soit conservé , même chiffré , dans le dépôt. La raison principale est que je synchronise mon dépôt local sur un serveur et pour des considérations de sécurité je ne suis pas confortable. Je vais donc ajouter à la pièce les fichiers 
 
             # git add passwd group network/interfaces crontab cron.* ssh/sshd_config ssh/ssh_config
@@ -530,12 +556,109 @@ Ceci s'applique pour **tous** les systèmes **VM** ou même les **conteneurs**.
 
 Encore une fois pas que je ne fait pas confiance au prestataire de service, cependant je désire savoir s'il y a eu une configuration mise en place qui est exécuté régulièrement. Pour donner un exemple **ovh** avait mis en place un système de monitoring qui transmet l'information sur la consommation __CPU__ , mémoire, etc . Ceci est très pratique quand on va sur l'interface client pour voir l'utilisation de la machine, donc l'idée n'est pas d'arracher les configurations en place mais en prendre connaissance :)  et prendre action si requis .
 
+1. Analyse des configurations en place 
+    * Vérification de la configuration du __crontab__ général
+
+                $  cat /etc/crontab | grep -v "^#" | grep -v "^$"
+                SHELL=/bin/sh
+                PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+                17 *    * * *   root    cd / && run-parts --report /etc/cron.hourly
+                25 6    * * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )
+                47 6    * * 7   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )
+                52 6    1 * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
+       
+       Dans la configuration ci-dessus il n'y a pas de configuration particulière mise par une personne tierce uniquement l'exécution des tâches , au heures , journalière , hebdomadaire et par mois 
+
+    * Vérification de l'ensemble des tâches :
+
+                $  ls /etc/cron.*
+                /etc/cron.d:
+                anacron  rsnapshot
+
+                /etc/cron.daily:
+                0anacron  apt  bsdmainutils  dpkg  logrotate  man-db  passwd  upstart
+
+                /etc/cron.hourly:
+
+                /etc/cron.monthly:
+                0anacron
+
+                /etc/cron.weekly:
+                0anacron  fstrim  man-db
+
+       Dans le contenu présenté ci-dessus uniquement le fichier **rsnapshot** est une particularité de l'environnement l'ensemble du système est normale. Bien entendu profité du moment pour prendre connaissance des scripts , toujours agréable de savoir les tâches qui roulent sur le système.
+
+2. Validation des tâches utilisateurs 
+    Si je dois "cacher" une exécution je le mettrai probablement pas sous **/etc** mais sous un utilisateur , malgré le problème de droit qui en découlerai ceci sera moins visible :P . L'ensemble des tâches utilisateurs sont contenu dans le répertoire **/var/spool/cron** . Nous allons donc valider le contenu de ce dernier , bien entendu il faut avoir les permissions **root** pour consulter le répertoire.
+
+            $ sudo ls -lR /var/spool/cron/ 
+
+    Analysez le résultat et faire le ménage si requis , toujours conformément aux règles en place selon le prestataire de service.
+
+3. Commit du changement dans le dépôt **git** du répertoire **/etc** si vous avez réalisez des modifications
+
+## <a name="checkup_log_sys" /> Confirmation que le système de log fonctionne bien 
+
+Les logs , les logs , les logs c'est tellement inutile quand tous va bien !!! C'est tellement essentiel quand ça va mal, pourquoi attendre que le système soit en problème pour valider ces derniers. 
+
+1. Validation que le système de gestion des logs est bien actif et en fonction
+
+            $ ps aux | grep syslo
+            syslog      71  0.0  0.1  31380  2756 ?        Ssl  17:13   0:00 /usr/sbin/rsyslogd
+            $ sudo /etc/init.d/rsyslog status
+             * rsyslogd is running
+
+2. Validation de la configuration , par défaut la configuration sous __Ubuntu__ ainsi que l'ensemble des distributions sont convenable , mais jeté un œil prend quelques minutes et on peut valider du contenu.
+
+            $ cat /etc/rsyslog.conf 
+            $ cat /etc/rsyslog.d/50-default.conf
+
+    Ce que je recherche est une entré du type :
+    
+            *.*   @@192.0.2.1:10514
+
+            *.*   @@other-server.example.net:10514
+
+    Ceci indiquerai que l'ensemble de vos logs sont transmise à un serveur distant , MOI j'aime pas :P , je supprimerai ces lignes , bien entendu conformément à l'entente de service ... blablabla.
+
+3. Si vous réalisez des modifications n'oubliez pas de mettre à jour votre dépôt **git**
+4. Redémarrage du service __rsyslog__ s'il y a eu modification
+
+            $ sudo /etc/init.d/rsyslog restart
+
+4. Validation du traitement des logs. 
+    Nous allons utiliser un autre terminal pour établir une connexion sur le serveur , sur le serveur nous allons visualisé en continue les logs d'authentification
+
+            $ sudo tail -f  /var/log/auth.log 
+            Sep 23 17:23:00 xerus sudo: pam_unix(sudo:session): session opened for user root by bob(uid=0)
+            Sep 23 17:23:00 xerus sudo: pam_unix(sudo:session): session closed for user root
+            Sep 23 17:29:42 xerus sudo:      bob : TTY=pts/0 ; PWD=/var/log ; USER=root ; COMMAND=/usr/bin/tail -f /var/log/auth.log
+            Sep 23 17:29:42 xerus sudo: pam_unix(sudo:session): session opened for user root by bob(uid=0)
 
 
-* Analyse des crontab en place
-* visualisation des logs
+            [ ... EN attente de la connexion ... ]
+            Sep 23 17:30:55 xerus sshd[96]: Accepted password for bob from 172.17.42.1 port 48732 ssh2
+            Sep 23 17:30:55 xerus sshd[96]: pam_unix(sshd:session): session opened for user bob by (uid=0)
+            Sep 23 17:30:55 xerus sshd[96]: pam_env(sshd:session): Unable to open env file: /etc/default/locale: No such file or directory
+
+    * Les logs sont bien actif et nous visualisons de l'activité
+    * validez que **l'heure** est convenable , comme nous avons réalisé la configuration __ntp__ normalement pas de problème, mais bon 2 validations c'est mieux 
+    * comme vous pouvez le constater j'ai une erreur de __pam__ que je vais devoir corrigé , merci la formation :P.
+
+## <a name="minimum_apps" /> Installation d'application vital :P
+
+Bon voilà les premières validations sont réalisez, nous allons finaliser la configuration de la prise en main en installant les applications essentiels pour la survie.
+
+Comme il y a des petits malin qui saute les sections :P , je vais remettre les applications déjà installé précédemment .
+
+        $ sudo apt-get install git vim screen tmux byobu netcat telnet net-tools
+
+TODO : ajout liste apps 
+ICI ICI ICI 
+
 * Installation app de base 
 * Firewall in minimum
 * Mise en place d'un système de validation de fichier tripwire
 * monitoring de base
 *
+# <a name="test_recovery" /> Validation de la procédure de recouvrement 
