@@ -180,6 +180,13 @@ Ha on se sent mieux déjà :D, allez c'est partie.
             # git commit -m "Ajout du fichier .gitignore"
             # git status 
 
+1. Étape difficile mais essentiel la définition du nom (__hostname__) de la machine ! Soyez créatif nommer la machine c'est lui donner une âme ! (Ok j'irais pas plus loin, je veux pas faire peur à personne ;) )
+
+        # vim /etc/hostname
+        # # pour l'activer tous de suite avant le reboot
+        # hostname Votre_hostname.Le_domaine.com
+
+
 1. Changer le mot de passe de l'utilisateur fournit, car connu du fournisseur de service , si vous utilisé **root** oublié la deuxième partie .
 
         $ passwd
@@ -262,7 +269,7 @@ Ha on se sent mieux déjà :D, allez c'est partie.
     * Ajout des fichiers et commit les changements
 
             # cd /etc
-            # git add /etc/sudoers
+            # git add /etc/sudoers /etc/group /etc/passwd /etc/hostname
             # git status         # Afin de visualiser les autres modifications
             # git add Autre_fichier_si_requis
             # git commit -m "Creation de l'utilisateur bob et ajout de ce dernier dans sudo "
@@ -651,14 +658,33 @@ Bon voilà les premières validations sont réalisez, nous allons finaliser la c
 
 Comme il y a des petits malin qui saute les sections :P , je vais remettre les applications déjà installé précédemment .
 
-        $ sudo apt-get install git vim screen tmux byobu netcat telnet net-tools
+        $ sudo apt-get install git vim screen tmux byobu netcat telnet net-tools wget whois openssh-client sudo rsync python3 ntp ntpdate a2
 
-TODO : ajout liste apps 
-ICI ICI ICI 
+Faut rajouter ce que vous avez besoin ici c'est vraiment une liste minimal .
 
-* Installation app de base 
-* Firewall in minimum
-* Mise en place d'un système de validation de fichier tripwire
-* monitoring de base
-*
+# <a name="base_security" /> Suggestion de mise en place de sécurité 
+
+Cette partie est "optionnel" , bien que je pense vraiment importante nous allons mettre en place des mécanismes de sécurité , nous ne mettrons pas des systèmes ultra sophistiqué nous sommes à l'étape de prise en main de la machine. Je vous invite vraiment à faire ces opérations au début car par la suite c'est pénible et nous n'avons plus le temps de le faire.
+
+Nous verrons la mise en place :
+* d'un __firewall__ (In/Out)
+* Mise en place d'une solution de validation des fichiers
+* Mise en place d'une solution de surveillance du système (monitoring)
+
+## <a name="setup_fw" /> Mise en place d'un firewall 
+
+Tous le monde est d'accord pour mettre en place un __firewall__ pour l'ensemble des communications entrante, mais moi je dis plus . Définissez aussi un __firewall__ pour les communications sortante, honnêtement c'est un peu plus pénible à géré mais au moins on sait avec qui la machine communique vers l'externe. 
+Nous utilisons des logiciels libre, mais ça ne veut pas dire que l'on est protégé d'envois d'information à l'externe. Honnêtement combien de fois avez vous lu le code source d'une application :P, ainsi que les __Release Note__ ou __Change Log__ d'une application lors d'une mise à jour :p. Il est possible que textuellement il est écrit que maintenant l'application envoie des statistique vers une machine externe . Qui blâmé dans cette situation ? Le développeur ou l'administrateur :P. 
+Comme je lis pas toujours bien les __release notes__ :P et encore moins le code , je préfère mettre un firewall vers l'externe puis ouvrir les communications requise. 
+
+Bon je planifie pas faire une formation __iptables__ ici , à ce stade pour le faire bien nous devrons faire un session spécial je fournit donc une fichier de configuration et on en parle rapidement. Par la suite je vous laisse modifier le fichier pour votre besoin puis on en reparle dans quelques mois :D.
+
+1. Installation des applications requise
+
+        $ sudo apt-get install iptables iptables-persistent
+
+2. Réalisation d'un fichier de configuration
+
+TODO : Voir pour faire un premier save puis modifier le contenu .... valider le comportement 
+
 # <a name="test_recovery" /> Validation de la procédure de recouvrement 
