@@ -30,50 +30,50 @@ Voici les étapes à réaliser lors de la réception de la machine :
 2. Valide les informations de la machine selon les spécifications demandé :
     * Mémoire
         
-        $ Free -m 
-        total        used        free      shared  buff/cache   available
-        Mem:           2009         483        1127           7         398        1490
-        Swap:          5006           0        5006
+            $ Free -m 
+            total        used        free      shared  buff/cache   available
+            Mem:           2009         483        1127           7         398        1490
+            Swap:          5006           0        5006
 
     * CPU
 
-        $ cat /proc/cpuinfo
-        [...OUTPUT COUPÉ...]
-        processor       : 1
-        vendor_id       : GenuineIntel
-        cpu family      : 6
-        model           : 15
-        model name      : Intel(R) Core(TM)2 CPU         U7600  @ 1.20GHz
-        stepping        : 2
-        microcode       : 0x57
-        cpu MHz         : 800.000
-        cache size      : 2048 KB
-        [...OUTPUT COUPÉ...]
+            $ cat /proc/cpuinfo
+            [...OUTPUT COUPÉ...]
+            processor       : 1
+            vendor_id       : GenuineIntel
+            cpu family      : 6
+            model           : 15
+            model name      : Intel(R) Core(TM)2 CPU         U7600  @ 1.20GHz
+            stepping        : 2
+            microcode       : 0x57
+            cpu MHz         : 800.000
+            cache size      : 2048 KB
+            [...OUTPUT COUPÉ...]
 
     * Taille du disque dur
 
-        $ df -h | grep sda
-        /dev/sda1        51G   33G   16G  68% /
-        $ cat /proc/scsi/scsi
-        Attached devices:
-        Host: scsi0 Channel: 00 Id: 00 Lun: 00
-          Vendor: ATA      Model: MCCOE64GEMPP     Rev: 03  
-          Type:   Direct-Access                    ANSI  SCSI revision: 05
-
-        $ dmesg  | grep sda
-        [    1.242858] sd 0:0:0:0: [sda] 117210240 512-byte logical blocks: (60.0 GB/55.8 GiB)
-        [    1.242968] sd 0:0:0:0: [sda] Write Protect is off
-        [    1.242975] sd 0:0:0:0: [sda] Mode Sense: 00 3a 00 00
-        [    1.243023] sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
-        [    1.244227]  sda: sda1 sda2
+            $ df -h | grep sda
+            /dev/sda1        51G   33G   16G  68% /
+            $ cat /proc/scsi/scsi
+            Attached devices:
+            Host: scsi0 Channel: 00 Id: 00 Lun: 00
+              Vendor: ATA      Model: MCCOE64GEMPP     Rev: 03  
+              Type:   Direct-Access                    ANSI  SCSI revision: 05
+    
+            $ dmesg  | grep sda
+            [    1.242858] sd 0:0:0:0: [sda] 117210240 512-byte logical blocks: (60.0 GB/55.8 GiB)
+            [    1.242968] sd 0:0:0:0: [sda] Write Protect is off
+            [    1.242975] sd 0:0:0:0: [sda] Mode Sense: 00 3a 00 00
+            [    1.243023] sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+            [    1.244227]  sda: sda1 sda2
 
     * Partitionnement (si spécifié)
         
-        $ df -h | grep ^/
+            $ df -h | grep ^/
 
     * Système de configuration du __RAID__ si disponible 
 
-        $ cat /proc/mdstats
+            $ cat /proc/mdstats
 
 3. Valider la distribution :
 
@@ -82,9 +82,9 @@ Voici les étapes à réaliser lors de la réception de la machine :
         DISTRIB_RELEASE=14.04
         DISTRIB_CODENAME=trusty
         DISTRIB_DESCRIPTION="Ubuntu 14.04 LTS"
-
+         
         ou 
-
+         
         $ cat /etc/redhat-release
 
 4. Prendre un café, une petite bière ou un verre de vin pour de félicité de cette nouvelle machine
@@ -101,7 +101,7 @@ Pour la suite des opérations je vous suggère d'utiliser un système de gestion
 
 Je fais une section juste pour cette opération , car on est tellement excité , d'avoir la nouvelle machine que l'on oublie cette opération. Je sais que vous avez reçu la machine et on se dit la machine est à jour ... 
 
-HA HA HA HA HA **MORTEL** qui tu est drôle !!
+HA HA HA HA HA **MORTEL** que tu est drôle !!
 
         La présomption est mère de tous les emmerdements du monde !!!! 
 
