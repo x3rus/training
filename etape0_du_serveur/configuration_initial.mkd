@@ -783,12 +783,69 @@ Ceci offre le résultat :
     1. La politique d'entré est toujours à **ACCEPT** cependant si vous regardez la dernière ligne juste avant __Chain FORWARD__ vous constatez qu'il y a l'instruction **DROP** qui enverra dans les limbes les paquets transmis (__aka timeout__).
     2. **ICMP** : les requêtes __ping__ sont acceptés donc nous répondons à ces dernières honnêtement j'aime bien laissé le __ping__ car pour diagnostiquer c'est vachement pratique.
     3. **Communication sur localhost** : Je désires bloquer l'extérieure mais toute communication sur l'interface __localhost__= 127.0.0.1 doit être autorisé , je ne vois pas la plus value de les bloquer.
-    4. **related established rules** : C'est le GROS truc à pas oublier , généralement c'est cette règles que l'on oublie et qui fait que l'on perd l'accès à la machine. L'ensemble des règles de __firewall__ s'applique sur les nouveaux paquets qui arrive ( **new** )
+    4. **related established rules** : C'est le GROS truc à pas oublier , généralement c'est cette règles que l'on oublie et qui fait que l'on perd l'accès à la machine. L'ensemble des règles de __firewall__ s'applique sur les nouveaux paquets qui arrive ( **new** ) paquet **SYN** , par la suite pour alléger le traitement l'ensemble transige dans la règle __002__ (numéro arbitraire dans ce cas).
+    5. **multiport dports 22** : autorisation des communications vers le port 22 , donc du serveur __OpenSSH__.
+    6. **DROP everythings** : Si aucune règle ne fut appliqué ci-dessus alors l'ensemble des paquets sont perdu , aucun réponse n'est fournit indiquant le problème la personne recevra un __timeout__ . Nous aurions pu ajouter une instruction __LOG__ afin de conservé un trace préalablement des communications qui sont coupé mais au nombre de connexion erroné que l'on reçoit d'Internet ceci génère beaucoup trop de logs. Nous verrons donc cette option lors de la limitation d'accès des communications vers l'externe.
 
-    ICI ICI ICI 
+    Prendre note que l'ordre définie ici est très important quand un paquet arrive sur la machine il traite chaque règle dès qu'une règle est applicable il sort du traitement. L'instruction **DROP** doit donc être impérativement à la fin de la liste !
+
 
 5. Réalisation d'un fichier de configuration, bloquer les communications **sortante**
+    Maintenant que nous avons bloqué les communications provenant de l'externe, si vous désirez bloquer les communications **sortante** , nous allons éditer le fichier de configuration pour ajouter des instructions dans la **chain OUTPUT** !
+    Nous allons reprendre le fichier **/etc/iptables/rules.v4** , ajoutez le contenu suivant :
 
-TODO : Voir pour faire un premier save puis modifier le contenu .... valider le comportement 
+            $ sudo vim /etc/iptables/rules.v4
+            -A OUTPUT -p icmp -m comment --comment "000 Authorize all icmp" -j ACCEPT
+            -A OUTPUT -o lo -m comment --comment "001 Authorize all to lo interface" -j ACCEPT
+            -A OUTPUT -m comment --comment "002 Authorized related established rules" -m state --state RELATED,ESTABLISHED -j ACCEPT
+            -A OUTPUT -d 199.19.167.36/32 -p udp -m multiport --dports 123 -m comment --comment "300-123-NTP_0.ca.pool.ntp.org_-199.19.167.36--udp-123" -j ACCEPT
+            -A OUTPUT -d 199.85.124.148/32 -p udp -m multiport --dports 123 -m comment --comment "300-123-NTP_0.ca.pool.ntp.org_-199.85.124.148--udp-123" -j ACCEPT
+            -A OUTPUT -d 208.73.56.29/32 -p udp -m multiport --dports 123 -m comment --comment "300-123-NTP_0.ca.pool.ntp.org_-208.73.56.29--udp-123" -j ACCEPT
+            -A OUTPUT -d 216.234.161.11/32 -p udp -m multiport --dports 123 -m comment --comment "300-123-NTP_0.ca.pool.ntp.org_-216.234.161.11--udp-123" -j ACCEPT
+            -A OUTPUT -d 127.0.0.1/32 -p tcp -m multiport --dports 53 -m comment --comment "300-53-DNS-127.0.0.1--tcp-53" -j ACCEPT
+            -A OUTPUT -d 127.0.0.1/32 -p udp -m multiport --dports 53 -m comment --comment "300-53-DNS-127.0.0.1--udp-53" -j ACCEPT
+            -A OUTPUT -d 213.186.33.102/32 -p tcp -m multiport --dports 53 -m comment --comment "300-53-DNS-213.186.33.102--tcp-53" -j ACCEPT
+            -A OUTPUT -d 213.186.33.102/32 -p udp -m multiport --dports 53 -m comment --comment "300-53-DNS-213.186.33.102--udp-53" -j ACCEPT
+            -A OUTPUT -d 213.186.33.99/32 -p tcp -m multiport --dports 53 -m comment --comment "300-53-DNS-213.186.33.99--tcp-53" -j ACCEPT
+            -A OUTPUT -d 213.186.33.99/32 -p udp -m multiport --dports 53 -m comment --comment "300-53-DNS-213.186.33.99--udp-53" -j ACCEPT
+            -A OUTPUT -d 8.8.4.4/32 -p tcp -m multiport --dports 53 -m comment --comment "300-53-DNS-8.8.4.4--tcp-53" -j ACCEPT
+            -A OUTPUT -d 8.8.4.4/32 -p udp -m multiport --dports 53 -m comment --comment "300-53-DNS-8.8.4.4--udp-53" -j ACCEPT
+            -A OUTPUT -d 91.189.88.149/32 -p tcp -m multiport --dports 80 -m comment --comment "300-80-APT_-security.ubuntu.com--tcp-80" -j ACCEPT
+            -A OUTPUT -d 142.4.218.29/32 -p tcp -m multiport --dports 80 -m comment --comment "300-80-APT_-ubuntu.bhs.mirrors.ovh.net--tcp-80" -j ACCEPT
+            -A OUTPUT -d 216.239.32.0/19 -p tcp -m multiport --dports 80 -m comment --comment 600_google1 -j ACCEPT
+            -A OUTPUT -d 173.194.0.0/16 -p tcp -m multiport --dports 80 -m comment --comment 600_google10 -j ACCEPT
+            -A OUTPUT -d 172.217.0.0/20 -p tcp -m multiport --dports 80 -m comment --comment 600_google11 -j ACCEPT
+            -A OUTPUT -d 64.233.160.0/19 -p tcp -m multiport --dports 80 -m comment --comment 600_google2 -j ACCEPT
+            -A OUTPUT -d 66.249.80.0/20 -p tcp -m multiport --dports 80 -m comment --comment 600_google3 -j ACCEPT
+            -A OUTPUT -d 72.14.192.0/18 -p tcp -m multiport --dports 80 -m comment --comment 600_google4 -j ACCEPT
+            -A OUTPUT -d 209.85.128.0/17 -p tcp -m multiport --dports 80 -m comment --comment 600_google5 -j ACCEPT
+            -A OUTPUT -d 66.102.0.0/20 -p tcp -m multiport --dports 80 -m comment --comment 600_google6 -j ACCEPT
+            -A OUTPUT -d 74.125.0.0/16 -p tcp -m multiport --dports 80 -m comment --comment 600_google7 -j ACCEPT
+            -A OUTPUT -d 64.18.0.0/20 -p tcp -m multiport --dports 80 -m comment --comment 600_google8 -j ACCEPT
+            -A OUTPUT -d 207.126.144.0/20 -p tcp -m multiport --dports 80 -m comment --comment 600_google9 -j ACCEPT
+            -A OUTPUT -m comment --comment "998 log all output " -m state --state NEW -j LOG
+            -A OUTPUT -m comment --comment "999 drop ALL OUTGOING" -j REJECT --reject-with icmp-port-unreachable
+            COMMIT
+            # Completed on Mon Sep 26 08:00:55 2016
+
+    Bien entendu il y a beaucoup de changement à réaliser afin de correspondre à votre besoin, car chaque règle inclut une destination spécifique qui est convenable pour MOI mais doit être évalué dans votre situation. Prendre note que les règles de __firewall__ sont appliquées sur des adresses IP , bien que l'on puisse mettre des nom de domaine lors de la définition ces derniers seront convertie en IP lors du chargement initiale.
+
+6. Explications de la configuration des communications **sortante** 
+    1. **ICMP** : tous comme pour les communications interne , je permet au paquet **ICMP** donc __ping__ de sortir de la machine , pour la même raison que lors de communication entrante soit facilité le diagnostique de problème.
+    2. **Communication sur localhost** : Je désires bloquer vers l'extérieure mais toute communication sur l'interface __localhost__= 127.0.0.1 doit être autorisé , je ne vois pas la plus value de les bloquer.
+    3. **related established rules** : C'est le GROS truc à pas oublier , généralement c'est cette règles que l'on oublie et qui fait que l'on perd l'accès à la machine. L'ensemble des règles de __firewall__ s'applique sur les nouveaux paquets transmit( **new** ) paquet **SYN** , par la suite pour alléger le traitement l'ensemble transige dans la règle __002__ (numéro arbitraire dans ce cas).
+    4. **NTP** : Comme je désire que mon serveur soit toujours à l'heure je permet la communication vers les serveurs de temps. La communication se fait sur le port **123** en **UDP** , dans la configuration de mon service j'ai définie le pool **ca.pool.ntp.org**. Telle que mentionné plus tôt __iptables__ va faire le traitement uniquement par adresse IP je dois donc spécifier toute les IP qui seront utilisées. Quand je réalise la résolution __DNS__
+
+            $ host ca.pool.ntp.org
+            ca.pool.ntp.org has address 159.203.8.72
+            ca.pool.ntp.org has address 192.95.27.155
+            ca.pool.ntp.org has address 167.114.205.5
+            ca.pool.ntp.org has address 198.50.135.212
+
+       Voila pourquoi nous voyons 4 règles de __firewall__ pour ce service , et oui c'est contraignant !! Heureusement ça ne change pas beaucoup et honnêtement je vous conseille de mettre un système automatique qui fera la validation si les IP changent.
+    5. **DNS** : Bien entendu nous devons permettre les communications vers les serveurs __DNS__ , les règles pour l'IP 127.0.0.1 sont complètement inutile car la règle __002__ va déjà permettre la communication. La règle est présente car en fait mes règles de __firewall__ sont générés :P . Le protocole __DNS__ utilise principalement le protocole __UDP__ sur le port 53. Si vous regardez ma configuration j'autorise l'__UDP__ et le __TCP__ , si la taille de la communication avec le serveur __DNS__ est trop grande le service va passer en __TCP__ donc je préfère avoir les 2 d'ouvert pour éviter des problèmes potentiel ! J'ai la définition des serveurs d'__DNS__ de __OVH__ , __google__.
+    6. **APT** : Bien entendu moi aussi j'installe des logiciels et je les met à jour, j'ai donc l'autorisation de communications vers les serveurs __apt__ configurer , ici nous retrouvons le miroirs __d'ovh__ ainsi que le site web d'Ubuntu __security__ uniquement sur le port 80 , car il n'utilise pas le __httpS__.
+    7. **IP de Google** : c'est le côté obscure de mes règles :-/, j'autorise l'ensemble des communications vers les IP de google, mais mais mais pourquoi, me direz vous !!! ??? !!! Le super site de __moodle__ utilise le système de __Captcha__ pour valider que les personnes qui s'inscrivent ne sont pas des robots. Ce dernier est fournit par google , le problème est que google ne garantie pas sur quelle IP ces services seront disponible ! Il demande que l'ensemble de ses segments IP soit ouvert : 
+    TODO : Ajouter lien site web google !!
 
 # <a name="test_recovery" /> Validation de la procédure de recouvrement 
