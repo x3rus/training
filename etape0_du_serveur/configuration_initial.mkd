@@ -845,7 +845,39 @@ Ceci offre le résultat :
        Voila pourquoi nous voyons 4 règles de __firewall__ pour ce service , et oui c'est contraignant !! Heureusement ça ne change pas beaucoup et honnêtement je vous conseille de mettre un système automatique qui fera la validation si les IP changent.
     5. **DNS** : Bien entendu nous devons permettre les communications vers les serveurs __DNS__ , les règles pour l'IP 127.0.0.1 sont complètement inutile car la règle __002__ va déjà permettre la communication. La règle est présente car en fait mes règles de __firewall__ sont générés :P . Le protocole __DNS__ utilise principalement le protocole __UDP__ sur le port 53. Si vous regardez ma configuration j'autorise l'__UDP__ et le __TCP__ , si la taille de la communication avec le serveur __DNS__ est trop grande le service va passer en __TCP__ donc je préfère avoir les 2 d'ouvert pour éviter des problèmes potentiel ! J'ai la définition des serveurs d'__DNS__ de __OVH__ , __google__.
     6. **APT** : Bien entendu moi aussi j'installe des logiciels et je les met à jour, j'ai donc l'autorisation de communications vers les serveurs __apt__ configurer , ici nous retrouvons le miroirs __d'ovh__ ainsi que le site web d'Ubuntu __security__ uniquement sur le port 80 , car il n'utilise pas le __httpS__.
-    7. **IP de Google** : c'est le côté obscure de mes règles :-/, j'autorise l'ensemble des communications vers les IP de google, mais mais mais pourquoi, me direz vous !!! ??? !!! Le super site de __moodle__ utilise le système de __Captcha__ pour valider que les personnes qui s'inscrivent ne sont pas des robots. Ce dernier est fournit par google , le problème est que google ne garantie pas sur quelle IP ces services seront disponible ! Il demande que l'ensemble de ses segments IP soit ouvert : 
-    TODO : Ajouter lien site web google !!
+    7. **IP de Google** : c'est le côté obscure de mes règles :-/, j'autorise l'ensemble des communications vers les IP de google, mais mais mais pourquoi, me direz vous !!! ??? !!! Le super site de __moodle__ utilise le système de __Captcha__ pour valider que les personnes qui s'inscrivent ne sont pas des robots. Ce dernier est fournit par google , le problème est que google ne garantie pas sur quelle IP ces services seront disponible ! Il demande que l'ensemble de ses segments IP soit ouvert , vous pouvez voir cette information à l'URL [https://code.google.com/archive/p/recaptcha/wikis/FirewallsAndRecaptcha.wiki](https://code.google.com/archive/p/recaptcha/wikis/FirewallsAndRecaptcha.wiki). Comme vous pouvez le constater l'ensemble des segments sont définie avec des /19, /17 , /20 ... Permettant ainsi le regroupement d'un grand nombre d'adresse IP.
+    8. **LOG** : Contrairement aux communications provenant de l'externe je désire savoir quand il y a communication bloqué , et surtout vers quelle destination / port. Éventuellement pour analyser et ouvrir la communication , l'heure est bien entendu très importante dans la situation pour comprendre le contexte. Malheureusement le logs ne nous offrira pas l'information sur le processus qui à fait la requête :-/. Voici un exemple d'une communication bloqué
+
+            $ dmesg | tail
+            [ ... OUTPUT COUPÉ ...]
+            [2440232.901428] IN= OUT=eth0 SRC=192.99.13.211 DST=212.85.158.9 LEN=68 TOS=0x00 PREC=0x00 TTL=64 ID=35399 PROTO=UDP SPT=45934 DPT=53 LEN=48 
+            [2440232.901629] IN= OUT=eth0 SRC=192.99.13.211 DST=188.121.227.53 LEN=68 TOS=0x00 PREC=0x00 TTL=64 ID=22130 PROTO=UDP SPT=48130 DPT=53 LEN=48 
+
+            $ tail /var/log/syslog
+            [ ... OUTPUT COUPÉ ...]
+            Sep 26 18:30:52 goke kernel: [2440232.901428] IN= OUT=eth0 SRC=192.99.13.211 DST=212.85.158.9 LEN=68 TOS=0x00 PREC=0x00 TTL=64 ID=35399 PROTO=UDP SPT=45934 DPT=53 LEN=48 
+
+    9. **REJECT** : Encore une différence avec les règles en entré , dans le cas des règles **INPUT** je **drop** les communications générant un __timeout__ chez le demandeur. Lorsque ma machine réalise des communications je veux que ce soit bloqué mais je ne veux pas ralentir ma machine en attendant un __timeout__ donc je **reject** la communication pour avoir tous de suite un refus. 
+
+    Voilà pas trop compliqué juste un peu plus pénible pour gérer !
+
+## <a name="validate_files" /> Mise en place d'un système de validation des fichiers
+
+Beaucoup ne mettrons pas cette solution en place, ce n'est pas requis pour le bon fonctionnement de la machine , par contre selon votre activité sur le serveur ceci peut vous aider à identifier des problèmes potentiel. L'idée est la suivante , si un fichier **important** est modifier nous désirons le savoir , par exemple si le fichier __/etc/shadow__ contenant les mot de passes est modifier ce serai bien d'être informer. Si vous avez changé votre mot de passe ou ajouté un nouvelle utilisateur pas de problème mais si une personne à modifier le mot de passe **root** par exemple comme vous ne l'utilisez pas vous ne le constaterez jamais :P . 
+
+Il existe une multitude d'application permettant de réaliser cette opération :
+
+* __Tripwire__ : Libre et commercial
+* __OSS SEC__ : Libre
+* __SAMHAIN__ : Libre mais pas la partie __UI__
+
+Lors de la réalisation de la formation j'ai eu envie d'essayer __Samhain__ qui semble très performant ! Cependant je pense que ceci est un peu volumineux pour nos besoin à ce stade. De plus je vais le garder pour la formation sécurité :P, car il y a une forte demande sur ce sujet , faut ce garder un peu de manière :P.
+
+Alors on fait quoi si faut tous garder pour d'autre cours :P, on va apprendre à le faire manuellement :), ça sera moins beau , moins puissant mais très instructif puis SUPER malléable. Nous allons donc monté en compétence avec la base, avec nos petites mains nous allons le faire. :D 
+
+Donc l'objectif est de définir des répertoires que nous désirons valider qu'il n'y a pas de modification sur le contenu , s'il y a une modification un petit courriel est transmis. 
+
+Alors la on peut se battre sur le langage :P , on va le faire en python pour le plaisir , mais libre à vous du langage. Sauf en java :P , faut pas que ça prenne 1 Gig de mémoire pour ça :P (__hihih__ je suis méchant :) ).
+
 
 # <a name="test_recovery" /> Validation de la procédure de recouvrement 
