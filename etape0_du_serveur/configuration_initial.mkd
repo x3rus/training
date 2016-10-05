@@ -7,6 +7,23 @@ TODO corriger les \_
 
 # Index 
 
+* [ Introduction ](#intro) 
+* [ Réception de la machine ](#first_step) 
+* [ Mise à jour du système](#Mise_a_jour) 
+* [ Prise de contrôle de la machine](#take_controle) 
+* [ Configuration initial avec votre utilisateur](#configue_init_with_bob) 
+       * [ Configuration du service OpenSSH](#configue_ssh) 
+       * [ Sécurisation minimal des répertoires ](#securisation_directory) 
+       * [ Validation de la configuration DNS en place](#validation_dns) 
+       * [ Configuration du fuseau horaire et synchronisation du temps](#setup_timezone) 
+       * [ Validation des tâches planifier mise en place](#checkup_crontab) 
+       * [ Confirmation que le système de log fonctionne bien ](#checkup_log_sys) 
+       * [ Installation d'application vital :P](#minimum_apps) 
+* [ Suggestion de mise en place de sécurité ](#base_security) 
+       * [ Mise en place d'un firewall ](#setup_fw) 
+       * [ Mise en place d'un système de validation des fichiers](#validate_files) 
+       * [ Mise en place d'un système de surveillance ](#monitoring_system) 
+* [ Validation de la procédure de recouvrement ](#test_recovery) 
 
 # <a name="intro" /> Introduction 
 
@@ -877,7 +894,61 @@ Alors on fait quoi si faut tous garder pour d'autre cours :P, on va apprendre à
 
 Donc l'objectif est de définir des répertoires que nous désirons valider qu'il n'y a pas de modification sur le contenu , s'il y a une modification un petit courriel est transmis. 
 
-Alors la on peut se battre sur le langage :P , on va le faire en python pour le plaisir , mais libre à vous du langage. Sauf en java :P , faut pas que ça prenne 1 Gig de mémoire pour ça :P (__hihih__ je suis méchant :) ).
+Alors la on peut se battre sur le langage :P , on va le faire en python pour le plaisir , mais libre à vous du langage. Sauf en java :P , faut pas que ça prenne 1 __Gig__ de mémoire pour ça :P (__hihih__ je suis méchant :) ).
 
+
+        #!/usr/bin/python
+        #
+        #
+        # Autheur : Thomas Boutry <thomas.boutry@x3rus.com>
+        ####################################################
+        
+        # Modules
+        import os
+        import subprocess
+        
+        DB_FILE_NAME="./db.txt"
+        
+        # Main
+        
+        lst_reps = [line.rstrip('\n') for line in open('reps.conf','r')]
+        db_file = open(DB_FILE_NAME, 'w')
+        
+        
+        for rep in lst_reps:
+            print (rep)
+            for root, dirs, files in os.walk(rep, topdown=False):
+                for name in files:
+                    filename = (os.path.join(root, name))
+                    sha1Result= subprocess.run(["sha1sum", filename  ], stdout=subprocess.PIPE)
+                    db_file.write(str(sha1Result.stdout))
+                    db_file.write("\n")
+                for name in dirs:
+                    filename = (os.path.join(root, name))
+                    sha1Result= subprocess.run(["sha1sum", filename ], stdout=subprocess.PIPE)
+                    db_file.write(str(sha1Result.stdout))
+                    db_file.write("\n")
+        
+
+Fichier de configuration :
+
+        $ cat reps.conf 
+        /etc
+        /bin
+
+Mais bien franchement je vous conseille FORTEMENT de trouver une vraie solution qui vous envoie des courriels et faire l'ensemble des validations bien plus que uniquement les fichiers. Ce script peut convenir pour une machine mais sur un plus grand nombre ceci deviendra compliqué, vous recevrez beaucoup de courriel et après 2 mois (je suis optimiste) vous ne les consulterez plus .
+
+## <a name="monitoring_system" /> Mise en place d'un système de surveillance 
+
+Bon à moins que vous soyez complètement en amour avec votre nouveau serveur , vous ne serez pas connecté 24/7 sur la machine, par le fait même un système de monitoring s'impose pour vous avertir s'il y a un problème avec votre serveur. Un bon système de monitoring est un système qui reçoit de l'amour, il doit crier quand ça va mal , mais faut pas qu'il crie pour rien non plus. Trop d'alerte fait en sorte que l'on ne fait plus attention au alerte il faut donc trouver un équilibre ! 
+
+Il existe un grand nombre de solution , bien entendu je ne parlerai pas de celle commercial ;-) :
+
+* __Nagios__ : Le bon vieux __Nagios__ que l'on utilise depuis plus de 15 ans , flexible agréable , mais lourd et au niveau des fonctionnalités coincé dans au début des années 2000. On aime l'utiliser et on aime le haïr :D
+* __Shinken__ : Un "nouveau" (5 ans) joueur , en fait ça part de __nagios__ des personnes qui voulait faire des modifications qui ne furent pas accepté alors ils ont __forké__, le tout écrit en python est constamment en évolution. 
+* __Zabbix__ : D'autre solution de surveillance je vous laisse les regarder
+* __ZenOSS__ : D'autre solution de surveillance je vous laisse les regarder
+
+Comme vous pouvez le voir, j'ai clairement un penchant pour __Shinken__ , et oui la formation est libre, donc j'ai le plaisir de faire des choix arbitraire :D.
 
 # <a name="test_recovery" /> Validation de la procédure de recouvrement 
