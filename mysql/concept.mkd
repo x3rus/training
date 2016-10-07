@@ -89,11 +89,73 @@ Une petite représentation graphique pour aider :
 Mais où est le relationnel dans cette structure ? Si chaque table est définie indépendamment, nous devrions plutôt parler de regroupement de données et non de relation! 
 
 Passons donc au côté relationnel : 
-ICI ICI ICI ICI
+
+* **Clé primaire** : La clé primaire permet de définir un enregistrement unique, telle que mentionné plus tôt ceci peut être un champ ou une combinaison de plusieurs champs. 
+* **Clé étrangère** : La clé étrangère permet de définir la relation avec une autre table et de spécifié la **clé primaire** pour spécifier un enregistrement unique dans l'autre table. Il ne peut y avoir qu'une clé primaire par table , mais il peut y avoir plusieurs clé étrangère faisant référence à plusieurs tables .
+
+Voici une représentation graphique de cette relation :
 
 ![Relation.png](./imgs/Relation.png) ![schema1-1.png](./imgs/schema1-1.png)
 
+Lorsque nous avons mentionné l'avantage d'utiliser une base de données pour conserver une **cohérence** de nos données ceci est un bon exemple.
+Prenons un exemple , avec la représentation de la table client avec la table des commandes .
+
+Nous voyons la table client comprenant la clé primaire (numéro de client) , le prénom , le nom et l'adresse courriel.
+Nous avons aussi la table des commandes , qui a comme clé primaire le numéro de commande , comme clé étrangère le numéro du client , le produit et la quantité. 
+Si nous désirons ajouter une commande dans le système si nous désirons ajouter une commande pour le client __Jean Dupont__ donc le numéro 1, mais lors de la saisi nous réalisons une erreur et nous écrivons le chiffre 11. Le système de base de données refusera l'insertion car la clé étrangère ne correspond pas à un client valide. Il y a donc une validation par le système nous assurant une cohérence des données.
+
+Nous verrons plus en détail ce mécanisme lors d'exemple de mise en place.
+
+## <a name="language_sql" /> Langage SQL
+
+__SQL__ (sigle de __Structured Query Language__, en français langage de requête structurée) est un langage informatique normalisé servant à exploiter des bases de données relationnelles. La partie langage de manipulation des données de __SQL__ permet de rechercher, d'ajouter, de modifier ou de supprimer des données dans les bases de données relationnelles.
+
+Outre le langage de manipulation des données, la partie langage de définition des données permet de créer et de modifier l'organisation des données dans la base de données, la partie langage de contrôle de transaction permet de commencer et de terminer des transactions, et la partie langage de contrôle des données permet d'autoriser ou d'interdire l'accès à certaines données à certaines personnes.
+
+Créé en 1974, normalisé depuis 1986, le langage est reconnu par la grande majorité des systèmes de gestion de bases de données relationnelles (abrégé __SGBDR__) du marché.
+
+C'est un langage déclaratif, c'est-à-dire qu'il permet de décrire le résultat escompté, sans décrire la manière de l'obtenir. Les __SGBD__ sont équipés d'optimiseurs de requêtes - des mécanismes qui déterminent automatiquement la manière optimale d'effectuer les opérations, notamment par une estimation de la complexité algorithmique. Celle-ci est fondée sur des statistiques récoltées à partir des données contenues dans la base de données (nombre d'enregistrements, nombre de valeurs distinctes dans une colonne, etc.).
+
+Les instructions de manipulation du contenu de la base de données commencent par les mots clés **SELECT**, **UPDATE**, **INSERT** ou **DELETE** qui correspondent respectivement aux opérations de recherche de contenu, modification, ajout et suppression. Divers mots clés tels que **FROM**, **JOIN** et **GROUP** permettent d'indiquer les opérations d'algèbre relationnelle à effectuer en vue d'obtenir le contenu à manipuler.
+
+Exemple de requête :
+
+* Recherche
+
+        SELECT nom, service
+        FROM   employe
+        WHERE  statut = 'stagiaire'
+        ORDER  BY nom;
+
+* Insertion 
+
+        INSERT INTO employe (nom, service , status)
+            VALUES ('Denis-Jean Noid', 'Developpement', 'Jardinier');
+
+* Suppression
+
+        DELETE FROM employe 
+            WHERE status = 'president';
+
+Nous aurons l'occasion de voir plus en détail ce langage pendant la formation bien évidement .
+
 ## <a name="BDnoSQL" /> Base de données NoSQL (un clin d'œil)
+
+Nous ne couvrirons pas ce type de base de données ici, cependant vu la popularité de ce type de base de données, je voulais faire au moins faire un clin d'œil. 
+
+La définition exacte de la famille des SGBD NoSQL reste sujette à débat. Le terme se rattache autant à des caractéristiques techniques qu'à une génération historique de SGBD qui a émergé à la fin des années 2000/début des années 20102. D'après Pramod J. Sadalage et Martin Fowler, la raison principale de l'émergence et de l'adoption des SGBD NoSQL serait le développement des clusters de serveurs et la nécessité de posséder un paradigme de bases de données adapté à ce modèle d'infrastructure matérielle
+
+Il existe plusieurs type de base de données __NoSQL__ :
+
+* **Clé/valeur** : Ceci représente les premières base de données __NoSQL__ . Permettent de stocker des informations sous forme d'un couple clef/valeur où la valeur peut être une chaine de caractère, un entier ou un objet sérialisé. Une base de données Redis. Ce type de base de données offre de très bonne performances par sa simplicité et peut même être utilisé pour stocker les sessions utilisateur ou le cache de votre site par exemple.
+* **Colonnes** : Ressemble aux bases de données relationnelles, car les données sont sauvegardées sous forme de ligne avec des colonnes, mais se distingue par le fait que le nombre de colonnes peut varier d'une ligne à l'autre. Les solutions les plus connues sont HBase ou Cassandra. Nous avions vu les systèmes de base de données relationnel stocké les informations dans un table avec un nombre de colonne déterminé, pour ajouter une entré il faut renseigner l'ensemble des colonne, contrairement au système __NoSQL__.
+* **Document** : Représente les informations sous forme d'objet XML ou JSON. L'avantage est de pouvoir récupérer simplement des informations structurées de manière hiérarchique. Les solutions les plus connues sont CouchDB, RavenDB et MongoDB. 
+
+
+L'objectif du système __NoSQL__ est de répondre au problématique des suivant : ICI ICI ICI ICI
+
+Afin d'obtenir de meilleures performances, les bases de données NoSQL ont abandonné certaines fonctionnalités proposées par défaut par les bases relationnelles comme les transactions ou encore les vérifications d'intégrités.
+
 
 ## <a name="Intro_ref" /> Introduction -  Référence
 
@@ -103,3 +165,7 @@ ICI ICI ICI ICI
 * [https://fr.wikipedia.org/wiki/Syst%C3%A8me\_de\_gestion\_de\_base\_de\_donn%C3%A9es](https://fr.wikipedia.org/wiki/Syst%C3%A8me_de_gestion_de_base_de_donn%C3%A9es)
 * [https://fr.wikipedia.org/wiki/Mod%C3%A8le\_relationnel](https://fr.wikipedia.org/wiki/Mod%C3%A8le_relationnel)
 * [http://www.lino.com/~vmartino/Logiciel/Access/vocabul.htm](http://www.lino.com/~vmartino/Logiciel/Access/vocabul.htm)
+* [https://fr.wikipedia.org/wiki/Structured\_Query\_Language](https://fr.wikipedia.org/wiki/Structured_Query_Language)
+* [https://en.wikipedia.org/wiki/NoSQL](https://en.wikipedia.org/wiki/NoSQL)
+* [https://fr.wikipedia.org/wiki/NoSQL](https://fr.wikipedia.org/wiki/NoSQL)
+* [https://www.grafikart.fr/blog/sql-nosql](https://www.grafikart.fr/blog/sql-nosql)
