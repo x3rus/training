@@ -50,24 +50,38 @@ Les avantages de l'utilisation d'une base de données ou rôles d'une base de do
 * **Sécurité** : Il est possible de géré l'accès aux utilisateurs afin de leur permettre uniquement la modification de certain table , ou de permettre la lecture seule.
 * **Administration** : Le système de sauvegarde, voir de réplication peut être mis en place peu importe les applications
 
-ICI ICI ICI ICI
 
 ### <a name="Topologie" /> Topologie 
 
 Il existe plusieurs **topologie** de base de données :
 
-* **Relationel** : De nos jours cette topologie est la plus répandu, quand vous dites base de donnée généralement les personnes ce représente une BD relationnel. Selon ce modèle, les données sont placées dans des tables avec lignes et colonnes et n'importe quelle donnée contenue dans la base de données peut être retrouvée à l'aide du nom de la table, du nom de la colonne et de la clé primaire. Le modèle relationnel est destiné à assurer l'indépendance des données et à offrir les moyens de contrôler la cohérence et d'éviter la redondance. Il permet de manipuler les données comme des ensembles en effectuant des opérations de la théorie des ensembles. Les règles de cohérence qui s'appliquent aux bases de données relationnelles sont l'absence de redondance ou de nul des clés primaires, et l'intégrité référentielle.
+* **Relationnel** : De nos jours cette topologie est la plus répandu, quand vous dites base de donnée généralement les personnes ce représente une BD relationnel. Selon ce modèle, les données sont placées dans des tables avec lignes et colonnes et n'importe quelle donnée contenue dans la base de données peut être retrouvée à l'aide du nom de la table, du nom de la colonne et de la clé primaire. Le modèle relationnel est destiné à assurer l'indépendance des données et à offrir les moyens de contrôler la cohérence et d'éviter la redondance. Il permet de manipuler les données comme des ensembles en effectuant des opérations de la théorie des ensembles. Les règles de cohérence qui s'appliquent aux bases de données relationnelles sont l'absence de redondance ou de nul des clés primaires, et l'intégrité référentielle.
     ![483px-Relational_Model.svg.png](./imgs/483px-Relational_Model.svg.png)
 * **Hiérarchique** : Une base de données hiérarchique est une base de données dont le système de gestion lie les enregistrements dans une structure arborescente où chaque enregistrement n'a qu'un seul possesseur. Elle a été utilisée dans les premiers systèmes de gestion de base de données de type mainframe et a été inventé par la NASA. Un Bonne exemple de base de données Hiérarchique nous pouvons penser à l'annuaire **LDAP**.
     ![320px-Hierarchical_Model.svg.png](./imgs/320px-Hierarchical_Model.svg.png)
-* **orienté objet et objet-relationnel** : Les SGBD orientés objet sont un sujet de recherche depuis 1980, lorsque sont apparus les premiers langages de programmation orientée objet. Ils sont destinés à offrir les fonctionnalités des SGBD à des langages orientés objet et permettre le stockage persistant des objets. Les objets sont manipulés en utilisant les possibilités natives des langages orientés objet et une interface de programmation permet d'exploiter les fonctionnalités du SGBD. Celui-ci est équipé des mécanismes nécessaires pour permettre l'utilisation des possibilités d'encapsulation, d'héritage et de polymorphisme des langages de programmation orientée objet. Les SGBD objet-relationnel offrent à la fois les possibilités des SGBD orientés objet et ceux des SGBD relationnels. 
+* **orienté objet et objet-relationnel** : Les SGBD orientés objet sont un sujet de recherche depuis 1980, lorsque sont apparus les premiers langages de programmation orientée objet. Ils sont destinés à offrir les fonctionnalités des SGBD à des langages orientés objet et permettre le stockage persistant des objets. Les objets sont manipulés en utilisant les possibilités natives des langages orientés objet et une interface de programmation permet d'exploiter les fonctionnalités du SGBD. Celui-ci est équipé des mécanismes nécessaires pour permettre l'utilisation des possibilités d'encapsulation, d'héritage et de polymorphisme des langages de programmation orientée objet. Les SGBD objet-relationnel offrent à la fois les possibilités des SGBD orientés objet et ceux des SGBD relationnels. (Base de données le supportant : __Informix__ , Oracle , ...)
     ![640px-Object-Oriented_Model.svg.png](./imgs/640px-Object-Oriented_Model.svg.png)
 * **XML ou RDF** : Une base de données XML Native (NXD en anglais) est une base de données qui s'appuie sur le modèle de données fourni par XML. Elle utilise typiquement des langages de requête XML comme XPath ou XQuery. Une extension possible est une base RDF, avec le langage d'interrogation SPARQL. 
 
 
 ## <a name="BDrelationel" /> Base de données relationnel 
 
-## <a name="BDnoSQL" /> Base de données NoSQL
+Comme nous allons voir le système __Mysql__ qui est une base de données relationnel concentrons nous sur cette topologie. Commençons par clarifier la structure des données qui sont contenu dans une base de données relationnel. Je comprend que beaucoup d'entre vous ont déjà une bonne représentation du système mais je désire mettre tous le monde à niveau. 
+
+L'ensemble des données sont stocké comme suit : 
+
+* **Table** : Une table représente un regroupement structuré de données, une base de données est composé de plusieurs tables formant l'ensemble des données.
+* **Colonne ou champ** : Élément de base d'une table, identifié par son nom, son type (numérique, date, caractères...) et une longueur maximale. Un champ apparait souvent comme le titre d'une colonne.
+* **Ligne ou enregistrement** : Informations contenues dans une ligne d'une table et décrivant un seul article, une seule personne...
+* **Clé primaire** : Champs permettant d'identifier un enregistrement de façon unique. Une clé peut être formée d'un seul champ ou de plusieurs. C'est la clé qui permet de retrouver un client parmi les autres ou d'extraire un produit de la base de données.
+
+Une petite représentation graphique pour aider : 
+
+![Table_relationnel.png](./imgs/Table_relationnel.png) ![table.gif](./imgs/table.gif)
+
+![Relation.png](./imgs/Relation.png)
+
+## <a name="BDnoSQL" /> Base de données NoSQL (un clin d'œil)
 
 ## <a name="Intro_ref" /> Introduction -  Référence
 
@@ -75,3 +89,5 @@ Il existe plusieurs **topologie** de base de données :
 * [https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql/les-types-de-donnees](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql/les-types-de-donnees)
 * [https://fr.wikipedia.org/wiki/Base\_de\_donn%C3%A9es](https://fr.wikipedia.org/wiki/Base_de_donn%C3%A9es)
 * [https://fr.wikipedia.org/wiki/Syst%C3%A8me\_de\_gestion\_de\_base\_de\_donn%C3%A9es](https://fr.wikipedia.org/wiki/Syst%C3%A8me_de_gestion_de_base_de_donn%C3%A9es)
+* [https://fr.wikipedia.org/wiki/Mod%C3%A8le\_relationnel](https://fr.wikipedia.org/wiki/Mod%C3%A8le_relationnel)
+* [http://www.lino.com/~vmartino/Logiciel/Access/vocabul.htm](http://www.lino.com/~vmartino/Logiciel/Access/vocabul.htm)
