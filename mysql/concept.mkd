@@ -152,9 +152,29 @@ Il existe plusieurs type de base de données __NoSQL__ :
 * **Document** : Représente les informations sous forme d'objet XML ou JSON. L'avantage est de pouvoir récupérer simplement des informations structurées de manière hiérarchique. Les solutions les plus connues sont CouchDB, RavenDB et MongoDB. 
 
 
-L'objectif du système __NoSQL__ est de répondre au problématique des suivant : ICI ICI ICI ICI
+![nosql_relationnel.png](./imgs/nosql_relationnel.png) ![nosql_colonne.png](./imgs/nosql_colonne.png)
+
+
+L'objectif du système __NoSQL__ est de répondre au problématique des suivant :
+
+* La majorité des solutions __NoSQL__ sont sans schéma (__shemaLess__) ceci permet de modifier la structure des données rapidement sans une réorganisation de l'ensemble de la structure.
+* Contrairement au base de données relationnel classique, l'évolution des performances est réalisé de manière horizontal via le partage des informations sur plusieurs serveurs. Les solutions de base de données relationnels offre une évolution de performance vertical (augmentation de mémoire , __cpu__ , ... ) il est possible aussi de mettre des solutions de __clusters__, mais ceci est plus coûteux.
+* Les solutions __NoSQL__ sont en mesure de traiter un haut volume de donnée (centaines,  milliers de __Teraoctets__)
+
+Bien entendu les solutions __NoSQL__ n'est pas magique, il y a aussi des problèmes :
+
+* Il n’existe pas de langage d’interrogation standardisé : chaque éditeur a mis en place le sien
+* La mise en œuvre d’un environnement fortement transactionnel (fort besoin d’écriture) où le séquencement des écritures est primordial, reste complexe puisque l'architecture est distribuée compliquant l'atomicité et la cohérence des transactions
+* L'écriture de requêtes complexes est difficile à mettre en œuvre
+
+Un petit résumé :
+
+![nosql_famille.png](./imgs/nosql_famille.png)
 
 Afin d'obtenir de meilleures performances, les bases de données NoSQL ont abandonné certaines fonctionnalités proposées par défaut par les bases relationnelles comme les transactions ou encore les vérifications d'intégrités.
+
+* **Transactions** : La raison de la suppression des transactions est explicable, en effet combien de fois réalisez vous des modifications sur la base de données sans les __commiter__ ? Afin d'optimiser les performances il fut choisie de supprimé cette fonctionnalité peu utilisé.
+* **Vérifications d'inrégrités** : Une fois encore il y a une explication à tous, la responsabilité des validations des données est délégué au développeur. Ceci peut être vu comme un inconvénient, mais soyons réaliste dans les formulaires que vous réalisez vous faites déjà cette validation ! Si les données sont modifiées directement, il faudra faire plus attention, mais combien de fois ceci arrive ?!?! Est-ce que les performances doivent être impacté lors de l'usage de 99% du temps ... C'est un choix !
 
 
 ## <a name="Intro_ref" /> Introduction -  Référence
@@ -169,3 +189,4 @@ Afin d'obtenir de meilleures performances, les bases de données NoSQL ont aband
 * [https://en.wikipedia.org/wiki/NoSQL](https://en.wikipedia.org/wiki/NoSQL)
 * [https://fr.wikipedia.org/wiki/NoSQL](https://fr.wikipedia.org/wiki/NoSQL)
 * [https://www.grafikart.fr/blog/sql-nosql](https://www.grafikart.fr/blog/sql-nosql)
+* [https://blog.talanlabs.com/etude-comparative-bdd-relationnelle-versus-nosql/](https://blog.talanlabs.com/etude-comparative-bdd-relationnelle-versus-nosql/)
