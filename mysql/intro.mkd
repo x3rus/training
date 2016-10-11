@@ -1,0 +1,113 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+<!-- Use mysql_training == Ubuntu -->
+<!-- Use mysql-train == mysql:5.5-->
+
+# Index 
+
+
+# <a name="Prise_en_main_mysql" /> Prise en main de Mysql
+
+Bon fini la théorie on va mettre la main à la patte maintenant, pour rappel je ne suis pas Administrateur de base de données de formation, donc mon niveau est moindre qu'un professionnel. J'espère que je vous offrirai une base adéquate !
+
+
+## <a name="install_mysql" /> Installation de Mysql
+
+Bon l'installation , je vous suggère FORTEMENT d'utiliser le système de pacquage de votre distribution afin d'avoir l'ensemble des mises à jours dans le temps. Mysql est très très populaire toutes les distributions l'offre, si Mysql n'est pas disponible regardez pour MariaDB .
+
+* Installation avec __apt__
+
+        $ sudo apt-get install mysql-server
+
+* Installation avec __yum__
+
+        $ sudo yum install mysql-server
+
+La magie du système de pacquage vous a probablement fait l'ensemble de la configuration : 
+
+* Création du l'utilisateur __mysql__ 
+* Initialisation de la Base de donnée vierge
+* Initialisation du mot de passe **root**
+
+Avant de poursuivre j'aimerai prendre quelques minutes pour voir les opérations réalisés par le système de gestion de pacquage afin de comprendre sous le capot. 
+
+* Création de l'utilisateur __mysql__
+    Afin de ne pas avoir le processus __mysql__ serveur en exécution sous l'utilisateur **root** le système à créer un utilisateur probablement nommé __mysql__ . Le numéro sous Ubuntu ne sera pas le même , pas de panic c'est juste un numéro :P
+
+            $ id mysql
+            uid=999(mysql) gid=999(mysql) groups=999(mysql)
+            $ ps aux | grep mysql
+            mysql        1  0.0  0.5 457192 46872 ?        Ssl  20:52   0:00 mysqld
+
+* Initialisation de la base de données vierge 
+    Je prend le temps de présenter cette partie, car je fus un jour pris avec ce besoin puis j'ai constaté que j'avais aucune idée comment le pacquage avait effectué l'opération. __Mysql__ fournit un script [mysql\_install\_db](http://dev.mysql.com/doc/refman/5.5/en/mysql-install-db.html) qui permet d'initialiser la base de données . Pour que __Mysql__ démarre le serveur à besoin d'une base de données, bien souvent les scripts d'initialisation (__/etc/init.d/mysql__) intègre la création de cette base de données, mais pas toujours. Voici un exemple :
+
+            $ mysql_install_db --datadir=/tmp/toto --user=mysql --basedir=/usr/local/mysql
+            [... OUTPUT COUPÉ ...]
+            $ ls -l /tmp/toto
+            total 8
+            drwx------ 2 mysql root  4096 Oct 11 21:12 mysql
+            drwx------ 2 mysql mysql 4096 Oct 11 21:12 performance_schema
+            drwx------ 2 mysql root     6 Oct 11 21:12 test
+            $ ls -l /tmp/toto/mysql/
+            total 1052
+            -rw-rw---- 1 mysql mysql      0 Oct 11 21:12 columns_priv.MYD
+            -rw-rw---- 1 mysql mysql   4096 Oct 11 21:12 columns_priv.MYI
+            -rw-rw---- 1 mysql mysql   8820 Oct 11 21:12 columns_priv.frm
+            -rw-rw---- 1 mysql mysql    880 Oct 11 21:12 db.MYD
+            -rw-rw---- 1 mysql mysql   5120 Oct 11 21:12 db.MYI
+            [... OUTPUT COUPÉ ... ]
+            -rw-rw---- 1 mysql mysql    344 Oct 11 21:12 user.MYD
+            -rw-rw---- 1 mysql mysql   2048 Oct 11 21:12 user.MYI
+            -rw-rw---- 1 mysql mysql  10630 Oct 11 21:12 user.frm
+
+    Nous aurons l'occasion de voir plus en détail le contenu de ces fichiers, rapidement ceci comprends 3 base de données :
+
+    * **mysql** : contenant la configuration de la base de données (actuellement vide).
+    * **performance_schema** : Cette base de données permet le stockage d'information de performance de __mysql__
+    * **test** : une base de données de test.
+
+    On y revient dans quelques minutes :D 
+
+* Initialisation du mot de passe de l'administrateur
+    Bon comme toujours on veut probablement sécurisé cette base de donnée, selon la distribution vous avez soit entré un mot de passe pour l'administrateur lors de l'installation du serveur. Si vous n'avez rien définie alors le mot de passe __root__ est vide :-/. Pour changer la valeur vous pouvez utiliser la commande **mysqladmin** .
+
+            $ mysqladmin -u root -p password  
+            Enter password: 
+            New password: 
+            Confirm new password: 
+
+    Dans le cas présent , ma base de donnée avait déjà un mot de passe assigné je l'ai donc simplement modifier avec un "meilleur" mot de passe :D.
+
+## <a name="mysql_connection" /> Établir une connexion à mysql 
+
+ICI ICI ICI
+
+## <a name="create_db" /> Création d'une base de donnée 
+
+## <a name="create_user" /> Création d'un utilisateur 
+
+### <a name="manage_perms" /> Gestion des permissions (GRANT)
+
+## <a name="define_schema" /> Création d'un schéma
+
+### <a name="type_de_bd" /> Type de BD MyISAM , Innodb
+
+
+# <a name="reference_intro"/> Référence introduction
+
+* [http://dev.mysql.com/doc/refman/5.5/en/mysql-install-db.html](http://dev.mysql.com/doc/refman/5.5/en/mysql-install-db.html)
+
+# <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
+
+# <a name="performance" /> Configuration de performance
+
+# <a name="crash_recovery" /> Système de recupération et validation de la santé des tables
+
+# <a name="mysql_replication" /> Mise en place d'une replication Mysql
+
+
+
