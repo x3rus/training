@@ -190,3 +190,19 @@ Afin d'obtenir de meilleures performances, les bases de données NoSQL ont aband
 * [https://fr.wikipedia.org/wiki/NoSQL](https://fr.wikipedia.org/wiki/NoSQL)
 * [https://www.grafikart.fr/blog/sql-nosql](https://www.grafikart.fr/blog/sql-nosql)
 * [https://blog.talanlabs.com/etude-comparative-bdd-relationnelle-versus-nosql/](https://blog.talanlabs.com/etude-comparative-bdd-relationnelle-versus-nosql/)
+
+# <a name="Prise_en_main_mysql" /> Prise en main de Mysql
+
+Bon fini la théorie on va mettre la main à la patte maintenant, pour rappel je ne suis pas Administrateur de base de données de formation, donc mon niveau est moindre qu'un professionnel. J'espère que je vous offrirai une base adéquate !
+
+
+## <a name="install_mysql" /> Installation de Mysql
+
+Bon l'installation , je vous suggère FORTEMENT d'utiliser le système de pacquage de votre distribution afin d'avoir l'ensemble des mises à jours dans le temps. Mysql est très très populaire toutes les distributions l'offre, si Mysql n'est pas disponible regardez pour MariaDB .
+
+* Installation avec __apt__
+
+        $ sudo apt-get install mysql-server
+
+
+
