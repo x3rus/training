@@ -82,12 +82,110 @@ Avant de poursuivre j'aimerai prendre quelques minutes pour voir les opérations
 
     Dans le cas présent , ma base de donnée avait déjà un mot de passe assigné je l'ai donc simplement modifier avec un "meilleur" mot de passe :D.
 
+
+* Démarrage du service et activation pour que le service démarre au __boot__ de la machine
+
+        $ sudo systemctl start mysql.service
+        $ sudo systemctl enable mysql.service
+        ou
+        $ sudo /etc/init.d/mysql start
+
 ## <a name="mysql_connection" /> Établir une connexion à mysql 
 
-ICI ICI ICI
+Cool nous avons un service __Mysql__ actif, nous pouvons valider que le service écoute bien sur le port **3306** celui par défaut :
 
-## <a name="create_db" /> Création d'une base de donnée 
+        $ sudo ss -lntp | grep 3306
+        State      Recv-Q Send-Q                      Local Address:Port                 Peer Address:Port 
+        LISTEN     0      50                          *:3306                             *:* 
 
+Dans la situation présente mon service __MySQL__ écoute sur l'ensemble des adresses IP , par défaut le service écoute uniquement sur l'Ip 127.0.0.1 donc __localhost__. 
+
+Réalisons une connexion au service avec l'utilisateur __root__ :
+
+        $ mysql -u root -p 
+        Enter password: 
+        Welcome to the MySQL monitor.  Commands end with ; or \g.
+        Your MySQL connection id is 2
+        Server version: 5.5.52 MySQL Community Server (GPL)
+
+        Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+
+        Oracle is a registered trademark of Oracle Corporation and/or its
+        affiliates. Other names may be trademarks of their respective
+        owners.
+
+        Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+        mysql>
+
+Nous entrons dans le système de __Mysql__ pour sortir tapé l'instruction : **quit** ou **bye** ou **CTRL+D** .
+
+Description des options:
+
+* **-u** : spécifie le nom de l'utilisateur pour la connexion.
+* **-p** : spécifie qu'il y a un mot de passe à entré , qui vous sera demandé sur la ligne de commande. Si vous n'avez pas cette option vous aurez probablement l'erreur suivante ...
+
+            ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: NO)
+
+Clarification du processus de connexion , avec la commande présenté si dessus le système n'utilisera  pas la couche IP pour réaliser la communication, il utilisera le fichier **socket** qui est par défaut : **/tmp/mysql.sock** . 
+Si vous désirez établir une connexion à un serveur distant ou utiliser le protocole __TCP__ vous devrez utiliser l'option **-h** voici un exemple:
+
+        $ mysql -u root -h 127.0.0.1 -p 
+
+Bien entendu de nombreuse autre option son disponible , simplement consulter le man page de __mysql__
+
+## <a name="create_db" /> Visualisation des base de données et création d'une base de donnée 
+
+Bon ça sera un très court chapitre :P 
+
+1. Établir une connexion __mysql__
+    Exemple de l'opération :
+
+        $ mysql -u root -p
+        [ ... OUTPUT COUPÉ ... ]
+        mysql> 
+
+2. Visualisation des base de données présente  avec l'instruction [SHOW DATABASES](http://dev.mysql.com/doc/refman/5.5/en/show-databases.html)
+    Exemple d'utilisation (explication juste après):
+
+        mysql> show databases;
+        +--------------------+
+        | Database           |
+        +--------------------+
+        | information_schema |
+        | mysql              |
+        | performance_schema |
+        +--------------------+
+        3 rows in set (0.00 sec)
+
+     Ou 
+
+        mysql> show databases \G;
+        *************************** 1. row ***************************
+        Database: information_schema
+        *************************** 2. row ***************************
+        Database: mysql
+        *************************** 3. row ***************************
+        Database: performance_schema
+        3 rows in set (0.00 sec)
+
+3. Utiliser l'instruction [CREATE DATABASE](http://dev.mysql.com/doc/refman/5.5/en/create-database.html)
+    Nous allons faire la création d'un bd avec le nom **ma_super_BD** 
+
+        mysql> create database ma_super_BD;
+        Query OK, 1 row affected (0.00 sec)
+
+    Avec [show database](http://dev.mysql.com/doc/refman/5.5/en/show-databases.html) vous pourrez voir la nouvelle base de données.
+
+Bon revenons sur la visualisation des bases de données , lors de la visualisation des base de données nous voyons:
+
+ICI ICI ICI ICI 
+
+* **information_schema**
+* **mysql**
+* **performance_schema**
+* et même peut-être **test**
+ 
 ## <a name="create_user" /> Création d'un utilisateur 
 
 ### <a name="manage_perms" /> Gestion des permissions (GRANT)
