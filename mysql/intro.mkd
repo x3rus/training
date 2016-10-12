@@ -134,9 +134,10 @@ Si vous désirez établir une connexion à un serveur distant ou utiliser le pro
 
 Bien entendu de nombreuse autre option son disponible , simplement consulter le man page de __mysql__
 
-## <a name="create_db" /> Visualisation des base de données et création d'une base de donnée 
+## <a name="db_manip" /> Manipulation des base de données
 
-Bon ça sera un très court chapitre :P 
+
+### <a name="create_db" /> Visualisation des base de données et création d'une base de donnée 
 
 1. Établir une connexion __mysql__
     Exemple de l'opération :
@@ -179,25 +180,201 @@ Bon ça sera un très court chapitre :P
 
 Bon revenons sur la visualisation des bases de données , lors de la visualisation des base de données nous voyons:
 
-ICI ICI ICI ICI 
-
-* **information_schema**
-* **mysql**
-* **performance_schema**
-* et même peut-être **test**
+* **[information\_schema](http://dev.mysql.com/doc/refman/5.5/en/information-schema.html)** : cette base de données vient avec toutes les instances de __Mysql__ , elle contient de l'information sur l'ensemble des base de données contenu dans le serveur. L'ensemble des tables qui composent cette base de données est en Lecture Seule , cette base de données est virtuelle, aucun fichier n'est contenu sur le disque. Nous pouvons par exemple connaître les tables qui compose une base de données en consultant cette vue.
+* **mysql** : Cette base de données est "réelle" contrairement à l'instance __Information\_Schema__ , il y a des des fichiers contenant les données (nous y reviendrons sous peu) . Nous retrouvons dans cette BD une tables utilisateur contenant l'information des utilisateurs (Nom d'utilisateur / password), le fuseau horaire de la base de donnée. En d'autre mot cette base de données est pour la configuration du serveur , nous verrons aussi plus tard le fichier **mysql.cnf** qui fournit les informations de démarrage du service.
+* **performance_schema** : 
+* et même peut-être **test** :  Selon votre distribution certain pacquage crée une base de données **test** où tous le monde peut écrire dedans, bien entendu lors de la sécurisation d'une base de donnée , ceci est supprimé assez vite.
  
+### <a name="use_db" /> Sélection d'une base de données et visualisation des tables
+
+Nous sommes en mesure de visualiser les base de données disponible maintenant comment entrer dans cette dernière et visualiser les tables.
+
+Pour passer d'une base de données à l'autre nous utilisons l'instruction **use** 
+
+        mysql> use mysql;
+        Reading table information for completion of table and column names
+        You can turn off this feature to get a quicker startup with -A
+
+        Database changed
+
+Nous sommes à présent dans la base de données **mysql** , pour visualiser les tables disponibles nous pouvons utiliser l'instruction **show tables;** :
+
+        mysql> show tables;
+        +---------------------------+
+        | Tables_in_mysql           |
+        +---------------------------+
+        | columns_priv              |
+        | db                        |
+        | event                     |
+        | func                      |
+        | general_log               |
+        | help_category             |
+        | help_keyword              |
+        | help_relation             |
+        | help_topic                |
+        | host                      |
+        | ndb_binlog_index          |
+        | plugin                    |
+        | proc                      |
+        | procs_priv                |
+        | proxies_priv              |
+        | servers                   |
+        | slow_log                  |
+        | tables_priv               |
+        | time_zone                 |
+        | time_zone_leap_second     |
+        | time_zone_name            |
+        | time_zone_transition      |
+        | time_zone_transition_type |
+        | user                      |
+        +---------------------------+
+        24 rows in set (0.00 sec)
+
+Nous pouvons donc voir l'ensemble des tables qui compose cette BD, pour voir le contenu un simple **select** , par exemple pour visualiser les utilisateurs de la base de données :
+
+        mysql> select * from user;   
+        +------+---------+-------------------------------------------+-------------+-------------+-------------+-------------+-------------+-----------+-------------+---------------+--------------+-----------+------------+-----------------+------------+------------+--------------+------------+-----------------------+------------------+--------------+-----------------+------------------+------------------+----------------+---------------------+--------------------+------------------+------------+--------------+------------------------+----------+------------+-------------+--------------+---------------+-------------+-----------------+----------------------+--------+-----------------------+
+        | Host | User    | Password                                  | Select_priv | Insert_priv | Update_priv | Delete_priv | Create_priv | Drop_priv | Reload_priv | Shutdown_priv | Process_priv | File_priv | Grant_priv | References_priv | Index_priv | Alter_priv | Show_db_priv | Super_priv | Create_tmp_table_priv | Lock_tables_priv | Execute_priv | Repl_slave_priv | Repl_client_priv | Create_view_priv | Show_view_priv | Create_routine_priv | Alter_routine_priv | Create_user_priv | Event_priv | Trigger_priv | Create_tablespace_priv | ssl_type | ssl_cipher | x509_issuer | x509_subject | max_questions | max_updates | max_connections | max_user_connections | plugin | authentication_string |
+        +------+---------+-------------------------------------------+-------------+-------------+-------------+-------------+-------------+-----------+-------------+---------------+--------------+-----------+------------+-----------------+------------+------------+--------------+------------+-----------------------+------------------+--------------+-----------------+------------------+------------------+----------------+---------------------+--------------------+------------------+------------+--------------+------------------------+----------+------------+-------------+--------------+---------------+-------------+-----------------+----------------------+--------+-----------------------+
+        | %    | root    | *F11871124CBA1F636AFD315DD9460315EFE8F965 | Y           | Y           | Y           | Y           | Y           | Y         | Y           | Y             | Y            | Y         | Y          | Y               | Y          | Y          | Y            | Y          | Y                     | Y                | Y            | Y               | Y                | Y                | Y              | Y                   | Y                  | Y                | Y          | Y            | Y                      |          |            |             |              |             0 |           0 |               0 |                    0 |        | NULL                  |
+        +------+---------+-------------------------------------------+-------------+-------------+-------------+-------------+-------------+-----------+-------------+---------------+--------------+-----------+------------+-----------------+------------+------------+--------------+------------+-----------------------+------------------+--------------+-----------------+------------------+------------------+----------------+---------------------+--------------------+------------------+------------+--------------+------------------------+----------+------------+-------------+--------------+---------------+-------------+-----------------+----------------------+--------+-----------------------+
+        1 rows in set (0.00 sec)
+
+
+__Hummm__ c'est pas très claire comme résultat il y a beaucoup de colonnes :-( , avec l'option **\G** vous aurez une ligne par colonne , très pratique surtout dans la situation comme celle ci. 
+
+        mysql> select * from user \G 
+        *************************** 1. row ***************************
+        Host: %
+        User: root
+        Password: *F11871124CBA1F636AFD315DD9460315EFE8F965
+        Select_priv: Y
+        Insert_priv: Y
+        Update_priv: Y
+        Delete_priv: Y
+        Create_priv: Y
+        Drop_priv: Y
+        Reload_priv: Y
+        Shutdown_priv: Y
+        Process_priv: Y
+        File_priv: Y
+        Grant_priv: Y
+        References_priv: Y
+        Index_priv: Y
+        Alter_priv: Y
+        Show_db_priv: Y
+        Super_priv: Y
+        Create_tmp_table_priv: Y
+        Lock_tables_priv: Y
+        Execute_priv: Y
+        Repl_slave_priv: Y
+        Repl_client_priv: Y
+        Create_view_priv: Y
+        Show_view_priv: Y
+        Create_routine_priv: Y
+        Alter_routine_priv: Y
+        Create_user_priv: Y
+        Event_priv: Y
+        Trigger_priv: Y
+        Create_tablespace_priv: Y
+        ssl_type: 
+        ssl_cipher: 
+        x509_issuer: 
+        x509_subject: 
+        max_questions: 0
+        max_updates: 0
+        max_connections: 0
+        max_user_connections: 0
+        plugin: 
+        authentication_string: NULL
+        1 rows in set (0.00 sec)
+
+
+Pas de panique nous reviendrons sous peu sur la gestion des utilisateurs nous allons en faire la création dans la prochaine section.
+Bien entendu si nous regardons notre base de données nouvellement créer nous n'aurons pas de tables.
+
+        mysql> use ma_super_BD;
+        Database changed
+        mysql> show tables;
+        Empty set (0.00 sec)
+
+Alimentons tous ça !!! Mais avant tous nous n'allons pas travailler avec l'utilisateur **root** c'est pas bien :P , on va créer un utilisateur qui aura les droit sur notre nouvelle base de données et uniquement sur cette dernière.
+
 ## <a name="create_user" /> Création d'un utilisateur 
 
+Là création d'un utilisateur est super important, bien entendu je passe sous silence l'importance d'un bon mot de passe surtout, si vous avez des données sensible, __oupsss__ bon finalement je l'ai dit :P.
+
+Pour la création d'un utilisateur, je vous conseille de créer préalablement la base de donnée ceci permet de réaliser tous de suite l'association utilisateur base de donnée. Nous allons utiliser l'instruction **[Create User](http://dev.mysql.com/doc/refman/5.5/en/create-user.html)** .
+
+Nous allons donc créer l'utilisateur **bob** avec le mot de passe **marley** , bien entendu vous devez être administrateur (__aka__ avoir les droits) de création d'un utilisateur.
+
+        mysql> create user 'bob'@'localhost' IDENTIFIED BY 'marley';
+        Query OK, 0 rows affected (0.00 sec)
+
+
+Donc le détail :
+
+* **'bob'** : définie le nom de l'utilisateur
+* **@'localhost'** : définie depuis quelle machine l'utilisateur peut établir la connexion , dans le cas présent **bob** ne peut établir la connexion QUE depuis __localhost__ donc localement sur la machine. AUCUNE connexion depuis l'externe n'est permis !!
+* **'marley'** : mot de passe associé à l'utilisateur depuis la machine __localhost__.
+
+L'option de restriction du __host__ peut être un **FQDN** ou une adresse IP , il est aussi possible d'utiliser le caractère : **%** indiquant depuis n'importe où . 
+
+Voici un exemple de création du même utilisateur **bob** pour établir une connexion depuis l'externe de la machine :
+
+        mysql> create user 'bob'@'%' IDENTIFIED BY 'la_super_mot_de_passe_de_ouf_trop_long_a_tape';
+        Query OK, 0 rows affected (0.00 sec)
+
+Donc nous avons maintenant 2 utilisateur **bob** :
+
+1. Pour l'utilisation local avec un mot de passe simpliste.
+2. Un utilisateur avec un mot de passe plus complexe pour les connexions externe.
+
+
+Établissons une connexion avec l'utilisateur afin de voir le comportement.
+
+        mysql -u bob -p 
+        Enter password:  (mot de passe marley)
+        [... OUTPUT COUPÉ ...]
+
+Visualisons les base de données disponible :
+
+        mysql> show databases;
+        +--------------------+
+        | Database           |
+        +--------------------+
+        | information_schema |
+        +--------------------+
+        1 row in set (0.00 sec)
+
+
+Comme vous pouvez le voir il n'y a pas de base de données auquel **bob** est accès nous ne voyons donc que la base de donnée "virtuelle" __information\_schema__.
+Quittons la connexion et essayons maintenant avec l'autre mot de passe l'utilisateur : __'bob'@'%'__ 
+
+        mysql -u bob -p                                                                                                                          
+        Enter password:  (mot de passe la_super_mot_de_passe_de_ouf_trop_long_a_tape)
+        ERROR 1045 (28000): Access denied for user 'bob'@'localhost' (using password: YES)
+
+Pourquoi ça ne fonctionne pas ? Car nous avons une entré identifiant l'utilisateur **bob** qui est plus précise celle avec **localhost** qui a donc préséance sur cette entré plus général.
+
+Reconnectons nous avec l'utilisateur **root** afin de faire l'association entre l'utilisateur **bob** et la base de donnée **ma_super_BD**.
+
+ICI ICI ICI
 ### <a name="manage_perms" /> Gestion des permissions (GRANT)
 
 ## <a name="define_schema" /> Création d'un schéma
 
 ### <a name="type_de_bd" /> Type de BD MyISAM , Innodb
 
+## <a name="view_vars_change_it"/> Visualisation et modification des variables
+
+* max_connexion ...
+
 
 # <a name="reference_intro"/> Référence introduction
 
-* [http://dev.mysql.com/doc/refman/5.5/en/mysql-install-db.html](http://dev.mysql.com/doc/refman/5.5/en/mysql-install-db.html)
+* [Mysql-install-db](http://dev.mysql.com/doc/refman/5.5/en/mysql-install-db.html)
+* [Create User](http://dev.mysql.com/doc/refman/5.5/en/create-user.html)
 
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
