@@ -422,11 +422,33 @@ database, table, column.</td></tr><tr><td scope="row"><a class="link" href="priv
     * **\*.\*** : Si nous avions utiliser cette nomenclature nous aurions attribué les permissions sous l'ensemble des tables , pour l'ensemble des base de données sur le serveur
     * **mysql.user** : Si nous voulions permettre l'accès à la table user contenu dans la base de données __MySQL__ nous aurions utiliser cette écriture.
 
-        ICI ICI ICI 
+* **TO 'bob'@'localhost'** : Nous assignons la permission à un utilisateur depuis une connexion donnée , dans notre cas __localhost__
 
-GRANT SELECT (col1), INSERT (col1,col2) ON mydb.mytbl TO 'someuser'@'somehost';
+Ceci est pour la base du concept bien entendu sur la page de documentation de __Mysql__ vous aurez plus d'information disponible : [GRANT](http://dev.mysql.com/doc/refman/5.5/en/grant.html)
+
+Voyons maintenant quelque exemple d'utilisation possible , nous verrons aussi quelque instruction supplémentaire à l'aide de ces exemples:
+
+* Avoir un usagé donnée avec des permissions différente selon la provenance de la connexion :
+
+        mysql> GRANT ALL ON ma_super_BD.* TO 'bob'@'localhost';
+        mysql> GRANT SELECT ON ma_super_BD.* TO 'bob'@'%';
+
+    Dans l'exemple ci-dessus nous avons tous les droits sur la base de données __ma\_super\_BD__ quand nous sommes localement sur le système, mais quand il y a connexion depuis l'externe uniquement les requêtes **select** sont permis. Honnêtement je ne conseille pas cette pratique, car ceci porte à confusion je suggère vraiment l'utilisation de 2 utilisateurs distinct, cependant ceci peut facilité vos déploiement !
+
+* Permettre la réalisation de requête pour des colonnes spécifique
+
+        GRANT SELECT (col1), INSERT (col1,col2) ON mydb.maTable TO 'robert'@'192.168.22.22';
+
+    Dans l'exemple ci-dessus nous permettons à l'utilisateur **robert** depuis la machine **192.168.22.22** de réaliser des **SELECT** sur la table **maTable** contenu dans la base de données **mydb**, mais uniquement sur la colonne **col1** . De plus il pourra réaliser des **insert** (ajout d'information)  dans la colonne **col1** et **col2** uniquement, toujours sur la table __mydb.maTable__.
+
+* Limitation du nombre de requête pour un utilisateur 
+
+        GRANT USAGE ON *.* TO 'robert'@'192.168.22.22'
+          WITH MAX_QUERIES_PER_HOUR 500 MAX_UPDATES_PER_HOUR 100;
+
+    Dans la requête ci-dessus je limite les opérations possible de l'utilisateur **robert** , il ne pourra depuis la machine **192.168.22.22** réalisé uniquement 500 requête par heures et uniquement 100 mise à jour. Ceci s'appliquera sur l'ensemble des base de données.
+
 * show grants
-* Max Querie
 ## <a name="drop_user" /> Suppression d'un utilisateur
 ## <a name="define_schema" /> Création d'un schéma
 
