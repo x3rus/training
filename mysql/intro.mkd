@@ -357,11 +357,77 @@ Quittons la connexion et essayons maintenant avec l'autre mot de passe l'utilisa
 
 Pourquoi ça ne fonctionne pas ? Car nous avons une entré identifiant l'utilisateur **bob** qui est plus précise celle avec **localhost** qui a donc préséance sur cette entré plus général.
 
-Reconnectons nous avec l'utilisateur **root** afin de faire l'association entre l'utilisateur **bob** et la base de donnée **ma_super_BD**.
+Reconnectons nous avec l'utilisateur **root** afin de faire l'association entre l'utilisateur **bob** et la base de donnée **ma\_super\_BD**.
+On va faire simple on autorise toutes les permissions sur la tables **ma\_super\_BD** à bob depuis l'accès local.
 
-ICI ICI ICI
+        $ mysql -u root -p
+        mysql> GRANT ALL ON ma_super_BD.* TO 'bob'@'localhost';
+        Query OK, 0 rows affected (0.00 sec)
+        mysql> Bye
+
+On rétablie une connexion avec l'utilisateur **bob** 
+
+        $ mysql -u bob -p 
+        mysql> show databases;
+        +--------------------+
+        | Database           |
+        +--------------------+
+        | information_schema |
+        | ma_super_BD        |
+        +--------------------+
+        2 rows in set (0.00 sec)
+
+Super maintenant nous voyons bien notre base de données, nous avons l'ensemble des droits sur cette dernière. Pendant que nous sommes la prenons le temps de voir de manière plus granulaire les permissions possible allouable avec **[GRANT](http://dev.mysql.com/doc/refman/5.5/en/grant.html)**.
+
 ### <a name="manage_perms" /> Gestion des permissions (GRANT)
 
+La gestion des permissions est essentiel pour la sécurité de nos données, que ce soit dû à une erreur de manipulation ou un script qui a une erreur causant des problème... 
+
+__MySQL__ offre une gestion très granulaire des permissions, ce sera à vous de faire les bon choix entre permissions très restrictive avec un coût de gestion significatif ou une ouverture trop grande.
+
+Donc reprenons la commande utiliser pour l'autorisation d'accès à la BD **ma\_super\_BD** à bob depuis __localhost__.
+
+        mysql> GRANT ALL ON ma_super_BD.* TO 'bob'@'localhost';
+
+* **GRANT** : Instruction __MySQL__ :D
+* **ALL** : Permissions qui sera attribué , voici un tableau des permissions disponible : (bon désolé je l'ai pas trouvé en français et je suis paresseux pour faire la traduction :-/ )
+    <table class="table" summary="Permissible Privileges for GRANT and REVOKE" border="1"><colgroup><col><col></colgroup><thead><tr><th scope="col">Privilege</th><th scope="col">Meaning and Grantable Levels</th></tr></thead><tbody><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_all"><code class="literal">ALL [PRIVILEGES]</code></a></td><td>Grant all privileges at specified access level except
+                      <a class="link" href="privileges-provided.html#priv_grant-option"><code class="literal">GRANT OPTION</code></a></td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_alter"><code class="literal">ALTER</code></a></td><td>Enable use of <a class="link" href="alter-table.html" title="13.1.7 ALTER TABLE Syntax"><code class="literal">ALTER TABLE</code></a>. Levels:
+                                        Global, database, table.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_alter-routine"><code class="literal">ALTER ROUTINE</code></a></td><td>Enable stored routines to be altered or dropped. Levels: Global,
+                                                          database, procedure.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_create"><code class="literal">CREATE</code></a></td><td>Enable database and table creation. Levels: Global, database, table.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_create-routine"><code class="literal">CREATE ROUTINE</code></a></td><td>Enable stored routine creation. Levels: Global, database.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_create-tablespace"><code class="literal">CREATE TABLESPACE</code></a></td><td>Enable tablespaces and log file groups to be created, altered, or
+                                                                            dropped. Level: Global.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_create-temporary-tables"><code class="literal">CREATE TEMPORARY TABLES</code></a></td><td>Enable use of <a class="link" href="create-table.html" title="13.1.17 CREATE TABLE Syntax"><code class="literal">CREATE
+                                                                                              TEMPORARY TABLE</code></a>. Levels: Global, database.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_create-user"><code class="literal">CREATE USER</code></a></td><td>Enable use of <a class="link" href="create-user.html" title="13.7.1.1 CREATE USER Syntax"><code class="literal">CREATE USER</code></a>,
+                                                                                                                <a class="link" href="drop-user.html" title="13.7.1.2 DROP USER Syntax"><code class="literal">DROP USER</code></a>,
+                                                                                                                                  <a class="link" href="rename-user.html" title="13.7.1.4 RENAME USER Syntax"><code class="literal">RENAME USER</code></a>, and
+                                                                                                                                                    <a class="link" href="revoke.html" title="13.7.1.5 REVOKE Syntax"><code class="literal">REVOKE ALL
+                                                                                                                                                                      PRIVILEGES</code></a>. Level: Global.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_create-view"><code class="literal">CREATE VIEW</code></a></td><td>Enable views to be created or altered. Levels: Global, database, table.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_delete"><code class="literal">DELETE</code></a></td><td>Enable use of <a class="link" href="delete.html" title="13.2.2 DELETE Syntax"><code class="literal">DELETE</code></a>. Level: Global, database, table.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_drop"><code class="literal">DROP</code></a></td><td>Enable databases, tables, and views to be dropped. Levels: Global, database, table.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_event"><code class="literal">EVENT</code></a></td><td>Enable use of events for the Event Scheduler. Levels: Global, database.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_execute"><code class="literal">EXECUTE</code></a></td><td>Enable the user to execute stored routines. Levels: Global, database, table.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_file"><code class="literal">FILE</code></a></td><td>Enable the user to cause the server to read or write files. Level: Global.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_grant-option"><code class="literal">GRANT OPTION</code></a></td><td>Enable privileges to be granted to or removed from other accounts. Levels: Global, database, table, procedure, proxy.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_index"><code class="literal">INDEX</code></a></td><td>Enable indexes to be created or dropped. Levels: Global, database, table.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_insert"><code class="literal">INSERT</code></a></td><td>Enable use of <a class="link" href="insert.html" title="13.2.5 INSERT Syntax"><code class="literal">INSERT</code></a>. Levels: Global, database, table, column.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_lock-tables"><code class="literal">LOCK TABLES</code></a></td><td>Enable use of <a class="link" href="lock-tables.html" title="13.3.5 LOCK TABLES and UNLOCK TABLES Syntax"><code class="literal">LOCK TABLES</code></a> on tables for which you have the  <a class="link" href="select.html" title="13.2.9 SELECT Syntax"><code class="literal">SELECT</code></a> privilege.
+Levels: Global, database.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_process"><code class="literal">PROCESS</code></a></td><td>Enable the user to see all processes with <a class="link" href="show-processlist.html" title="13.7.5.30 SHOW PROCESSLIST Syntax"><code class="literal">SHOW PROCESSLIST</code></a>. Level: Global.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_proxy"><code class="literal">PROXY</code></a></td><td>Enable user proxying. Level: From user to user.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_references"><code class="literal">REFERENCES</code></a></td><td>Enable foreign key creation. Levels: Global, database, table, column.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_reload"><code class="literal">RELOAD</code></a></td><td>Enable use of <a class="link" href="flush.html" title="13.7.6.3 FLUSH Syntax"><code class="literal">FLUSH</code></a> operations. Level:
+Global.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_replication-client"><code class="literal">REPLICATION CLIENT</code></a></td><td>Enable the user to ask where master or slave servers are. Level: Global.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_replication-slave"><code class="literal">REPLICATION SLAVE</code></a></td><td>Enable replication slaves to read binary log events from the master.
+Level: Global.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_select"><code class="literal">SELECT</code></a></td><td>Enable use of <a class="link" href="select.html" title="13.2.9 SELECT Syntax"><code class="literal">SELECT</code></a>. Levels: Global,
+database, table, column.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_show-databases"><code class="literal">SHOW DATABASES</code></a></td><td>Enable <a class="link" href="show-databases.html" title="13.7.5.15 SHOW DATABASES Syntax"><code class="literal">SHOW DATABASES</code></a> to show all
+databases. Level: Global.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_show-view"><code class="literal">SHOW VIEW</code></a></td><td>Enable use of <a class="link" href="show-create-view.html" title="13.7.5.14 SHOW CREATE VIEW Syntax"><code class="literal">SHOW CREATE VIEW</code></a>. Levels:
+Global, database, table.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_shutdown"><code class="literal">SHUTDOWN</code></a></td><td>Enable use of <a class="link" href="mysqladmin.html" title="4.5.2 mysqladmin — Client for Administering a MySQL Server"><span class="command"><strong>mysqladmin shutdown</strong></span></a>. Level: Global.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_super"><code class="literal">SUPER</code></a></td><td>Enable use of other administrative operations such as
+<a class="link" href="change-master-to.html" title="13.4.2.1 CHANGE MASTER TO Syntax"><code class="literal">CHANGE MASTER TO</code></a>,
+<a class="link" href="kill.html" title="13.7.6.4 KILL Syntax"><code class="literal">KILL</code></a>,
+<a class="link" href="purge-binary-logs.html" title="13.4.1.1 PURGE BINARY LOGS Syntax"><code class="literal">PURGE BINARY LOGS</code></a>,
+<a class="link" href="set-variable.html" title="13.7.4.1 SET Syntax for Variable Assignment"><code class="literal">SET
+GLOBAL</code></a>, and <a class="link" href="mysqladmin.html" title="4.5.2 mysqladmin — Client for Administering a MySQL Server"><span class="command"><strong>mysqladmin
+debug</strong></span></a> command. Level: Global.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_trigger"><code class="literal">TRIGGER</code></a></td><td>Enable trigger operations. Levels: Global, database, table.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_update"><code class="literal">UPDATE</code></a></td><td>Enable use of <a class="link" href="update.html" title="13.2.11 UPDATE Syntax"><code class="literal">UPDATE</code></a>. Levels: Global,
+database, table, column.</td></tr><tr><td scope="row"><a class="link" href="privileges-provided.html#priv_usage"><code class="literal">USAGE</code></a></td><td>Synonym for <span class="quote">“<span class="quote">no privileges</span>”</span></td></tr></tbody></table>
+</div>
+
+* **ON** __ma\_super\_BD__.\* : Nous avons identifier les permissions que nous voulions qui soit attribué nous devons maintenant spécifier à quelle BD / Table nous désirons l'appliquer. La syntaxe est **Nom\_BD.Nom\_Table** voyons quelques exemple pour démontrer l'utilisation :
+    * **__ma\_super\_BD__.\*** : commençons par la définition que nous venons juste d'utiliser 
+        Donc nous allouons les permissions pour la base de donnée __ma\_super\_BD__ , pour l'ensemble des tables qui compose cette dernière.
+    * **\*.\*** : Si nous avions utiliser cette nomenclature nous aurions attribué les permissions sous l'ensemble des tables , pour l'ensemble des base de données sur le serveur
+    * **mysql.user** : Si nous voulions permettre l'accès à la table user contenu dans la base de données __MySQL__ nous aurions utiliser cette écriture.
+
+        ICI ICI ICI 
+
+GRANT SELECT (col1), INSERT (col1,col2) ON mydb.mytbl TO 'someuser'@'somehost';
+* show grants
+* Max Querie
+## <a name="drop_user" /> Suppression d'un utilisateur
 ## <a name="define_schema" /> Création d'un schéma
 
 ### <a name="type_de_bd" /> Type de BD MyISAM , Innodb
@@ -374,7 +440,10 @@ ICI ICI ICI
 # <a name="reference_intro"/> Référence introduction
 
 * [Mysql-install-db](http://dev.mysql.com/doc/refman/5.5/en/mysql-install-db.html)
-* [Create User](http://dev.mysql.com/doc/refman/5.5/en/create-user.html)
+* [CREATE USER](http://dev.mysql.com/doc/refman/5.5/en/create-user.html)
+* [SHOW DATABASES](http://dev.mysql.com/doc/refman/5.5/en/show-databases.html)
+* [SHOW TABLES](http://dev.mysql.com/doc/refman/5.5/en/show-tables.html)
+* [GRANT](http://dev.mysql.com/doc/refman/5.5/en/grant.html)
 
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
@@ -383,6 +452,7 @@ ICI ICI ICI
 # <a name="crash_recovery" /> Système de recupération et validation de la santé des tables
 
 # <a name="mysql_replication" /> Mise en place d'une replication Mysql
+# <a name="mysql_backup" /> Réalisation d'un backup de(s) base(s) de données
 
 
 
