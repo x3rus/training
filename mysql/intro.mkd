@@ -14,7 +14,7 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 Bon fini la théorie on va mettre la main à la patte maintenant, pour rappel je ne suis pas Administrateur de base de données de formation, donc mon niveau est moindre qu'un professionnel. J'espère que je vous offrirai une base adéquate !
 
 
-## <a name="install_mysql" /> Installation de Mysql
+# <a name="install_mysql" /> Installation de Mysql
 
 Bon l'installation , je vous suggère FORTEMENT d'utiliser le système de pacquage de votre distribution afin d'avoir l'ensemble des mises à jours dans le temps. Mysql est très très populaire toutes les distributions l'offre, si Mysql n'est pas disponible regardez pour MariaDB .
 
@@ -90,7 +90,7 @@ Avant de poursuivre j'aimerai prendre quelques minutes pour voir les opérations
         ou
         $ sudo /etc/init.d/mysql start
 
-## <a name="mysql_connection" /> Établir une connexion à mysql 
+# <a name="mysql_connection" /> Établir une connexion à mysql 
 
 Cool nous avons un service __Mysql__ actif, nous pouvons valider que le service écoute bien sur le port **3306** celui par défaut :
 
@@ -134,10 +134,10 @@ Si vous désirez établir une connexion à un serveur distant ou utiliser le pro
 
 Bien entendu de nombreuse autre option son disponible , simplement consulter le man page de __mysql__
 
-## <a name="db_manip" /> Manipulation des base de données
+# <a name="db_manip" /> Manipulation des base de données
 
 
-### <a name="create_db" /> Visualisation des base de données et création d'une base de donnée 
+## <a name="create_db" /> Visualisation des base de données et création d'une base de donnée 
 
 1. Établir une connexion __mysql__
     Exemple de l'opération :
@@ -185,7 +185,7 @@ Bon revenons sur la visualisation des bases de données , lors de la visualisati
 * **performance_schema** : 
 * et même peut-être **test** :  Selon votre distribution certain pacquage crée une base de données **test** où tous le monde peut écrire dedans, bien entendu lors de la sécurisation d'une base de donnée , ceci est supprimé assez vite.
  
-### <a name="use_db" /> Sélection d'une base de données et visualisation des tables
+## <a name="use_db" /> Sélection d'une base de données et visualisation des tables
 
 Nous sommes en mesure de visualiser les base de données disponible maintenant comment entrer dans cette dernière et visualiser les tables.
 
@@ -379,7 +379,7 @@ On rétablie une connexion avec l'utilisateur **bob**
 
 Super maintenant nous voyons bien notre base de données, nous avons l'ensemble des droits sur cette dernière. Pendant que nous sommes la prenons le temps de voir de manière plus granulaire les permissions possible allouable avec **[GRANT](http://dev.mysql.com/doc/refman/5.5/en/grant.html)**.
 
-### <a name="manage_perms" /> Gestion des permissions (GRANT)
+## <a name="manage_perms" /> Gestion des permissions (GRANT)
 
 La gestion des permissions est essentiel pour la sécurité de nos données, que ce soit dû à une erreur de manipulation ou un script qui a une erreur causant des problème... 
 
@@ -448,15 +448,129 @@ Voyons maintenant quelque exemple d'utilisation possible , nous verrons aussi qu
 
     Dans la requête ci-dessus je limite les opérations possible de l'utilisateur **robert** , il ne pourra depuis la machine **192.168.22.22** réalisé uniquement 500 requête par heures et uniquement 100 mise à jour. Ceci s'appliquera sur l'ensemble des base de données.
 
-* show grants
+### <a name="view_grant" /> Visualisation des permissions 
+
+On va commencé par la version "moderne" et propre :D , après on verra la méthode __old school__ , bon est-ce qu'elle est encore bonne elle fonctionne... 
+
+Si Vous allouez un grand nombre de permission il peut être ambigüe après un certain temps de se rappeler les permissions attribué. 
+Heureusement il y a l'instruction : [SHOW GRANT](http://dev.mysql.com/doc/refman/5.5/en/show-grants.html).
+
+Voyons sur utilisation simple :
+
+        mysql> show grants; 
+        +--------------------------------------------------------------------------------------------------------------------------------+
+        | Grants for root@%                                                                                                              |
+        +--------------------------------------------------------------------------------------------------------------------------------+
+        | GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY PASSWORD '*F11871124CBA1F636AFD315DD9460315EFE8F965' WITH GRANT OPTION |
+        +--------------------------------------------------------------------------------------------------------------------------------+
+        1 row in set (0.00 sec)
+
+Par défaut le système présente les permissions pour l'utilisateur qui a exécuté la commande , bien entendu il est possible de demander le résultat pour un autre utilisateur. 
+
+        mysql> show grants for bob;
+        +----------------------------------------------------------------------------------------------------+
+        | Grants for bob@%                                                                                   |
+        +----------------------------------------------------------------------------------------------------+
+        | GRANT USAGE ON *.* TO 'bob'@'%' IDENTIFIED BY PASSWORD '*E416B544405021A2AEEFCEA3510848CB76400895' |
+        +----------------------------------------------------------------------------------------------------+
+        1 row in set (0.00 sec)
+
+Donc dans l'exemple ci-dessus nous voyons les permissions pour **bob**... __Oupss__ mais où est passé l'attribution des permissions pour la BD __ma\_super\_BD__. Regardons 2 seconde la ligne , nous n'avons identifier que le nom de l'utilisateur **bob**  l'utilisateur qui est sortie est : __'bob'@'%'__ .
+Reprenons la commande en spécifiant l'utilisateur **bob** depuis __localhost__
+
+        mysql> show grants for bob@localhost;
+        +------------------------------------------------------------------------------------------------------------+
+        | Grants for bob@localhost                                                                                   |
+        +------------------------------------------------------------------------------------------------------------+
+        | GRANT USAGE ON *.* TO 'bob'@'localhost' IDENTIFIED BY PASSWORD '*88369468F44AD87C9ED548B0C98F135B3227C8DB' |
+        | GRANT ALL PRIVILEGES ON `ma_super_BD`.* TO 'bob'@'localhost'                                               |
+        +------------------------------------------------------------------------------------------------------------+
+        2 rows in set (0.00 sec)
+
+Voilà nous avons l'information aussi pour notre base de donnée.
+
 ## <a name="drop_user" /> Suppression d'un utilisateur
+
+Rapidement la suppression d'un utilisateur, car ça arrive aussi que l'on enlève les accès :D, afin de faire la démonstration je vais supprimer l'utilisateur **bob** disponible depuis n'importe quelle IP.
+
+        mysql> drop user 'bob'@'%';
+        Query OK, 0 rows affected (0.00 sec)
+
+Et voilà :D , c'est aussi simple que ça avec l'instruction [DROP USER](http://dev.mysql.com/doc/refman/5.5/en/drop-user.html).
+
 ## <a name="define_schema" /> Création d'un schéma
+
+Bon nous avons à présent une base de donnée , un utilisateur qui peut la manipuler , mais elle est complètement vide. C'est le tant de la nourrir un peu , nous allons définir une table avec des colonnes ... 
+Bon beaucoup d'entre vous on déjà un base de connaissance des systèmes de base de données , je vais pas passer énormément de temps sur les instructions je ne crois pas que ma valeur ajouté est là ! Si je me trouve faudra me le dire , au moins pour les prochaines formations :0, afin que je corrige le tir .
+
+Prenons notre base de donnée __ma\_super\_BD__ si nous regardons, suite à la création dans le répertoire **datadir** de __mysql__ nous avons un répertoire avec le nom de notre base de données :
+
+        $ ls -ld /var/lib/mysql/ma_super_BD/     
+        drwx------ 2 mysql mysql 4096 Oct 12 12:39 /var/lib/mysql/ma_super_BD/
+        $ ls -l /var/lib/mysql/ma_super_BD/ 
+        total 4
+        -rw-rw---- 1 mysql mysql 65 Oct 12 12:39 db.opt
+
+Ce répertoire contiendra les tables de notre base de données par la suite , si vous regardez le contenu du fichier **db.opt** , ce dernier contient de l'information par défaut de la bd :
+
+        $ cat /var/lib/mysql/ma_super_BD/db.opt
+        default-character-set=latin1
+        default-collation=latin1_swedish_ci
+
+Dans le cas présent ceci est essentiellement la définition des caractères supporté par la base de données si nous voulions stocké des informations dans une langue asiatique par exemple nous devrions modifier cette configuration. Honnêtement je ne pense pas couvrir le changement de cette configuration, nous ferons un clin d'œil  rapide.
+
+### <a name="create_table" /> Création d'une table
+
+Ajoutons une table à notre base de donnée, je manque d'imagination :-/ , nous allons donc faire une table d'employé ... __ok ok__ c'est nul, mais on est vendredi soir de retour à la maison ... Si je trouve mieux entre temps , je le change.
+
+Donc connexion avec l'utilisateur **bob** pas de raison d'être **root** et sélection de la base de donnée
+
+         $ mysql -u bob -p 
+         mysql> use ma_super_BD
+
+La création d'une base de donnée ce fait à l'aide de l'instruction [CREATE TABLE](http://dev.mysql.com/doc/refman/5.5/en/create-table.html).
+Pour rappel je suis pas **DBA** !! Nous verrons la base pour l'optimisation faudra malheureusement allé voir ailleurs :D, puis si vous trouvez quelque chose de très bien vous m'envoyez le lien que je le rajoute à la formation comme référence.
+
+ICI ICI ICI
+
+CREATE TABLE new_tbl LIKE orig_tbl;
+CREATE TABLE new_tbl SELECT * FROM orig_tbl;
 
 ### <a name="type_de_bd" /> Type de BD MyISAM , Innodb
 
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
 
 * max_connexion ...
+
+# <a name="perms_mysql_tables" /> Manipulation des permissions avec mysql sans le grant
+
+Bon voyons à l'étape **brutale** :D , car bon c'est ça qui est cool avec le libre, il y a la bonne méthode jolie avec les commandes :) , puis y a la méthode ou tu modifies le fichier en arrière puis ça marche :D. Je ne vous dis pas d'utiliser cette méthode !!! Mon objectif avec la démonstration est de démontré comment __Mysql__ stock l'information des permissions , le savoir est bien !
+
+Telle mentionné, le système __MySQL__ à besoin de la base de données __mysql__ pour fonctionné afin de conserver les informations du système dont les permissions utilisateur. Nous allons créer une nouvelle base de donnée et refaire la même opération de création d'utilisateur mais sans **create user** et **sans les grant** . 
+Pour les personnes qui disent **POURQUOI ?** vous pouvez passer au prochaine chapitre, car **la question n'est pas pourquoi mais COMMENT ?** .
+
+Allez on crée la base de donnée : **zer\_bd**
+
+        mysql> create database ze_bd ;
+            Query OK, 1 row affected (0.00 sec)
+
+        mysql> show databases;
+        +--------------------+
+        | Database           |
+        +--------------------+
+        | information_schema |
+        | ma_super_BD        |
+        | mysql              |
+        | performance_schema |
+        | ze_bd              |
+        +--------------------+
+        5 rows in set (0.00 sec)
+
+Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de donnée __mysql__
+
+        mysql> use mysql;
+        Database changed
+
 
 
 # <a name="reference_intro"/> Référence introduction
@@ -466,6 +580,9 @@ Voyons maintenant quelque exemple d'utilisation possible , nous verrons aussi qu
 * [SHOW DATABASES](http://dev.mysql.com/doc/refman/5.5/en/show-databases.html)
 * [SHOW TABLES](http://dev.mysql.com/doc/refman/5.5/en/show-tables.html)
 * [GRANT](http://dev.mysql.com/doc/refman/5.5/en/grant.html)
+* [SHOW GRANT](http://dev.mysql.com/doc/refman/5.5/en/show-grants.html)
+* [DROP USER](http://dev.mysql.com/doc/refman/5.5/en/drop-user.html)
+* [CREATE TABLE](http://dev.mysql.com/doc/refman/5.5/en/create-table.html)
 
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
