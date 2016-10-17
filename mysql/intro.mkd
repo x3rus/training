@@ -617,18 +617,75 @@ Ceci prendra 4 octets d'espace de stockage pour chaque entré !
 Dans mon cas le type __TINYINT__ serait bien suffisant , je doute d'avoir plus de 127 employé , bon __ok__ faut compter ceux qui partirons avec le temps :P, qui me supporterons plus :P ... Mais mais  ce qui est certain est que je n'aurais jamais un employé négatif ... Du moins dans son numéro d'employé. 
 Comme vous pouvez lire dans le table , plus haut, il y a l'indication __Signed/Unsigned__ qui indique si la valeur peut être négative.
 
-ICI ICI ICI ICI
+Donc si je reprend la création de ma table employé afin de définir l'__ID__ avec un type __TINYINT__ non signé donc sans nombre négatif voici ce que ceci donne . Premièrement je vais supprimer la table original __employe__ et la recréer 
 
-        mysql> insert into employe2 value (3030303 ,'Bob Marley','Prophete');
+        mysql> drop table employe;
+        Query OK, 0 rows affected (0.01 sec)
+
+        mysql> CREATE TABLE employe ( id TINYINT UNSIGNED  , nom VARCHAR(20), titre VARCHAR(30) );  
+        Query OK, 0 rows affected (0.01 sec)
+
+        mysql> insert into employe value (1 ,'Bob Marley','Prophete');                              
+        Query OK, 1 row affected (0.00 sec)
+
+        mysql> select * from employe;
+        +------+------------+----------+
+        | id   | nom        | titre    |
+        +------+------------+----------+
+        |    1 | Bob Marley | Prophete |
+        +------+------------+----------+
+        1 row in set (0.00 sec)
+
+COOL, avec cette configuration j'utilise mieux le système et surtout utilise moins de données.
+Mais si j'arrive avec un nombre plus élevé que les 255 permis exemple si j'essaye d'ajouter une valeur 300 
+
+        mysql> insert into employe value (300,'Ki-many Marley','chanteur');
         Query OK, 1 row affected, 1 warning (0.00 sec)
 
-        mysql> select * from employe2;
-            +------+------------+----------+
-            | id   | nom        | titre    |
-            +------+------------+----------+
-            |  255 | Bob Marley | Prophete |
-            +------+------------+----------+
-            1 row in set (0.00 sec)
+        mysql> select * from employe;
+        +------+----------------+----------+
+        | id   | nom            | titre    |
+        +------+----------------+----------+
+        |    1 | Bob Marley     | Prophete |
+        |  255 | Ki-many Marley | chanteur |
+        +------+----------------+----------+
+        2 rows in set (0.00 sec)
+
+La valeur est __normalisé__ à la valeur maximal du champ il faut donc faire attention !
+
+#### <a name="colonne_type_decimal" /> Valeur décimal
+
+Documentation sur __MySQL__ :
+
+* [décimal valeur Fixe](http://dev.mysql.com/doc/refman/5.5/en/fixed-point-types.html)
+* [décimal valeur arrondie](http://dev.mysql.com/doc/refman/5.5/en/floating-point-types.html)
+
+Il existe 2 catégorie de type de données :
+
+* **NUMERIC** et **DECIMAL** : sont équivalents et acceptent deux paramètres : la précision et l'échelle.
+    La précision définit le nombre de chiffres significatifs stockés, donc les 0 à gauche ne comptent pas. En effet 0024 est équivalent à 24. Il n'y a donc que deux chiffres significatifs dans 0024.
+    L'échelle définit le nombre de chiffres après la virgule.
+* **FLOAT**, **REAL**, **DOUBLE** : C'est type de donnée vont stocké les valeurs approximative fournit, ils seront arrondies
+
+
+Les nombres stockés en tant que **NUMERIC** ou **DECIMAL** sont stockés sous forme de chaînes de caractères. Par conséquent, c'est la valeur exacte qui est stockée. Par contre, les types **FLOAT**, **DOUBLE** et **REAL** sont stockés sous forme de nombres, et c'est une valeur approchée qui est stockée.
+Cela signifie que si vous stockez par exemple 56,6789 dans une colonne de type **FLOAT**, en réalité, __MySQL__ stockera une valeur qui se rapproche de 56,6789 (par exemple, 56,678900000000000001). Cela peut poser problème pour des comparaison notamment (56,678900000000000001 n'étant pas égal à 56,6789). S'il est nécessaire de conserver la précision exacte de vos données (l'exemple type est celui des données bancaires), il est donc conseillé d'utiliser un type numérique à valeur exacte (__NUMERIC__ ou __DECIMAL__ donc).
+
+#### <a name="colonne_type_char" /> Valeur chaîne de caractère
+
+Bien entendu nous désirons aussi conserver du texte dans nos base de données ...
+
+Documentation sur __MySQL__ : 
+
+* [chaine de caractère](http://dev.mysql.com/doc/refman/5.5/en/char.html)
+
+Pour stocker un texte relativement court (moins de 255 caractères), vous pouvez utiliser les types **CHAR** et **VARCHAR**. Ces deux types s'utilisent avec un paramètre qui précise la taille que peut prendre votre texte (entre 1 et 255). La différence entre **CHAR** et **VARCHAR** est la manière dont ils sont stockés en mémoire. Un **CHAR(x)** stockera toujours x caractères, en remplissant si nécessaire le texte avec des espaces vides pour le compléter, tandis qu'un **VARCHAR(x)** stockera jusqu'à x caractères (entre 0 et x), et stockera en plus en mémoire la taille du texte stocké.
+Si vous entrez un texte plus long que la taille maximale définie pour le champ, celui-ci sera tronqué.
+
+Petit tableau explicatif, en prenant l'exemple d'un **CHAR** ou d'un **VARCHAR** de 5 caractères maximum :
+
+<table id="r-1977848" data-claire-element-id="2129659"><thead id="r-1977802" data-claire-element-id="2129613"><tr id="r-1977801" data-claire-element-id="2129612"><th id="r-1977792" data-claire-element-id="2129603"><p id="r-1977791" data-claire-element-id="2129602">Texte</p></th><th id="r-1977794" data-claire-element-id="2129605"><p id="r-1977793" data-claire-element-id="2129604">CHAR(5)</p></th><th id="r-1977796" data-claire-element-id="2129607"><p id="r-1977795" data-claire-element-id="2129606">Mémoire requise</p></th><th id="r-1977798" data-claire-element-id="2129609"><p id="r-1977797" data-claire-element-id="2129608">VARCHAR(5)</p></th><th id="r-1977800" data-claire-element-id="2129611"><p id="r-1977799" data-claire-element-id="2129610">Mémoire requise</p></th></tr></thead><tbody id="r-1977847" data-claire-element-id="2129658"><tr id="r-1977813" data-claire-element-id="2129624"><td id="r-1977804" data-claire-element-id="2129615"><p id="r-1977803" data-claire-element-id="2129614">''</p></td><td id="r-1977806" data-claire-element-id="2129617"><p id="r-1977805" data-claire-element-id="2129616"><code>'   '</code></p></td><td id="r-1977808" data-claire-element-id="2129619"><p id="r-1977807" data-claire-element-id="2129618">5 octets</p></td><td id="r-1977810" data-claire-element-id="2129621"><p id="r-1977809" data-claire-element-id="2129620"><code>''</code></p></td><td id="r-1977812" data-claire-element-id="2129623"><p id="r-1977811" data-claire-element-id="2129622">1 octet</p></td></tr><tr id="r-1977824" data-claire-element-id="2129635"><td id="r-1977815" data-claire-element-id="2129626"><p id="r-1977814" data-claire-element-id="2129625">'tex'</p></td><td id="r-1977817" data-claire-element-id="2129628"><p id="r-1977816" data-claire-element-id="2129627"><code>'tex  '</code></p></td><td id="r-1977819" data-claire-element-id="2129630"><p id="r-1977818" data-claire-element-id="2129629">5 octets</p></td><td id="r-1977821" data-claire-element-id="2129632"><p id="r-1977820" data-claire-element-id="2129631"><code>'tex'</code></p></td><td id="r-1977823" data-claire-element-id="2129634"><p id="r-1977822" data-claire-element-id="2129633">4 octets</p></td></tr><tr id="r-1977835" data-claire-element-id="2129646"><td id="r-1977826" data-claire-element-id="2129637"><p id="r-1977825" data-claire-element-id="2129636">'texte'</p></td><td id="r-1977828" data-claire-element-id="2129639"><p id="r-1977827" data-claire-element-id="2129638"><code>'texte'</code></p></td><td id="r-1977830" data-claire-element-id="2129641"><p id="r-1977829" data-claire-element-id="2129640">5 octets</p></td><td id="r-1977832" data-claire-element-id="2129643"><p id="r-1977831" data-claire-element-id="2129642"><code>'texte'</code></p></td><td id="r-1977834" data-claire-element-id="2129645"><p id="r-1977833" data-claire-element-id="2129644">6 octets</p></td></tr><tr id="r-1977846" data-claire-element-id="2129657"><td id="r-1977837" data-claire-element-id="2129648"><p id="r-1977836" data-claire-element-id="2129647">'texte trop long'</p></td><td id="r-1977839" data-claire-element-id="2129650"><p id="r-1977838" data-claire-element-id="2129649"><code>'texte'</code></p></td><td id="r-1977841" data-claire-element-id="2129652"><p id="r-1977840" data-claire-element-id="2129651">5 octets</p></td><td id="r-1977843" data-claire-element-id="2129654"><p id="r-1977842" data-claire-element-id="2129653"><code>'texte'</code></p></td><td id="r-1977845" data-claire-element-id="2129656"><p id="r-1977844" data-claire-element-id="2129655">6 octets</p></td></tr></tbody></table>
+
 
 
 #### <a name="copy_table" /> Création d'un table depuis une autre
