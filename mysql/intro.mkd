@@ -498,7 +498,7 @@ Rapidement la suppression d'un utilisateur, car ça arrive aussi que l'on enlèv
 
 Et voilà :D , c'est aussi simple que ça avec l'instruction [DROP USER](http://dev.mysql.com/doc/refman/5.5/en/drop-user.html).
 
-## <a name="define_schema" /> Création d'un schéma
+# <a name="define_schema" /> Création d'un schéma
 
 Bon nous avons à présent une base de donnée , un utilisateur qui peut la manipuler , mais elle est complètement vide. C'est le tant de la nourrir un peu , nous allons définir une table avec des colonnes ... 
 Bon beaucoup d'entre vous on déjà un base de connaissance des systèmes de base de données , je vais pas passer énormément de temps sur les instructions je ne crois pas que ma valeur ajouté est là ! Si je me trouve faudra me le dire , au moins pour les prochaines formations :0, afin que je corrige le tir .
@@ -519,7 +519,7 @@ Ce répertoire contiendra les tables de notre base de données par la suite , si
 
 Dans le cas présent ceci est essentiellement la définition des caractères supporté par la base de données si nous voulions stocké des informations dans une langue asiatique par exemple nous devrions modifier cette configuration. Honnêtement je ne pense pas couvrir le changement de cette configuration, nous ferons un clin d'œil  rapide.
 
-### <a name="create_table" /> Création d'une table
+## <a name="create_table" /> Création d'une table
 
 Ajoutons une table à notre base de donnée, je manque d'imagination :-/ , nous allons donc faire une table d'employé ... __ok ok__ c'est nul, mais on est vendredi soir de retour à la maison ... Si je trouve mieux entre temps , je le change.
 
@@ -527,15 +527,115 @@ Donc connexion avec l'utilisateur **bob** pas de raison d'être **root** et sél
 
          $ mysql -u bob -p 
          mysql> use ma_super_BD
+         Database changed
 
 La création d'une base de donnée ce fait à l'aide de l'instruction [CREATE TABLE](http://dev.mysql.com/doc/refman/5.5/en/create-table.html).
 Pour rappel je suis pas **DBA** !! Nous verrons la base pour l'optimisation faudra malheureusement allé voir ailleurs :D, puis si vous trouvez quelque chose de très bien vous m'envoyez le lien que je le rajoute à la formation comme référence.
 
-ICI ICI ICI
+        mysql> CREATE TABLE employe (
+            -> id INT ,
+            -> nom VARCHAR(20),
+            -> titre VARCHAR(30)
+            -> );
+        Query OK, 0 rows affected (0.02 sec)
+
+Nous allons réaliser l'opération en 2 temps premièrement l'opération la plus simple de création d'une tables avec 3 colonnes , par la suite nous rajouterons des fonctionnalité du système de base de données relationnelle (clé privé, auto incrémentale .... ).
+
+Donc regardons notre table **employe** , nous avons donc 3 colonnes :
+
+* **id** : de type **Integer** donc un chiffre, cette colonne contiendra le numéro de l'employé.
+* **nom** : de type **Varchar** donc de **Char**actère **Var**riable , avec un maximum de 20 caractère.
+* **titre**: de type **Varchar** donc de **Char**actère **Var**riable maximum 30 caractère pour contenir le titre de l'employé.
+
+Pour visualiser la **description** d'une table déjà créer dans le passé vous pouvez utiliser l'instruction : 
+
+        mysql> desc employe;
+        +-------+-------------+------+-----+---------+-------+
+        | Field | Type        | Null | Key | Default | Extra |
+        +-------+-------------+------+-----+---------+-------+
+        | id    | int(11)     | YES  |     | NULL    |       |
+        | nom   | varchar(20) | YES  |     | NULL    |       |
+        | titre | varchar(30) | YES  |     | NULL    |       |
+        +-------+-------------+------+-----+---------+-------+
+        3 rows in set (0.00 sec)
+
+J'ai vraiment été au plus simple pour la création de la table voyons rapidement une insertion et la consultation de la tables :
+
+Ici je rajoute une entré dans la table 
+
+        mysql> insert into employe value (10,'Peter Torch','Guitariste');
+        Query OK, 1 row affected (0.01 sec)
+
+Validons la saisie 
+
+        mysql> select * from employe;
+        +------+-------------+------------+
+        | id   | nom         | titre      |
+        +------+-------------+------------+
+        |   10 | Peter Torch | Guitariste |
+        +------+-------------+------------+
+        1 row in set (0.00 sec)
+
+Voyons un peu plus loin avec les types de colonne disponible.
+
+### <a name="colonne_type" /> Type de colonne disponible 
+
+Vous retrouverez la documentation complète des types de données disponible sur le site de __MySQL__ : [Type de données](http://dev.mysql.com/doc/refman/5.5/en/data-types.html) . Nous allons en couvrir plusieurs ici mais je n'ai pas la prétention de tous les couvrir, ceci dépend aussi de vos besoins.
+
+Il est important de bien comprendre les usages et particularités de chaque type de données, afin de choisir le meilleur type possible lorsque vous définissez les colonnes de vos tables. En effet, choisir un mauvais type de données pourrait entraîner :
+
+* un gaspillage de mémoire (ex. : si vous stockez de toutes petites données dans une colonne faite pour stocker de grosses quantités de données) ;
+
+* des problèmes de performance (ex. : il est plus rapide de faire une recherche sur un nombre que sur une chaîne de caractères) ;
+
+* un comportement contraire à celui attendu (ex. : trier sur un nombre stocké comme tel, ou sur un nombre stocké comme une chaîne de caractères ne donnera pas le même résultat) ;
+
+* l'impossibilité d'utiliser des fonctionnalités propres à un type de données (ex. : stocker une date comme une chaîne de caractères vous prive des nombreuses fonctions temporelles disponibles).
+
+#### <a name="colonne_type_int" /> Nombres entiers
+
+Documentation sur __MySQL__ : [Nombre entiers](http://dev.mysql.com/doc/refman/5.5/en/integer-types.html)
+
+<p>
+MySQL supports the SQL standard integer types
+<code class="literal">INTEGER</code> (or <code class="literal">INT</code>) and
+<code class="literal">SMALLINT</code>. As an extension to the standard,
+MySQL also supports the integer types
+<code class="literal">TINYINT</code>, <code class="literal">MEDIUMINT</code>, and
+<code class="literal">BIGINT</code>. The following table shows the
+required storage and range for each integer type.
+</p>
+<div class="informaltable">
+<table class="informaltable" summary="This table shows required storage and range for
+integer types supported by MySQL." border="1"><colgroup><col><col><col><col></colgroup><thead><tr><th scope="col">Type</th><th scope="col">Storage</th><th scope="col">Minimum Value</th><th scope="col">Maximum Value</th></tr><tr><th scope="col"> </th><th scope="col">(Bytes)</th><th scope="col">(Signed/Unsigned)</th><th scope="col">(Signed/Unsigned)</th></tr></thead><tbody><tr><td scope="row"><code class="literal">TINYINT</code></td><td>1</td><td><code class="literal">-128</code></td><td><code class="literal">127</code></td></tr><tr><td scope="row"> </td><td> </td><td><code class="literal">0</code></td><td><code class="literal">255</code></td></tr><tr><td scope="row"><code class="literal">SMALLINT</code></td><td>2</td><td><code class="literal">-32768</code></td><td><code class="literal">32767</code></td></tr><tr><td scope="row"> </td><td> </td><td><code class="literal">0</code></td><td><code class="literal">65535</code></td></tr><tr><td scope="row"><code class="literal">MEDIUMINT</code></td><td>3</td><td><code class="literal">-8388608</code></td><td><code class="literal">8388607</code></td></tr><tr><td scope="row"> </td><td> </td><td><code class="literal">0</code></td><td><code class="literal">16777215</code></td></tr><tr><td scope="row"><code class="literal">INT</code></td><td>4</td><td><code class="literal">-2147483648</code></td><td><code class="literal">2147483647</code></td></tr><tr><td scope="row"> </td><td> </td><td><code class="literal">0</code></td><td><code class="literal">4294967295</code></td></tr><tr><td scope="row"><code class="literal">BIGINT</code></td><td>8</td><td><code class="literal">-9223372036854775808</code></td><td><code class="literal">9223372036854775807</code></td></tr><tr><td scope="row"> </td><td> </td><td><code class="literal">0</code></td><td><code class="literal">18446744073709551615</code></td></tr></tbody></table>
+</div>
+
+Bon si nous reprenons la définition de notre table employé , j'ai utilisé simplement la valeur **INT** pour désigner le numéro de l'employé.
+Résultat pour le champs **ID** telle que mentionné dans le tableau ci-dessus nous pouvons attribué une valeur entre :   __-2147483648 et 2147483647__ !
+Ceci prendra 4 octets d'espace de stockage pour chaque entré ! 
+
+Dans mon cas le type __TINYINT__ serait bien suffisant , je doute d'avoir plus de 127 employé , bon __ok__ faut compter ceux qui partirons avec le temps :P, qui me supporterons plus :P ... Mais mais  ce qui est certain est que je n'aurais jamais un employé négatif ... Du moins dans son numéro d'employé. 
+Comme vous pouvez lire dans le table , plus haut, il y a l'indication __Signed/Unsigned__ qui indique si la valeur peut être négative.
+
+ICI ICI ICI ICI
+
+        mysql> insert into employe2 value (3030303 ,'Bob Marley','Prophete');
+        Query OK, 1 row affected, 1 warning (0.00 sec)
+
+        mysql> select * from employe2;
+            +------+------------+----------+
+            | id   | nom        | titre    |
+            +------+------------+----------+
+            |  255 | Bob Marley | Prophete |
+            +------+------------+----------+
+            1 row in set (0.00 sec)
+
+
+#### <a name="copy_table" /> Création d'un table depuis une autre
 
 CREATE TABLE new_tbl LIKE orig_tbl;
 CREATE TABLE new_tbl SELECT * FROM orig_tbl;
-
+c
 ### <a name="type_de_bd" /> Type de BD MyISAM , Innodb
 
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
@@ -583,6 +683,8 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
 * [SHOW GRANT](http://dev.mysql.com/doc/refman/5.5/en/show-grants.html)
 * [DROP USER](http://dev.mysql.com/doc/refman/5.5/en/drop-user.html)
 * [CREATE TABLE](http://dev.mysql.com/doc/refman/5.5/en/create-table.html)
+* [Type de données](http://dev.mysql.com/doc/refman/5.5/en/data-types.html)
+    * [Nombre entiers](http://dev.mysql.com/doc/refman/5.5/en/integer-types.html)
 
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
