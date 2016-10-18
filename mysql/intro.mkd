@@ -1,4 +1,4 @@
-<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<cmeta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
 <style>
 pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 </style>
@@ -592,6 +592,8 @@ Il est important de bien comprendre les usages et particularités de chaque type
 
 * l'impossibilité d'utiliser des fonctionnalités propres à un type de données (ex. : stocker une date comme une chaîne de caractères vous prive des nombreuses fonctions temporelles disponibles).
 
+Documentation donc je me suis inspiré pour écrire cette section : [OpenClassRoom Mysql par Chantal Gribaumont](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql/les-types-de-donnees)
+
 #### <a name="colonne_type_int" /> Nombres entiers
 
 Documentation sur __MySQL__ : [Nombre entiers](http://dev.mysql.com/doc/refman/5.5/en/integer-types.html)
@@ -705,9 +707,54 @@ Cependant, si les textes sont affectés par l'encodage et l'interclassement, ce 
 
 Ceci nous permet donc de stocké des images ou d'autre fichier binaire dans la base de données , alors j'aimerai juste mettre un avertissement avec cette pratique. J'ai déjà entendu des __DBA__ dire qu'une base de données était pas fait pour ça et qu'il est mieux de stocker les fichiers sur le disque et de définir dans la base de données le chemin d'accès. Personnellement je suis plus pour cette approche, surtout pour avoir la flexibilité de manipuler les fichiers en dehors de la base de donnée, mais bon ... Donc si vous désirez faire ce type d'opération parlez s'en a un spécialiste :P , pour avoir confirmation :D.
 
-
-#### <a name="colonne_type_num" /> Valeur prédéfinie d'énumération
 #### <a name="colonne_type_date" /> Valeur temporel (date)
+
+Documentation sur __MySQL__ : [champs temporelle](http://dev.mysql.com/doc/refman/5.5/en/data-type-defaults.html)
+
+Autre type de donnée que vous voudrez surement stocké des valeurs temporelle telle que des dates , incluant l'heure . Voici les 5 types disponible avec __MySQL__:
+
+Les cinq types temporels de __MySQL__ sont :
+
+* **DATE** : Permet d'entrer une date, l'ordre des données est la seule contrainte. Il faut donner d'abord l'année (deux ou quatre chiffres), ensuite le mois (deux chiffres) et pour finir, le jour (deux chiffres) : **AAAA-MM-JJ**
+* **DATETIME** : ce type permet de stocker une heure, en plus d'une date : **AAAA-MM-JJ HH:MM:SS** 
+* **TIME** : Si nous désirons stocker uniquement le temps ce type est approprié : **HH:MM:SS**
+* **TIMESTAMP**: le timestamp d'une date est le nombre de secondes écoulées depuis le 1er janvier 1970, 0h0min0s (TUC) et la date en question. Les timestamps étant stockés sur 4 octets, il existe une limite supérieure : le 19 janvier 2038 à 3h14min7s.
+* **YEAR** : Ce type contenant l'année est limité en effet il ne permet de contenir une date entre :1901 et 2155
+
+Pour plus de détail je vous laisserai le plaisir de consulter la documentation de __MySQL__ :D.
+
+#### <a name="colonne_type_num" /> Valeur prédéfinie d'énumération (Propre à Mysql)
+
+Documentation sur __MySQL__ :
+
+* [champs enum](http://dev.mysql.com/doc/refman/5.5/en/enum.html)
+* [champs set](http://dev.mysql.com/doc/refman/5.5/en/set.html)
+
+Je vais couvrir 2 type propre à __MySQL__ si vous désirez être indépendant de la base de donnée , n'utilisez pas ce type, car il n'est pas portable sur toutes les base de données! Bon moi je les trouves cool tous de même :P.
+
+* **ENUM** : Permet de définir une liste (énumération) de valeur possible pour le champs , **ENUM** permet l'assignation d'une valeur uniquement si nous assignons une valeur non valide , **NULL** sera stocké dans la colonne
+* **SET** : Équivalent à **ENUM** cependant nous pouvons assigné plusieurs valeur à la colonne.
+
+
+Un petit exemple avec **ENUM** , création d'une colonne 
+
+        espece ENUM('chat', 'chien', 'tortue')
+
+La colonne __espece__ pourra alors contenir les chaînes "chat", "chien" ou "tortue", mais pas les chaînes "lapin" ou "cheval".
+
+Exemple avec **SET** :
+
+        espece SET('chat', 'chien', 'tortue')
+
+La colonne pourra contenir :
+
+* '' (chaîne vide ) ;
+* 'chat' ;
+* 'chat,tortue' ;
+* 'chat,chien,tortue' ;
+* 'chien,tortue' ;
+
+
 
 #### <a name="copy_table" /> Création d'un table depuis une autre
 
@@ -763,6 +810,14 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
 * [CREATE TABLE](http://dev.mysql.com/doc/refman/5.5/en/create-table.html)
 * [Type de données](http://dev.mysql.com/doc/refman/5.5/en/data-types.html)
     * [Nombre entiers](http://dev.mysql.com/doc/refman/5.5/en/integer-types.html)
+    * [décimal valeur Fixe](http://dev.mysql.com/doc/refman/5.5/en/fixed-point-types.html)
+    * [décimal valeur arrondie](http://dev.mysql.com/doc/refman/5.5/en/floating-point-types.html)
+    * [chaine de caractère](http://dev.mysql.com/doc/refman/5.5/en/char.html)
+    * [champ binaire](http://dev.mysql.com/doc/refman/5.5/en/binary-varbinary.html)   * [LONG chaine de caractère](http://dev.mysql.com/doc/refman/5.5/en/blob.html)
+    * [champs temporelle](http://dev.mysql.com/doc/refman/5.5/en/data-type-defaults.html)
+    * [champs enum](http://dev.mysql.com/doc/refman/5.5/en/enum.html)
+    * [champs set](http://dev.mysql.com/doc/refman/5.5/en/set.html)
+* [OpenClassRoom Mysql par Chantal Gribaumont](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql/les-types-de-donnees)
 
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
