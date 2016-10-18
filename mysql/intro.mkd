@@ -752,7 +752,170 @@ La colonne pourra contenir :
 * 'chat,chien,tortue' ;
 * 'chien,tortue' ;
 
+### <a name="primary_key" /> Définition d'une clé primaire
 
+Référence de documentation sur [OpenClassRoom](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql/cles-primaires-et-etrangeres)
+
+Nous allons commencer par couvrir la question de la clé primaire nous verrons par la suite la mise en relation entre 2 table avec la clé étrangère.
+**La clé primaire permet d'identifier une ligne de manière unique**
+
+La clé primaire peut être une colonne ou une combinaisons de plusieurs colonne, dans tous les cas le résultat est unique dans la table.
+La clé primaire ne peut pas être **null**.
+
+Voyons la mise en place d'une clé primaire , nous reprenons la table en employé :
+
+        mysql> drop table employe;
+        Query OK, 0 rows affected (0.01 sec)
+
+        mysql> create table employe ( id tinyint unsigned PRIMARY KEY, nom varchar(20), titre varchar(30) );
+        Query OK, 0 rows affected (0.02 sec)
+
+        mysql> insert into employe value (1,'Bob Marley','Chanteur');
+        Query OK, 1 row affected (0.01 sec)
+
+        mysql> select  * from employe;
+        +----+------------+----------+
+        | id | nom        | titre    |
+        +----+------------+----------+
+        |  1 | Bob Marley | Chanteur |
+        +----+------------+----------+
+        1 row in set (0.00 sec)
+
+        mysql> insert into employe value (1,'Robert Nesta Marley','Chanteur'); 
+        ERROR 1062 (23000): Duplicate entry '1' for key 'PRIMARY'
+        mysql> desc employe;
+        +-------+---------------------+------+-----+---------+-------+
+        | Field | Type                | Null | Key | Default | Extra |
+        +-------+---------------------+------+-----+---------+-------+
+        | id    | tinyint(3) unsigned | NO   | PRI | NULL    |       |
+        | nom   | varchar(20)         | YES  |     | NULL    |       |
+        | titre | varchar(30)         | YES  |     | NULL    |       |
+        +-------+---------------------+------+-----+---------+-------+
+        3 rows in set (0.00 sec)
+
+Dans l'exemple ci-dessous j'ai identifier la colonne  numéro **id** comme clé primaire , j'ai tenté d'ajouter 2 fois __l'id__ le système ne permet pas.
+
+Mise en place d'une clé primaire à champs multiple :
+
+        mysql> create table nomAlbum ( nom VARCHAR(20), artiste VARCHAR(20), annee YEAR , PRIMARY KEY(nom,annee));
+        Query OK, 0 rows affected (0.01 sec)
+
+        mysql> desc nomAlbum;
+        +---------+-------------+------+-----+---------+-------+
+        | Field   | Type        | Null | Key | Default | Extra |
+        +---------+-------------+------+-----+---------+-------+
+        | nom     | varchar(20) | NO   | PRI |         |       |
+        | artiste | varchar(20) | YES  |     | NULL    |       |
+        | annee   | year(4)     | NO   | PRI | 0000    |       |
+        +---------+-------------+------+-----+---------+-------+
+        3 rows in set (0.00 sec)
+
+        mysql> insert into nomAlbum value ('Babylon Bus','Bob Marley',1973);  
+        Query OK, 1 row affected (0.00 sec)
+
+        mysql> insert into nomAlbum value ('Babylon Bus','Bob Marley',2010);
+        Query OK, 1 row affected (0.00 sec)
+
+        mysql> insert into nomAlbum value ('Babylon Bus','Ki-many Marley',2010);
+        ERROR 1062 (23000): Duplicate entry 'Babylon Bus-2010' for key 'PRIMARY'
+
+Comme vous pouvez le constater pas __d'id__ dans cette situation mais des contraintes sur 2 colonne.
+
+#### <a name="primary_key_le_choix" /> Choisir une clé primaire
+
+Le choix d'une clé primaire est une étape importante dans la conception d'une table. Ce n'est pas parce que vous avez l'impression qu'une colonne, ou un groupe de colonnes, pourrait faire une bonne clé primaire que c'est le cas. Prenons l'exemple d'une table Client, qui contient le nom, le prénom, la date de naissance et l'email des clients d'une société.
+
+Chaque client a bien sûr un nom et un prénom. Est-ce que (nom, prénom) ferait une bonne clé primaire ? Non bien sûr : il est évident ici que vous risquez des doublons. Et si on ajoute la date de naissance ? Les chances de doublons sont alors quasi nulles. Mais quasi nul, ce n'est pas nul… Qu'arrivera-t-il le jour où vous voyez débarquer un client qui a les mêmes nom et prénom qu'un autre, et qui est né le même jour ? On refait toute la base de données ? Non, bien sûr.
+Et l'email alors ? Il est impossible que deux personnes aient la même adresse email, donc la contrainte d'unicité est respectée. Par contre, tout le monde n'est pas obligé d'avoir une adresse email. Difficile donc de mettre une contrainte non **NULL** sur cette colonne.
+
+Par conséquent, on est bien souvent obligé d'ajouter une colonne pour jouer le rôle de la clé primaire. C'est cette fameuse colonne id, __auto-incrémentée__.
+
+Il y a une autre raison d'utiliser une colonne spéciale __auto-incrémentée__, de type **INT** (ou un de ses dérivés) pour la clé primaire. En effet, si l'on définit une clé primaire, c'est en partie dans le but d'utiliser au maximum cette clé pour faire des recherches dans la table. Bien sûr, parfois ce n'est pas possible, parfois vous ne connaissez pas __l'id__ du client, et vous êtes obligés de faire une recherche par nom. Cependant, vous verrez bientôt que les clés primaires peuvent servir à faire des recherches de manière indirecte sur la table. Du coup, comme les recherches sont beaucoup plus rapides sur des nombres que sur des textes, il est souvent intéressant d'avoir une clé primaire composée de colonnes de type **INT**.
+
+### <a name="foreign_key" /> Définition d'une clé étrangère 
+
+Référence de documentation sur [OpenClassRoom](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql/cles-primaires-et-etrangeres)
+
+La clé étrangère c'est bien , c'est pratique pour définir une ligne unique , mais la clé primaire prend tous sont sens avec les clé étrangère 
+**Les clés étrangères ont pour fonction principale la vérification de l'intégrité de votre base. Elles permettent de s'assurer que vous n'insérez pas de bêtises…**
+
+Je vais faire la création de 2 table , une contenant la liste des artistes et l'autre contenant la liste des albums. Avec l'aide des clé primaire et étrangère nous mettrons en relation les 2 tables. 
+La clé primaire de la table **artiste** est le numéro __d'id__.
+La clé primaire de la table **album** est aussi un __id__.
+Nous identifions une colonne artiste dans la table **album** qui est du même type que la clé primaire définie dans la table artiste. Nous assignions la référence avec l'instruction 
+
+        FOREIGN KEY (artiste) REFERENCES artiste(id) );
+
+Voici l'exemple complet de l'opération :
+
+        mysql> create table artiste ( id TINYINT UNSIGNED PRIMARY KEY, nom VARCHAR(20) );
+        Query OK, 0 rows affected (0.01 sec)
+
+        mysql> create table album (id TINYINT UNSIGNED PRIMARY KEY,
+             > nom VARCHAR(20), annee YEAR,
+             > artiste TINYINT UNSIGNED ,
+             > FOREIGN KEY (artiste) REFERENCES artiste(id) );
+
+       mysql> desc album;
+       +---------+---------------------+------+-----+---------+-------+
+       | Field   | Type                | Null | Key | Default | Extra |
+       +---------+---------------------+------+-----+---------+-------+
+       | id      | tinyint(3) unsigned | NO   | PRI | NULL    |       |
+       | nom     | varchar(20)         | YES  |     | NULL    |       |
+       | annee   | year(4)             | YES  |     | NULL    |       |
+       | artiste | tinyint(3) unsigned | YES  | MUL | NULL    |       |
+       +---------+---------------------+------+-----+---------+-------+
+       4 rows in set (0.00 sec)
+
+
+
+Ajoutons un peu de donnée , quelle artiste on ajoute :P .... 
+
+
+        mysql> insert into artiste value (1, 'Bob Marley');
+        Query OK, 1 row affected (0.01 sec)
+
+        mysql> select * from artiste;
+        +----+------------+
+        | id | nom        |
+        +----+------------+
+        |  1 | Bob Marley |
+        +----+------------+
+        1 row in set (0.00 sec)
+
+        mysql> insert into album value (1,'Babylon bus',1973,1);                                                                                                     
+        Query OK, 1 row affected (0.01 sec)
+
+        mysql> select * from album;
+        +----+-------------+-------+---------+
+        | id | nom         | annee | artiste |
+        +----+-------------+-------+---------+
+        |  1 | Babylon bus |  1973 |       1 |
+        +----+-------------+-------+---------+
+        1 row in set (0.00 sec)
+
+
+Voyons maintenant l'erreur de contrainte / clé étrangère 
+
+        mysql> insert into album value (1,'Babylon bus',1973,3);
+        ERROR 1062 (23000): Duplicate entry '1' for key 'PRIMARY'
+
+        mysql> insert into album value (2,'kaya',1978,3);       
+        ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`ma_super_BD`.`album`, CONSTRAINT `album_ibfk_1` FOREIGN KEY (`artiste`) REFERENCES `artiste` (`id`))
+
+        mysql> insert into album value (2,'kaya',1978,1);
+        Query OK, 1 row affected (0.00 sec)
+
+        mysql> select * from album;                             
+        +----+-------------+-------+---------+
+        | id | nom         | annee | artiste |
+        +----+-------------+-------+---------+
+        |  1 | Babylon bus |  1973 |       1 |
+        |  2 | kaya        |  1978 |       1 |
+        +----+-------------+-------+---------+
+        2 rows in set (0.00 sec)
+
+## <a name="create_table_complet" /> Création d'une table version final
 
 #### <a name="copy_table" /> Création d'un table depuis une autre
 
