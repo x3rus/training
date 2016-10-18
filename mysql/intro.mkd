@@ -3,8 +3,6 @@
 pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 </style>
 
-<!-- Use mysql_training == Ubuntu -->
-<!-- Use mysql-train == mysql:5.5-->
 
 # Index 
 
