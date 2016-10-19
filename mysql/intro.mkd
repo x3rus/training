@@ -915,7 +915,44 @@ Voyons maintenant l'erreur de contrainte / clé étrangère
         +----+-------------+-------+---------+
         2 rows in set (0.00 sec)
 
+Voici une représentation graphique du résultat :
+
+![cle_primaire-cle_secondaire.png](./imgs/cle_primaire-cle_secondaire.png)
+
+### <a name="option_available" /> Option disponible par colonne
+
+Nous avons l'essentiel pour créer une base de donnée , nous allons prendre quelques minutes pour voir quelque option additionnel afin d'être en mesure d'interpréter l'ensemble des informations __SQL__ que nous pouvons voir sur internet. 
+
+2 Option que vous retrouverez fréquemment sont :
+
+* **NOT NULL** : qui permet de spécifier que la colonne ne peut PAS être __null__ donc une donnée doit être assigné 
+* **AUTO_INCREMENT** : principalement utilisé pour les colonnes **id** afin que le numéro s incrémente automatiquement.
+
+Voici un exemple d'utilisation :
+
+        mysql> drop table album;
+        Query OK, 0 rows affected (0.00 sec)
+
+        mysql> create table album (id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+             > nom VARCHAR(20) NOT NULL ,
+             > annee YEAR NOT NULL ,
+             > artiste TINYINT UNSIGNED ,
+             > FOREIGN KEY (artiste) REFERENCES artiste(id) );
+
+        mysql> desc album;                                                                                                                                           
+        +---------+---------------------+------+-----+---------+----------------+
+        | Field   | Type                | Null | Key | Default | Extra          |
+        +---------+---------------------+------+-----+---------+----------------+
+        | id      | tinyint(3) unsigned | NO   | PRI | NULL    | auto_increment |
+        | nom     | varchar(20)         | NO   |     | NULL    |                |
+        | annee   | year(4)             | NO   |     | NULL    |                |
+        | artiste | tinyint(3) unsigned | YES  | MUL | NULL    |                |
+        +---------+---------------------+------+-----+---------+----------------+
+        4 rows in set (0.00 sec)
+
 ## <a name="create_table_complet" /> Création d'une table version final
+
+https://codex.wordpress.org/Database_Description
 
 #### <a name="copy_table" /> Création d'un table depuis une autre
 
