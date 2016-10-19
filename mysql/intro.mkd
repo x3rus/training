@@ -952,13 +952,140 @@ Voici un exemple d'utilisation :
 
 ## <a name="create_table_complet" /> Création d'une table version final
 
-https://codex.wordpress.org/Database_Description
+Bon je fus dans l'hésitation pour cette partie faire la création d'un schéma de base de donnée compliqué pour faire la démonstration ou en prendre un déjà existant. Bon je suis un sysadmin, certain dise que je suis bon et un **bon** sysadmin c'est paresseux :P , ça travaille fort pour automatisé dans le but d'avoir plus rien a faire après. Bon dans la pratique ça marche pas, car il y a toujours des trucs cool à faire :D.
 
-#### <a name="copy_table" /> Création d'un table depuis une autre
+Donc voilà comme dans ma vie , c'est très rare que je crée un schéma pour moi, mais je consulte beaucoup de schéma pour comprendre les applications, donc je vais prendre un schéma BD connu pour faire la démonstration :D.
 
-CREATE TABLE new_tbl LIKE orig_tbl;
-CREATE TABLE new_tbl SELECT * FROM orig_tbl;
-c
+J'aime pas __wordpress__, mais comme beaucoup aime on va voir ce schéma voici un exemple du schéma : [schéma de wordpress NON officiel](https://github.com/ronaldbradford/schema/blob/master/wordpress.sql)
+
+On va pas tous faire :P , mais rapidement ceci va permettre de couvrir les aspects manquant de la formation :
+
+        CREATE DATABASE /*!32312 IF NOT EXISTS*/ `wordpress` /*!40100 DEFAULT CHARACTER SET latin1 */;
+        use `wordpress`
+
+Nous avions vu l'instruction **CREATE DATABASE** ici nous avons une instruction supplémentaire **IF NOT EXISTS** ceci permet de ne pas avoir d'erreur si la base de données existe déjà. TRÈS pratique surtout quand vous désirez rafraichir une base de données existante avec le contenu d'une autre BD. 
+Nous avons aussi la définition des caractère par défaut ici **latin1** pour le support des caractères occidentaux telle que les accents , ...
+
+Une fois la BD créer le système bascule sur cette nouvelle BD nommée __wordpress__
+
+        DROP TABLE IF EXISTS `wp_commentmeta`;
+
+Donc si la BD existe déjà le script __SQL__ n'a pas recréer la BD , mais on aimerai bien que les données ou le schéma de la base de données soit recréer , donc l'instruction permet de supprimer la tables uniquement si elle existe.
+
+        CREATE TABLE `wp_commentmeta` (
+          `meta_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+          `comment_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+          `meta_key` varchar(255) DEFAULT NULL,
+          `meta_value` longtext,
+          PRIMARY KEY (`meta_id`),
+          KEY `comment_id` (`comment_id`),
+          KEY `meta_key` (`meta_key`)
+        ) ENGINE=InnoDB AUTO_INCREMENT=213 DEFAULT CHARSET=utf8;
+
+La création d'une table rapidement nous sommes en mesure de l'interpréter couvrant les manque de la formation :-).
+
+* **DEFAULT '0'** et **DEFAULT NULL** : ceci permet de définir une valeur par défaut si l'information ne fut pas transmis lors de l'insertion de la ligne.
+* **KEY** : J'ai volontairement mis de côté cette partie, l'option __KEY__ nous permet de définir des colonnes qui seront spécialement indexé afin de réaliser des recherches plus rapidement dans les tables. Bon si vous êtes __DBA__ vous vous dites c'est le plus important dans un BD , ça change tous pour les performances de la communication avec le système. **HA WELL** vous avez raison, mais pour traiter la question des index faut du temps et le maîtriser :P , je vous invite à consulter [OpenClassRoom index](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql/index-1). Si u __DBA__ veut proposé un article sur les index il me fera plaisir de le rajouter à la formation :D.
+* **AUTO_INCREMENT=213** : Telle que mentionné l'auto incrémentation permet d'automatiquement incrémenté la valeur, dans l'exemple présent la valeur initiale n'est pas 1 mais 213 . [AUTO_INCREMENT](http://dev.mysql.com/doc/refman/5.5/en/example-auto-increment.html)
+* **DEFAULT CHARSET=utf8** : caractère supporté par défaut dans la table.
+
+Telle que mentionné je ferai pas toutes les tables :P :
+
+        CREATE TABLE `wp_options` (
+          `option_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+          `blog_id` int(11) NOT NULL DEFAULT '0',
+          `option_name` varchar(64) NOT NULL DEFAULT '',
+          `option_value` longtext NOT NULL,
+          `autoload` varchar(20) NOT NULL DEFAULT 'yes',
+          PRIMARY KEY (`option_id`),
+          UNIQUE KEY `option_name` (`option_name`)
+        ) ENGINE=MyISAM AUTO_INCREMENT=19306 DEFAULT CHARSET=utf8;
+
+Ici nous avons :
+
+* **UNIQUE KEY** : Nous avions vue que la mise en place de clé primaire permet d'assurer que le champs est unique , en plus d'être un point de référence pour la table.  L'instruction [UNIQUE KEY](http://dev.mysql.com/doc/refman/5.5/en/partitioning-limitations-partitioning-keys-unique-keys.html) permet d'identifier un champ de la table qui doit être uniquement mais qui n'est pas forcément une clé primaire qui sera utilisé dans d'autre table comme clé étrangère.
+
+Bon les personnes qui se sont dit aille mais il y a aussi **ENGINE=** t'en parle pas :P, oui oui je sais no stress je vais le couvrir dans une autre section ça va prendre plus qu'une ligne. Puis je trouve ça plus intéressant que les **index** :P .
+
+Je vous invite si le sujet de __wordpress__ vous intéresse peut-être vous avez déjà l'application en place de consulter cette page :
+
+[https://codex.wordpress.org/Database\_Description](https://codex.wordpress.org/Database_Description) , c'est très intéressant pour comprendre la structure .
+
+Voici une représentation des tables :
+
+![WP4.4.2-ERD.png](./imgs/WP4.4.2-ERD.png) 
+
+Je vous laisse le plaisir de lire le tous si vous avez des questions , répondez y ...heu non c pas ça vous pouvez me contacter, mais pas sur les index :P...
+
+## <a name="copy_table" /> Création d'un table depuis une autre (petit truc)
+
+Éventuellement il vous arrivera de vouloir réaliser une modification sur un table, via un script ou peu importe, mais vous n'êtes pas certain de votre coup. Bien entendu la meilleur solution est de monté un lab à coté pour faire vos testes ... Bon dans la pratique une copie de la table sur la même BD serait probablement suffisant selon vos besoin.
+
+Il est possible de créer une table en utilisant une autre comme référence , voici un exemple:
+
+        mysql> desc artiste;
+        +-------+---------------------+------+-----+---------+-------+
+        | Field | Type                | Null | Key | Default | Extra |
+        +-------+---------------------+------+-----+---------+-------+
+        | id    | tinyint(3) unsigned | NO   | PRI | NULL    |       |
+        | nom   | varchar(20)         | YES  |     | NULL    |       |
+        +-------+---------------------+------+-----+---------+-------+
+        2 rows in set (0.00 sec)
+
+        mysql> select * from artiste;                               
+        +----+-------------------+
+        | id | nom               |
+        +----+-------------------+
+        |  1 | Bob Marley        |
+        |  2 | tairo             |
+        |  3 | Lee Scratch Perry |
+        +----+-------------------+
+        3 rows in set (0.00 sec)
+
+Je vais utiliser la table **artiste** pour créer une autre table nommé **t_artiste**  :
+
+        mysql> CREATE TABLE t_artiste LIKE artiste;
+        Query OK, 0 rows affected (0.02 sec)
+
+        mysql> desc t_artiste;
+        +-------+---------------------+------+-----+---------+-------+
+        | Field | Type                | Null | Key | Default | Extra |
+        +-------+---------------------+------+-----+---------+-------+
+        | id    | tinyint(3) unsigned | NO   | PRI | NULL    |       |
+        | nom   | varchar(20)         | YES  |     | NULL    |       |
+        +-------+---------------------+------+-----+---------+-------+
+        2 rows in set (0.00 sec)
+
+        mysql> select * from t_artiste;
+        Empty set (0.00 sec)
+
+**Woww** mais elle est vide c'est nul ton truc.... Bon bon avec les données maintenant 
+
+        mysql> CREATE TABLE t2_artiste SELECT * FROM artiste;
+        Query OK, 3 rows affected (0.02 sec)
+        Records: 3  Duplicates: 0  Warnings: 0
+
+        mysql> desc t2_artiste;
+        +-------+---------------------+------+-----+---------+-------+
+        | Field | Type                | Null | Key | Default | Extra |
+        +-------+---------------------+------+-----+---------+-------+
+        | id    | tinyint(3) unsigned | NO   |     | NULL    |       |
+        | nom   | varchar(20)         | YES  |     | NULL    |       |
+        +-------+---------------------+------+-----+---------+-------+
+        2 rows in set (0.00 sec)
+
+        mysql> select * from t2_artiste;
+        +----+-------------------+
+        | id | nom               |
+        +----+-------------------+
+        |  1 | Bob Marley        |
+        |  2 | tairo             |
+        |  3 | Lee Scratch Perry |
+        +----+-------------------+
+        3 rows in set (0.00 sec)
+
+**Woww** magie , maintenant vous pouvez lancer votre script qui casse tous sur cette table pour vos teste :D.
+
 ### <a name="type_de_bd" /> Type de BD MyISAM , Innodb
 
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
@@ -1015,8 +1142,11 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
     * [champs temporelle](http://dev.mysql.com/doc/refman/5.5/en/data-type-defaults.html)
     * [champs enum](http://dev.mysql.com/doc/refman/5.5/en/enum.html)
     * [champs set](http://dev.mysql.com/doc/refman/5.5/en/set.html)
+* [AUTO_INCREMENT](http://dev.mysql.com/doc/refman/5.5/en/example-auto-increment.html)
+* [UNIQUE KEY](http://dev.mysql.com/doc/refman/5.5/en/partitioning-limitations-partitioning-keys-unique-keys.html)
 * [OpenClassRoom Mysql par Chantal Gribaumont](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql/les-types-de-donnees)
-
+* [OpenClassRoom clé primaire / clé étrangère](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql/cles-primaires-et-etrangeres)
+* [OpenClassRoom index](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql/index-1)
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
 # <a name="performance" /> Configuration de performance
