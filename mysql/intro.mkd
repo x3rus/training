@@ -1,4 +1,4 @@
-<cmeta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
 <style>
 pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 </style>
@@ -1086,6 +1086,190 @@ Je vais utiliser la table **artiste** pour créer une autre table nommé **t_art
 
 **Woww** magie , maintenant vous pouvez lancer votre script qui casse tous sur cette table pour vos teste :D.
 
+# <a name="language_sql" /> Langage SQL
+
+J'ai choisie de fournir les explications sur le langage __SQL__ uniquement maintenant, car mon idée est de vous fournir les outils pour mettre en place une base de données qui est utilisé par une application tierce. Est-ce que ce fut un bon choix à vous de me le dire, je pourrais restructurer les chapitres pour les étudiant à venir.
+
+J'ai réalisé quelque démonstration de requête telle que la récupération d'information **SELECT** et des insertions **INSERT** prenant le temps de mieux les couvrir. Je le répète, je ne suis pas __DBA__ donc n'attendais pas des informations sur les optimisations __SQL__ ...
+
+## <a name="language_sql_insert" /> Insertion de données
+
+Référence chez __MySQL__: [INSERT](http://dev.mysql.com/doc/refman/5.5/en/insert.html)
+Avant de pouvoir réalisé des requêtes pour extraire de l'information débutons par l'insertion de données.
+
+Pour les besoins de la démonstration nous allons faire la création d'une table :
+
+        mysql> CREATE TABLE produit ( id INT AUTO_INCREMENT PRIMARY KEY,
+            -> nom VARCHAR(20) NOT NULL,
+            -> info VARCHAR(100),
+            -> creation_data TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  
+            -> prix BIGINT ); 
+
+        mysql> desc produit;
+        +---------------+--------------+------+-----+-------------------+----------------+
+        | Field         | Type         | Null | Key | Default           | Extra          |
+        +---------------+--------------+------+-----+-------------------+----------------+
+        | id            | int(11)      | NO   | PRI | NULL              | auto_increment |
+        | nom           | varchar(20)  | NO   |     | NULL              |                |
+        | info          | varchar(100) | YES  |     | NULL              |                |
+        | creation_data | timestamp    | NO   |     | CURRENT_TIMESTAMP |                |
+        | prix          | bigint(20)   | YES  |     | NULL              |                |
+        +---------------+--------------+------+-----+-------------------+----------------+
+        5 rows in set (0.00 sec)
+
+Petit point d'ajout ici , j'ai définie comme valeur par défaut pour le champs **creation_data** une valeur dynamique lors de l'ajout d'une ligne par défaut la date courante sera assigné.
+
+* Ajout d'une entré en spécifiant l'ensemble des colonnes 
+
+        mysql> insert into produit values (1,'Apache 2','Serveur Web OpenSOURCE, multi-fonction',1476966010,0);
+        Query OK, 1 row affected, 1 warning (0.01 sec)
+
+    Dans l'exemple ci-dessus j'ai remplie l'ensemble des colonnes , il n'y a donc pas eu utilisation des valeurs par défaut, l'information fut entré dans l'ordre définie de la tables des colonnes. En d'autre mot 
+    * 1 == 'id'
+    * 'Apache 2' == nom
+    * 'Serveur ...' == info 
+    * etc 
+
+* Ajout d'une entré avec uniquement certaine colonne 
+
+        mysql> insert into produit (nom,info) values ('Haproxy','Load Balancer logiciel OpenSource');
+        Query OK, 1 row affected (0.00 sec)
+
+    Dans l'exemple ci-dessus, nous ajoutons une entré dans la table produit, mais uniquement en fournissant l'information sur la colonne **nom**, **info**. Pour informer __MySQL__ que nous ne fournissons pas l'information de l'ensemble des colonnes nous spécifions avec l'instruction **values** les colonnes fournit.
+
+Regardons le résultat :
+
+
+        mysql> select * from produit;
+        +----+----------+----------------------------------------+---------------------+------+
+        | id | nom      | info                                   | creation_data       | prix |
+        +----+----------+----------------------------------------+---------------------+------+
+        |  1 | Apache 2 | Serveur Web OpenSOURCE, multi-fonction | 0000-00-00 00:00:00 |    0 |
+        |  2 | Haproxy  | Load Balancer logiciel OpenSource      | 2016-10-20 12:23:13 | NULL |
+        +----+----------+----------------------------------------+---------------------+------+
+        2 rows in set (0.00 sec)
+
+Bon comme vous pouvez le voir la rédaction de l'instruction pour l'ajout d'apache n'est pas bonne :P , bon au lieu de le corriger maintenant je vais conservé l'erreur pour visualisé comment modifier une entré dans la section suivante . On va profité de l'erreur :D. Je vais faire l'ajout de quelques entré en plus afin d'avoir plus d'éléments pour la récupération des données.
+
+
+        mysql> insert into produit (nom,creation_data,prix) values ('RHEL7','2016-10-20 08:23:13',300);
+        Query OK, 1 row affected (0.00 sec)
+
+        mysql> insert into produit (nom,creation_data,prix) values ('SUSE 14','2016-09-10 08:23:13',600);
+        Query OK, 1 row affected (0.00 sec)
+
+        mysql> insert into produit (prix,nom) values (0,'Ubuntu 16.10');                                 
+        Query OK, 1 row affected (0.01 sec)
+
+        mysql> insert into produit (nom) values ('Arch');                                                
+        Query OK, 1 row affected (0.01 sec)
+
+        mysql> insert into produit (nom,info,prix) values ('Spotify','application privative',10);
+        Query OK, 1 row affected (0.00 sec)
+
+        mysql> insert into produit (nom,info,creation_data,prix) values ('Chrome','Web browser privatif','2016-09-10 19:30:00',0);
+        Query OK, 1 row affected (0.01 sec)
+
+
+## <a name="language_sql_select" /> Récupération de données
+
+Référence chez __MySQL__: [SELECT](http://dev.mysql.com/doc/refman/5.5/en/select.html)
+
+Je viens de réaliser plusieurs ajout validons le résultat avec une requête très simple qui extrait l'ensemble de l'information :
+
+        mysql> select * from produit;
+        +----+--------------+----------------------------------------+---------------------+------+
+        | id | nom          | info                                   | creation_data       | prix |
+        +----+--------------+----------------------------------------+---------------------+------+
+        |  1 | Apache 2     | Serveur Web OpenSOURCE, multi-fonction | 0000-00-00 00:00:00 |    0 |
+        |  2 | Haproxy      | Load Balancer logiciel OpenSource      | 2016-10-20 12:23:13 | NULL |
+        |  4 | RHEL7        | NULL                                   | 2016-10-20 08:23:13 |  300 |
+        |  5 | SUSE 14      | NULL                                   | 2016-09-10 08:23:13 |  600 |
+        |  6 | Ubuntu 16.10 | NULL                                   | 2016-10-20 12:32:01 |    0 |
+        |  7 | Arch         | NULL                                   | 2016-10-20 12:32:23 | NULL |
+        |  8 | RHEL 6       | NULL                                   | 2016-10-20 12:33:19 |  400 |
+        |  9 | Spotify      | application privative                  | 2016-10-20 12:34:52 |   10 |
+        | 10 | Chrome       | Web browser privatif                   | 2016-09-10 19:30:00 |    0 |
+        +----+--------------+----------------------------------------+---------------------+------+
+        9 rows in set (0.00 sec)
+
+Grâce à l'étoile vous avez l'ensemble des colonnes , si vous désirez avoir uniquement le nom ET le prix :-/, __Yep__ c'est souvent ce qui arrive :P 
+
+        mysql> select nom,prix from produit;
+        +--------------+------+
+        | nom          | prix |
+        +--------------+------+
+        | Apache 2     |    0 |
+        | Haproxy      | NULL |
+        | RHEL7        |  300 |
+        | SUSE 14      |  600 |
+        | Ubuntu 16.10 |    0 |
+        | Arch         | NULL |
+        | RHEL 6       |  400 |
+        | Spotify      |   10 |
+        | Chrome       |    0 |
+        +--------------+------+
+        9 rows in set (0.00 sec)
+
+En ajoutant la liste des colonnes que je désire, je n'extrait que l'information désirée. 
+
+Vous pouvez rajouter les clauses restrictive sur le résultat grâce à l'instruction **WHERE** définie dans la requête, par exemple si nous reprenons nos __prix__ si je ne désires pas voir les prix qui ne fut pas entré. Donc les prix aillant une valeur __NULL__ 
+
+        mysql> select nom,prix from produit where prix is not null;   
+        +--------------+------+
+        | nom          | prix |
+        +--------------+------+
+        | Apache 2     |    0 |
+        | RHEL7        |  300 |
+        | SUSE 14      |  600 |
+        | Ubuntu 16.10 |    0 |
+        | RHEL 6       |  400 |
+        | Spotify      |   10 |
+        | Chrome       |    0 |
+        +--------------+------+
+        7 rows in set (0.00 sec
+
+Ou uniquement les prix égaux à 0 
+
+        mysql> select nom,prix from produit where prix=0;          
+        +--------------+------+
+        | nom          | prix |
+        +--------------+------+
+        | Apache 2     |    0 |
+        | Ubuntu 16.10 |    0 |
+        | Chrome       |    0 |
+        +--------------+------+
+        3 rows in set (0.00 sec)
+
+Il est possible aussi d'utiliser les > , >= ,< , <= :D 
+
+        mysql> select nom,prix from produit where prix <= 300 ;
+        +--------------+------+
+        | nom          | prix |
+        +--------------+------+
+        | Apache 2     |    0 |
+        | RHEL7        |  300 |
+        | Ubuntu 16.10 |    0 |
+        | Spotify      |   10 |
+        | Chrome       |    0 |
+        +--------------+------+
+        5 rows in set (0.00 sec)
+
+        mysql> select nom,prix from produit where prix > 0 AND prix <= 300 ;
+        +---------+------+
+        | nom     | prix |
+        +---------+------+
+        | RHEL7   |  300 |
+        | Spotify |   10 |
+        +---------+------+
+        2 rows in set (0.00 sec)
+
+## <a name="language_sql_update" /> Mise à jour d'un champ
+## <a name="language_sql_alter" /> Modification d'une table
+## <a name="language_sql_lock" /> Lock d'une table
+## <a name="language_sql_commit" /> Regroupement d'opération (Transaction)
+## <a name="language_sql_trigger" /> Trigger 
+
 ### <a name="type_de_bd" /> Type de BD MyISAM , Innodb
 
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
@@ -1147,6 +1331,9 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
 * [OpenClassRoom Mysql par Chantal Gribaumont](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql/les-types-de-donnees)
 * [OpenClassRoom clé primaire / clé étrangère](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql/cles-primaires-et-etrangeres)
 * [OpenClassRoom index](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql/index-1)
+* Syntaxe __SQL__
+    * [INSERT](http://dev.mysql.com/doc/refman/5.5/en/insert.html) 
+
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
 # <a name="performance" /> Configuration de performance
