@@ -1264,8 +1264,135 @@ Il est possible aussi d'utiliser les > , >= ,< , <= :D
         +---------+------+
         2 rows in set (0.00 sec)
 
+Autre exemple avec une chaine de caractère :
+
+        mysql> select nom,info from produit where info like '%priva%' OR prix > 300;
+        +---------+-----------------------+
+        | nom     | info                  |
+        +---------+-----------------------+
+        | SUSE 14 | NULL                  |
+        | RHEL 6  | NULL                  |
+        | Spotify | application privative |
+        | Chrome  | Web browser privatif  |
+        +---------+-----------------------+
+        4 rows in set (0.00 sec)
+
+ICI nous recherchons les chaînes de caractère contenant **priva** ou que le prix est > que 300 .
+
+Avec l'instruction **ORDER BY** nous pouvons reclassé le résultat :
+
+        mysql> select nom,info from produit where info like '%priva%' OR prix > 300 ORDER BY nom;
+        +---------+-----------------------+
+        | nom     | info                  |
+        +---------+-----------------------+
+        | Chrome  | Web browser privatif  |
+        | RHEL 6  | NULL                  |
+        | Spotify | application privative |
+        | SUSE 14 | NULL                  |
+        +---------+-----------------------+
+        4 rows in set (0.00 sec)
+
+Si vous avez un grand nombre d'enregistrement il est possible de limité le résultat retourné avec l'instruction **LIMIT** :
+
+        mysql> select nom,info from produit where info like '%priva%' OR prix > 300 ORDER BY nom LIMIT 2;
+        +--------+----------------------+
+        | nom    | info                 |
+        +--------+----------------------+
+        | Chrome | Web browser privatif |
+        | RHEL 6 | NULL                 |
+        +--------+----------------------+
+        2 rows in set (0.00 sec)
+
+Nous limitons à 2 enregistrements le résultat retourné. **ATTENTION** cette instruction **limit** n'est pas disponible dans toutes les Base de données si mes souvenir sont bon sous __Postgress__ et/ou __Oracle__ ce n'est pas la même instruction.
+
+Il est possible de faire beaucoup , beaucoup plus avec des **JOIN** , **GROUP BY**, ... Faites vous amis avec un __DBA__ ;-) il se fera un plaisir de vous fournir plus d'information . Je le répète si vous avez un bon site de référence , il me fera un plaisir de l'ajouter en lien ICI :D.
+
 ## <a name="language_sql_update" /> Mise à jour d'un champ
+
+Nous avons ajouter des entrés , extrait les informations depuis la table, voyons maintenant la mise à jour d'une entré. Il est possible que lors de la saisie il y a eu une erreur de frappe voir une faute d'orthographe :P. Moi faire une faute d'orthographe ... Non jamais du moins je la vois pas ;-).
+
+Documentation sur __MySQL__ : [UPDATE](http://dev.mysql.com/doc/refman/5.5/en/update.html) 
+
+Trêve de plaisanterie , voyons la modification d'un champs , comme nous l'avons vu il y a plusieurs entré avec la colonne __info__ à __null__.
+
+        mysql> select * from produit where info is NULL;
+        +----+--------------+------+---------------------+------+
+        | id | nom          | info | creation_data       | prix |
+        +----+--------------+------+---------------------+------+
+        |  4 | RHEL7        | NULL | 2016-10-20 08:23:13 |  300 |
+        |  5 | SUSE 14      | NULL | 2016-09-10 08:23:13 |  600 |
+        |  6 | Ubuntu 16.10 | NULL | 2016-10-20 12:32:01 |    0 |
+        |  7 | Arch         | NULL | 2016-10-20 12:32:23 | NULL |
+        |  8 | RHEL 6       | NULL | 2016-10-20 12:33:19 |  400 |
+        +----+--------------+------+---------------------+------+
+        5 rows in set (0.00 sec)
+
+Bon nous pouvons faire une modification "simple" :
+
+        mysql> update produit set info = "RedHat Enterprise class Linux "  where nom="RHEL7";
+        Query OK, 1 row affected (0.01 sec)
+        Rows matched: 1  Changed: 1  Warnings: 0
+
+        mysql> select * from produit where nom="RHEL7"  ;
+        +----+-------+--------------------------------+---------------------+------+
+        | id | nom   | info                           | creation_data       | prix |
+        +----+-------+--------------------------------+---------------------+------+
+        |  4 | RHEL7 | RedHat Enterprise class Linux  | 2016-10-20 08:23:13 |  300 |
+        +----+-------+--------------------------------+---------------------+------+
+        1 row in set (0.00 sec)
+
+**ATTENTION**: Lors de l'utilisation de l'instruction **update** il est super important de définir la clause **WHERE** sinon la modification fournit sera appliquer sur **TOUTES** les entrés. Je vous suggère d'utiliser l'instruction **LIMIT** pour vous donnez un filet de sécurité.
+Démonstration :
+
+        mysql> select * from produit where info is NULL;                                     
+        +----+--------------+------+---------------------+------+
+        | id | nom          | info | creation_data       | prix |
+        +----+--------------+------+---------------------+------+
+        |  5 | SUSE 14      | NULL | 2016-09-10 08:23:13 |  600 |
+        |  6 | Ubuntu 16.10 | NULL | 2016-10-20 12:32:01 |    0 |
+        |  7 | Arch         | NULL | 2016-10-20 12:32:23 | NULL |
+        |  8 | RHEL 6       | NULL | 2016-10-20 12:33:19 |  400 |
+        +----+--------------+------+---------------------+------+
+        4 rows in set (0.00 sec)
+
+
+        mysql> UPDATE produit SET info = "Non definie" WHERE info IS NULL limit 1;           
+        Query OK, 1 row affected (0.01 sec)
+        Rows matched: 1  Changed: 1  Warnings: 0
+
+        mysql> select * from produit where info is NULL;                          
+        +----+--------------+------+---------------------+------+
+        | id | nom          | info | creation_data       | prix |
+        +----+--------------+------+---------------------+------+
+        |  6 | Ubuntu 16.10 | NULL | 2016-10-20 12:32:01 |    0 |
+        |  7 | Arch         | NULL | 2016-10-20 12:32:23 | NULL |
+        |  8 | RHEL 6       | NULL | 2016-10-20 12:33:19 |  400 |
+        +----+--------------+------+---------------------+------+
+        3 rows in set (0.00 sec)
+
+J'ai valider mon instruction sur **une** entré j'applique maintenant sur l'ensemble :
+
+        mysql> UPDATE produit SET info = "Non definie" WHERE info IS NULL;        
+        Query OK, 3 rows affected (0.00 sec)
+        Rows matched: 3  Changed: 3  Warnings: 0
+
+Encore une fois je pense que l'on peut faire des choses plus tordue et plus performant, mais ça sort de mon champs de compétence :D.
+
 ## <a name="language_sql_alter" /> Modification d'une table
+
+Bon c'est cool tous ça mais dans ma liste de produit je n'ai pas l'information si c'est libre ou non !!! Ma seule ET unique source d'information est le champs __info__ s'il y a l'indication que le système est propriétaire , privatif, restrictif, dépossédant, réprimant la liberté ,... Comme nous pouvons le voir le nombre de terme utilisé peut varié énormément .
+De plus le prix n'est pas une source de référence , car c'est **libre** l'important PAS gratuit . 
+
+        free as in free speech not free beer
+
+[What is free software?](https://www.gnu.org/philosophy/free-sw.en.html)
+
+Ceci étant dit j'aimerai rajouter une colonne contenant l'information afin de sélectionner rapidement les bon produits :D.
+
+Documentation sur __MySQL__ : [ALTER](http://dev.mysql.com/doc/refman/5.5/en/alter-table.html)
+
+**ATTENTION**: Avant de réaliser ce type d'opération prenez un peu de recule et évaluer les conséquences ... 
+
 ## <a name="language_sql_lock" /> Lock d'une table
 ## <a name="language_sql_commit" /> Regroupement d'opération (Transaction)
 ## <a name="language_sql_trigger" /> Trigger 
@@ -1333,6 +1460,9 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
 * [OpenClassRoom index](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql/index-1)
 * Syntaxe __SQL__
     * [INSERT](http://dev.mysql.com/doc/refman/5.5/en/insert.html) 
+    * [SELECT](http://dev.mysql.com/doc/refman/5.5/en/select.html) 
+    * [UPDATE](http://dev.mysql.com/doc/refman/5.5/en/update.html) 
+    * [ALTER](http://dev.mysql.com/doc/refman/5.5/en/alter-table.html)
 
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
