@@ -1391,47 +1391,234 @@ Ceci étant dit j'aimerai rajouter une colonne contenant l'information afin de s
 
 Documentation sur __MySQL__ : [ALTER](http://dev.mysql.com/doc/refman/5.5/en/alter-table.html)
 
-**ATTENTION**: Avant de réaliser ce type d'opération prenez un peu de recule et évaluer les conséquences ... 
+**ATTENTION**: Avant de réaliser ce type d'opération prenez un peu de recule et évaluer les conséquences :
 
-## <a name="language_sql_lock" /> Lock d'une table
-## <a name="language_sql_commit" /> Regroupement d'opération (Transaction)
-## <a name="language_sql_trigger" /> Trigger 
+* Si vous changez le nombre de colonne et que votre code réalise des **INSERT** sans spécifier les colonnes il y aura une erreur dans votre programme lors de l'insertion de données
+* Il y a un risque d'erreur d'intégrité des données entre les enregistrements originalement créer et les nouvelles
 
-### <a name="type_de_bd" /> Type de BD MyISAM , Innodb
+En d'autre mot il faut que le code suive les données :D.
 
-## <a name="view_vars_change_it"/> Visualisation et modification des variables
+Bon revenons à l'opération proprement dite, nous avons la table produit : 
 
-* max_connexion ...
-
-# <a name="perms_mysql_tables" /> Manipulation des permissions avec mysql sans le grant
-
-Bon voyons à l'étape **brutale** :D , car bon c'est ça qui est cool avec le libre, il y a la bonne méthode jolie avec les commandes :) , puis y a la méthode ou tu modifies le fichier en arrière puis ça marche :D. Je ne vous dis pas d'utiliser cette méthode !!! Mon objectif avec la démonstration est de démontré comment __Mysql__ stock l'information des permissions , le savoir est bien !
-
-Telle mentionné, le système __MySQL__ à besoin de la base de données __mysql__ pour fonctionné afin de conserver les informations du système dont les permissions utilisateur. Nous allons créer une nouvelle base de donnée et refaire la même opération de création d'utilisateur mais sans **create user** et **sans les grant** . 
-Pour les personnes qui disent **POURQUOI ?** vous pouvez passer au prochaine chapitre, car **la question n'est pas pourquoi mais COMMENT ?** .
-
-Allez on crée la base de donnée : **zer\_bd**
-
-        mysql> create database ze_bd ;
-            Query OK, 1 row affected (0.00 sec)
-
-        mysql> show databases;
-        +--------------------+
-        | Database           |
-        +--------------------+
-        | information_schema |
-        | ma_super_BD        |
-        | mysql              |
-        | performance_schema |
-        | ze_bd              |
-        +--------------------+
+        mysql> desc produit;
+        +---------------+--------------+------+-----+-------------------+----------------+
+        | Field         | Type         | Null | Key | Default           | Extra          |
+        +---------------+--------------+------+-----+-------------------+----------------+
+        | id            | int(11)      | NO   | PRI | NULL              | auto_increment |
+        | nom           | varchar(20)  | NO   |     | NULL              |                |
+        | info          | varchar(100) | YES  |     | NULL              |                |
+        | creation_data | timestamp    | NO   |     | CURRENT_TIMESTAMP |                |
+        | prix          | bigint(20)   | YES  |     | NULL              |                |
+        +---------------+--------------+------+-----+-------------------+----------------+
         5 rows in set (0.00 sec)
 
-Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de donnée __mysql__
+Nous voulons rajouter la colonne licence_type , je vais utiliser le type **SET**, car il y a parfois des applications avec une double licence possible.
 
-        mysql> use mysql;
-        Database changed
+        mysql> ALTER TABLE produit ADD COLUMN licence_type SET('privatif','libre','inconnue') DEFAULT 'inconnue' ;
+        Query OK, 9 rows affected (0.04 sec)
+        Records: 9  Duplicates: 0  Warnings: 0
 
+        mysql> desc produit;
+        +---------------+------------------------------------+------+-----+-------------------+----------------+
+        | Field         | Type                               | Null | Key | Default           | Extra          |
+        +---------------+------------------------------------+------+-----+-------------------+----------------+
+        | id            | int(11)                            | NO   | PRI | NULL              | auto_increment |
+        | nom           | varchar(20)                        | NO   |     | NULL              |                |
+        | info          | varchar(100)                       | YES  |     | NULL              |                |
+        | creation_data | timestamp                          | NO   |     | CURRENT_TIMESTAMP |                |
+        | prix          | bigint(20)                         | YES  |     | NULL              |                |
+        | licence_type  | set('privatif','libre','inconnue') | YES  |     | inconnue          |                |
+        +---------------+------------------------------------+------+-----+-------------------+----------------+
+        6 rows in set (0.00 sec)
+
+        mysql> select * from produit;
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        | id | nom          | info                                   | creation_data       | prix | licence_type |
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        |  1 | Apache 2     | Serveur Web OpenSOURCE, multi-fonction | 0000-00-00 00:00:00 |    0 | inconnue     |
+        |  2 | Haproxy      | Load Balancer logiciel OpenSource      | 2016-10-20 12:23:13 | NULL | inconnue     |
+        |  4 | RHEL7        | RedHat Enterprise class Linux          | 2016-10-20 08:23:13 |  300 | inconnue     |
+        |  5 | SUSE 14      | Non definie                            | 2016-09-10 08:23:13 |  600 | inconnue     |
+        |  6 | Ubuntu 16.10 | Non definie                            | 2016-10-20 12:32:01 |    0 | inconnue     |
+        |  7 | Arch         | Non definie                            | 2016-10-20 12:32:23 | NULL | inconnue     |
+        |  8 | RHEL 6       | Non definie                            | 2016-10-20 12:33:19 |  400 | inconnue     |
+        |  9 | Spotify      | application privative                  | 2016-10-20 12:34:52 |   10 | inconnue     |
+        | 10 | Chrome       | Web browser privatif                   | 2016-09-10 19:30:00 |    0 | inconnue     |
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        9 rows in set (0.00 sec)
+
+Comme vous pouvez le constater l'ensemble des enregistrements ont maintenant la valeur par défaut définie pour la colonne . Une petite révision de l'instruction **UPDATE** :)
+
+        mysql> UPDATE produit SET licence_type='libre';
+        Query OK, 9 rows affected (0.00 sec)
+        Rows matched: 9  Changed: 9  Warnings: 0
+
+        mysql> UPDATE produit SET licence_type='privatif' WHERE info like '%priv%';
+        Query OK, 2 rows affected (0.01 sec)
+        Rows matched: 2  Changed: 2  Warnings: 0
+
+        mysql> select * from produit;
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        | id | nom          | info                                   | creation_data       | prix | licence_type |
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        |  1 | Apache 2     | Serveur Web OpenSOURCE, multi-fonction | 0000-00-00 00:00:00 |    0 | libre        |
+        |  2 | Haproxy      | Load Balancer logiciel OpenSource      | 2016-10-20 12:23:13 | NULL | libre        |
+        |  4 | RHEL7        | RedHat Enterprise class Linux          | 2016-10-20 08:23:13 |  300 | libre        |
+        |  5 | SUSE 14      | Non definie                            | 2016-09-10 08:23:13 |  600 | libre        |
+        |  6 | Ubuntu 16.10 | Non definie                            | 2016-10-20 12:32:01 |    0 | libre        |
+        |  7 | Arch         | Non definie                            | 2016-10-20 12:32:23 | NULL | libre        |
+        |  8 | RHEL 6       | Non definie                            | 2016-10-20 12:33:19 |  400 | libre        |
+        |  9 | Spotify      | application privative                  | 2016-10-20 12:34:52 |   10 | privatif     |
+        | 10 | Chrome       | Web browser privatif                   | 2016-09-10 19:30:00 |    0 | privatif     |
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        9 rows in set (0.00 sec)
+
+Vous pouvez aussi modifier le nom d'une table si le __product manager__ vient vous ennuyez sur le nom d'une table (oui oui ça arrive :P )
+
+        mysql> ALTER TABLE produit CHANGE info description varchar(100) ;
+        Query OK, 9 rows affected (0.04 sec)
+        Records: 9  Duplicates: 0  Warnings: 0
+
+        mysql> select * from produit limit 1;
+        +----+----------+----------------------------------------+---------------------+------+--------------+
+        | id | nom      | description                            | creation_data       | prix | licence_type |
+        +----+----------+----------------------------------------+---------------------+------+--------------+
+        |  1 | Apache 2 | Serveur Web OpenSOURCE, multi-fonction | 0000-00-00 00:00:00 |    0 | libre        |
+        +----+----------+----------------------------------------+---------------------+------+--------------+
+        1 row in set (0.00 sec)
+
+Nous avons changé le nom de la table **info** pour **description**, je vous laisse consulter la documentation pour voir les autres possibilité :
+[ALTER](http://dev.mysql.com/doc/refman/5.5/en/alter-table.html)
+
+## <a name="language_sql_commit" /> Regroupement d'opération (Transaction)
+
+Le regroupement d'opération, car on est pas tous __DBA__ et avoir un filet c'est vraiment agréable !!!
+
+Documentation __MySQL__ : [COMMIT](http://dev.mysql.com/doc/refman/5.5/en/commit.html)
+
+Si vous réalisez beaucoup d'opérations sur des données et que vous êtes comme moi pas toujours confortable avec les requêtes __SQL__ vous avez peut-être peur de réaliser une erreur de manipulation :-/. Vous pouvez toujours faire des testes sur une copie de la base de données, mais si cette dernière est volumineuse il est probable que les données soit pas tous à fait à jour. 
+
+Visualisation de la table avant opération :
+
+        mysql> select * from produit;
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        | id | nom          | description                            | creation_data       | prix | licence_type |
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        |  1 | Apache 2     | Serveur Web OpenSOURCE, multi-fonction | 0000-00-00 00:00:00 |    0 | libre        |
+        |  2 | Haproxy      | Load Balancer logiciel OpenSource      | 2016-10-20 12:23:13 | NULL | libre        |
+        |  4 | RHEL7        | RedHat Enterprise class Linux          | 2016-10-20 08:23:13 |  300 | libre        |
+        |  5 | SUSE 14      | Non definie                            | 2016-09-10 08:23:13 |  600 | libre        |
+        |  6 | Ubuntu 16.10 | Non definie                            | 2016-10-20 12:32:01 |    0 | libre        |
+        |  7 | Arch         | Non definie                            | 2016-10-20 12:32:23 | NULL | libre        |
+        |  8 | RHEL 6       | Non definie                            | 2016-10-20 12:33:19 |  400 | libre        |
+        |  9 | Spotify      | application privative                  | 2016-10-20 12:34:52 |   10 | privatif     |
+        | 10 | Chrome       | Web browser privatif                   | 2016-09-10 19:30:00 |    0 | privatif     |
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        9 rows in set (0.00 sec)
+
+
+
+Le système de transaction vous permet de réalisé des modifications en mémoire avec qu'elle soit appliqué et de les __COMMITÉ__ une fois le résultat attendu réussie. Voyons une exemple , je démarre avec l'instruction **START TRANSACTION** le filet , les opérations qui suivrons ne seront pas réalisé tous de suite sur les tables. Par défaut __MySQL__ à le système d'auto commit donc l'ensemble des opérations sont réalisé instantanément avec ce système , le système ne sera affecté que lorsque l'instruction **COMMIT** sera transmise.
+
+        mysql> START TRANSACTION
+        Query OK, 0 rows affected (0.00 sec)
+
+Insertion et modification des informations de la table produit :
+
+        mysql> insert into produit (nom,description,prix) values ('firefox','Web browser',0);
+        Query OK, 1 row affected (0.00 sec)
+
+        mysql> insert into produit (nom,description,prix) values ('safarie','Web browser',0);
+        Query OK, 1 row affected (0.00 sec)
+
+        mysql> UPDATE produit SET prix=0 WHERE nom="Arch";
+        Query OK, 1 row affected (0.00 sec)
+        Rows matched: 1  Changed: 1  Warnings: 0
+
+Validation du résultat :
+
+        mysql> select * from produit;                     
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        | id | nom          | description                            | creation_data       | prix | licence_type |
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        |  1 | Apache 2     | Serveur Web OpenSOURCE, multi-fonction | 0000-00-00 00:00:00 |    0 | libre        |
+        |  2 | Haproxy      | Load Balancer logiciel OpenSource      | 2016-10-20 12:23:13 | NULL | libre        |
+        |  4 | RHEL7        | RedHat Enterprise class Linux          | 2016-10-20 08:23:13 |  300 | libre        |
+        |  5 | SUSE 14      | Non definie                            | 2016-09-10 08:23:13 |  600 | libre        |
+        |  6 | Ubuntu 16.10 | Non definie                            | 2016-10-20 12:32:01 |    0 | libre        |
+        |  7 | Arch         | Non definie                            | 2016-10-20 12:32:23 |    0 | libre        |
+        |  8 | RHEL 6       | Non definie                            | 2016-10-20 12:33:19 |  400 | libre        |
+        |  9 | Spotify      | application privative                  | 2016-10-20 12:34:52 |   10 | privatif     |
+        | 10 | Chrome       | Web browser privatif                   | 2016-09-10 19:30:00 |    0 | privatif     |
+        | 11 | firefox      | Web browser                            | 2016-10-21 21:01:19 |    0 | inconnue     |
+        | 12 | safarie      | Web browser                            | 2016-10-21 21:01:35 |    0 | inconnue     |
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        11 rows in set (0.00 sec)
+
+Si je constate que malheureusement ce n'est pas bon :(, j'invoque la formule magique du magicien **ROLLBACK** et ma table est de retour à l'état original :D
+
+        mysql> ROLLBACK;
+        Query OK, 0 rows affected (0.00 sec)
+
+        mysql> select * from produit;
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        | id | nom          | description                            | creation_data       | prix | licence_type |
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        |  1 | Apache 2     | Serveur Web OpenSOURCE, multi-fonction | 0000-00-00 00:00:00 |    0 | libre        |
+        |  2 | Haproxy      | Load Balancer logiciel OpenSource      | 2016-10-20 12:23:13 | NULL | libre        |
+        |  4 | RHEL7        | RedHat Enterprise class Linux          | 2016-10-20 08:23:13 |  300 | libre        |
+        |  5 | SUSE 14      | Non definie                            | 2016-09-10 08:23:13 |  600 | libre        |
+        |  6 | Ubuntu 16.10 | Non definie                            | 2016-10-20 12:32:01 |    0 | libre        |
+        |  7 | Arch         | Non definie                            | 2016-10-20 12:32:23 | NULL | libre        |
+        |  8 | RHEL 6       | Non definie                            | 2016-10-20 12:33:19 |  400 | libre        |
+        |  9 | Spotify      | application privative                  | 2016-10-20 12:34:52 |   10 | privatif     |
+        | 10 | Chrome       | Web browser privatif                   | 2016-09-10 19:30:00 |    0 | privatif     |
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        9 rows in set (0.00 sec)
+
+Même opération , mais cette fois ci le résultat est bon donc j'invoque mon ami **COMMIT** pour que les modifications soit appliqué !!
+
+        mysql> START TRANSACTION
+        Query OK, 0 rows affected (0.00 sec)
+
+        mysql> BEGIN;
+        Query OK, 0 rows affected (0.00 sec)
+
+        mysql> insert into produit (nom,description,prix) values ('firefox','Web browser',0);
+        Query OK, 1 row affected (0.00 sec)
+
+        mysql> insert into produit (nom,description,prix) values ('safarie','Web browser',0);
+        Query OK, 1 row affected (0.00 sec)
+
+        mysql> COMMIT;
+        Query OK, 0 rows affected (0.00 sec)
+
+        mysql> select * from produit;
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        | id | nom          | description                            | creation_data       | prix | licence_type |
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        |  1 | Apache 2     | Serveur Web OpenSOURCE, multi-fonction | 0000-00-00 00:00:00 |    0 | libre        |
+        |  2 | Haproxy      | Load Balancer logiciel OpenSource      | 2016-10-20 12:23:13 | NULL | libre        |
+        |  4 | RHEL7        | RedHat Enterprise class Linux          | 2016-10-20 08:23:13 |  300 | libre        |
+        |  5 | SUSE 14      | Non definie                            | 2016-09-10 08:23:13 |  600 | libre        |
+        |  6 | Ubuntu 16.10 | Non definie                            | 2016-10-20 12:32:01 |    0 | libre        |
+        |  7 | Arch         | Non definie                            | 2016-10-20 12:32:23 | NULL | libre        |
+        |  8 | RHEL 6       | Non definie                            | 2016-10-20 12:33:19 |  400 | libre        |
+        |  9 | Spotify      | application privative                  | 2016-10-20 12:34:52 |   10 | privatif     |
+        | 10 | Chrome       | Web browser privatif                   | 2016-09-10 19:30:00 |    0 | privatif     |
+        | 13 | safarie      | Web browser                            | 2016-10-21 21:05:07 |    0 | inconnue     |
+        | 14 | firefox      | Web browser                            | 2016-10-21 21:05:15 |    0 | inconnue     |
+        +----+--------------+----------------------------------------+---------------------+------+--------------+
+        11 rows in set (0.00 sec)
+
+
+Voilà maintenant vous pouvez faire vos conneries :D , vous avez le filet, pas de panique on va aussi voir les backups bientôt :D
+
+## <a name="language_sql_trigger" /> Procédure stocké (non couvert)
+
+Désolé je ne couvrirai pas cette partie :(, mais je vous donne le lien vers la documentation [TRIGGER](http://dev.mysql.com/doc/refman/5.5/en/trigger-syntax.html).
+
+Si un grand nombre crie à l'injustice on verra pour rajouter ça, mais pour le moment je saute .
 
 
 # <a name="reference_intro"/> Référence introduction
@@ -1463,15 +1650,6 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
     * [SELECT](http://dev.mysql.com/doc/refman/5.5/en/select.html) 
     * [UPDATE](http://dev.mysql.com/doc/refman/5.5/en/update.html) 
     * [ALTER](http://dev.mysql.com/doc/refman/5.5/en/alter-table.html)
-
-# <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
-
-# <a name="performance" /> Configuration de performance
-
-# <a name="crash_recovery" /> Système de recupération et validation de la santé des tables
-
-# <a name="mysql_replication" /> Mise en place d'une replication Mysql
-# <a name="mysql_backup" /> Réalisation d'un backup de(s) base(s) de données
-
+* [COMMIT](http://dev.mysql.com/doc/refman/5.5/en/commit.html)
 
 

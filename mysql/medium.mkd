@@ -1,0 +1,55 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+
+# Index 
+
+
+### <a name="type_de_bd" /> Type de BD MyISAM , Innodb
+
+## <a name="view_vars_change_it"/> Visualisation et modification des variables
+
+* max_connexion ...
+
+# <a name="perms_mysql_tables" /> Manipulation des permissions avec mysql sans le grant
+
+Bon voyons à l'étape **brutale** :D , car bon c'est ça qui est cool avec le libre, il y a la bonne méthode jolie avec les commandes :) , puis y a la méthode ou tu modifies le fichier en arrière puis ça marche :D. Je ne vous dis pas d'utiliser cette méthode !!! Mon objectif avec la démonstration est de démontré comment __Mysql__ stock l'information des permissions , le savoir est bien !
+
+Telle mentionné, le système __MySQL__ à besoin de la base de données __mysql__ pour fonctionné afin de conserver les informations du système dont les permissions utilisateur. Nous allons créer une nouvelle base de donnée et refaire la même opération de création d'utilisateur mais sans **create user** et **sans les grant** . 
+Pour les personnes qui disent **POURQUOI ?** vous pouvez passer au prochaine chapitre, car **la question n'est pas pourquoi mais COMMENT ?** .
+
+Allez on crée la base de donnée : **zer\_bd**
+
+        mysql> create database ze_bd ;
+            Query OK, 1 row affected (0.00 sec)
+
+        mysql> show databases;
+        +--------------------+
+        | Database           |
+        +--------------------+
+        | information_schema |
+        | ma_super_BD        |
+        | mysql              |
+        | performance_schema |
+        | ze_bd              |
+        +--------------------+
+        5 rows in set (0.00 sec)
+
+Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de donnée __mysql__
+
+        mysql> use mysql;
+        Database changed
+
+
+# <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
+
+# <a name="performance" /> Configuration de performance
+
+# <a name="crash_recovery" /> Système de recupération et validation de la santé des tables
+
+# <a name="mysql_replication" /> Mise en place d'une replication Mysql
+# <a name="mysql_backup" /> Réalisation d'un backup de(s) base(s) de données
+
+ 
