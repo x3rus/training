@@ -25,14 +25,35 @@ Voici une liste non exhaustive des raisons de choisir un type de stockage partic
     * [Caractéristique stockage](http://dev.mysql.com/doc/refman/5.5/en/pluggable-storage-common-layer.html)
     * [Module de stockage](http://dev.mysql.com/doc/refman/5.5/en/pluggable-storage-overview.html)
 
-## <a name="engine_available" /> Visualiser les engins disponible
+## <a name="engine_available" /> Engins disponible
 
-http://dev.mysql.com/doc/refman/5.5/en/storage-engines.html
+Documentation __MySQL__ de référence : [Storage engines](http://dev.mysql.com/doc/refman/5.5/en/storage-engines.html)
 
-# Référence 
+Premièrement voyons ce qui est disponible sur notre environnements, vous n'avez pas besoin d'être l'administrateur pour visualiser les engins disponibles 
 
-* [Module de stockage](http://dev.mysql.com/doc/refman/5.5/en/pluggable-storage-overview.html)
-* [Caractéristique stockage](http://dev.mysql.com/doc/refman/5.5/en/pluggable-storage-common-layer.html)
+        $ mysql -u bob -p
+        Enter password:
+        mysql> SHOW ENGINES ;
+        +--------------------+---------+----------------------------------------------------------------+--------------+------+------------+
+        | Engine             | Support | Comment                                                        | Transactions | XA   | Savepoints |
+        +--------------------+---------+----------------------------------------------------------------+--------------+------+------------+
+        | PERFORMANCE_SCHEMA | YES     | Performance Schema                                             | NO           | NO   | NO         |
+        | MRG_MYISAM         | YES     | Collection of identical MyISAM tables                          | NO           | NO   | NO         |
+        | CSV                | YES     | CSV storage engine                                             | NO           | NO   | NO         |
+        | BLACKHOLE          | YES     | /dev/null storage engine (anything you write to it disappears) | NO           | NO   | NO         |
+        | MEMORY             | YES     | Hash based, stored in memory, useful for temporary tables      | NO           | NO   | NO         |
+        | InnoDB             | DEFAULT | Supports transactions, row-level locking, and foreign keys     | YES          | YES  | YES        |
+        | ARCHIVE            | YES     | Archive storage engine                                         | NO           | NO   | NO         |
+        | MyISAM             | YES     | MyISAM storage engine                                          | NO           | NO   | NO         |
+        | FEDERATED          | NO      | Federated MySQL storage engine                                 | NULL         | NULL | NULL       |
+        +--------------------+---------+----------------------------------------------------------------+--------------+------+------------+
+        9 rows in set (0.00 sec)
+
+Nous pouvons donc voir l'ensemble des engins offert sur notre base de données prenons quelque minutes pour identifier les options disponibles :
+
+* **InnoDB** __défaut__ : Depuis la version 5.5.5 **InnoDB** est le système de stockage par défaut originalement c'était **MyISAM** qui était privilégié. __InnoDB__ support le système de transaction (__commit__, __rollback__, ...) , il a aussi la fonctionnalité de __crash-recovery__ afin de protéger les données en cas de problème du système. **InnoDB** a la caractéristique de réalisé des verrous par enregistrement et non sur l'ensemble de la table , les données sont stocké dans un index de type __cluster__ afin de réduire __l'I/O__ (accès disque) pour les requêtes courantes particulièrement sur les clés primaires. Plus d'information disponible sur la documentation de __MySQL__ [Innodb storage](dev.mysql.com/doc/refman/5.5/en/innodb-storage-engine.html)
+* **MyISAM** : Avant la version 5.5.5 c'était le système de stockage par défaut, ce système de stockage n'offre pas la possibilité d'utiliser le système de transaction. Il n'offre pas non plus la possibilité d'utiliser les clés étrangère pour l'intégrité des données. Le système de verrou est sur l'ensemble de la table et non pour l'enregistrement, bon à ce point vous vous dites mais pourquoi j'utiliserai ce système il fait moins de chose **qu'innoDB**. **MyISAM** support un plus grand nombre de données que **InnoDB** 256TB pour être exacte :D. Il support la cherche indexé dans l'ensemble des champs teste , non disponible dans **innoDB** avant la version 5.6.4. L'absence de mécanisme de validation en a fait un système plus performant pour les accès en **Lecture** et fut très populaire pour l'indexation des champs **TEXT** principalement pour les applications web . Documentation sur __MySQL__ [MyISAM storage](http://dev.mysql.com/doc/refman/5.5/en/myisam-storage-engine.html)
+* **Memory** : 
 
 ### <a name="type_de_bd" /> Type de BD MyISAM , Innodb
 
@@ -69,6 +90,14 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
         mysql> use mysql;
         Database changed
 
+
+# <a name="reference" /> Références
+
+* Stockage des informations
+    * [Caractéristique stockage](http://dev.mysql.com/doc/refman/5.5/en/pluggable-storage-common-layer.html)
+    * [Module de stockage](http://dev.mysql.com/doc/refman/5.5/en/pluggable-storage-overview.html)
+    * [Storage engines](http://dev.mysql.com/doc/refman/5.5/en/storage-engines.html)
+    * [Innodb storage](dev.mysql.com/doc/refman/5.5/en/innodb-storage-engine.html)
 
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
