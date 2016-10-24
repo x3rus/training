@@ -6,6 +6,33 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Index 
 
+# <a name="storage_engine" /> Stockage des informations
+
+__MySQL__ a un système de stockage des informations modulaire (__pluggable__) , ceci permet d'utiliser le système adéquat selon vos besoins. Dans les faits ceci est principalement lors de l'optimisation que l'on modifie le système de stockage. Le gros avantage est que le système de stockage est complètement transparent pour les applications ! Ceci permet aussi d'accroitre les possibilités de __MySQL__.
+
+Voici une liste non exhaustive des raisons de choisir un type de stockage particulier :
+
+* **Concurrence** : Certain système de stockage offre un système de verrou (__LOCK__) plus granulaire (par exemple : uniquement verrou par enregistrement / ligne) . Choisir le bon système de stockage peut permettre de réduire le temps de traitement (__overhead__) requis pour le verrou, améliorant la performance générale.
+* **Support des Transactions** : Support des transactions ( couvert dans le chapitre précédent __COMMIT__ et __ROLLBACK__ ) bien que toutes les applications n'en n'ont pas besoin ceci peut être pratique. 
+* **Intégrité** : Selon le système de stockage que vous utilisez vous pouvez avoir ou non le système référentiel fort avec les clés étrangère , bien entendu cette ajout ayant un coût si vous désirez réduire la charge sur le serveur de BD opté pour un système sans référentiel fort vous aurez un gain de performance.
+* **Stockage physique** : Les modules choisie vous permet d'avoir un système de stockage approprié pour vos besoin ( __csv__, mémoire, ...)
+* **Indexation** : Les systèmes de stockage offre une indexation propre, optimisé selon la situation. Vous retrouverez l'indexation __B-tree__ pour l'ensemble des systèmes de stockage.
+* **Cache mémoire** : L'ensemble des systèmes de stockage offre une fonctionnalité minimal de mise en mémoire des requêtes, mais certain système offre une optimisation pour ce besoin. (exemple __MySQL's high-speed Query Cache__)
+* **Assistant de performance** : De manière général , l'engin peut être optimal pour la lecture ou l'écriture , offrir des utilitaires d'analyse de performance ...
+* **Fonctionnalité particulière** : Le système de stockage peut offrir des fonctionnalités particulière telle que le support des données __GéoSpacial__, ou une gestion plus granulaire des accès de sécurité.
+
+* Référence 
+    * [Caractéristique stockage](http://dev.mysql.com/doc/refman/5.5/en/pluggable-storage-common-layer.html)
+    * [Module de stockage](http://dev.mysql.com/doc/refman/5.5/en/pluggable-storage-overview.html)
+
+## <a name="engine_available" /> Visualiser les engins disponible
+
+http://dev.mysql.com/doc/refman/5.5/en/storage-engines.html
+
+# Référence 
+
+* [Module de stockage](http://dev.mysql.com/doc/refman/5.5/en/pluggable-storage-overview.html)
+* [Caractéristique stockage](http://dev.mysql.com/doc/refman/5.5/en/pluggable-storage-common-layer.html)
 
 ### <a name="type_de_bd" /> Type de BD MyISAM , Innodb
 
