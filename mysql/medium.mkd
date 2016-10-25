@@ -71,6 +71,77 @@ Pour une même base de données plusieurs engins peuvent être utilisé, selon v
 
 Vous avez un site de jeu , l'ensemble des informations utilisateurs ( nom, mot de passe, contact , ... ) sont stocké dans une base de données de type **InnoDB** ou **MyISAM** , quand les utilisateurs débutes une partie (éphémère) et jugé non-critique :P vous pourriez créer une table : partie\_2764 (partie\_#de-la-partie) cette table serait définie avec l'engin **Memory** pour être optimisé au maximum en cas de crash ce n'est pas critique. 
 
+Voyons un peu l'utilisation des **engin** je vais me concentrer sur les 2 types les plus utiliser **MyISAM** et **InnoDB** , car je veux que l'on voit le stockage sur le disque en plus de l'utilisation dans __MySQL__ . Les tables que nous allons créer seront aussi utilisé afin de voir la récupération de donnée lors de crash :).
+
+Donc création des tables puis insertion de données :
+
+        mysql> CREATE TABLE app_article ( id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY , texte TEXT NOT NULL, text_status ENUM('brouillon','evaluation','final') NOT NULL , info VARCHAR(20) ) ENGINE=MYISAM ;
+        mysql> CREATE TABLE app_inno_article ( id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY , texte TEXT NOT NULL, text_status ENUM('brouillon','evaluation','final') NOT NULL , info VARCHAR(20) ) ENGINE=INNODB ;
+
+Donc nous avons 2 tables complètement identique au niveau de la définition **SAUF** pour l'engin de stockage :
+* __app\_article__ utilise **MyIsam**
+* __app\_inno\_article__ utilise **InnoDB**
+
+Je vais faire quelques ajout dans les tables toujours des données identique , pour des fin de données bidon je vais prendre chaque ligne du logs **dmegs** et faire l'ajout dans la tables. 
+
+        # dmesg | tail 
+        [  112.040722] device vethfc5261a entered promiscuous mode
+        [  112.040819] IPv6: ADDRCONF(NETDEV_UP): vethfc5261a: link is not ready
+        [  112.040822] br-9f2bdd9fbdd2: port 1(vethfc5261a) entered blocking state
+        [  112.040824] br-9f2bdd9fbdd2: port 1(vethfc5261a) entered forwarding state
+        [  112.042343] br-9f2bdd9fbdd2: port 1(vethfc5261a) entered disabled state
+        # dmesg | wc -l
+        809
+
+Voici le petit script pas trop jolie :D , mais bon j'ai pas 4 heures à mettre ça beau :D.
+
+        $ cat insert.sh
+        #!/bin/bash
+        #
+        #############################
+
+        # Variables
+        USER_BD=bob
+        USER_PASS=marley
+        DB=ma_super_BD
+
+        export IFS=$'\n'
+
+        for line in $(dmesg) ; do
+                TIMESTAMP=$(echo $line | cut -d ']' -f 1 | tr -d "[" | tr -s " " )
+                TEXT=$(echo $line | cut -d ']' -f 2- | tr -s " ")
+                STATUS=$(shuf -i 1-3 -n 1)
+
+                # insertion dans mysql
+                mysql -u $USER_BD --password=$USER_PASS $DB -e "insert into app_article (texte,text_status,info) values (\"$TEXT\",$STATUS,\"$TIMESTAMP\");"
+                mysql -u $USER_BD --password=$USER_PASS $DB -e "insert into app_inno_article (texte,text_status,info) values (\"$TEXT\",$STATUS,\"$TIMESTAMP\");"
+
+         done
+
+donc on lance l'insertion :
+
+        $ ./insert.sh
+
+Résultat :
+
+        $ mysql -u bob -p
+        mysql> select * from app_article;
+        [ ... OUTPUT COUPÉ ... ]
+        | 807 |  br-9f2bdd9fbdd2: port 1(vethfc5261a) entered forwarding state
+        | brouillon   |  112.230810 |
+        | 808 |  IPv6: ADDRCONF(NETDEV_CHANGE): br-9f2bdd9fbdd2: link becomes ready
+        | final       |  112.230891 |
+        +-----+----------------------------------------------------------------------
+        808 rows in set (0.00 sec)
+
+        mysql> select * from app_inno_article;
+        | 804 |  IPv6: ADDRCONF(NETDEV_CHANGE): vethfc5261a: link becomes ready                                                                                                                                 | final       |  112.230731 |
+        | 805 |  br-9f2bdd9fbdd2: port 1(vethfc5261a) entered blocking state                                                                                                                                    | evaluation  |  112.230807 |
+        | 806 |  br-9f2bdd9fbdd2: port 1(vethfc5261a) entered forwarding state                                                                                                                                  | final       |  112.230810 |
+        | 807 |  IPv6: ADDRCONF(NETDEV_CHANGE): br-9f2bdd9fbdd2: link becomes ready                                                                                                                             | final       |  112.230891 |
+        +-----+----------------------------------------------------------------
+        807 rows in set (0.00 sec)
+
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
 
 * max_connexion ...
