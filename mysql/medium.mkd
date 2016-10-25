@@ -53,9 +53,23 @@ Nous pouvons donc voir l'ensemble des engins offert sur notre base de données p
 
 * **InnoDB** __défaut__ : Depuis la version 5.5.5 **InnoDB** est le système de stockage par défaut originalement c'était **MyISAM** qui était privilégié. __InnoDB__ support le système de transaction (__commit__, __rollback__, ...) , il a aussi la fonctionnalité de __crash-recovery__ afin de protéger les données en cas de problème du système. **InnoDB** a la caractéristique de réalisé des verrous par enregistrement et non sur l'ensemble de la table , les données sont stocké dans un index de type __cluster__ afin de réduire __l'I/O__ (accès disque) pour les requêtes courantes particulièrement sur les clés primaires. Plus d'information disponible sur la documentation de __MySQL__ [Innodb storage](dev.mysql.com/doc/refman/5.5/en/innodb-storage-engine.html)
 * **MyISAM** : Avant la version 5.5.5 c'était le système de stockage par défaut, ce système de stockage n'offre pas la possibilité d'utiliser le système de transaction. Il n'offre pas non plus la possibilité d'utiliser les clés étrangère pour l'intégrité des données. Le système de verrou est sur l'ensemble de la table et non pour l'enregistrement, bon à ce point vous vous dites mais pourquoi j'utiliserai ce système il fait moins de chose **qu'innoDB**. **MyISAM** support un plus grand nombre de données que **InnoDB** 256TB pour être exacte :D. Il support la cherche indexé dans l'ensemble des champs teste , non disponible dans **innoDB** avant la version 5.6.4. L'absence de mécanisme de validation en a fait un système plus performant pour les accès en **Lecture** et fut très populaire pour l'indexation des champs **TEXT** principalement pour les applications web . Documentation sur __MySQL__ [MyISAM storage](http://dev.mysql.com/doc/refman/5.5/en/myisam-storage-engine.html)
-* **Memory** : 
+* **Memory** : Permet d'utiliser la **RAM** du système pour stocké les informations, bien entendu ce mécanisme est très très performant, cependant les informations sont éphémère. Il n'y a aucun mécanisme en cas de crash du système, le système ressemble à **MyISAM** pas de clé étrangère, pas de transaction , ... Documentation sur __MySQL__ [Memory storage](http://dev.mysql.com/doc/refman/5.5/en/memory-storage-engine.html).
+* **Archive** : Comme son nom l'indique ce type de stockage est utilisé pour l'archivage de donnée, la particularité est d'offrir la possibilité de stockage SANS limite. Bien entendu il ne faut pas s'attendre à avoir de la performance pour ce type de stockage , il n'y a pas d'indexation des données ceci à donc un gros impact sur la performance. Il y a tout de même une mise en cache des requêtes. Documentation sur __MySQL__ [Archive storage](http://dev.mysql.com/doc/refman/5.5/en/archive-storage-engine.html).
+* **Federated** : Vous avez la possibilité de créer un serveur __MySQL__ logique qui regroupe un grand nombre de serveur __MySQL__. Quand nous utilisons les système de stockage classique (__MyISAM__, __InnoDB__, ...) la définition de la table ET les données sont sur la même machine, avec le mode **fédéré** les donnés sont sur un serveur distant .Documentation __MySQL__ [Federated storage](http://dev.mysql.com/doc/refman/5.5/en/federated-storage-engine.html)
+    ![se-federated-structure.png](./imgs/se-federated-structure.png)
+* **CSV** : __Comma Separated Values__ soit Valeur Séparés par des Virgules , ceci permet d'avoir un fichier avec une virgule qui sépare les champs. La performance est très limité cependant ceci peut être pratique pour extraire de l'information de la base de données. Documentation __MySQL__ [csv storage](http://dev.mysql.com/doc/refman/5.5/en/csv-storage-engine.html)
+* **BlackHole** : Alors celui la j'essaye encore de voir l'utilité , la documentation parle d'utilité lors de la réplication pour ne pas répliquer certain données, mais bon personnellement j'exclus les tables que je ne veux pas ... Bon j'oublie de donner l'explication, normale **blackhole** c'est le trou noir. Le système vous permet de créer un table d'insérer des donnes mais tous est envoyé à la poubelle. Donc lors d'un **SELECT** le système ne renvoie AUCUNE information. Je trouve ça bien même si je ne vois pas l'utilité :D . Documentation __MySQL__  [Blackhole storage](http://dev.mysql.com/doc/refman/5.5/en/blackhole-storage-engine.html)
 
-### <a name="type_de_bd" /> Type de BD MyISAM , Innodb
+Voici un résumé des fonctionnalités et du supports selon l'engin :
+
+![summary_storage_engine.png](./imgs/summary_storage_engine.png)
+
+
+## <a name="engine_use" /> Utilisation des systèmes de stockage
+
+Pour une même base de données plusieurs engins peuvent être utilisé, selon vos besoins , voici un petit exemple d'utilisation :
+
+Vous avez un site de jeu , l'ensemble des informations utilisateurs ( nom, mot de passe, contact , ... ) sont stocké dans une base de données de type **InnoDB** ou **MyISAM** , quand les utilisateurs débutes une partie (éphémère) et jugé non-critique :P vous pourriez créer une table : partie\_2764 (partie\_#de-la-partie) cette table serait définie avec l'engin **Memory** pour être optimisé au maximum en cas de crash ce n'est pas critique. 
 
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
 
@@ -97,7 +111,13 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
     * [Caractéristique stockage](http://dev.mysql.com/doc/refman/5.5/en/pluggable-storage-common-layer.html)
     * [Module de stockage](http://dev.mysql.com/doc/refman/5.5/en/pluggable-storage-overview.html)
     * [Storage engines](http://dev.mysql.com/doc/refman/5.5/en/storage-engines.html)
-    * [Innodb storage](dev.mysql.com/doc/refman/5.5/en/innodb-storage-engine.html)
+    * Type de stocakge :
+        * [Innodb storage](dev.mysql.com/doc/refman/5.5/en/innodb-storage-engine.html)
+        * [MyISAM storage](http://dev.mysql.com/doc/refman/5.5/en/myisam-storage-engine.html)
+        * [Memory storage](http://dev.mysql.com/doc/refman/5.5/en/memory-storage-engine.html)
+        * [Federated storage](http://dev.mysql.com/doc/refman/5.5/en/federated-storage-engine.html)
+        * [csv storage](http://dev.mysql.com/doc/refman/5.5/en/csv-storage-engine.html)
+        * [Blackhole storage](http://dev.mysql.com/doc/refman/5.5/en/blackhole-storage-engine.html)
 
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
