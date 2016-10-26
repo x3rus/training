@@ -190,6 +190,72 @@ La particularité de **innoDB** est de stocké l'ensemble des données de l'engi
          112.230891
 
 
+### <a name="engine_innodb" /> Système de stockage InnoDB
+
+Comme **innoDB** est maintenant le système de stockage par défaut, je vais couvrir ce dernier uniquement. J'aurais bien voulu couvrir aussi **MyISAM**, mais j'ai plus envie de couvrir d'autre matière que le système de base de données (faut être honnête :D ). 
+
+Telle que mentionné précédemment le système **innoDB** enregistre l'ensemble des données dans un ou plusieurs fichiers **ibdata** contenu dans le répertoire de donnée de __MySQL__. L'optimisation du système est réalisé justement avec cette concentration des données , contrairement à __MyISAM__ qui utilise plusieurs fichier obligeant l'application à ouvrir plusieurs fichiers et à rechercher l'information dedans. Le désavantage comme nous l'avons vu est que **innoDB** se retrouve avec une limitation pour la taille des tables qu'il peut géré. Personnellement je n'ai pas de problème avec 64 Térabytes comme limite :D .
+
+Bon il existe une méthode pour avoir un fichier par table l'option **innodb_file_per_table** vous permet d'avoir un fichier de donnée par table à ce moment vous aurez des fichiers par table avec l'extension __.ibd__.
+
+Pour les personnes qui sont familier avec __Oracle__ vous allez apprécier :D , après tous __MySQL__ est propriété d'Oracle faut s'attendre à y voir des similitude. 
+
+#### <a name="engine_innodb_tablespace" /> Tablespace d'InnoDB
+
+**InnoDB** utilise le système d'espace de table , woww en Français ça sonne étrange , ou en anglais **TABLESPACE** , Un __tablespace__ est un espace de stockage dans lequel des données composant les bases de données peuvent être enregistrées. Il fournit une couche d'abstraction entre les données logiques et les données physiques, et sert d'espace d'allocation pour tous les segments pris en charge par le système de gestion de bases de données (un segment de base de données est un objet de base de données qui occupe un espace physique, comme les données d'une table ou d'un index). Une fois créé, le __tablespace__ peut être référencé par son nom lors de la création des segments de base de données.
+Le __tablespace__ spécifie uniquement l'espace de stockage de la base de données, non la structure logique de celle-ci ou le modèle de données. 
+
+La logique **d'innoDB** va comme suit, le système n'a pas envie d'écrire de chargé le fichier en mémoire mais préfère travaillé sur un espace contenant les tables et les index. Afin d'optimiser le traitement d'écriture au lieu d'ajouter des données dans le fichier de donnée il pré alloue une quantité pré définie de donnée et joue dedans pour l'insertion d'information.
+
+Reprenons rapidement notre base de données __ma\_super\_BD__ au niveau du système de fichier :
+
+        $ du -hs /var/lib/mysql/ibdata1
+        18M     /var/lib/mysql/ibdata1
+        $ du -hs /var/lib/mysql/ma_super_BD/
+        204K    /var/lib/mysql/ma_super_BD/
+
+18 __Megs__ pour les données dans le __tablespace__ d'**innodb** comparativement à 204k pour l'ensemble de la base de donnée de __ma\_super\_BD__ , vous me direz que oui mais l'ensemble des tables créer originalement sont des tables __innodb__ . Effectivement mais 18 __Megs__ tous de même c beaucoup , pour les données insérées.
+
+Bon je voulais montré l'utilisation de [show variables](http://dev.mysql.com/doc/refman/5.5/en/show-variables.html) , mais j'en ai besoin maintenant :D.
+Nous allons regarder la configuration assigné à **innoDB** pour cette opération je vous suggère d'être **root**, car je ne sais pas si un simple utilisateur peut tous voir.
+
+Pour faire vite [show variables](http://dev.mysql.com/doc/refman/5.5/en/show-variables.html), permet de visualisé les configurations du serveur __MySQL__ que ces configurations soit définies par l'administrateur dans le fichier de configuration du serveur __MySQL__ ou celle par défaut (comme c'est le cas pour nous).
+
+        $ mysql -u root -p
+        mysql> show variables where Variable_name='innodb_data_file_path';
+        +-----------------------+------------------------+
+        | Variable_name         | Value                  |
+        +-----------------------+------------------------+
+        | innodb_data_file_path | ibdata1:10M:autoextend |
+        +-----------------------+------------------------+
+        1 row in set (0.00 sec)
+
+L'instruction **innodb\_data\_file\_path** permet de définir le nom du fichier qui sera utilisé pour stocker les informations du __tablespace__ par défaut. Prenons l'exemple ici :
+
+* **ibdata1:10M:autoextend** :
+    * **ibdata1** : Le nom du fichier , nous l'avons déjà vu
+    * **10M** : Définie la taille du __tablespace__ créer initialement 
+    * **autoextend** : Que ce passe t'il quand les 10 __Megs__ sont remplie , dans le cas présent le système va automatiquement étendre le __tablespace__ pour permettre l'ajout de données.
+
+Prenons une autre variable pour savoir de combien sera augmenté le __tablespace__ l'idée est d'ajouter une quantité significatif de donnée  dans le __tablespace__ pour ne pas être obligé d'étendre le __tablespace__ à chaque minutes ... 
+
+        mysql> show variables where Variable_name='innodb_autoextend_increment';
+        +-----------------------------+-------+
+        | Variable_name               | Value |
+        +-----------------------------+-------+
+        | innodb_autoextend_increment | 8     |
+        +-----------------------------+-------+
+
+* **innodb_autoextend_increment** : ici nous avons la valeur 8 qui indique que 8 __Megs__ sera ajouté au __tablespace__ à chaque fois qu'il y aura extension de ce dernier...
+
+__HO__! 10 + 8 == 18M , je pense que la valeur de 18M du fichier __ibdata__ est claire maintenant :D. 
+
+ICI ICI ICI ICI 
+
+* Référence :
+    * [File Space Management](http://dev.mysql.com/doc/refman/5.5/en/innodb-file-space.html) 
+    * [SHOW TABLES STATUS](http://dev.mysql.com/doc/refman/5.5/en/show-table-status.html)
+    * [Configuration innodb](http://dev.mysql.com/doc/refman/5.5/en/innodb-init-startup-configuration.html#innodb-startup-data-file-configuration)
 
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
 
@@ -245,6 +311,8 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
 
 * définition du data sur un autre HD
 * voir option de configue pour innoDB p-e myISAM (share mémory , ... )
+
+http://dev.mysql.com/doc/refman/5.5/en/innodb-best-practices.html
 
 # <a name="crash_recovery" /> Système de recupération et validation de la santé des tables
 
