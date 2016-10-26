@@ -118,7 +118,7 @@ Voici le petit script pas trop jolie :D , mais bon j'ai pas 4 heures à mettre �
 
          done
 
-donc on lance l'insertion :
+Donc on lance l'insertion :
 
         $ ./insert.sh
 
@@ -141,6 +141,55 @@ Résultat :
         | 807 |  IPv6: ADDRCONF(NETDEV_CHANGE): br-9f2bdd9fbdd2: link becomes ready                                                                                                                             | final       |  112.230891 |
         +-----+----------------------------------------------------------------
         807 rows in set (0.00 sec)
+
+
+Regardons le résultat sur le système de fichiers nous allons voir dans le répertoires **data** de mysql : **/var/lib/mysql/**.
+
+        ls -l /var/lib/mysql/ma_super_BD/app_*
+        -rw-rw---- 1 mysql mysql 62792 Oct 25 21:21 /var/lib/mysql/ma_super_BD/app_article.MYD
+        -rw-rw---- 1 mysql mysql 10240 Oct 25 21:27 /var/lib/mysql/ma_super_BD/app_article.MYI
+        -rw-rw---- 1 mysql mysql  8691 Oct 25 20:49 /var/lib/mysql/ma_super_BD/app_article.frm
+        -rw-rw---- 1 mysql mysql  8691 Oct 25 20:50 /var/lib/mysql/ma_super_BD/app_inno_article.frm
+
+Regardons les fichiers présente :
+
+* **app\_article.frm** et **app\_inno\_article.frm** : Ce fichier contient la définition des tables vous pouvez constater que ce fichier est présent pour l'engin **MyISAM** et **innoDB**. Avec la commande **strings** vous pourrez extraire l'information de la tables , car le fichier est binaire :
+
+        $ strings app_inno_article.frm
+        PRIMARY
+        InnoDB
+        )
+        texte
+        text_status
+
+* **app\_article.MYI** : Fichier contenant les index de la table **app\_article**
+* **app\_article.MYD** : Le fichier contient les données de la tables **app\_article** , si nous utilisons **strings** sur le fichiers vous aurez les données.
+
+        $ strings app_article.MYD
+        [ ... OUTPUT COUPÉ ... ]
+         br-9f2bdd9fbdd2: port 1(vethfc5261a) entered blocking state
+         112.230807
+         br-9f2bdd9fbdd2: port 1(vethfc5261a) entered forwarding state
+         112.230810
+         IPv6: ADDRCONF(NETDEV_CHANGE): br-9f2bdd9fbdd2: link becomes ready
+         112.230891
+
+Mais où sont les __Index__ et les données pour la tables __app\_inno\_article__ ? Dans le __cloud__ tous est dans le __cloud__ de nos jours ... Non c'est une farce , l'ensemble des données sont stocké dans le fichier : **ibdata1**
+La particularité de **innoDB** est de stocké l'ensemble des données de l'engin dans un même fichier peut importe la table , mais un petit coup de **strings** nous montrera que je ne dis pas QUE des conneries :D.
+
+        $ strings ibdata1  | tail
+         eth0: renamed from veth2e94dd9
+         112.207424
+         IPv6: ADDRCONF(NETDEV_CHANGE): vethfc5261a: link becomes ready
+         112.230731
+         br-9f2bdd9fbdd2: port 1(vethfc5261a) entered blocking state
+         112.230807
+         br-9f2bdd9fbdd2: port 1(vethfc5261a) entered forwarding state
+         112.230810
+         IPv6: ADDRCONF(NETDEV_CHANGE): br-9f2bdd9fbdd2: link becomes ready
+         112.230891
+
+
 
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
 
@@ -193,6 +242,9 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
 # <a name="performance" /> Configuration de performance
+
+* définition du data sur un autre HD
+* voir option de configue pour innoDB p-e myISAM (share mémory , ... )
 
 # <a name="crash_recovery" /> Système de recupération et validation de la santé des tables
 
