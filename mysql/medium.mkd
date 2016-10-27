@@ -194,7 +194,7 @@ La particularité de **innoDB** est de stocké l'ensemble des données de l'engi
 
 Comme **innoDB** est maintenant le système de stockage par défaut, je vais couvrir ce dernier uniquement. J'aurais bien voulu couvrir aussi **MyISAM**, mais j'ai plus envie de couvrir d'autre matière que le système de base de données (faut être honnête :D ). 
 
-Telle que mentionné précédemment le système **innoDB** enregistre l'ensemble des données dans un ou plusieurs fichiers **ibdata** contenu dans le répertoire de donnée de __MySQL__. L'optimisation du système est réalisé justement avec cette concentration des données , contrairement à __MyISAM__ qui utilise plusieurs fichier obligeant l'application à ouvrir plusieurs fichiers et à rechercher l'information dedans. Le désavantage comme nous l'avons vu est que **innoDB** se retrouve avec une limitation pour la taille des tables qu'il peut géré. Personnellement je n'ai pas de problème avec 64 Térabytes comme limite :D .
+Telle que mentionné précédemment le système **innoDB** enregistre l'ensemble des données dans un ou plusieurs fichiers **ibdata** contenu dans le répertoire de donnée de __MySQL__. Comme nous allons le voir les informations sont stocké par défaut par __tablespace__ dans un gros fichier par défaut.
 
 Bon il existe une méthode pour avoir un fichier par table l'option **innodb_file_per_table** vous permet d'avoir un fichier de donnée par table à ce moment vous aurez des fichiers par table avec l'extension __.ibd__.
 
@@ -250,12 +250,162 @@ Prenons une autre variable pour savoir de combien sera augmenté le __tablespace
 
 __HO__! 10 + 8 == 18M , je pense que la valeur de 18M du fichier __ibdata__ est claire maintenant :D. 
 
-ICI ICI ICI ICI 
+#### <a name="engine_innodb_filesize" /> Taille des fichiers de données
+
+Un problème avec cette ajustement de l'espace automatiquement incrémenté est dans l'optimisation de l'espace disque dur , regardons la taille du __tablespace__ en octet pour avoir une vision plus précise de l'espace utilisé.
+
+        $ du -s /var/lib/mysql/ibdata1
+        18432   /var/lib/mysql/ibdata1 
+
+Regardons maintenant l'espace utilisé par l'engin __MyIsam__, je fais l'addition des données ET des indexs : 
+
+        $ du -sc app_article.MYD app_article.MYI
+        64      app_article.MYD
+        12      app_article.MYI
+        76      total
+
+
+Donc nous avons bien les 18 __megs__  pour **innoDB** et 76K pour **MyISAM** .
+Je vais ajouter des données dans la tables __innodb__ toujours avec le script d'insertion des données provenant de la commande __dmegs__
+
+        $  ./insert.sh
+        $ du -s /var/lib/mysql/ibdata1
+        18432   /var/lib/mysql/ibdata1
+        $ du -sc /var/lib/mysql/ma_super_BD/app_article.MYD /var/lib/mysql/ma_super_BD/app_article.MYI 
+        124     /var/lib/mysql/ma_super_BD/app_article.MYD
+        20      /var/lib/mysql/ma_super_BD/app_article.MYI
+        144     total
+
+
+Rien n'a changé pour le fichier **innoDB** car il ne va augmenté que lors que le __tablespace__ sera presque plein et allouera un bloque de 8M.
+Réalisons de l'ajout de donnée , de manière plus significatif.
+
+Je vais exécuter 10000 fois le scripts d'insertion  :
+
+        $ for i in $(seq 1 10000) ; do ./insert.sh ;done
+
+Comme ma base de données n'est utilisé QUE pour cette formation les données ajouter dans la base de données n'est QUE et UNIQUEMENT réalisé dans les 2 tables __app\_articles__ et __app\_inno\_article__
+
+
+Bon finalement c'était un peu trop long 10000 , je l'ai arrêté :P , regardons l'espace disque utilisé :
+
+         $ du -s /var/lib/mysql/ibdata1 
+         26628   /var/lib/mysql/ibdata1
+         $ du -hs /var/lib/mysql/ibdata1
+         27M     /var/lib/mysql/ibdata1
+
+         $ du -hsc /var/lib/mysql/ma_super_BD/app_article.MYD /var/lib/mysql/ma_super_BD/app_article.MYI    
+         4.8M    /var/lib/mysql/ma_super_BD/app_article.MYD
+         656K    /var/lib/mysql/ma_super_BD/app_article.MYI
+         5.5M    total
+
+Il y a augmentation du __tablespaces__ voyons dans la tables le nombre d'entré :
+
+        mysql> select count(*) from app_inno_article;
+        +----------+
+        | count(*) |
+        +----------+
+        |    64569 |
+        +----------+
+        1 row in set (0.02 sec)
+
+        mysql> select count(*) from app_article;     
+        +----------+
+        | count(*) |
+        +----------+
+        |    64570 |
+        +----------+
+        1 row in set (0.00 sec)
+
+Parfait donc nous avons l'espace utilisé dans le __tablespace__ que ce passe t'il si nous supprimons la tables __app\_article__ , donc celle avec l'engin **MyISAM** ?
+
+        $ du -sh /var/lib/mysql/ 
+        49M     /var/lib/mysql/
+
+
+        mysql> drop table app_article;
+        Query OK, 0 rows affected (0.01 sec)
+
+        $ du -hs /var/lib/mysql/
+        43M     /var/lib/mysql/
+
+        $ ls /var/lib/mysql/ma_super_BD/app_article*            
+        ls: cannot access /var/lib/mysql/ma_super_BD/app_article*: No such file or directory
+
+Donc nous voyons clairement que nous avons récupéré l'espace disque dur alloué à la table __app\_article__ !
+
+Réalisons la même opération avec la table utilisant l'engin **InnoDB** soit __app\_inno\_article__ :
+
+         $ du -hs /var/lib/mysql/                    
+         43M     /var/lib/mysql/
+
+         $ du -h /var/lib/mysql/ibdata1 
+         27M     /var/lib/mysql/ibdata1
+
+         mysql> drop table app_inno_article;
+         Query OK, 0 rows affected (0.01 sec)
+
+         $ du -hs /var/lib/mysql/                    
+         43M     /var/lib/mysql/
+
+         $ du -h /var/lib/mysql/ibdata1 
+         27M     /var/lib/mysql/ibdata1
+
+Aucune économie d'espace réalisé !! Peut-être faut redémarrer le service ... Allez pourquoi pas , si ça peut faire plaisir :D .
+
+        $ sudo /etc/init.d/mysql restart
+
+        $ du -sh /var/lib/mysql/    
+        43M     /var/lib/mysql/
+        $ du -h  /var/lib/mysql/ibdata1               
+        27M     /var/lib/mysql/ibdata1
+
+Et bien non ... L'espace alloué reste alloué peut importe la suppression réalisée par la suite , il n'y a pas de réduction du fichier de __tablespace__, en fait les bloques à l'intérieur sont identifiés comme disponible. Il y a donc plus d'espace disponible dans le __tablespace__ il n'aura pas besoin d'étendre le fichier la prochaine fois il comblera l'espace libéré par la table __app\_inno\_article__. 
+Ceci est un détail cependant il est important de le comprendre, surtout si vous avez un ajout de donnée dans votre base de données. Exemple vous réalisez des testes de performance sur votre système , si vous vous dites que vous supprimerez uniquement les tables après le teste ceci ne libérera pas l'espace sur le disque !
+
+Bon la solution maintenant, je présume que c'est ce que tout le monde attend. Il n'y en a pas, je peux parlé pour la version 5.5 et 5.7 pas de méthode intégré dans __MySQL__ pour récupéré l'espace sans **downtime**. __WTF__ vous vous dites , __yep__ moi aussi !!
+
+La solution suggérer est de faire un backup complet de la base de données de supprimé les fichiers de  __tablespaces__ et de réimporter la BD.
+
+Heu ... Heu ...
+
+Bon __ok__  il y a une autre solution :) , mais faut y pensé lors de la configuration de votre serveur __MySQL__ , si vous activez la fonctionnalité **innodb_file_per_table**, __MySQL__ réalisera un fichier par table même si le format est **innoDB**. Résultat lors de la __suppression__ d'une table l'espace sera de nouveau disponible. Par défaut **AVANT** la version 5.7 cette option était à __OFF__ , avec la version 5.7 par défaut ceci est à **TRUE**. Vous pouvez voir la valeur sur votre système :
+
+
+        mysql> show variables where Variable_name='innodb_file_per_table';                            
+        +-----------------------+-------+
+        | Variable_name         | Value |
+        +-----------------------+-------+
+        | innodb_file_per_table | OFF   |
+        +-----------------------+-------+
+        1 row in set (0.00 sec)
+
+Bien que le système utilise un fichier **innoDB** par table le mécanisme reste le même , un fichier d'une taille X sera prédéfinie et il utilisera une valeur définie pour automatiquement agrandir le fichier. Donc si l'on supprimer uniquement des entrés dans la tables il n'y aura pas libération de l'espace disque dur au niveau du système d'exploitation. Pour réduire l'espace vous devrez utiliser l'instruction [OPTIMIZE TABLE](http://dev.mysql.com/doc/refman/5.7/en/optimize-table.html)
+
+Vous pourrez trouver les avantages et inconvénients de cette configuration sur la page de __MySQL 5.7__ : [InnoDB par table](http://dev.mysql.com/doc/refman/5.7/en/innodb-multiple-tablespaces.html)
+
+Voyons rapidement quelques points :
+
+* Pour 
+    * Récupération de l'espace disque dur "direct" lors de la suppression des tables
+    * Vous pouvez utilisez l'instruction [OPTIMIZE TABLE](http://dev.mysql.com/doc/refman/5.7/en/optimize-table.html) pour compacter un fichier de table. **innodb** dans la pratique va lui même refaire la création du fichier pour éliminer les bloques __libre__.
+    * Il est possible de copier un simple table d'une base de données à l'autre lors que ces dernières sont éteintes.
+    * La segmentation des fichiers permet d'avoir un impacte moins grand s'il y a corruption du disque dur.
+    * Vous pouvez voir la taille des tables SANS communiquer avec __MySQL__ , donc uniquement avec le système d'exploitation.
+* Contre
+    * Comme nous l'avons dis précédemment comme l'ajout d'espace est fait par bloque ainsi que la création initial du fichier est possible si la taille initiale est trop grande qu'une grande quantité d'espace soit perdu.
+    * L'opération de synchronisation entre la mémoire est les fichiers (**[fsync](https://linux.die.net/man/2/fsync)**) sera plus demandant sur le système, car cette fois ci __MySQL__ devra communiquer avec un plus grand nombre de fichiers pour la synchronisation comparativement à 1 originalement.
+    * __MySQL__ devra avoir plusieurs fichier d'ouvert pour les opérations , si votre base de données contient beaucoup de tables il est possible que la valeur du nombre de fichier ouvert ne soit pas convenablement configurer.
+    * Lors de la suppression d'un table le __Buffer Pool__ est scanné , cette opération peut être ralentie si le __Buffer pool__ a une taille de __10gig__
+
+
+Comme toujours il n'y a pas de recette qui s'applique à tous le monde , personnellement je pense que si vous avez une base de données pour vos sites web (__cms__, __moodle__ , ...) avec une charge petite l'utilisation de **InnoDB\_par\_table** est une bonne idée . Si vous êtes une entreprise avec à haut volume de transaction , vous avez probablement un __DBA__ de disponible, parlez sans évalué , faite des __benchmark__ avec votre application et la Base de données c'est le meilleur moyen de planifier à court et moyen terme.
 
 * Référence :
     * [File Space Management](http://dev.mysql.com/doc/refman/5.5/en/innodb-file-space.html) 
     * [SHOW TABLES STATUS](http://dev.mysql.com/doc/refman/5.5/en/show-table-status.html)
     * [Configuration innodb](http://dev.mysql.com/doc/refman/5.5/en/innodb-init-startup-configuration.html#innodb-startup-data-file-configuration)
+    * [InnoDB par table](http://dev.mysql.com/doc/refman/5.7/en/innodb-multiple-tablespaces.html)
 
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
 
@@ -304,6 +454,11 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
         * [Federated storage](http://dev.mysql.com/doc/refman/5.5/en/federated-storage-engine.html)
         * [csv storage](http://dev.mysql.com/doc/refman/5.5/en/csv-storage-engine.html)
         * [Blackhole storage](http://dev.mysql.com/doc/refman/5.5/en/blackhole-storage-engine.html)
+    * InnoDB
+        * [File Space Management](http://dev.mysql.com/doc/refman/5.5/en/innodb-file-space.html) 
+        * [SHOW TABLES STATUS](http://dev.mysql.com/doc/refman/5.5/en/show-table-status.html)
+        * [Configuration innodb](http://dev.mysql.com/doc/refman/5.5/en/innodb-init-startup-configuration.html#innodb-startup-data-file-configuration)
+        * [InnoDB par table](http://dev.mysql.com/doc/refman/5.7/en/innodb-multiple-tablespaces.html)
 
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
