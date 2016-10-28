@@ -401,11 +401,50 @@ Voyons rapidement quelques points :
 
 Comme toujours il n'y a pas de recette qui s'applique à tous le monde , personnellement je pense que si vous avez une base de données pour vos sites web (__cms__, __moodle__ , ...) avec une charge petite l'utilisation de **InnoDB\_par\_table** est une bonne idée . Si vous êtes une entreprise avec à haut volume de transaction , vous avez probablement un __DBA__ de disponible, parlez sans évalué , faite des __benchmark__ avec votre application et la Base de données c'est le meilleur moyen de planifier à court et moyen terme.
 
+#### <a name="engine_innodb_fileformat" /> Format de fichier d'innoDB (clin d'œil)
+
+Je ne pourrais malheureusement approfondir sur ce sujet, car avant de préparer la formation je ne savais pas qu'il y avait plusieurs format de fichier possible pour **innodb** :P. Donc au lieu de dire bêtise que j'aurais copié / collé d'Internet sans ajouter de valeur ajouter sur le sujet je vais simplement vous pointé l'existence des formats et vous laissez faire vos recherches. 
+
+Il existe 2 type de format de fichier supporté par **InnoDB**:
+
+* **Antelope** (format par défaut pour __MySQL__  avant 5.5) :  offre le supports **REDUNDANT** et **COMPACT** des enregistrements (ligne)
+* **Barracuda** (format par défaut pour __MySQL__  après 5.5)  : offre le supports **COMPRESSED** pour la compression des données et **DYNAMIC** pour une meilleur gestion du stockage pour les entrés variables (__VARCHAR__, __TEXT__, ... ) des enregistrements (ligne)
+
+Pour visualiser le format actuellement en cours d'utilisation :
+
+        mysql> show variables where Variable_name='innodb_file_format';   
+        +--------------------+----------+
+        | Variable_name      | Value    |
+        +--------------------+----------+
+        | innodb_file_format | Antelope |
+        +--------------------+----------+
+        1 row in set (0.00 sec)
+
+Et voilà j'en dirai pas plus :D, désolé 
+
 * Référence :
     * [File Space Management](http://dev.mysql.com/doc/refman/5.5/en/innodb-file-space.html) 
     * [SHOW TABLES STATUS](http://dev.mysql.com/doc/refman/5.5/en/show-table-status.html)
     * [Configuration innodb](http://dev.mysql.com/doc/refman/5.5/en/innodb-init-startup-configuration.html#innodb-startup-data-file-configuration)
     * [InnoDB par table](http://dev.mysql.com/doc/refman/5.7/en/innodb-multiple-tablespaces.html)
+    * [InnoDB file_format](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_file_format)
+
+
+
+# <a name="crash_healt_recovery" /> Validation de la santé et prise en charge
+
+Cette section est je pense important, est-ce que vous l'appliquerez **cash** je ne pense pas, cependant ceci vous offrira un base un point de référence si ceci arrive. Vous transpirerez peut-être un peu moins et / ou vous aurez l'air plus en contrôle devant les autres qui sont en panique totale :).
+
+Avant de corriger les problèmes il faut être en mesure d'identifier s'il y a un problème :D donc commençons par la validation des tables.
+
+http://dev.mysql.com/doc/refman/5.5/en/myisam-table-maintenance.html
+http://dev.mysql.com/doc/refman/5.5/en/innochecksum.html
+http://dev.mysql.com/doc/refman/5.5/en/check-table.html#check-table-innodb
+http://dev.mysql.com/doc/refman/5.5/en/analyze-table.html
+http://dev.mysql.com/doc/refman/5.5/en/innodb-statistics-estimation.html
+https://twindb.com/repair-corrupted-innodb-table-with-corruption-in-secondary-index/
+
+SHOW ENGINE INNODB STATUS\G
 
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
 
@@ -459,6 +498,7 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
         * [SHOW TABLES STATUS](http://dev.mysql.com/doc/refman/5.5/en/show-table-status.html)
         * [Configuration innodb](http://dev.mysql.com/doc/refman/5.5/en/innodb-init-startup-configuration.html#innodb-startup-data-file-configuration)
         * [InnoDB par table](http://dev.mysql.com/doc/refman/5.7/en/innodb-multiple-tablespaces.html)
+        * [InnoDB file_format](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_file_format)
 
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
