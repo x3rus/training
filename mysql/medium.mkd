@@ -435,12 +435,110 @@ Et voilà j'en dirai pas plus :D, désolé
 
 Cette section est je pense important, est-ce que vous l'appliquerez **cash** je ne pense pas, cependant ceci vous offrira un base un point de référence si ceci arrive. Vous transpirerez peut-être un peu moins et / ou vous aurez l'air plus en contrôle devant les autres qui sont en panique totale :).
 
+
+## <a name="check_status" /> Analyse de l'état de santé des tables
+
 Avant de corriger les problèmes il faut être en mesure d'identifier s'il y a un problème :D donc commençons par la validation des tables.
 
+Comme j'avais fait mention je vais utiliser les 2 tables __app\_article__ et __app\_inno\_article__ pour faire la démonstration avec les 2 systèmes de stockage **MyISAM** et **innoDB**. Bon quand j'avais dis ça j'avais pas prévu de supprimer les tables pour faire la démonstration de l'utilisation de l'espace :P.
+Pas grave, on va les recréer :D.
+
+        $ mysql -u bob -p 
+        mysql> use ma_super_BD
+        mysql> CREATE TABLE app_inno_article ( id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY , texte TEXT NOT NULL, text_status ENUM('brouillon','evaluation','final') NOT NULL , info VARCHAR(20) ) ENGINE=INNODB ;
+        Query OK, 0 rows affected (0.00 sec)
+
+        mysql> CREATE TABLE app_article ( id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY , texte TEXT NOT NULL, text_status ENUM('brouillon','evaluation','final') NOT NULL , info VARCHAR(20) ) ENGINE=MYISAM ;
+        Query OK, 0 rows affected (0.01 sec)
+
+Un petit coup de script d'insertion pour mettre un peu de contenu  :
+
+        $ ./insert.sh
+
+        mysql> select count(*) from app_article;
+        +----------+
+        | count(*) |
+        +----------+
+        |      803 |
+        +----------+
+        1 row in set (0.00 sec)
+
+        mysql> select count(*) from app_inno_article;
+        +----------+
+        | count(*) |
+        +----------+
+        |      803 |
+        +----------+
+        1 row in set (0.00 sec)
+
+Validons l'état des tables maintenant, à l'aide de l'instruction [check table](http://dev.mysql.com/doc/refman/5.5/en/check-table.html#check-table-innodb) :
+
+
+        mysql> check table app_article;
+        +-------------------------+-------+----------+----------+
+        | Table                   | Op    | Msg_type | Msg_text |
+        +-------------------------+-------+----------+----------+
+        | ma_super_BD.app_article | check | status   | OK       |
+        +-------------------------+-------+----------+----------+
+        1 row in set (0.00 sec)
+
+        mysql> check table app_inno_article;
+        +------------------------------+-------+----------+----------+
+        | Table                        | Op    | Msg_type | Msg_text |
+        +------------------------------+-------+----------+----------+
+        | ma_super_BD.app_inno_article | check | status   | OK       |
+        +------------------------------+-------+----------+----------+
+        1 row in set (0.01 sec)
+
+L'instruction [check table](http://dev.mysql.com/doc/refman/5.5/en/check-table.html#check-table-innodb) fonctionne aussi bien pour **MyISAM** et **innoDB**.
+Ceci ne validera **QUE** l'état générale de la table si cette dernier à un problème d'index ou de clé , le problème ne sera pas remonté ! Vous devez utiliser une autre instruction [CHECK ANALYZE](http://dev.mysql.com/doc/refman/5.5/en/analyze-table.html):
+
+        mysql> analyze table app_article;     
+        +-------------------------+---------+----------+-----------------------------+
+        | Table                   | Op      | Msg_type | Msg_text                    |
+        +-------------------------+---------+----------+-----------------------------+
+        | ma_super_BD.app_article | analyze | status   | Table is already up to date |
+        +-------------------------+---------+----------+-----------------------------+
+        1 row in set (0.00 sec)
+
+        mysql> analyze table app_inno_article;
+        +------------------------------+---------+----------+----------+
+        | Table                        | Op      | Msg_type | Msg_text |
+        +------------------------------+---------+----------+----------+
+        | ma_super_BD.app_inno_article | analyze | status   | OK       |
+        +------------------------------+---------+----------+----------+
+        1 row in set (0.00 sec)
+
+La différence est que [CHECK ANALYZE](http://dev.mysql.com/doc/refman/5.5/en/analyze-table.html) valide les index et les clé 
+
+Moins pertinent selon dans le sujet de la validation de la santé des tables mais pertinent pour valider s'il y a modification d'un table il existe l'instruction [CHECKSUM TABLE](http://dev.mysql.com/doc/refman/5.5/en/innochecksum.html), qui permet d'avoir un __checksum__ d'un table :
+
+        mysql> CHECKSUM TABLE app_article;
+        +-------------------------+------------+
+        | Table                   | Checksum   |
+        +-------------------------+------------+
+        | ma_super_BD.app_article | 3408470473 |
+        +-------------------------+------------+
+        1 row in set (0.01 sec)
+
+        mysql> CHECKSUM TABLE app_inno_article;
+        +------------------------------+------------+
+        | Table                        | Checksum   |
+        +------------------------------+------------+
+        | ma_super_BD.app_inno_article | 3408470473 |
+        +------------------------------+------------+
+        1 row in set (0.00 sec)
+
+
+Comme nous avons exactement la même quantité et même donnée dans les 2 table nous pouvons constater que le résultat est identique :D, c'est bien fait tous de même :D.
+
+Référence :
+
+* [check table](http://dev.mysql.com/doc/refman/5.5/en/check-table.html#check-table-innodb)
+* [CHECK ANALYZE](http://dev.mysql.com/doc/refman/5.5/en/analyze-table.html)
+* [CHECKSUM TABLE](http://dev.mysql.com/doc/refman/5.5/en/innochecksum.html)
+
 http://dev.mysql.com/doc/refman/5.5/en/myisam-table-maintenance.html
-http://dev.mysql.com/doc/refman/5.5/en/innochecksum.html
-http://dev.mysql.com/doc/refman/5.5/en/check-table.html#check-table-innodb
-http://dev.mysql.com/doc/refman/5.5/en/analyze-table.html
 http://dev.mysql.com/doc/refman/5.5/en/innodb-statistics-estimation.html
 https://twindb.com/repair-corrupted-innodb-table-with-corruption-in-secondary-index/
 
