@@ -692,7 +692,97 @@ Passons à **InnoDB** c'est plus compliqué :D, le principe est que **innodb** s
 Copie du backup , je sais pas pourquoi je fais ça , réflex :
 
          $ sudo cp ibdata1 ~/bk-bd 
-         
+
+         $ sudo vim /var/lib/mysql/ibdata1 
+         [ Modification aléatoire du contenue ]
+
+Je vais maintenant valider la table : 
+
+         mysql> check table app_inno_article;
+        +------------------------------+-------+----------+----------+
+        | Table                        | Op    | Msg_type | Msg_text |
+        +------------------------------+-------+----------+----------+
+        | ma_super_BD.app_inno_article | check | status   | OK       |
+        +------------------------------+-------+----------+----------+
+        1 row in set (0.01 sec)
+
+Pas de problème, __humm__ là t'as vraiment envie de dire que **innoDB** c'est fort , mais attendons un peu on va arrêter la BD et redémarrer le système ,
+vaut mieux le faire ici qu'en production . Voici le résultat :
+
+        161031 21:11:01 [Note] mysqld (mysqld 5.5.52) starting as process 19 ...
+        161031 21:11:01 [Note] Plugin 'FEDERATED' is disabled.
+        161031 21:11:01 InnoDB: The InnoDB memory heap is disabled
+        161031 21:11:01 InnoDB: Mutexes and rw_locks use GCC atomic builtins
+        161031 21:11:01 InnoDB: Compressed tables use zlib 1.2.3
+        161031 21:11:01 InnoDB: Using Linux native AIO
+        161031 21:11:01 InnoDB: Initializing buffer pool, size = 128.0M
+        161031 21:11:01 InnoDB: Completed initialization of buffer pool
+        161031 21:11:01 InnoDB: highest supported file format is Barracuda.
+        161031 21:11:01  InnoDB: Waiting for the background threads to start
+        161031 21:11:02 InnoDB: Error: tablespace size stored in header is 1664 pages, but
+        161031 21:11:02 InnoDB: the sum of data file sizes is only 1600 pages
+        161031 21:11:02 InnoDB: Cannot start InnoDB. The tail of the system tablespace is
+        161031 21:11:02 InnoDB: missing. Have you edited innodb_data_file_path in my.cnf in an
+        161031 21:11:02 InnoDB: inappropriate way, removing ibdata files from there?
+        161031 21:11:02 InnoDB: You can set innodb_force_recovery=1 in my.cnf to force
+        161031 21:11:02 InnoDB: a startup if you are trying to recover a badly corrupt database.
+        161031 21:11:02 [ERROR] Plugin 'InnoDB' init function returned error.
+        161031 21:11:02 [ERROR] Plugin 'InnoDB' registration as a STORAGE ENGINE failed.
+        161031 21:11:02 [ERROR] Unknown/unsupported storage engine: InnoDB
+        161031 21:11:02 [ERROR] Aborting
+
+        161031 21:11:02 [Note] mysqld: Shutdown complete
+
+C'est sympa **innoDB** ça te laisse même pas démarrer ta BD !! C'est le problème d'un fichier pour l'ensemble du __tablespace__. 
+
+Le **PIRE** si vous utilisez __MySQL__ dans un docker vous corrigez comment le problème ?!?!?! Il mentionne de mettre **innodb_force_recovery=1** mais si vous n'avez pas fait de volume votre conteneur démarre pas ! Bon pour les personnes comme moi :D , qui préparez tranquillement leur formation dans le train dans un conteneur voici comment vous sauver . Bien entendu c'est **HORS SUJET** pour mysql [Docker changement du start](#docker_start_change)
+
+Nous allons donc définir dans le fichier **my.cnf** l'option **innodb_force_recovery=1** , nous reviendrons bientôt sur ce fichier de configuration :
+
+        $ cat /etc/mysql/my.cnf
+        [mysqld]
+        skip-host-cache
+        skip-name-resolve
+        datadir = /var/lib/mysql
+        innodb_force_recovery=1
+        !includedir /etc/mysql/conf.d/
+
+
+Bon il semble qu'il a réussie :
+
+         # /usr/local/bin/docker-entrypoint.sh mysqld
+         21:35:50 InnoDB: Using Linux native AIO
+         161031 21:35:50 InnoDB: Initializing buffer pool, size = 128.0M
+         161031 21:35:50 InnoDB: Completed initialization of buffer pool
+         161031 21:35:50 InnoDB: highest supported file format is Barracuda.
+         161031 21:35:50  InnoDB: Waiting for the background threads to start
+         161031 21:35:51 InnoDB: Error: tablespace size stored in header is 1664 pages, but
+         161031 21:35:51 InnoDB: the sum of data file sizes is only 1600 pages
+         161031 21:35:51 InnoDB: 5.5.52 started; log sequence number 13537750
+         161031 21:35:51 InnoDB: !!! innodb_force_recovery is set to 1 !!!
+
+
+Il la même super bien fait :D 
+
+        mysql> select count(*) from app_inno_article;                   
+        +----------+
+        | count(*) |
+        +----------+
+        |      809 |
+        +----------+
+        1 row in set (0.00 sec)
+
+        mysql> CHECKSUM TABLE app_inno_article;                  
+        +------------------------------+------------+
+        | Table                        | Checksum   |
+        +------------------------------+------------+
+        | ma_super_BD.app_inno_article | 3766155580 |
+        +------------------------------+------------+
+        1 row in set (0.00 sec)
+
+Même le __checksum__ est bon :-|
+
+ICI ICI ICI 
 
 https://twindb.com/repair-corrupted-innodb-table-with-corruption-in-secondary-index/
 
@@ -772,4 +862,110 @@ http://dev.mysql.com/doc/refman/5.5/en/innodb-best-practices.html
 # <a name="mysql_replication" /> Mise en place d'une replication Mysql
 # <a name="mysql_backup" /> Réalisation d'un backup de(s) base(s) de données
 
+# <a name="docker_start_change" /> Changement de la commande start d'un docker
+
+Premièrement récupérer le ID du conteneur :
+
+        $ docker ps -a 
+        [ ... OUTPUT COUPÉ ...] 
+        286a58149acd    mysql:5.5    "docker-entrypoint.sh"    3 weeks ago    Exited (1) 2 seconds ago         x3-mysql-p
+        [ ... OUTPUT COUPÉ ...] 
  
+Inspection du conteneur :
+
+    	$ docker inspect 286a58149acd
+    	[
+    	    {
+            	"Id": "286a58149acd3d333b808764ee053b389b394a06a792483150df0e7b30dd9a78",
+            	"Created": "2016-10-05T23:45:55.899578983Z",
+    	        "Path": "docker-entrypoint.sh",
+    	        "Args": [
+    	            "mysqld"
+    	        ],
+                "State": {
+                    "Status": "exited",
+                    "Running": false,
+                    "Paused": false,
+                    "Restarting": false,
+                    "OOMKilled": false,
+                    "Dead": false,
+                    "Pid": 0,
+                    "ExitCode": 1,
+                    "Error": "",
+                    "StartedAt": "2016-10-31T20:45:47.097872323Z",
+                    "FinishedAt": "2016-10-31T20:45:48.286121255Z"
+                },
+                "Image": "sha256:402df65b897ec438b848525dc5812bb4b435aef153f9da617748afcd34c79664",
+                "ResolvConfPath": "/var/lib/docker/containers/286a58149acd3d333b808764ee053b389b394a06a792483150df0e7b30dd9a78/resolv.conf",
+                "HostnamePath": "/var/lib/docker/containers/286a58149acd3d333b808764ee053b389b394a06a792483150df0e7b30dd9a78/hostname",
+                "HostsPath": "/var/lib/docker/containers/286a58149acd3d333b808764ee053b389b394a06a792483150df0e7b30dd9a78/hosts",
+                "LogPath": "/var/lib/docker/containers/286a58149acd3d333b808764ee053b389b394a06a792483150df0e7b30dd9a78/286a58149acd3d333b808764ee053b389b394a06a792483150df0e7b30dd9a78-json.log",
+
+
+Nous allons éditer le fichier de configuration du conteneur :D , car on est des **H4x0r** !! 
+Normalement le fichier est contenu dans /var/lib/docker/containers/ et l'ID , si vous le trouvez pas **Grep** est ton ami :D , j'espère que le répertoire est pas trop gros :D 
+
+**IMPORTANT** avant d'éditer le fichier il faut arrêter le service de docker :-( , ouin ,car docker est plus **H4x0r** que nous il va réécrire le fichier :-/.
+
+          $ sudo systemctl stop docker.service
+          $ sudo vim /var/lib/docker/containers/286a58149acd3d333b808764ee053b389b394a06a792483150df0e7b30dd9a78/config.v2.json
+
+Nous devons modifier les arguments suivant  : 
+
+            "Path":"docker-entrypoint.sh","Args":["mysqld"],
+
+Pour :
+
+            "Path":"/usr/bin/tail","Args":["-f","/dev/null"],
+
+On redémarre le service docker 
+
+        $ sudo systemctl start  docker.service
+
+On valide la nouvelle configuration :
+
+        $ docker ps -a | grep 286a58149acd
+        286a58149acd     mysql:5.5      "/usr/bin/tail -f /de"    3 weeks ago    Exited (0) 54 seconds ago             x3-mysql-p
+
+On peut maintenant démarrer le conteneur  :
+
+        $ docker start -i -a x3-mysql-p
+        [ ... La console restera comme ça ...]
+
+Sur un autre terminal :
+
+        $ docker exec -it x3-mysql-p bash
+        root@x3-sql:/#
+        
+**ET VOILÀ**
+
+Maintenant on peut même roulé le démarrage SQL tranquille
+
+        root@x3-sql:/# /usr/local/bin/docker-entrypoint.sh mysqld
+        161031 21:32:51 [Note] mysqld (mysqld 5.5.52) starting as process 62 ...
+        161031 21:32:51 [Note] Plugin 'FEDERATED' is disabled.
+        161031 21:32:51 InnoDB: The InnoDB memory heap is disabled
+        161031 21:32:51 InnoDB: Mutexes and rw_locks use GCC atomic builtins
+        161031 21:32:51 InnoDB: Compressed tables use zlib 1.2.3
+        161031 21:32:51 InnoDB: Using Linux native AIO
+        161031 21:32:51 InnoDB: Initializing buffer pool, size = 128.0M
+        161031 21:32:51 InnoDB: Completed initialization of buffer pool
+        161031 21:32:51 InnoDB: highest supported file format is Barracuda.
+        161031 21:32:51  InnoDB: Waiting for the background threads to start
+        161031 21:32:52 InnoDB: Error: tablespace size stored in header is 1664 pages, but
+        161031 21:32:52 InnoDB: the sum of data file sizes is only 1600 pages
+        161031 21:32:52 InnoDB: Cannot start InnoDB. The tail of the system tablespace is
+        161031 21:32:52 InnoDB: missing. Have you edited innodb_data_file_path in my.cnf in an
+        161031 21:32:52 InnoDB: inappropriate way, removing ibdata files from there?
+        161031 21:32:52 InnoDB: You can set innodb_force_recovery=1 in my.cnf to force
+        161031 21:32:52 InnoDB: a startup if you are trying to recover a badly corrupt database.
+        161031 21:32:52 [ERROR] Plugin 'InnoDB' init function returned error.
+        161031 21:32:52 [ERROR] Plugin 'InnoDB' registration as a STORAGE ENGINE failed.
+        161031 21:32:52 [ERROR] Unknown/unsupported storage engine: InnoDB
+        161031 21:32:52 [ERROR] Aborting
+
+        161031 21:32:52 [Note] mysqld: Shutdown complete
+
+        root@x3-sql/#
+
+Il y a un Issue sur __github__ pour le faire en lui passant un argument , en attendant ça MARCHE :D 
