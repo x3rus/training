@@ -532,17 +532,173 @@ Moins pertinent selon dans le sujet de la validation de la santé des tables mai
 
 Comme nous avons exactement la même quantité et même donnée dans les 2 table nous pouvons constater que le résultat est identique :D, c'est bien fait tous de même :D.
 
+Comme nous l'avions vu aussi précédemment il est aussi possible d'utiliser l'instruction [SHOW TABLE STATUS](http://dev.mysql.com/doc/refman/5.5/en/show-table-status.html): 
+
+        mysql> SHOW TABLE STATUS WHERE NAME="app_inno_article" \G
+        *************************** 1. row ***************************
+        Name: app_inno_article
+        Engine: InnoDB
+        Version: 10
+        Row_format: Compact
+        Rows: 950
+        Avg_row_length: 120
+        Data_length: 114688
+        Max_data_length: 0
+        Index_length: 0
+        Data_free: 15728640
+        Auto_increment: 810
+        Create_time: 2016-10-31 12:02:38
+        Update_time: NULL
+        Check_time: NULL
+        Collation: latin1_swedish_ci
+        Checksum: NULL
+        Create_options:
+        Comment:
+        1 row in set (0.00 sec)
+
+### <a name="monitoring_innodb" /> Monitoring des tables avec innoDB
+
+Documentation chez __MySQL__ : [Monitoring InnoDB](http://dev.mysql.com/doc/refman/5.5/en/innodb-enabling-monitors.html) 
+
+Vous pouvez voir la santé du système de stockage __innoDB__ avec l'instruction  : **SHOW ENGINE INNODB STATUS\G**
+
+        mysql> SHOW ENGINE INNODB STATUS\G
+        *************************** 1. row ***************************
+        Type: InnoDB
+            Name:
+            Status:
+            =====================================
+            161031 12:14:12 INNODB MONITOR OUTPUT
+            =====================================
+            Per second averages calculated from the last 48 seconds
+            -----------------
+            BACKGROUND THREAD
+            -----------------
+            srv_master_thread loops: 1 1_second, 1 sleeps, 0 10_second, 1 background, 1 flush
+            srv_master_thread log flush and writes: 1
+       [... OUTPUT COUPÉ ...]
+
+
+En théorie, oui je dis en théorie car avec ma version de __MySQL__ 5.5 je n'ai pas réussie à avoir le output du monitoring par table :-/.
+Selon la documentation il faut simplement créer une table : 
+
+        mysql> CREATE TABLE innodb_table_monitor (a INT) ENGINE=INNODB;
+
+Pour avoir l'information sur les tables après plusieurs tentative je n'ai pas eu de succès , j'ai du oublier quelque chose, mais quoi ... Je vous laisserai faire vos recherches nous essayerons ensemble lors de la formation :D.
+
+
 Référence :
 
 * [check table](http://dev.mysql.com/doc/refman/5.5/en/check-table.html#check-table-innodb)
 * [CHECK ANALYZE](http://dev.mysql.com/doc/refman/5.5/en/analyze-table.html)
 * [CHECKSUM TABLE](http://dev.mysql.com/doc/refman/5.5/en/innochecksum.html)
+* [Monitoring InnoDB](http://dev.mysql.com/doc/refman/5.5/en/innodb-enabling-monitors.html)
 
-http://dev.mysql.com/doc/refman/5.5/en/myisam-table-maintenance.html
-http://dev.mysql.com/doc/refman/5.5/en/innodb-statistics-estimation.html
+
+## <a name="repair_tables" /> Réparation des tables
+
+Bon avant de pouvoir  réparer une table faut que cette dernière est un problème ... Donc on va générer un problème :D.
+Un petit backup avant , attention le backup que je réalise est TRÈS mauvais :P , mais comme il n'y a pas d'activité ce n'est pas critique mais cette méthode ne fonctionnera pas dans un vraie environnement avec de l'activité.
+
+        $ mkdir ~/bk-bd
+        $ cp app_* ~/bk-bd
+
+Un petit **VIM** avec de la suppression et de l'ajout d'information sur la table **app\_article**
+
+        $ sudo vim app_article.MYD
+
+Après avec erroné le fichier refaisons une validation de la table 
+
+        mysql> check table app_article;                              
+        +-------------------------+-------+----------+-----------------------------------------------------+
+        | Table                   | Op    | Msg_type | Msg_text                                            |
+        +-------------------------+-------+----------+-----------------------------------------------------+
+        | ma_super_BD.app_article | check | error    | Size of datafile is: 62848         Should be: 62856 |
+        | ma_super_BD.app_article | check | error    | Corrupt                                             |
+        +-------------------------+-------+----------+-----------------------------------------------------+
+        2 rows in set (0.00 sec)
+
+**COOL** un problème contrôler :D , vous pouvez aussi utilisé la ligne de commande avec **mysqlcheck**
+
+        $ /usr/local/mysql/bin/mysqlcheck -u bob -p ma_super_BD app_article
+        Enter password:
+        ma_super_BD.app_article
+        warning  : Table is marked as crashed
+        error    : Size of datafile is: 62848         Should be: 62856
+        error    : Corrupt
+
+        $ /usr/local/mysql/bin/mysqlcheck -u bob -p ma_super_BD app_inno_article
+        Enter password:
+        ma_super_BD.app_inno_article                       OK
+
+Passons à l'étape de la réparation de la table [REPAIR TABLE](http://dev.mysql.com/doc/refman/5.5/en/repair-table.html).
+**ATTENTION** : **repair table** ne fonctionne QUE pour **MyISAM**
+
+        mysql> repair table app_article;
+        +-------------------------+--------+----------+----------------------------------------------------+
+        | Table                   | Op     | Msg_type | Msg_text                                           |
+        +-------------------------+--------+----------+----------------------------------------------------+
+        | ma_super_BD.app_article | repair | info     | Wrong bytesec:   0-  0-120 at 60380; Skipped       |
+        | ma_super_BD.app_article | repair | info     | Found block that points outside data file at 60552 |
+        | ma_super_BD.app_article | repair | info     | Found block that points outside data file at 60660 |
+        | ma_super_BD.app_article | repair | info     | Found block that points outside data file at 60720 |
+        | ma_super_BD.app_article | repair | info     | Found block that points outside data file at 61028 |
+        | ma_super_BD.app_article | repair | info     | Found block that points outside data file at 61224 |
+        | ma_super_BD.app_article | repair | warning  | Number of rows changed from 809 to 778             |
+        | ma_super_BD.app_article | repair | status   | OK                                                 |
+        +-------------------------+--------+----------+----------------------------------------------------+
+        8 rows in set (0.00 sec)
+
+        mysql> check table app_article; 
+        +-------------------------+-------+----------+----------+
+        | Table                   | Op    | Msg_type | Msg_text |
+        +-------------------------+-------+----------+----------+
+        | ma_super_BD.app_article | check | status   | OK       |
+        +-------------------------+-------+----------+----------+
+        1 row in set (0.01 sec)
+
+
+Regardons à présent le __checksum__ entre nos 2 tables identique :
+
+        mysql> CHECKSUM TABLE app_article;
+        | Table                   | Checksum   |
+        +-------------------------+------------+
+        | ma_super_BD.app_article | 1217375564 |
+        +-------------------------+------------+
+
+        mysql> CHECKSUM TABLE app_inno_article; 
+        | Table                        | Checksum   |
+        +------------------------------+------------+
+        | ma_super_BD.app_inno_article | 3766155580 |
+        +------------------------------+------------+
+
+Lors de l'opération de réparation nous avons pu voir le message : **Number of rows changed from 809 to 778** , validons le :
+
+        mysql> select count(*) from app_article;
+        | count(*) |
+        +----------+
+        |      778 |
+        +----------+
+
+        mysql> select count(*) from app_inno_article;
+        | count(*) |
+        +----------+
+        |      809 |
+        +----------+
+
+
+Passons à **InnoDB** c'est plus compliqué :D, le principe est que **innodb** se répare tous seul, ouin ... Par expérience si votre système de fichier à un problème ou votre **RAID** il n'y a PAS de réparation automatique qui fonctionne ... Bon créons le problème :D.
+
+Copie du backup , je sais pas pourquoi je fais ça , réflex :
+
+         $ sudo cp ibdata1 ~/bk-bd 
+         
+
 https://twindb.com/repair-corrupted-innodb-table-with-corruption-in-secondary-index/
 
-SHOW ENGINE INNODB STATUS\G
+* Référence :
+    * [REPAIR TABLE](http://dev.mysql.com/doc/refman/5.5/en/repair-table.html)
+ 
 
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
 
@@ -597,6 +753,10 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
         * [Configuration innodb](http://dev.mysql.com/doc/refman/5.5/en/innodb-init-startup-configuration.html#innodb-startup-data-file-configuration)
         * [InnoDB par table](http://dev.mysql.com/doc/refman/5.7/en/innodb-multiple-tablespaces.html)
         * [InnoDB file_format](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_file_format)
+    * Santé des tables
+        * [check table](http://dev.mysql.com/doc/refman/5.5/en/check-table.html#check-table-innodb)
+        * [CHECK ANALYZE](http://dev.mysql.com/doc/refman/5.5/en/analyze-table.html)
+        * [CHECKSUM TABLE](http://dev.mysql.com/doc/refman/5.5/en/innochecksum.html)
 
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
