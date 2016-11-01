@@ -884,10 +884,88 @@ Ou directement le mettre sur la commande en mettant la date du jour :D, c'est pl
 
 Quelques arguments COOL :
 
-* **-xml** (__mysqldump --xml --all-databases -u root -p > bk.xml__)
+* **-xml** (__mysqldump --xml --all-databases -u root -p > bk.xml__) : permet d'avoir le résultat en format __xml__ pour les amoureux du __xml__ :P
+* **--no-data, -d**  : Permet de réaliser une sauvegarde uniquement des schémas sans le contenu des tables, pas très pratique pour un backup mais idéal pour répliquer une structure .
+* **--extended-insert, -e** : ceci permet de définie le backup avec le système d'insertion étendu , ça augmente la rapidité de __restore__
+* **--dump-date** : Ajoute en commentaire la date de la sauvegarde dans le fichier
+* **--complete-insert, -c** : les instructions d'insertion seront complète incluant les colonnes, principalement intéressant lorsque vous migré de base de donnée de __MySQL__ vers une autre BD.
+* **--compatible=name** : Dans la même idée si vous réalisez une sauvegarde pour la rechargé dans une autre BD vous pouvez définir un mode de compatibilité voici la liste des options possible : __ansi, mysql323, mysql40, postgresql, oracle, mssql, db2, maxdb, no_key_options, no_table_options, or no_field_options__
+* **--replace** : Au lieu de réalisé la sauvegarde avec des __insert__ le système utilisera l'instruction __replace__ , pratique pour rafraichir un environnement.
+* **where** : Réalise la sauvegarde unique pour les lignes qui concorde au critère inclut dans l'instruction __where__.
+
+L'ensemble des instructions / options sont disponible à l'adresse de __Mysql__ : [http://dev.mysql.com/doc/refman/5.5/en/mysqldump.html](http://dev.mysql.com/doc/refman/5.5/en/mysqldump.html)
  
+## <a name="mysql_backup_database" /> Sauvegarde des base de donnée individuelle 
+
+Telle que mentionné , moi j'aime bien avoir une sauvegarde par base de donnée au lieu d'avoir un **GROS** fichier avec l'ensemble. Pourquoi simplement que si j'ai une base de donnée de 200__Megs__ et 2 autres base de données de 5 __Gig__ , si je dois faire une récupération de la petite base de données faut que je manipule un fichier de 10.2 __gig__ . Si je dois faire une restauration d'urgence, je transpire déjà assez pour pas vouloir me battre à trier un gros fichier !
+
+Donc voici l'instruction pour faire une sauvegarde d'une base de donnée :
+
+        $ mysqldump -u root --password=superPatate  --databases ma_super_BD > dump-ma_super_BD-$(date +%F).sql
+        $  ls -l dump-ma_super_BD-$(date +%F).sql
+        -rw-r--r-- 1 root root 148701 Nov  1 21:05 dump-ma_super_BD-2016-11-01.sql
+
+Comme vous pouvez voir la commande est la même [mysqldump](http://dev.mysql.com/doc/refman/5.5/en/mysqldump.html) , donc l'ensemble des arguments mentionné dans la précédente section sont valide. 
+
+Bon une petite astuce maintenant :D , pour ceux qui se disent super je vais faire un script comme suit :
+
+        #!/bin/bash
+        #
+        ###########################################
+
+        LST_BD_TO_BACKUP="ma_super_BD wordpress pyrocms"
+        USER_BD=root
+        PASSWORD_BD=superPatate
+        REP_BK=/dump/bd/
+
+        for bd in $LST_BD_TO_BACKUP ; do
+            mysqldump -u $USER_BD --password=$PASSWORD_BD --databases $bd | gzip > $REP_BK/$bd-$(date +%F).sql.gz
+        done
+
+Oui , c'est pas mal ... __Ok__ non c'est à chier !! Pas que je vous fais pas confiance , mais si vous êtes plusieurs administrateur sur la machine ou qu'un développeur peut aussi créer des base de données que va t'il arriver ?? Quand vous aurez un __crash__ vous vous rendrez compte que vous avez oublié d'ajouter la nouvelle base de données dans la variable **$LST_BD_TO_BACKUP** , résultat pas de backup . Si vous en supprimé une vous aurez une erreur, mince consolation car c'est pas le plus critique. 
+
+Voici ce que je vous suggère, de procéder à l'inverse de prendre TOUTES les base de données et d'exclure celle que vous ne désirez pas. Voici la commande pour avoir l'ensemble des bases de données présent dans la bd.
+
+        $ mysql -u root --password=superPatate --skip-column-names -s -e 'show databases '
+        information_schema
+        ma_super_BD
+        mysql
+        performance_schema
+        ze_bd
+
+Avec les options **--skip-column-names** , pour supprimer le nom de la colonne et **-s** pour silence pour ne pas avoir le formatage du résultat j'ai l'ensemble des base de données disponible. Nous savons que **information\_schema**  et **performance\_schema** sont dynamique nous pouvons donc les exclure de la sauvegarde.
+On reprend :D 
+
+        #!/bin/bash
+        #
+        ############################################
+        LST_EXCLU_BD_TO_BACKUP="information_schema performance_schema"
+        USER_BD=root
+        PASSWORD_BD=superPatate
+        REP_BK=/dump/bd/
+
+        LST_BD=$(mysql -u $USER_BD --password=$PASSWORD_BD --skip-column-names -s -e 'show databases ')
+        for bd in $LST_BD ; do
+            if echo $LST_EXCLU_BD_TO_BACKUP | grep -v -q $bd ; then
+                mysqldump -u $USER_BD --password=$PASSWORD_BD --databases $bd | gzip > $REP_BK/$bd-$(date +%F).sql.gz
+            fi
+        done
+
+
+**HAaaa** je me sens plus en sécurité tous d'un coup :D. Je vous suggère d'utiliser le même principe pour l'ensemble de vos BD que ce soit __MySQL__ ou autre , les sauvegardes sont trop importante pour que l'on oublie une base de données :-/.
+
+Il vous  reste à ajouter un système de rotation pour ne pas remplir le disque dur de backup de base de données.
+
+
 * Référence :
     * [Mysqldump](http://dev.mysql.com/doc/refman/5.5/en/mysqldump.html)
+
+## <a name="mysql_backup_restore" /> Réalisation d'une restauration
+
+Un peu plus et j'oubliais de couvrir la restauration d'un backup :P .
+
+Pour les besoins de l'opération je vais prendre la sauvegarde de la base de donnée **ma\_super\_bd** et créer la base de donnée , **restored\_bd**. 
+Bon l'opération peut varier selon les données, car il est possible 
 
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
 
