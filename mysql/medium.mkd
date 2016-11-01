@@ -780,15 +780,114 @@ Il la même super bien fait :D
         +------------------------------+------------+
         1 row in set (0.00 sec)
 
-Même le __checksum__ est bon :-|
+Même le __checksum__ est bon :-| .
 
-ICI ICI ICI 
+Bon malheureusement je vais être un peu limité dans mes possibilités de __crash__ , donc je vais vous faire par de mon expérience, de mon dernier __crash__ de base de données __MySQL__ avec **innoDB** . 
+Comme vous avez pu le constater quand il y a un problème avec le système de stockage **innoDB** l'ensemble de la base de données __crash__ le processus **mysqld** s'arrête et essaye de redémarrer selon votre système. Même si j'avais l'option **innodb_force_recovery=1** dans ma configuration comme c'était un problème de disque dur, il n'a pas pu faire grand chose. Le plus gros problème est que comme le processus **mysqld** s'arrête même les services qui utilisaient __MyISAMM__ été affecté :(. La solution fut de reprendre le backup et de réimporter les données afin de recréer les tables __innoDB__ convenablement, bien entendu ceci sera équivalent pour __MyISAMM__ cependant ce dernier n'affecte pas l'ensemble du processus __mysqld__. Nous verrons lors de la formation si le problème est équivalent pour __MySQL__ **5.7**.
 
-https://twindb.com/repair-corrupted-innodb-table-with-corruption-in-secondary-index/
+Donc peut importe le mécanisme de **crash recovery** un backup reste votre meilleur filet :D. 
+
+Passons donc au backup :D
 
 * Référence :
     * [REPAIR TABLE](http://dev.mysql.com/doc/refman/5.5/en/repair-table.html)
+    * [REPAIR INNODB](https://twindb.com/repair-corrupted-innodb-table-with-corruption-in-secondary-index/)
  
+# <a name="mysql_backup" /> Réalisation d'un backup de(s) base(s) de données
+
+Le système de backup de __Mysql__ est bien fait car il prend en charge peut importe le système de stockage utilisé, pas besoin de ce prendre la tête.
+L'application pour réaliser un backup se nomme [Mysqldump](http://dev.mysql.com/doc/refman/5.5/en/mysqldump.html) , bien entendu vous devrez fournir des informations d'authentification pour l'utiliser. Je vous suggère d'utiliser un utilisateur dédier au backup , voici les droits requis : [SELECT](http://dev.mysql.com/doc/refman/5.5/en/privileges-provided.html#priv_select) , [SHOW VIEW](http://dev.mysql.com/doc/refman/5.5/en/privileges-provided.html#priv_show-view), [TRIGGER](http://dev.mysql.com/doc/refman/5.5/en/privileges-provided.html#priv_trigger), [LOCK TABLE](http://dev.mysql.com/doc/refman/5.5/en/privileges-provided.html#priv_lock-tables). Bien entendu l'utilisateur n'a pas besoin d'avoir accès en écriture , sauf si vous désirez __restorer__ une base de données mais honnêtement à ce stade j'utilise l'administrateur (__root__). 
+
+
+Nous allons voir 2 type de backup , personnellement j'utilise toujours les 2 , car j'aime avoir un BON filet en cas de problème après tous c'est mes données !!
+
+1. Sauvegarde complet dans 1 fichiers : L'avantage de cette solution s'il y a un problème avec votre BD que vous devez la réinstaller et la remettre en place 1 fichier et voilà l'ensemble est présent pas de soucis 
+2. Sauvegarde des base de données 1 fichier par BD : L'avantage est que si vous avez besoin de récupéré juste une BD qui à eu un problème (erreur de manipulation , suppression , contenu erroné ) vous avez uniquement besoin de traiter cette base de données pas de manipulation à réaliser pour récupérer juste une BD
+
+L'avantage d'utiliser ces 2 méthodes est que vous avez 2 sauvegarde presque identique (presque car il est possible qu'il y est quelques secondes / minutes entre les sauvegardes ) donc un filet double :D.
+
+Bon fini le __blabla let's GO__ les commandes.
+
+## <a name="mysql_backup_full" /> Sauvegarde complet de la base de donnée
+
+Allez direct la commande :
+
+        mysqldump --all-databases -u root -p > full.sql
+
+Et voilà , l'ensemble de la BD __MySQL__ est contenu dans le fichier __full.sql__ !!
+
+Vous pouvez voir le contenu :
+
+        head -45 full.sql
+        -- MySQL dump 10.13  Distrib 5.5.52, for linux2.6 (x86_64)
+        --
+        -- Host: localhost    Database: 
+        -- ------------------------------------------------------
+        -- Server version       5.5.52
+
+        /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+        /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+        /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+        /*!40101 SET NAMES utf8 */;
+        /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+        /*!40103 SET TIME_ZONE='+00:00' */;
+        /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+        /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+        /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+        /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+        --
+        -- Current Database: `ma_super_BD`
+        --
+
+        CREATE DATABASE /*!32312 IF NOT EXISTS*/ `ma_super_BD` /*!40100 DEFAULT CHARACTER SET latin1 */;
+
+        USE `ma_super_BD`;
+
+        --
+        -- Table structure for table `album`
+        --
+
+        DROP TABLE IF EXISTS `album`;
+        /*!40101 SET @saved_cs_client     = @@character_set_client */;
+        /*!40101 SET character_set_client = utf8 */;
+        CREATE TABLE `album` (
+          `id` tinyint(3) unsigned NOT NULL AUTO_INCREMENT,
+          `nom` varchar(20) NOT NULL,
+          `annee` year(4) NOT NULL,
+          `artiste` tinyint(3) unsigned DEFAULT NULL,
+          PRIMARY KEY (`id`),
+          KEY `artiste` (`artiste`),
+          CONSTRAINT `album_ibfk_1` FOREIGN KEY (`artiste`) REFERENCES `artiste` (`id`)
+        ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+        /*!40101 SET character_set_client = @saved_cs_client */;
+        --
+
+Bien entendu tous comme pour l'établissement de connexion avec le client __mysql__ il est possible de fournir le mot de passe sur la ligne de commande afin de pouvoir mettre cette commande dans un **cron** ou un script.
+
+        $ mysqldump --all-databases -u root --password=superPatate > full.sql
+
+Bon c'est du texte simple donc ça se compresse bien , bien entendu vous pouvez toujours utiliser la commande **gzip** post-exécution.
+
+        $ du -hs full.sql
+        3.2M    full.sql
+        $ gzip full.sql
+        $ du -hs full.sql.gz
+        788K    full.sql.gz
+
+Ou directement le mettre sur la commande en mettant la date du jour :D, c'est plus jolie  :
+
+        $ mysqldump --all-databases -u root --password=superPatate | gzip > full-$(date +%F).sql.gz 
+        $ du -hs full-$(date +%F).sql.gz                                                           
+        788K    full-2016-11-01.sql.gz
+
+
+Quelques arguments COOL :
+
+* **-xml** (__mysqldump --xml --all-databases -u root -p > bk.xml__)
+ 
+* Référence :
+    * [Mysqldump](http://dev.mysql.com/doc/refman/5.5/en/mysqldump.html)
 
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
 
@@ -847,6 +946,8 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
         * [check table](http://dev.mysql.com/doc/refman/5.5/en/check-table.html#check-table-innodb)
         * [CHECK ANALYZE](http://dev.mysql.com/doc/refman/5.5/en/analyze-table.html)
         * [CHECKSUM TABLE](http://dev.mysql.com/doc/refman/5.5/en/innochecksum.html)
+        * [REPAIR TABLE](http://dev.mysql.com/doc/refman/5.5/en/repair-table.html)
+        * [REPAIR INNODB](https://twindb.com/repair-corrupted-innodb-table-with-corruption-in-secondary-index/)
 
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
