@@ -782,6 +782,37 @@ Il la même super bien fait :D
 
 Même le __checksum__ est bon :-| .
 
+Le problème par contre est qu'avec l'option **innodb_force_recovery=1** vous ne pouvez plus faire d'insertion , dans le __tablespace__ :-/ , oui la base de données est en **lecture-seule** si vous essayer de créer un table ceci fonctionnera mais pas l'insertion . Vous aurez l'erreur suivante dans de __MySQL__ :
+
+        Got error -1 from storage engine
+
+Dans les logs vous aurez un message claire :
+
+        InnoDB: A new raw disk partition was initialized or
+        InnoDB: innodb_force_recovery is on: we do not allow
+        InnoDB: database modifications by the user. Shut down
+        InnoDB: mysqld and edit my.cnf so that newraw is replaced
+        InnoDB: with raw, and innodb_force_... is removed.
+
+Mais c'est le moment de réalisé une sauvegarde de la base de donnée.  Vous pouvez utilisez la commande **mysqlcheck**:
+
+        $ mysqlcheck -u root -p --all-databases
+        Enter password:
+        ma_super_BD.album                                  OK
+        ma_super_BD.album2                                 OK
+        ma_super_BD.app_article                            OK
+        ma_super_BD.app_inno_article                       OK
+        ma_super_BD.artiste                                OK
+        ma_super_BD.employe                                OK
+        ma_super_BD.employe2                               OK
+        ma_super_BD.employe3                               OK
+        ma_super_BD.innodb_monitor                         OK
+        ma_super_BD.innodb_table_monitor                   OK
+        ma_super_BD.innodb_tablespace_monitor              OK
+        [ ... OUTPUT COUPÉ ... ]
+
+S'il y a indication d'une table problématique vous pouvez la supprimer et reprendre les données depuis la sauvegarde pour recréer proprement la table et le __tablespace__ . Dans le pire des cas faire une sauvegarde complète du système et recréer l'ensemble.
+
 Bon malheureusement je vais être un peu limité dans mes possibilités de __crash__ , donc je vais vous faire par de mon expérience, de mon dernier __crash__ de base de données __MySQL__ avec **innoDB** . 
 Comme vous avez pu le constater quand il y a un problème avec le système de stockage **innoDB** l'ensemble de la base de données __crash__ le processus **mysqld** s'arrête et essaye de redémarrer selon votre système. Même si j'avais l'option **innodb_force_recovery=1** dans ma configuration comme c'était un problème de disque dur, il n'a pas pu faire grand chose. Le plus gros problème est que comme le processus **mysqld** s'arrête même les services qui utilisaient __MyISAMM__ été affecté :(. La solution fut de reprendre le backup et de réimporter les données afin de recréer les tables __innoDB__ convenablement, bien entendu ceci sera équivalent pour __MyISAMM__ cependant ce dernier n'affecte pas l'ensemble du processus __mysqld__. Nous verrons lors de la formation si le problème est équivalent pour __MySQL__ **5.7**.
 
@@ -998,15 +1029,69 @@ Regardons le fichier de sauvegarde, principalement les premières ligne :
            25
            26  --
 
-Bon Il y a pas mal de commentaire :-/ , mais j'ai voulu les laissé , en gros si je veux importer cette sauvegarde dans une autre base de données j'ai simplement à modifier la ligne **22** et **24** :D. soit 
+Bon Il y a pas mal de commentaire :-/ , mais j'ai voulu les laissé , en gros si je veux importer cette sauvegarde dans une autre base de données j'ai simplement à modifier la ligne **22** et **24** :D soit  :
 
            22  CREATE DATABASE /*!32312 IF NOT EXISTS*/ `ma_super_BD` /*!40100 DEFAULT CHARACTER SET latin1 */;
            23
            24  USE `ma_super_BD`;
 
-Allez un petit VI sur le fichier et voilà on en parle plus , __Yeahhh__ ça marche bien jusqu'a ce que votre BD soit de plusieurs __GIG__. Dans cette situation même si VI est super merveilleux avec 25 ans d'ingénierie en arrière , il aura de la difficulter :-/.
+Allez un petit __VI__ sur le fichier et voilà on en parle plus , __Yeahhh__ ça marche bien jusqu'à ce que votre BD soit de plusieurs __GIG__. Dans cette situation même si __VI__ est super merveilleux avec 25 ans d'ingénierie en arrière , il aura de la difficultés :-/. 
 
-         sed -i '1,5s/ma_super_BD/TOTO/' dump.sql
+Donc l'objectif est de ne pas avoir l'instruction __CREATE__ et surtout ne pas avoir l'instruction __USE__. Pour le __CREATE__ vous pouvez utiliser l'option **--no-create-db** lors du __dump__ , c'est bien mais bon ça reste pas l'idéal de plus il n'y a pas de paramètre pour supprimer l'instruction __USE__ dans **mysqldump** . De plus si vous désirez restauré la __BD__ original vous ne serez pas plus avancé de devoir rajouter ces instructions si la sauvegarde est volumineuse. 
+
+Voici ma suggestion, laissez l'instruction de création (__CREATE__) et d'utilisation (__USE__), après nous se que l'on veut c'est simplement faire une recherche et remplacé la définition de l'ancienne BD. Ça tombe bien **sed** le fait SUPER BIEN :D, on sait et on peut le valider avec **hear** que l'instruction de création et d'utilisation est présent uniquement dans les premières lignes . 
+Voici l'exemple de validation
+
+         head -30 ma_super_BD-2016-11-01.sql | cat -n
+              1  -- MySQL dump 10.13  Distrib 5.5.52, for linux2.6 (x86_64)
+              2  --
+              3  -- Host: localhost    Database: ma_super_BD
+              4  -- ------------------------------------------------------
+              5  -- Server version       5.5.52
+              6
+              7  /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+              8  /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+              9  /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+             10  /*!40101 SET NAMES utf8 */;
+             11  /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+             12  /*!40103 SET TIME_ZONE='+00:00' */;
+             13  /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+             14  /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+             15  /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+             16  /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+             17
+             18  --
+             19  -- Current Database: `ma_super_BD`
+             20  --
+             21
+             22  CREATE DATABASE /*!32312 IF NOT EXISTS*/ `ma_super_BD` /*!40100 DEFAULT CHARACTER SET latin1 */;
+             23
+             24  USE `ma_super_BD`;
+             25
+             26  --
+             27  -- Table structure for table `album`
+             28  --
+             29
+             30  DROP TABLE IF EXISTS `album`;
+
+Le reste on s'en fou :D , donc on peut le dire il n'y a que les 30 premières lignes à modifier peut importe la taille de la sauvegarde. Nous allons utiliser **sed** pour modifier les 30 premières lignes du fichier.
+
+         $ sed -i '1,30s/ma_super_BD/restored_bd/' ma_super_BD-2016-11-01.sql
+
+**MAGIE** :D 
+
+Nous sommes près à charger le fichier :
+
+        $  mysql -u root -p
+        mysql> \. ma_super_BD-2016-11-01.sql
+
+
+Voilà  pas plus compliquer que ça :D.
+
+# <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
+
+http://dev.mysql.com/doc/refman/5.5/en/server-configuration.html
+
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
 
 * max_connexion ...
@@ -1066,8 +1151,8 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
         * [CHECKSUM TABLE](http://dev.mysql.com/doc/refman/5.5/en/innochecksum.html)
         * [REPAIR TABLE](http://dev.mysql.com/doc/refman/5.5/en/repair-table.html)
         * [REPAIR INNODB](https://twindb.com/repair-corrupted-innodb-table-with-corruption-in-secondary-index/)
+        * [REPAIR INNODB blog](http://blackbird.si/mysql-corrupted-innodb-tables-recovery-step-by-step-guide/)
 
-# <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
 # <a name="performance" /> Configuration de performance
 
@@ -1076,10 +1161,8 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
 
 http://dev.mysql.com/doc/refman/5.5/en/innodb-best-practices.html
 
-# <a name="crash_recovery" /> Système de recupération et validation de la santé des tables
 
 # <a name="mysql_replication" /> Mise en place d'une replication Mysql
-# <a name="mysql_backup" /> Réalisation d'un backup de(s) base(s) de données
 
 # <a name="docker_start_change" /> Changement de la commande start d'un docker
 
