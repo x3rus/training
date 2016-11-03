@@ -1093,7 +1093,7 @@ Voilà c'est pas plus compliquer que ça :D.
 Nous allons voir comment modifier les fichiers de configuration de __MySQL__ pour le serveur et pour le client. 
 On va commencé par le client c'est la partie moins longue puis nous couvrirons le serveur .
 
-## Configuration du client ($HOME/.my.cnf)
+## Configuration du client ( USER_HOME/.my.cnf)
 
 Si vous manipulez souvent votre base de donnée avec le client __mysql__ vous devez à chaque fois entrer le mot de passe et utilisateur , ce n'est pas la fin du monde, mais on est tous paresseux . Pour un Sysadmin c'est une qualité :D !
 
@@ -1168,7 +1168,40 @@ Allons plus loin pour l'ensemble des instructions **innodb\_buffer**
         | innodb_buffer_pool_size      | 134217728 |
         +------------------------------+-----------+
 
-C'est vraiment le plus important de la formation , être en mesure d'extraire l'information de notre configuration :D.
+C'est vraiment le plus important de la formation , être en mesure d'extraire l'information de notre configuration existante :D.
+
+Avant de débuter les configurations pour l'optimisation de la base de données  voyons les configurations primaire importante .
+
+* **[datadir](http://dev.mysql.com/doc/refman/5.5/en/server-options.html#option_mysqld_datadir)** : Permet de définir où est le répertoire de données de __MySQL__ , on n'y touche rarement sauf quand la partition **/var** est pleine :P . Si cette situation arrive vous arrêtez __MySQL__ déplacé le répertoire __/var/lib/mysql__ vers un autre répertoire exemple __/data/mysql/__ modifiez cette variable et redémarrer __MySQL__. Aussi simple que ça , attention tous de même au permissions :P, vous assurez que l'utilisateur __mysql__ pourra lire et écrire !
+* **[bind-address](http://dev.mysql.com/doc/refman/5.5/en/server-options.html#option_mysqld_bind-address)** : Définie sur quelle __IP__ le service écoutera , cette option est souvent par défaut à 127.0.0.1 . Si votre service __SQL__ doit pouvoir écouter sur le réseau soit vous définissez l'IP ici ou 0.0.0.0 pour indiquer TOUTES les IP.
+* **[port](http://dev.mysql.com/doc/refman/5.5/en/server-options.html#option_mysqld_port)** : assez claire mais je voulais le mentionné si vous désirez modifier le port 3306 par défaut par un autre.
+* **[log](http://dev.mysql.com/doc/refman/5.5/en/server-options.html#option_mysqld_log)**: Permet de loguer  l'ensemble des opérations de __MySQL__ attention ceci ne doit être activé QUE pour réalisé de l'analyse de __debug__, car tous est contenu dans le logs ( Les requêtes, les erreurs , les connexions, TOUS)
+* **[log-error](http://dev.mysql.com/doc/refman/5.5/en/server-options.html#option_mysqld_log-error)**: Cette instruction est mieux car elle ne conserve log que les erreurs de __MySQL__ donc ceci est plus minimal.
+* **[max\_connections]http://dev.mysql.com/doc/refman/5.5/en/server-system-variables.html#sysvar_max_connections)**: Définie le nombre de connexion maximal que __MySQL__ accepte, par défaut la valeur est à **151** . Pour un environnement interne pas de problème, si vous avez un gros trafic il est fort probable que vous soyez obligé d'augmenter cette valeur.
+* **[old\_password](http://dev.mysql.com/doc/refman/5.5/en/server-system-variables.html#sysvar_old_passwords)**: Je nomme cette option uniquement si vous êtes vraiment mal pris et que vous devez importer une VEILLE ( avant 4.1 ) sur votre base de données. Le système de chiffrement de mot de passe a changé vous serez donc dans l'obligation d'indiquer la fonctionnalité du vieux chiffrement. Conseil réinitialisé les mot de passe !! Ce sera plus propre.
+* **[log-slow-query](http://dev.mysql.com/doc/refman/5.5/en/server-options.html#option_mysqld_log-slow-queries)**: Permet de loguer les requêtes qui ont pris beaucoup de temps. C'est quoi beaucoup ? C'est ce que la valeur de la variable [long\_query\_time](http://dev.mysql.com/doc/refman/5.5/en/server-system-variables.html#sysvar_long_query_time) soit 10 secondes par défaut.
+* **[user](http://dev.mysql.com/doc/refman/5.5/en/server-options.html#option_mysqld_user)**: Indique le nom de l'utilisateur système qui sera utilisé pour exécuter le service / __deamon__ de __MySQL__. Bien entendu s'il y a modification de cette valeur, modifier aussi les permissions du répertoire __datadir__.
+
+Pour le reste ceci varie selon vos besoin je redonne l'URL de la page de __Mysql__: [Mysql Option available](http://dev.mysql.com/doc/refman/5.5/en/mysqld-option-tables.html)
+
+Vous verrez il y a l'option pour définir le système de __storage__ par défaut de présent ...
+
+## <a name="perf_conf" /> Configuration d'optimisation de performance
+
+Nous allons maintenant voir quelques paramètres disponible pour améliorer les performances de __MySQL__. 
+Avant tous je tiens à préciser une chose, d'expérience passé la majorité des problèmes sont reliés à 2 choses :
+
+* Des **requêtes SQL** mal écrites , résultant à un nombre énorme de requêtes avec des liens non utilisé.
+* Un oublis  de création **INDEX** , sur les champs qui sont régulièrement interrogé.
+* Le dernier et non le moindre l'accès disque, qui peut se révéler un vraie problème, merci l'inventeur des **SSD**.
+
+Et pas de bol c'est pas couvert ici :P, car ceci est relié à votre application et que je ne suis pas particulièrement bon pour la rédaction de requête __SQL__. Bon ceci étant dis si votre __DBA__ ou expert __SQL__ vient vous parler et dis j'ai tous regardé c'est un problème avec __l'OS__. Si vous n'êtes pas l'administrateur réseau vous pouvez toujours répondre non c'est un problème de __network__ ;-).
+Sans farce nous allons voir comment nous allons pouvoir faire notre part pour résoudre le problème. 
+Nous sommes des super héros :
+
+![supertux.gif](./imgs/supertux.gif)
+
+ICI ICI ICI 
 
 * Référence 
     * http://dev.mysql.com/doc/refman/5.5/en/server-configuration.html
@@ -1176,7 +1209,7 @@ C'est vraiment le plus important de la formation , être en mesure d'extraire l'
     * https://www.percona.com/blog/2014/01/28/10-mysql-performance-tuning-settings-after-installation/
     * https://support.rackspace.com/how-to/configuring-mysql-server-on-ubuntu/
 
-## <a name="view_vars_change_it"/> Visualisation et modification des variables
+## <a name="view_vars_change_it" /> Visualisation et modification des variables
 
 * max_connexion ...
 
@@ -1209,6 +1242,8 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
         mysql> use mysql;
         Database changed
 
+
+# <a name="forgot_root_password" /> Instruction si vous avez perdu votre mot de passe root
 
 # <a name="reference" /> Références
 
