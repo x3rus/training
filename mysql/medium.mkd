@@ -1086,11 +1086,95 @@ Nous sommes près à charger le fichier :
         mysql> \. ma_super_BD-2016-11-01.sql
 
 
-Voilà  pas plus compliquer que ça :D.
+Voilà c'est pas plus compliquer que ça :D.
 
 # <a name="configue" /> Configuration de mysql (mysql.cnf +  ~/.my.cnf)
 
-http://dev.mysql.com/doc/refman/5.5/en/server-configuration.html
+Nous allons voir comment modifier les fichiers de configuration de __MySQL__ pour le serveur et pour le client. 
+On va commencé par le client c'est la partie moins longue puis nous couvrirons le serveur .
+
+## Configuration du client ($HOME/.my.cnf)
+
+Si vous manipulez souvent votre base de donnée avec le client __mysql__ vous devez à chaque fois entrer le mot de passe et utilisateur , ce n'est pas la fin du monde, mais on est tous paresseux . Pour un Sysadmin c'est une qualité :D !
+
+Donc éditez votre fichier __$HOME/.my.cnf__ avec les informations suivant :
+
+        [client]
+        user=root
+        password=superPatate
+        # host=localhost
+        # database = ma_super_BD
+
+Bien entendu il y a le mot de passe en claire donc il faut ajuster les permissions pour protéger le contenu :
+
+        $ chmod 600 .my.cnf
+
+Suite à l'ajout de l'instruction maintenant si je tape uniquement , il établera une avec l'utilisateur __root__.
+
+        $ mysql
+        mysql> 
+
+Comme vous pouvez le constater il est aussi possible de définir un serveur __SQL__ et une base de donnée de connexion.
+
+Vous pourrez voir d'autre option disponible sur la page de [Mysql cnf option](http://dev.mysql.com/doc/refman/5.5/en/option-files.html)
+Je pense que l'on à fait le tour , très rapidement vous verrez le reste sur le site de __MySQL__
+Passons à la section serveur :D :D.
+
+## Configuration du serveur ou globale (/etc/mysql/my.cnf)
+
+Le fichier de configuration par défaut de __MySQL__ se trouve dans le répertoire __/etc/mysql/__ et porte le nom __my.cnf__ . Regardons celui actuellement en utilisation  : 
+
+        $ cat /etc/mysql/my.cnf
+        [mysqld]
+        skip-host-cache
+        skip-name-resolve
+        datadir = /var/lib/mysql
+        !includedir /etc/mysql/conf.d/
+        $ ls /etc/mysql/conf.d/
+
+Comme vous pouvez le voir il n'y a pas grand chose, surtout que je suis dans un docker actuellement, si vous avez installé __MySQL__ sous Ubuntu ou Debian vous aurez beaucoup plus de paramètre. Regardons la liste des paramètres possible , à la page [Mysql Option available](http://dev.mysql.com/doc/refman/5.5/en/mysqld-option-tables.html)
+
+Heu, effectivement on les fera pas tous :P , par contre vous aimeriez bien savoir ce que votre système utilise, imaginons que vous avez une problématique avec le serveur. Vous postez sur un forum pour avoir un peu d'aide puis on vous demande qu'elle est la valeur de **innodb_buffer_pool_size** , dans notre cas si on regarde , heu heu heu. On peut difficilement répondre . 
+
+Regardons comment extraire l'information depuis le serveur , avec l'instruction [SHOW VARIABLES](http://dev.mysql.com/doc/refman/5.5/en/show-variables.html) nous serrons en mesure d'avoir notre informations
+
+        mysql> show variables;
+        +-------------------------------+------------------------------------------------------
+        | Variable_name                 | Value                                               |
+        +-------------------------------+-----------------------------------------------------+
+        | auto_increment_increment      | 1                                                   |
+        | auto_increment_offset         | 1                                                   |
+        | autocommit                    | ON                                                  |
+        | automatic_sp_privileges       | ON                                                  |
+        [ ... OUTPUT COUPÉ ...]
+
+
+Bon reprenons notre problème pour la valeur de **innodb_buffer_pool_size** , quelle est la valeur en place :
+
+        mysql> show variables where Variable_name = 'innodb_buffer_pool_size';     
+        +-------------------------+-----------+
+        | Variable_name           | Value     |
+        +-------------------------+-----------+
+        | innodb_buffer_pool_size | 134217728 |
+        +-------------------------+-----------+
+
+Allons plus loin pour l'ensemble des instructions **innodb\_buffer**
+
+        mysql> show variables where Variable_name like '%innodb_buffer%';          
+        +------------------------------+-----------+
+        | Variable_name                | Value     |
+        +------------------------------+-----------+
+        | innodb_buffer_pool_instances | 1         |
+        | innodb_buffer_pool_size      | 134217728 |
+        +------------------------------+-----------+
+
+C'est vraiment le plus important de la formation , être en mesure d'extraire l'information de notre configuration :D.
+
+* Référence 
+    * http://dev.mysql.com/doc/refman/5.5/en/server-configuration.html
+    * http://www.codingpedia.org/ama/optimizing-mysql-server-settings/
+    * https://www.percona.com/blog/2014/01/28/10-mysql-performance-tuning-settings-after-installation/
+    * https://support.rackspace.com/how-to/configuring-mysql-server-on-ubuntu/
 
 ## <a name="view_vars_change_it"/> Visualisation et modification des variables
 
@@ -1098,7 +1182,7 @@ http://dev.mysql.com/doc/refman/5.5/en/server-configuration.html
 
 # <a name="perms_mysql_tables" /> Manipulation des permissions avec mysql sans le grant
 
-Bon voyons à l'étape **brutale** :D , car bon c'est ça qui est cool avec le libre, il y a la bonne méthode jolie avec les commandes :) , puis y a la méthode ou tu modifies le fichier en arrière puis ça marche :D. Je ne vous dis pas d'utiliser cette méthode !!! Mon objectif avec la démonstration est de démontré comment __Mysql__ stock l'information des permissions , le savoir est bien !
+Bon voyons l'étape **brutale** :D , car bon c'est ça qui est cool avec le libre, il y a la bonne méthode jolie avec les commandes :) , puis y a la méthode ou tu modifies le fichier en arrière puis ça marche :D. Je ne vous dis pas d'utiliser cette méthode !!! Mon objectif avec la démonstration est de démontré comment __Mysql__ stock l'information des permissions , le savoir est bien !
 
 Telle mentionné, le système __MySQL__ à besoin de la base de données __mysql__ pour fonctionné afin de conserver les informations du système dont les permissions utilisateur. Nous allons créer une nouvelle base de donnée et refaire la même opération de création d'utilisateur mais sans **create user** et **sans les grant** . 
 Pour les personnes qui disent **POURQUOI ?** vous pouvez passer au prochaine chapitre, car **la question n'est pas pourquoi mais COMMENT ?** .
@@ -1152,6 +1236,15 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
         * [REPAIR TABLE](http://dev.mysql.com/doc/refman/5.5/en/repair-table.html)
         * [REPAIR INNODB](https://twindb.com/repair-corrupted-innodb-table-with-corruption-in-secondary-index/)
         * [REPAIR INNODB blog](http://blackbird.si/mysql-corrupted-innodb-tables-recovery-step-by-step-guide/)
+    * Fichier de configuration
+        * [Mysql cnf option](http://dev.mysql.com/doc/refman/5.5/en/option-files.html)   
+    * Configuration de __Mysql__ serveur
+        * [http://dev.mysql.com/doc/refman/5.5/en/server-configuration.html](http://dev.mysql.com/doc/refman/5.5/en/server-configuration.html)
+        * [http://www.codingpedia.org/ama/optimizing-mysql-server-settings/](http://www.codingpedia.org/ama/optimizing-mysql-server-settings/)
+        * [https://www.percona.com/blog/2014/01/28/10-mysql-performance-tuning-settings-after-installation/](https://www.percona.com/blog/2014/01/28/10-mysql-performance-tuning-settings-after-installation/)
+        * [https://support.rackspace.com/how-to/configuring-mysql-server-on-ubuntu/](https://support.rackspace.com/how-to/configuring-mysql-server-on-ubuntu/)
+
+
 
 
 # <a name="performance" /> Configuration de performance
