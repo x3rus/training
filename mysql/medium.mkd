@@ -1242,31 +1242,63 @@ Ceci est vraiment très pratique pour visualiser les requêtes en cours et poten
 
 Dans la même idée de visualisation en direct des problèmes il y a aussi **innotop** qui vous permet de visualiser la santé de vos table **innoDB**. Nous voyons que __MySQL__ pousse de plus en plus pour ce système de stockage. 
 
-TODO : faire un test
+Sous __Debian__ la commande est directement disponible dans le packaque de __mysql-client__ 
+
+Voici un exemple d'utilisation :
+
+        When   Load  QPS     Slow  QCacheHit  KCacheHit  BpsIn   BpsOut
+        Now    0.02  499.68     0      0.00%    100.00%  47.87k  84.26k
+        Total  0.00   25.86     0      0.00%     99.96%   2.28k   2.82k
+
+        Cmd    ID      State   User   Host           DB           Time   Query                                                                                        
+        Query    4709  update  bob    localhost      ma_super_BD  00:00  insert into app_article (texte,text_status,info) values (" lpc_ich: Resource conflict(s) foun
+
+
+Vous avez un très bon article disponible sur les possibilité __d'innotop__ [innotop real time](https://www.percona.com/blog/2013/10/14/innotop-real-time-advanced-investigation-tool-mysql/)
+
+Une fois démarré, vous pouvez faire **?** afin de voir les vu disponible , voici le résultat :
+
+![option-innotop.png](./imgs/option-innotop.png)
+
+Je manque d'activité pour que ce soit représentatif , l'idée est qu'avec les touches :
+
+* **B** :  vous visualisez les __buffers__ de __innoDB__
+* **I** : les accès disque de __innoDB__ 
+* etc :D
 
 ### Percona-monitoring-plugins
 
 L'avantage et l'inconvénient des solutions présenté préalablement est que vous n'avez pas une vision de la santé dans le temps. Le système __Percona Monitoring Plugins__ vous permettra à l'aide de graphique de visualisé la santé de vos base de données sur une longue période . Vous pourrez ainsi voir une dégradation des performances si ceci est minimal dans le temps tranquillement , jusqu'à atteindre un point critique.
+Bien entendu le désavantage est qu'il y a un délais dans la collecte d'information donc en combinaisons avec les 2 solutions présenté préalablement vous aurez l'ensemble des informations requis.
+
+Voici un exemple du résultat : 
+
+![percona-perf-cacti.png](./imgs/percona-perf-cacti.png)
+
+
+Voici la documentation officiel du produit : [Percona monitoring plugins](https://www.percona.com/doc/percona-monitoring-plugins/1.1/cacti/installing-templates.html)
 
 TODO : faire un test
 
-![percona-perf-cacti.png](./imgs/percona-perf-cacti.png)
-ICI ICI ICI
+
+
+## <a name="change_seting" /> Changement de configuration pour la performance.
+
 
 Nous allons donc voir quelques options disponible , voici la marche à suivre que je vous suggère :
 
 * Ne changez pas trop de valeur à la fois afin d'être en mesure d'identifier celle qui est la meilleur dans votre situation 
-* Aillez des métriques d'utilisation de la base de donnée 
+* Aillez des métriques d'utilisation de la base de donnée, afin de bien voir les impactes dans le temps et de voir s'il y a eu un effet de bord
+
+Car c'est bien de réussir à identifier les problèmes mais faut bien les corriger un jour :D.
 
 * Référence 
     * http://dev.mysql.com/doc/refman/5.5/en/server-configuration.html
     * http://www.codingpedia.org/ama/optimizing-mysql-server-settings/
     * https://www.percona.com/blog/2014/01/28/10-mysql-performance-tuning-settings-after-installation/
     * https://support.rackspace.com/how-to/configuring-mysql-server-on-ubuntu/
+    * https://www.percona.com/doc/percona-monitoring-plugins/1.1/cacti/installing-templates.html
 
-## <a name="view_vars_change_it" /> Visualisation et modification des variables
-
-* max_connexion ...
 
 # <a name="perms_mysql_tables" /> Manipulation des permissions avec mysql sans le grant
 
