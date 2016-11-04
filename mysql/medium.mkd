@@ -1186,22 +1186,77 @@ Pour le reste ceci varie selon vos besoin je redonne l'URL de la page de __Mysql
 
 Vous verrez il y a l'option pour définir le système de __storage__ par défaut de présent ...
 
-## <a name="perf_conf" /> Configuration d'optimisation de performance
+* Référence 
+    * http://dev.mysql.com/doc/refman/5.5/en/server-configuration.html
+ 
+# <a name="perf_conf" /> Configuration d'optimisation de performance
 
 Nous allons maintenant voir quelques paramètres disponible pour améliorer les performances de __MySQL__. 
 Avant tous je tiens à préciser une chose, d'expérience passé la majorité des problèmes sont reliés à 2 choses :
 
 * Des **requêtes SQL** mal écrites , résultant à un nombre énorme de requêtes avec des liens non utilisé.
 * Un oublis  de création **INDEX** , sur les champs qui sont régulièrement interrogé.
-* Le dernier et non le moindre l'accès disque, qui peut se révéler un vraie problème, merci l'inventeur des **SSD**.
+* Le dernier et non le moindre l'accès disque, qui peut se révéler un vraie problème, merci l'inventeur des **SSD**. Pour ce point je vous suggère de regarder la commande **iostat** qui vous permettra d'analyser quelle partition qui cause problème.
 
 Et pas de bol c'est pas couvert ici :P, car ceci est relié à votre application et que je ne suis pas particulièrement bon pour la rédaction de requête __SQL__. Bon ceci étant dis si votre __DBA__ ou expert __SQL__ vient vous parler et dis j'ai tous regardé c'est un problème avec __l'OS__. Si vous n'êtes pas l'administrateur réseau vous pouvez toujours répondre non c'est un problème de __network__ ;-).
 Sans farce nous allons voir comment nous allons pouvoir faire notre part pour résoudre le problème. 
-Nous sommes des super héros :
+Après tous nous sommes des super héros :
 
 ![supertux.gif](./imgs/supertux.gif)
 
-ICI ICI ICI 
+## <a name="metric_mysql_perf" /> Récupération de métriques
+
+Avant toutes chose nous devons avoir des métriques sur l'utilisation de notre système __MySQL__ , car malgré toute notre bonne volonté il est possible qu'il y est de effet de bord négatif nous devons être en mesure de l'identifier rapidement.
+J'aimerai vous dire que vous devez d'abord réaliser les opérations sur un environnement de __QA__ , __Perf__, ... Mais nous connaissons tous la réalité soit vous en avez pas (malheureusement) soit cette dernière n'est pas représentatif de la production et même si les 2 premiers affirmations sont vraie une fois en production c'est possible qu'il y est des différences. 
+La seule solution est d'avoir des métriques pour comprendre et prendre action.
+
+Voici quelques outils  disponible 
+
+### MyTOP
+
+Une bonne documentation disponible par nos amis de __DigitalOcean__ [how-to-use-mytop-to-monitor-mysql-performance](https://www.digitalocean.com/community/tutorials/how-to-use-mytop-to-monitor-mysql-performance).
+
+Rapidement installation : 
+
+        $ sudo apt-get install mytop 
+
+Et pour visualiser l'ensemble en live :
+
+        $ mytop -u root -h 127.0.0.1
+
+        MySQL on 127.0.0.1 (5.5.52)                             load 0.68 0.40 0.28 7/395 19043 up 0+00:22:57 [12:31:06]
+         Queries: 7.0k     qps:    5 Slow:     0.0         Se/In/Up/De(%):    33/33/00/00
+         Sorts:      0 qps now:  469 Slow qps: 0.0  Threads:    2 (   1/   0) 33/33/00/00
+         Key Efficiency: 99.8%  Bps in/out: 468.3/565.0   Now in/out: 39.9k/53.1k
+
+         Id      User         Host/IP         DB       Time    Cmd    State Query       
+         --      ----         -------         --       ----    ---    ----- ----------
+         1619      root       127.0.0.1                     0  Query          show full processlist
+         2359       bob       localhost ma_super_B          0  Query query en insert into app_inno_article (texte,text_status,info) values (" clocksource: Switche
+
+
+Ceci est vraiment très pratique pour visualiser les requêtes en cours et potentiellement identifier une requête problématique .
+
+
+### innotop
+
+Dans la même idée de visualisation en direct des problèmes il y a aussi **innotop** qui vous permet de visualiser la santé de vos table **innoDB**. Nous voyons que __MySQL__ pousse de plus en plus pour ce système de stockage. 
+
+TODO : faire un test
+
+### Percona-monitoring-plugins
+
+L'avantage et l'inconvénient des solutions présenté préalablement est que vous n'avez pas une vision de la santé dans le temps. Le système __Percona Monitoring Plugins__ vous permettra à l'aide de graphique de visualisé la santé de vos base de données sur une longue période . Vous pourrez ainsi voir une dégradation des performances si ceci est minimal dans le temps tranquillement , jusqu'à atteindre un point critique.
+
+TODO : faire un test
+
+![percona-perf-cacti.png](./imgs/percona-perf-cacti.png)
+ICI ICI ICI
+
+Nous allons donc voir quelques options disponible , voici la marche à suivre que je vous suggère :
+
+* Ne changez pas trop de valeur à la fois afin d'être en mesure d'identifier celle qui est la meilleur dans votre situation 
+* Aillez des métriques d'utilisation de la base de donnée 
 
 * Référence 
     * http://dev.mysql.com/doc/refman/5.5/en/server-configuration.html
