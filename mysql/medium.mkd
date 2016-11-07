@@ -1292,9 +1292,39 @@ Nous allons donc voir quelques options disponible , voici la marche à suivre qu
 
 Car c'est bien de réussir à identifier les problèmes mais faut bien les corriger un jour :D.
 
-* Référence 
+Nous allons voir les configurations selon que ce soit de type **innoDB** , **MyISAM** ou de manière général .
+
+### <a name="optimize_innodb" /> Optimisation d'innoDB
+
+Voici des options de configuration disponible :
+
+        #INNODB
+        innodb_buffer_pool_size = 378M
+        innodb_log_file_size = 64M
+        innodb_file_per_table=1
+        innodb_flush_method = O_DIRECT
+
+Alors là si vous copiez / collez cette configuration cash , ça risque de faire crash :P ou du moins de ne pas avoir le résultat désiré, il est important de comprendre ce que fait ces options ... C'est partie.
+
+* **[innodb_buffer_pool_size](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_buffer_pool_size)** (valeur par défaut 128M): Cette valeur doit être élevé surtout si votre serveur est dédié au service de base de donnée __MySQL__. Le système __innoDB__ utilise cette espace mémoire (**buffer**) pour mettre en cache les données ainsi que l'indexation. Plus la taille du __buffer__ grand plus le système de stockage réalisera les opérations en mémoire. Cette option vous permettra de réduire l'accès disque améliorant ainsi les performances de la base de données. Lors d'opération de modification __insert__, __update__, l'information sera mise à jour dans ce __buffer__ et écrit régulièrement. Bien entendu il est important de laisser de la mémoire pour les autres processus sur le système, nous ne voudrions pas que les autres applications __swap__, car __Mysql__ prend l'ensemble de la mémoire. Voici un exemple de valeur possible selon la mémoire disponible sur votre système , prendre en note que ceci est pour un serveur dédié à __MySQL__ :
+    *  Mémoire total : __8GB__ RAM __=>__  valeur 5-6__GB__ 
+    *  Mémoire total : __32GB__ RAM __=>__ valeur 20-25__GB__ 
+    *  Mémoire total : __128GB__ RAM __=>__ valeur 100-120__GB__
+Documentation disponible sur le sujet :
+    * Plus d'information sur le système de **buffer d'innodb** disponible sur le site de __MySQL__ [innodb-buffer-pool](http://dev.mysql.com/doc/refman/5.5/en/innodb-buffer-pool.html). 
+    * Un peu vieux mais les concepts reste les mêmes [percona - choosing-innodb-buffer](https://www.percona.com/blog/2007/11/03/choosing-innodb_buffer_pool_size/)
+* **[innodb_log_file_size](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_log_file_size)** (valeur par défaut 5M): Alors là attention choix difficile, le système **innodb** réalise des fichiers de logs qui sont utilisés lors des __crash recovery__  pour reconstruire les tables. Ils sont aussi nommé __redo log__ sur d'autre système de base de données. Donc il permette de rejoué les transactions qui non pas pu être écrit sur disques dans le __tablespace__, bien entendu la réalisation d'écriture prend du jus et surtout de l'accès disque qui est lent par nature. L'objectif ici est de réduire le nombre de fichiers écrit en aillant des fichiers plus gros au lieu d'avoir une gestion de plusieurs petit fichier. En d'autre mot en réduisant le nombre de __checkpoint__ par fichier nous améliorons les performances d'accès disque, cependant en cas de restauration des données après un crash le système devra parcourir des plus gros fichier ceci prendra plus de temps.
+* **[innodb_file_per_table](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_file_per_table)** : J'ai décidé de le remettre ici , nous ne parlons pas d'optimisation de performance ici, mais plutôt d'utilisation de l'espace disque dur. Car si nous voulons de la performance je vous suggère de ne pas mettre cette option cependant dans la réalité la récupération d'espace disque est importante.
+* **[innodb_flush_method](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_flush_method)** (valeur par défaut __NULL__) : L'objectif de cette configuration est de supprimé le double **buffering**, si vous avez configurer de manière approprié la valeur **[innodb_buffer_pool_size](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_buffer_pool_size)** , vous avez mis en cache les opérations. Si nous laissons la valeur **innodb_flush_method** telle quel que va t'il se passer quand __l'OS__ va recevoir l'instruction d'écriture sur le disque il va le caché aussi (__bufferiser__) résultat nous avons un double __buffer__ . Bien entendu si vous n'avez confiant en votre système d'exploitation, si vous n'avez pas de RAID, vous pouvez laisser le double __caching__ , mais c'est inutile , pas optimal ;-). Regardez les options disponible sur le site de __MySQL__.
+    * L'article ici revient sur le sujet [percona - choosing-innodb-buffer](https://www.percona.com/blog/2007/11/03/choosing-innodb_buffer_pool_size/)
+* **[innodb_flush_log_at_trx_commit](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_flush_log_at_trx_commit)** (valeur par défaut 1) : Un choix encore plus difficile :D, et oui ça se complique . Par défaut le système **innodb** est **ACID compliant**, en d'autre mot il réalisera l'ensemble des validations (clé primaire et clé étrangère) avant chaque **commit**. Ceci est l'idéal pour l'intégrité des données , cette valeur peut être idéale sur un serveur **master** , par contre ceci peut être intense si les disques dur sont plus lent.
+    ICI ICI ICI ICI
+
+
+### <a name="ref_optimisation" /> Référence 
     * http://dev.mysql.com/doc/refman/5.5/en/server-configuration.html
     * http://www.codingpedia.org/ama/optimizing-mysql-server-settings/
+    * https://www.percona.com/blog/2007/11/03/choosing-innodb_buffer_pool_size/
     * https://www.percona.com/blog/2014/01/28/10-mysql-performance-tuning-settings-after-installation/
     * https://support.rackspace.com/how-to/configuring-mysql-server-on-ubuntu/
     * https://www.percona.com/doc/percona-monitoring-plugins/1.1/cacti/installing-templates.html
