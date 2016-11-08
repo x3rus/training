@@ -1317,8 +1317,38 @@ Documentation disponible sur le sujet :
 * **[innodb_file_per_table](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_file_per_table)** : J'ai décidé de le remettre ici , nous ne parlons pas d'optimisation de performance ici, mais plutôt d'utilisation de l'espace disque dur. Car si nous voulons de la performance je vous suggère de ne pas mettre cette option cependant dans la réalité la récupération d'espace disque est importante.
 * **[innodb_flush_method](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_flush_method)** (valeur par défaut __NULL__) : L'objectif de cette configuration est de supprimé le double **buffering**, si vous avez configurer de manière approprié la valeur **[innodb_buffer_pool_size](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_buffer_pool_size)** , vous avez mis en cache les opérations. Si nous laissons la valeur **innodb_flush_method** telle quel que va t'il se passer quand __l'OS__ va recevoir l'instruction d'écriture sur le disque il va le caché aussi (__bufferiser__) résultat nous avons un double __buffer__ . Bien entendu si vous n'avez confiant en votre système d'exploitation, si vous n'avez pas de RAID, vous pouvez laisser le double __caching__ , mais c'est inutile , pas optimal ;-). Regardez les options disponible sur le site de __MySQL__.
     * L'article ici revient sur le sujet [percona - choosing-innodb-buffer](https://www.percona.com/blog/2007/11/03/choosing-innodb_buffer_pool_size/)
-* **[innodb_flush_log_at_trx_commit](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_flush_log_at_trx_commit)** (valeur par défaut 1) : Un choix encore plus difficile :D, et oui ça se complique . Par défaut le système **innodb** est **ACID compliant**, en d'autre mot il réalisera l'ensemble des validations (clé primaire et clé étrangère) avant chaque **commit**. Ceci est l'idéal pour l'intégrité des données , cette valeur peut être idéale sur un serveur **master** , par contre ceci peut être intense si les disques dur sont plus lent.
-    ICI ICI ICI ICI
+* **[innodb_flush_log_at_trx_commit](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_flush_log_at_trx_commit)** (valeur par défaut 1) : Un choix encore plus difficile :D, et oui ça se complique . Par défaut le système **innodb** est **[ACID compliant](https://fr.wikipedia.org/wiki/Propri%C3%A9t%C3%A9s_ACID)**, (atomicité, cohérence, isolation et durabilité) sont un ensemble de propriétés qui garantissent qu'une transaction informatique est exécutée de façon fiable.  Ceci est l'idéal pour l'intégrité des données , cette valeur peut être idéale sur un serveur **master** , par contre ceci peut être intense si les disques dur sont plus lent. 
+    * Valeur **1** : le système écrit dans les __redo log__ à chaque __commit__, garantissant les données.
+    * Valeur **2** : le système va écrire chaque transaction , après le commit , dans le __log file__ qui sera __flushé__ sur le disque approximativement à chaque seconde. Ceci n'est cependant pas garantie selon le planificateur de tâche interne à __MySQL__. Par le fait même il y a un risque de perte de donnée advenant un crash du système.
+    * Valeur **0** : avec cette configuration il n'y a pas d'écriture dans le __log file__ mémoire le système attendra l'opération de __flush__ pour enregistrer la transaction sur disque. Est-ce un problème **OUI** pour un serveur maître , peut-être pas pour un __slave__ dont l'ensemble des transactions fut déjà valider et qui est présent en backup uniquement !
+
+### <a name="optimize_MyISAM" /> Optimisation de MyISAM
+
+Voici des options de configuration disponible :
+
+        #MyISAM
+        key_buffer_size = 128M
+
+Bon je suis un peu emmerdé, car j'ai pas trouvé grand chose sur le sujet, la majorité des optimisations que j'ai trouvé s'applique autant pour __MyISAM qu'innoDB__ très peu de paramètre pour ce type de stockage. Ceci démontre clairement la tendance vers __innoDB__.
+
+* **[key_buffer_size](http://dev.mysql.com/doc/refman/5.5/en/server-system-variables.html#sysvar_key_buffer_size)** (valeur par défaut 8M) : Nous retrouvons le même concepts de conserver les index en mémoire afin d'optimiser la recherche au lieu de parcourir le disque. Il est important de noter que ceci n'inclut QUE les **index** aucun donnée , donc pas besoin de mettre un valeur énorme . La documentation de __MySQL__ suggère de définir cette valeur de 25% de la mémoire , j'aime pas trop les pourcentages du genre car quand on a un serveur de 8G et de 128G ce n'est pas tous à fait la même chose. Le site offre une technique pour calculer / valider votre configuration .
+
+            You can check the performance of the key buffer by issuing a SHOW STATUS statement and examining the Key_read_requests, Key_reads, Key_write_requests, and Key_writes status variables. (See Section 13.7.5, “SHOW Syntax”.) The Key_reads/Key_read_requests ratio should normally be less than 0.01. The Key_writes/Key_write_requests ratio is usually near 1 if you are using mostly updates and deletes, but might be much smaller if you tend to do updates that affect many rows at the same time or if you are using the DELAY_KEY_WRITE table option. 
+
+ 
+### <a name="optimize_global" /> Optimisation applicable à l'ensemble 
+
+Voici des options disponibles :
+
+        tmp_table_size = 32M
+        max_heap_table_size = 32M
+        query_cache_type = 0
+        query_cache_size = 00
+        max_connections = 500
+        thread_cache_size = 50
+        table_open_cache = 800
+        open_files_limit = 65535
+
 
 
 ### <a name="ref_optimisation" /> Référence 
@@ -1395,8 +1425,7 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
         * [http://www.codingpedia.org/ama/optimizing-mysql-server-settings/](http://www.codingpedia.org/ama/optimizing-mysql-server-settings/)
         * [https://www.percona.com/blog/2014/01/28/10-mysql-performance-tuning-settings-after-installation/](https://www.percona.com/blog/2014/01/28/10-mysql-performance-tuning-settings-after-installation/)
         * [https://support.rackspace.com/how-to/configuring-mysql-server-on-ubuntu/](https://support.rackspace.com/how-to/configuring-mysql-server-on-ubuntu/)
-
-
+        * [percona - choosing innodb buffer](https://www.percona.com/blog/2007/11/03/choosing-innodb_buffer_pool_size/)
 
 
 # <a name="performance" /> Configuration de performance
