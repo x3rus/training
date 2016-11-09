@@ -1373,7 +1373,96 @@ Voici des options disponibles :
 * https://www.percona.com/doc/percona-monitoring-plugins/1.1/cacti/installing-templates.html
 
 
-# <a name="perms_mysql_tables" /> Manipulation des permissions avec mysql sans le grant
+# <a name="special_perms" /> Situation spécial de permissions 
+
+Présentation de situation spécial de gestion de permission, car parfois on a besoin de jouer avec les permissions de manière plus ou moins standard :).
+
+## <a name="forgot_root_password" /> Instruction si vous avez perdu votre mot de passe root
+
+Oui ! Parfois ça arrive que l'on ne connait pas / plus le mot de passe de l'administrateur **root** :
+
+* L'ancien administrateur est partie.
+* Le système est en place depuis plusieurs année et nous n'avons plus le mot de passe, car mal stocké.
+* Simplement car on avait un coup de fatigue ou un verre en trop lors de la mise en place.
+
+
+Voyons quelques situation pour vous aider ... Dans tous les cas vous devez être administrateur de la machine !!!
+
+### <a  name="root_pass_history" /> Récupération du mot de passe dans l'historique
+
+Si vous n'utilisez pas beaucoup l'utilisateur **root** ou un utilisateur particulier il est possible que le mot de passe soit en claire dans un fichier d'historique. Oui parfois c'est aussi simple que ça :D , rechercher les fichier **.mysql_history** sur la machine il est dans le **home** des utilisateurs .
+
+Voici un exemple :
+
+        # grep "PASSWORD"  /root/.mysql_history
+        SET PASSWORD FOR 'root'@'%' = PASSWORD('MyNewPass');
+
+Bien entendu si le mot de passe fut réinitialisé par une connexion distante vous n'aurez pas l'information :)
+
+### <a  name="root_pass_docker" /> Récupération du mot de passe pour un Docker
+
+Si vous avez utilisez un conteneur __Docker__ pour votre base de donnée le mot de passe fut passé lors de l'initialisation comme variable d'environnement. Cette variable fut **MYSQL_ROOT_PASSWORD**, donc une manière simple et d'utiliser la commande **env** pour le visualisé :
+
+        $ docker exec -it NomDuDockerSQL bash
+        $ env | grep MYSQL_ROOT_PASSWORD
+        MYSQL_ROOT_PASSWORD=superPatate
+
+Voilà !! Bon si l'administrateur à utilisé un mot de passe via le système de variable d'environnement uniquement pour initialisé la base de donnée et que dans un second temps il l'a sécurisé vous ne serez pas plus avancé :D. Passez à une autre étape !
+
+### <a  name="root_pass_debian" /> Récupération du mot de passe pour une installation sous Ubuntu / Debian
+
+Le système Ubuntu / Debian crée un utilisateur nommé **debian-sys-maint** cette utilisateur est présent principalement pour la rotation des logs, mais il a des droit élevé. Vous pourrez utiliser cette utilisateur pour réinitialisé le mot de passe administrateur de votre base de donnée.
+
+Voici un exemple du contenu :
+
+        [client]
+        host = localhost
+        user = debian-sys-maint
+        password = Jfe8y73ije73
+        socket = /var/run/mysqld/mysqld.sock
+        [mysql_upgrade]
+        host = localhost
+        user = debian-sys-maint
+        password = Jfe8y73ije73
+        socket = /var/run/mysqld/mysqld.sock
+        basedir = /usr
+
+
+Résultat pour modifier le mot de passe __root__ :
+
+       $ mysql -u debian-sys-maint -p 
+       mysql> use mysql;
+       mysql> SET PASSWORD FOR 'root'@'%' = PASSWORD('MyNewPass');
+       ou
+       mysql> SET PASSWORD FOR 'root'@'localhost' = PASSWORD('MyNewPass');
+
+Et voilà !!
+
+Si vous n'êtes pas sous Debian / Ubuntu , prochaine étape :D
+
+### <a  name="root_pass_linux" /> Réinitialisé le mot de passe avec une interruption 
+
+Bon après les différentes options de contournement on arrive à la méthode un peu moins discrète et un peu plus rude mais au moins elle marche peut importe le système. En gros nous allons redémarrer le service __MySQL__ SANS la gestion des droits au système en gros tous le monde pourra établir une connexion sur le système et tous le monde pourra faire ce qu'il veut, **OPEN BAR**
+
+
+1. éteindre le service __mysql__ 
+
+        service mysqld stop
+2. Redémarrer le service avec l'option **--skip-grant-tables** comme suit
+
+        # su - mysql -c "mysqld --skip-grant-tables"
+3. Établir une connexion avec l'utilisateur **root**
+        
+        $ mysql -u root 
+4. Réinitialisé le mot de passe :
+
+        mysql> SET PASSWORD FOR 'root'@'%' = PASSWORD('MyNewPass');
+
+* Référence
+    * [resetting-permissions](http://dev.mysql.com/doc/refman/5.5/en/resetting-permissions.html)
+    * [set-password](http://dev.mysql.com/doc/refman/5.5/en/set-password.html)
+
+## <a name="perms_mysql_tables" /> Manipulation des permissions avec mysql sans le grant
 
 Bon voyons l'étape **brutale** :D , car bon c'est ça qui est cool avec le libre, il y a la bonne méthode jolie avec les commandes :) , puis y a la méthode ou tu modifies le fichier en arrière puis ça marche :D. Je ne vous dis pas d'utiliser cette méthode !!! Mon objectif avec la démonstration est de démontré comment __Mysql__ stock l'information des permissions , le savoir est bien !
 
@@ -1403,7 +1492,6 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
         Database changed
 
 
-# <a name="forgot_root_password" /> Instruction si vous avez perdu votre mot de passe root
 
 # <a name="reference" /> Références
 
