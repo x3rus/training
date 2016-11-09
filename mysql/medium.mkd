@@ -1302,6 +1302,8 @@ Voici des options de configuration disponible :
         innodb_buffer_pool_size = 378M
         innodb_log_file_size = 64M
         innodb_file_per_table=1
+
+        innodb_thread_concurrency = 128
         innodb_flush_method = O_DIRECT
 
 Alors là si vous copiez / collez cette configuration cash , ça risque de faire crash :P ou du moins de ne pas avoir le résultat désiré, il est important de comprendre ce que fait ces options ... C'est partie.
@@ -1321,6 +1323,9 @@ Documentation disponible sur le sujet :
     * Valeur **1** : le système écrit dans les __redo log__ à chaque __commit__, garantissant les données.
     * Valeur **2** : le système va écrire chaque transaction , après le commit , dans le __log file__ qui sera __flushé__ sur le disque approximativement à chaque seconde. Ceci n'est cependant pas garantie selon le planificateur de tâche interne à __MySQL__. Par le fait même il y a un risque de perte de donnée advenant un crash du système.
     * Valeur **0** : avec cette configuration il n'y a pas d'écriture dans le __log file__ mémoire le système attendra l'opération de __flush__ pour enregistrer la transaction sur disque. Est-ce un problème **OUI** pour un serveur maître , peut-être pas pour un __slave__ dont l'ensemble des transactions fut déjà valider et qui est présent en backup uniquement !
+* **[innodb\_thread\_concurrency](http://dev.mysql.com/doc/refman/5.5/en/innodb-parameters.html#sysvar_innodb_thread_concurrency)** (valeur par défaut 0) : La configuration suivant n'est pertinente QUE si vous partagez le service __MySQL__ avec d'autre application !! Par défaut le système __MySQL__ ne limite pas le nombre de __thread__ pour **innoDB** , la limitation est celle du système d'exploitation. Comme nous l'avions vu lors de la formation sur apache et les performances parfois il vaut mieux limiter l'utilisation du système pour qu'il réponde bien plutôt que de le laisser prendre toute les ressources et s'écraser tous seul. Voici un exemple fournit par le site __MySQL__ de configuration possible :
+
+         If your workload is consistently heavy or occasionally spikes, start by setting innodb_thread_concurrency=128, and lowering the value to 96, 80, 64, and so on, until you find the number of threads that provides the best performance. For example, suppose your system typically has 40 to 50 users, but periodically the number increases to 60, 70, or even 200. You find that performance is stable at 80 concurrent users but starts to show a regression above this number. In this case, you would set innodb_thread_concurrency=80 to avoid impacting performance. 
 
 ### <a name="optimize_MyISAM" /> Optimisation de MyISAM
 
@@ -1342,22 +1347,30 @@ Voici des options disponibles :
 
         tmp_table_size = 32M
         max_heap_table_size = 32M
-        query_cache_type = 0
-        query_cache_size = 00
-        max_connections = 500
         thread_cache_size = 50
         table_open_cache = 800
         open_files_limit = 65535
 
+        skip_name_resolve = ON
+        max_connections = 500
 
+* **[tmp\_table\_size](http://dev.mysql.com/doc/refman/5.5/en/server-system-variables.html#sysvar_tmp_table_size) et [max\_heap\_table\_size](http://dev.mysql.com/doc/refman/5.5/en/server-system-variables.html#sysvar_max_heap_table_size)** (valeur par défaut : 16M): Ceci permet d'indiquer à __MySQL__ la quantité de mémoire qui sera utilisé pour les tables temporaire, ceci est particulièrement  intéressant si vous avez plusieurs **GROUP BY** dans vos requêtes __SQL__. Le fonctionnement est le suivant lors de la requête __MySQL__ met en mémoire une table temporaire, si cette dernière dépasse la valeur donné (exemple 32M) il réalisera une table sur disque pour faire le traitement. Bien entendu une table sur disque sera plus couteux en terme de ressource, les 2 valeurs sont conjointe vous devez donc ajuster les 2 valeurs.
+
+* **[thread\_cache\_size](http://dev.mysql.com/doc/refman/5.5/en/server-system-variables.html#sysvar_thread_cache_size)** (valeur par défaut 0): Cette configuration permet d'indiquer à __MySQL__ de réutiliser les __thread__ utilisé lors des connexions. Par défaut le fonctionnement est le suivant quand une nouvelle connexion est établie un __thread__ est démarrer quand la connexion est terminé le __thread__ est détruit. Le changement de valeur , selon la documentation à peu d'impact sur la performance, sauf si vous avez un nombre important de connexion par second. Bon important c'est quoi , le point de référence qui est donnée est 100 par seconde. Si vous centralisez votre base de donnée pour plusieurs application vous constaterez que ceci peut arrivé vite. Si vous modifiez la valeur vous serez en mesure de valider l'impacte de la configuration en analysant le nombre connexion (__SHOW GLOBAL STATUS LIKE 'Connections';__) en comparaison au nombre de __thread__ créés (__SHOW GLOBAL STATUS LIKE 'Threads_created';__). 
+* **[table\_open\_cache](http://dev.mysql.com/doc/refman/5.5/en/server-system-variables.html#sysvar_table_open_cache)** (valeur par défaut 400): Cette valeur indique le nombre de table qui pourra être ouvert par chaque __thread__. Si vous augmentez cette valeur vous devrez aussi modifier la valeur de la configuration **[open\_files\_limit](http://dev.mysql.com/doc/refman/5.5/en/server-system-variables.html#sysvar_open_files_limit)**. Pour connaître la valeur à définir consultez le résultat de la commande __SHOW GLOBAL STATUS LIKE 'open_tables';__.
+
+
+* **[max\_connections](http://dev.mysql.com/doc/refman/5.5/en/server-system-variables.html#sysvar_max_connections)** (valeur par défaut 151): Permet de définir le nombre maximal de connexion accepté par __MySQL__ , si vous avez une valeur trop basse vous aurez le message suivant lors d'un tentative de connexion : __“Too many connections”__.
+* **[skip\_name\_resolve](http://dev.mysql.com/doc/refman/5.5/en/server-system-variables.html#sysvar_skip_name_resolve)** (valeur par défaut OFF): Avec cette instruction lorsque le client établera une connexion au système __MySQL__ ne réalisera PAS de reverse __DNS__ sur l'adresse IP. Je vous conseille d'activer cette option si vous avez un grand nombre de connexion provenant de plusieurs machines. Par contre ceci aura un impacte sur votre configuration surtout pour l'attribution d'accès, lors de l'instruction **GRANT** vous ne pourrez plus utilise le nom de domaine pour l'attribution d'accès, mais uniquement l'adresse IP. Est-ce que ceci peut avoir un __GROS__ gain de performance je ne le crois pas , mais parfois une combinaison d'opération donne un bon résultat.
 
 ### <a name="ref_optimisation" /> Référence 
-    * http://dev.mysql.com/doc/refman/5.5/en/server-configuration.html
-    * http://www.codingpedia.org/ama/optimizing-mysql-server-settings/
-    * https://www.percona.com/blog/2007/11/03/choosing-innodb_buffer_pool_size/
-    * https://www.percona.com/blog/2014/01/28/10-mysql-performance-tuning-settings-after-installation/
-    * https://support.rackspace.com/how-to/configuring-mysql-server-on-ubuntu/
-    * https://www.percona.com/doc/percona-monitoring-plugins/1.1/cacti/installing-templates.html
+
+* http://dev.mysql.com/doc/refman/5.5/en/server-configuration.html
+* http://www.codingpedia.org/ama/optimizing-mysql-server-settings/
+* https://www.percona.com/blog/2007/11/03/choosing-innodb_buffer_pool_size/
+* https://www.percona.com/blog/2014/01/28/10-mysql-performance-tuning-settings-after-installation/
+* https://support.rackspace.com/how-to/configuring-mysql-server-on-ubuntu/
+* https://www.percona.com/doc/percona-monitoring-plugins/1.1/cacti/installing-templates.html
 
 
 # <a name="perms_mysql_tables" /> Manipulation des permissions avec mysql sans le grant
@@ -1426,17 +1439,17 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
         * [https://www.percona.com/blog/2014/01/28/10-mysql-performance-tuning-settings-after-installation/](https://www.percona.com/blog/2014/01/28/10-mysql-performance-tuning-settings-after-installation/)
         * [https://support.rackspace.com/how-to/configuring-mysql-server-on-ubuntu/](https://support.rackspace.com/how-to/configuring-mysql-server-on-ubuntu/)
         * [percona - choosing innodb buffer](https://www.percona.com/blog/2007/11/03/choosing-innodb_buffer_pool_size/)
+        * [innodb-best-practices](http://dev.mysql.com/doc/refman/5.5/en/innodb-best-practices.html)
+    * Optimisation de __Mysql__ :
+        * http://dev.mysql.com/doc/refman/5.5/en/server-configuration.html
+        * http://www.codingpedia.org/ama/optimizing-mysql-server-settings/
+        * https://www.percona.com/blog/2007/11/03/choosing-innodb_buffer_pool_size/
+        * https://www.percona.com/blog/2014/01/28/10-mysql-performance-tuning-settings-after-installation/
+        * https://support.rackspace.com/how-to/configuring-mysql-server-on-ubuntu/
+        * https://www.percona.com/doc/percona-monitoring-plugins/1.1/cacti/installing-templates.html
 
 
-# <a name="performance" /> Configuration de performance
 
-* définition du data sur un autre HD
-* voir option de configue pour innoDB p-e myISAM (share mémory , ... )
-
-http://dev.mysql.com/doc/refman/5.5/en/innodb-best-practices.html
-
-
-# <a name="mysql_replication" /> Mise en place d'une replication Mysql
 
 # <a name="docker_start_change" /> Changement de la commande start d'un docker
 
