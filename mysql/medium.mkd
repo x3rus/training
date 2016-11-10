@@ -1093,7 +1093,7 @@ Voilà c'est pas plus compliquer que ça :D.
 Nous allons voir comment modifier les fichiers de configuration de __MySQL__ pour le serveur et pour le client. 
 On va commencé par le client c'est la partie moins longue puis nous couvrirons le serveur .
 
-## Configuration du client ( USER_HOME/.my.cnf)
+##  Configuration du client ( USER_HOME/.my.cnf)
 
 Si vous manipulez souvent votre base de donnée avec le client __mysql__ vous devez à chaque fois entrer le mot de passe et utilisateur , ce n'est pas la fin du monde, mais on est tous paresseux . Pour un Sysadmin c'est une qualité :D !
 
@@ -1120,7 +1120,7 @@ Vous pourrez voir d'autre option disponible sur la page de [Mysql cnf option](ht
 Je pense que l'on à fait le tour , très rapidement vous verrez le reste sur le site de __MySQL__
 Passons à la section serveur :D :D.
 
-## Configuration du serveur ou globale (/etc/mysql/my.cnf)
+##  Configuration du serveur ou globale (/etc/mysql/my.cnf)
 
 Le fichier de configuration par défaut de __MySQL__ se trouve dans le répertoire __/etc/mysql/__ et porte le nom __my.cnf__ . Regardons celui actuellement en utilisation  : 
 
@@ -1212,7 +1212,7 @@ La seule solution est d'avoir des métriques pour comprendre et prendre action.
 
 Voici quelques outils  disponible 
 
-### MyTOP
+###  MyTOP
 
 Une bonne documentation disponible par nos amis de __DigitalOcean__ [how-to-use-mytop-to-monitor-mysql-performance](https://www.digitalocean.com/community/tutorials/how-to-use-mytop-to-monitor-mysql-performance).
 
@@ -1238,7 +1238,7 @@ Et pour visualiser l'ensemble en live :
 Ceci est vraiment très pratique pour visualiser les requêtes en cours et potentiellement identifier une requête problématique .
 
 
-### innotop
+###  innotop
 
 Dans la même idée de visualisation en direct des problèmes il y a aussi **innotop** qui vous permet de visualiser la santé de vos table **innoDB**. Nous voyons que __MySQL__ pousse de plus en plus pour ce système de stockage. 
 
@@ -1266,7 +1266,7 @@ Je manque d'activité pour que ce soit représentatif , l'idée est qu'avec les 
 * **I** : les accès disque de __innoDB__ 
 * etc :D
 
-### Percona-monitoring-plugins
+###  Percona-monitoring-plugins
 
 L'avantage et l'inconvénient des solutions présenté préalablement est que vous n'avez pas une vision de la santé dans le temps. Le système __Percona Monitoring Plugins__ vous permettra à l'aide de graphique de visualisé la santé de vos base de données sur une longue période . Vous pourrez ainsi voir une dégradation des performances si ceci est minimal dans le temps tranquillement , jusqu'à atteindre un point critique.
 Bien entendu le désavantage est qu'il y a un délais dans la collecte d'information donc en combinaisons avec les 2 solutions présenté préalablement vous aurez l'ensemble des informations requis.
@@ -1388,7 +1388,7 @@ Oui ! Parfois ça arrive que l'on ne connait pas / plus le mot de passe de l'adm
 
 Voyons quelques situation pour vous aider ... Dans tous les cas vous devez être administrateur de la machine !!!
 
-### <a  name="root_pass_history" /> Récupération du mot de passe dans l'historique
+### <a name="root_pass_history" /> Récupération du mot de passe dans l'historique
 
 Si vous n'utilisez pas beaucoup l'utilisateur **root** ou un utilisateur particulier il est possible que le mot de passe soit en claire dans un fichier d'historique. Oui parfois c'est aussi simple que ça :D , rechercher les fichier **.mysql_history** sur la machine il est dans le **home** des utilisateurs .
 
@@ -1399,7 +1399,7 @@ Voici un exemple :
 
 Bien entendu si le mot de passe fut réinitialisé par une connexion distante vous n'aurez pas l'information :)
 
-### <a  name="root_pass_docker" /> Récupération du mot de passe pour un Docker
+### <a name="root_pass_docker" /> Récupération du mot de passe pour un Docker
 
 Si vous avez utilisez un conteneur __Docker__ pour votre base de donnée le mot de passe fut passé lors de l'initialisation comme variable d'environnement. Cette variable fut **MYSQL_ROOT_PASSWORD**, donc une manière simple et d'utiliser la commande **env** pour le visualisé :
 
@@ -1409,7 +1409,7 @@ Si vous avez utilisez un conteneur __Docker__ pour votre base de donnée le mot 
 
 Voilà !! Bon si l'administrateur à utilisé un mot de passe via le système de variable d'environnement uniquement pour initialisé la base de donnée et que dans un second temps il l'a sécurisé vous ne serez pas plus avancé :D. Passez à une autre étape !
 
-### <a  name="root_pass_debian" /> Récupération du mot de passe pour une installation sous Ubuntu / Debian
+### <a name="root_pass_debian" /> Récupération du mot de passe pour une installation sous Ubuntu / Debian
 
 Le système Ubuntu / Debian crée un utilisateur nommé **debian-sys-maint** cette utilisateur est présent principalement pour la rotation des logs, mais il a des droit élevé. Vous pourrez utiliser cette utilisateur pour réinitialisé le mot de passe administrateur de votre base de donnée.
 
@@ -1440,7 +1440,7 @@ Et voilà !!
 
 Si vous n'êtes pas sous Debian / Ubuntu , prochaine étape :D
 
-### <a  name="root_pass_linux" /> Réinitialisé le mot de passe avec une interruption 
+### <a name="root_pass_linux" /> Réinitialisé le mot de passe avec une interruption 
 
 Bon après les différentes options de contournement on arrive à la méthode un peu moins discrète et un peu plus rude mais au moins elle marche peut importe le système. En gros nous allons redémarrer le service __MySQL__ SANS la gestion des droits au système en gros tous le monde pourra établir une connexion sur le système et tous le monde pourra faire ce qu'il veut, **OPEN BAR**
 
@@ -1458,6 +1458,9 @@ Bon après les différentes options de contournement on arrive à la méthode un
 
         mysql> SET PASSWORD FOR 'root'@'%' = PASSWORD('MyNewPass');
 
+
+Trop facile :D . Si vous êtes obligé de prendre cette méthode je vous conseille tous de même d'ajouter une règle de __Firewall__ afin de bloquer l'accès au port 3306 depuis l'externe, il y a un risque de sécurité.
+
 * Référence
     * [resetting-permissions](http://dev.mysql.com/doc/refman/5.5/en/resetting-permissions.html)
     * [set-password](http://dev.mysql.com/doc/refman/5.5/en/set-password.html)
@@ -1469,7 +1472,7 @@ Bon voyons l'étape **brutale** :D , car bon c'est ça qui est cool avec le libr
 Telle mentionné, le système __MySQL__ à besoin de la base de données __mysql__ pour fonctionné afin de conserver les informations du système dont les permissions utilisateur. Nous allons créer une nouvelle base de donnée et refaire la même opération de création d'utilisateur mais sans **create user** et **sans les grant** . 
 Pour les personnes qui disent **POURQUOI ?** vous pouvez passer au prochaine chapitre, car **la question n'est pas pourquoi mais COMMENT ?** .
 
-Allez on crée la base de donnée : **zer\_bd**
+Allez on crée la base de donnée : **ze\_bd**
 
         mysql> create database ze_bd ;
             Query OK, 1 row affected (0.00 sec)
@@ -1491,7 +1494,94 @@ Nous sommes avec l'utilisateur **root** nous allons basculer sous la base de don
         mysql> use mysql;
         Database changed
 
+Telle que mentionné avant la base de donnée __mysql__ contient les configurations système incluant les permissions BD. 
 
+Je vais maintenant créer un utilisateur , SANS utiliser la commande __CREATE USER__, mais en manipulant la table __user__.
+Regardons avant le contenu de la table __user__ :
+
+        mysql> desc user;
+        +------------------------+-----------------------------------+------+-----+---------+-------+
+        | Field                  | Type                              | Null | Key | Default | Extra |
+        +------------------------+-----------------------------------+------+-----+---------+-------+
+        | Host                   | char(60)                          | NO   | PRI |         |       |
+        | User                   | char(16)                          | NO   | PRI |         |       |
+        | Password               | char(41)                          | NO   |     |         |       |
+        | Select_priv            | enum('N','Y')                     | NO   |     | N       |       |
+        | Insert_priv            | enum('N','Y')                     | NO   |     | N       |       |
+        | Update_priv            | enum('N','Y')                     | NO   |     | N       |       |
+        | Delete_priv            | enum('N','Y')                     | NO   |     | N       |       |
+        [ ... OUTPUT COUPÉ ...]
+
+Comme vous pouvez voir il y a :
+
+* **Host** : La provenance de connexion de l'utilisateur ceci correspond à la section @**'192.168.39.30'** lors de la création de l'utilisateur
+* **User** : Comprend le nom de l'utilisateur
+* **Password** : heu :P , le mot de passe :P
+* **Select_priv**, **Insert_priv** : la liste des privilèges de l'utilisateur, les privilèges attribué dans cette table touche l'ensemble des bases de donnée voilà pourquoi l'utilisateur **root** à les droits alors que vos utilisateurs "simple" est définie à N == Non. Vous pouvez constater aussi que les permissions sont à Non par défaut
+
+C'est partie on réalise la création de l'utilisateur ! 
+
+        mysql> insert into user (Host,User,Password) values ('%','robert',PASSWORD('boby'));
+        Query OK, 1 row affected, 3 warnings (0.00 sec)
+
+Voici le résultat :
+
+        mysql> select * from user where User='robert' \G
+        *************************** 1. row ***************************
+        Host: %
+        User: robert
+        Password: *095CE149B20358EB012949235CCC2505F3B1B4CC
+        Select_priv: N
+        Insert_priv: N
+        Update_priv: N
+        Delete_priv: N
+        Create_priv: N
+        [ ... OUTPUT COUPÉ ... ]
+
+
+À ce stade nous avons simplement réalisé la création de l'utilisateur il ne peux manipuler aucune base de donnée. Passons à l'étape du __Grant__ .
+
+Pour l'attribution des permissions BD, nous allons manipuler la table **db**, voici la description de la table
+
+        mysql> desc db;
+        +-----------------------+---------------+------+-----+---------+-------+
+        | Field                 | Type          | Null | Key | Default | Extra |
+        +-----------------------+---------------+------+-----+---------+-------+
+        | Host                  | char(60)      | NO   | PRI |         |       |
+        | Db                    | char(64)      | NO   | PRI |         |       |
+        | User                  | char(16)      | NO   | PRI |         |       |
+        | Select_priv           | enum('N','Y') | NO   |     | N       |       |
+        | Insert_priv           | enum('N','Y') | NO   |     | N       |       |
+        | Update_priv           | enum('N','Y') | NO   |     | N       |       |
+        | Delete_priv           | enum('N','Y') | NO   |     | N       |       |
+        [... OUTPUT COUPÉ ...]
+
+Nous y retrouvons  le **Host**, le nom de la base de donnée à qui s'applique les permissions **Db** , l'utilisateur **User** ainsi que les différentes permissions **Select_priv**, **Insert_priv**, **Update_priv**, ...
+
+Ajoutons nos droits SANS fournir à l'utilisateur la permission d'allouer d'autre droit :
+
+        mysql> insert into db values ('%','ze_bd','robert','Y','Y','Y','Y','Y','Y','N','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y');
+        Query OK, 1 row affected (0.00 sec)
+
+Comme vous pouvez le voir il y a 1 **'N'** dans la liste qui est pour le **GRANT**, essayons ... Petit indice ça marchera pas, Mais j'aime le montrer .
+
+        $  mysql -u robert -p
+        Enter password:
+        ERROR 1045 (28000): Access denied for user 'robert'@'localhost' (using password: YES)
+
+Quand vous manipulez les tables **user** et **db** pour que __MySQL__ relise / refresh la configuration vous devez utiliser la commande **FLUSH PRIVILEGES**.
+
+        mysql> FLUSH PRIVILEGES;                                                                                                        
+        Query OK, 0 rows affected (0.00 sec)
+
+
+Et maintenant  :
+
+        $ mysql -u robert -p
+        Enter password:
+        mysql> 
+
+C'est cool :D
 
 # <a name="reference" /> Références
 
