@@ -37,4 +37,68 @@ L'objectif de Docker est d'offrir des conteneurs applicatif facile à déployer 
 * La distribution et les options de transfert de conteneurs vous permet d'avoir le même environnement pour l'ensemble des équipes (__Dev__, __QA__, ...)
 
 
+### <a name="docker_vs_vm" /> La différence entre une Machine Virtuel (VM) et docker
+
+On dit souvent une image vos mille mot donc commençons par la représentation graphique des 2 configurations. 
+
+![ContainerVsVM.png](./imgs/ContainerVsVM.png)
+
+* Les partie commune 
+    * Composante matériel , en d'autre mot la machine physique
+    * Un système d'exploitation (Linux, Windows , ...)
+* Une Machine Virtuel
+    * Un système __d'hypervisor__ , __ESX__, __KVM__, __Xen__ , ... Cette couche permettra l'émulation d'une __CPU__, mémoire, carte réseau , ...
+    * Un système d'exploitation potentiellement différent du système d'exploitation native sur la machine
+    * Installation des librairies et de l'application contenu dans la machine virtuel
+* Un Conteneur
+    * contient uniquement les librairies et l'application 
+
+Vous êtes tous familiarisé avec le système de machine virtuel, nous nous concentrerons donc sur la partie conteneur.
+
+Dans le cas d'un conteneur il n'y a pas __d'hyperviseur__, le système d'exploitation dans le cas présent GNU/Linux peut gérer nativement les systèmes docker via l'applicatif installé. Il n'y a donc pas d'émulation de matériels réalisé comme pour une machine virtuel, il n'y a pas de système d'exploitation d'installer qui réalisera le même travail que le système hôte. 
+Un conteneur utilisera le même **noyaux** que le système hôte pour fonctionner, à l'avantage de réduire considérablement le temps d'initialisation d'un conteneur , car le conteneur n'a pas de **noyaux** à charger , de matériel à détecter ou d'initialisation du système , il ne démarre que l'application spécifié. L'inconvénient avec cette solution est que le conteneur initialisé doit être de même type de le docker __host__. En d'autre mot il n'est pas possible d'avoir un conteneur de type __Windows__ sur une machine GNU/Linux, conceptuellement ceci n'est pas possible.
+
+* Il est plus approprié de voir un conteneur comme environnement [chrooté](https://fr.wikipedia.org/wiki/Chroot) en anglais [Chroot](https://en.wikipedia.org/wiki/Chroot). (Limité dans un espace disque dur du système **Ch**ange **root** , changement de racine / )
+* Un des avantages est que chaque conteneur à sa couche réseau (__stack ip__) , donc en plus d'une isolation des fichiers nous avons aussi une isolation des communication réseau. 
+* Chaque conteneur à son administrateur **root** ainsi que les utilisateurs dans le conteneur, assurant encore une fois une isolation complète.
+
+Pour les plus vieux d'entre vous, vous vous direz peut-être : Quelle sont les avantages de **docker** comparativement au __jail__ sous __BSD__ qui existe depuis 15 ans ou encore les zones de __solaris__ ?
+
+* L'administration des conteneurs simplifier avec l'utilisation de __DockerFiles__ pour construire l'image des conteneurs.
+* L'administration de l'orchestration des conteneurs à l'aide de __docker-compose__ ou de système de __cluster__ telle que __Kibernet__ ou __swarm__.
+* La possibilité de gérer les version des containers
+* La possibilité de stocker , manipuler , récupérer des conteneurs depuis un __registry__, ceci nous donne la possibilité d'avoir des images de conteneur comme artefact.
+* L'API __Rest__ pour manipuler nos docker __host__.
+* L'utilisation __d'unionFS__ pour réutiliser l'espace disque pour les bloques disques équivalent.
+
+## <a name="Architecture" /> Architecture de Docker 
+
+Nous parlons de __docker__ et de conteneur , nous avons vue que le docker __host__ est l'applicatif installer sur le système d'exploitation qui permet d'exécuter / isoler un conteneur. Avant d'aller plus loin sur l'applicatif __docker__ nous allons nous arrêter sur le conteneur. 
+
+### <a name="ContainerAndImage" /> Conteneur est au commencement une images
+
+Nous allons clarifier l'utilisation des termes ceci simplifiera le dialogue pour le reste de la présentation.
+
+* Une **image** est l'artefact d'un conteneur , l'image est un __conteneur__ à l'état non initialisé, c'est la coquille contenant l'ensemble requis. Nous allons déplacé cette image sur le docker __host__ afin de l'exécuter. Une autre manière de le voir une image est un conteneur vierge, pas encore exécuté.
+* Un **conteneur** est une image qui fut exécuter au moins une fois, donc initialiser sur un docker __host__, avec des configurations (Variable d'environnement, assignation réseau , partage d'espace disque , ...) .
+
+Vous pouvez trouver un **GRAND** d'image sur le site [hub.docker.com](https://hub.docker.com/). 
+
+Prenons quelques minutes pour regarder le contenu, [hub.docker.com/explore](https://hub.docker.com/explore/), juste pour vous donner une idée du contenu.
+Il y a 2 type d'image disponible :
+
+* **OFFICIEL** : C'est images sont valider par le fournisseur est considérer comme officiel par le "manufacturé" , comme vous pouvez le voir vous retrouvez :
+    * [Ubuntu](https://hub.docker.com/_/ubuntu/)
+    * [Mysql](https://hub.docker.com/_/mysql/)
+    * [Apache](https://hub.docker.com/_/httpd/)
+    * [Wordpress](https://hub.docker.com/_/wordpress/)
+* **PUBLIQUE** : C'est images sont créer par des internautes, ils sont donc non valider par un tierce, il est donc important de les utiliser avec parcimonie, lors de teste ou de valider le contenu !
+    * [le miens :D](https://hub.docker.com/u/x3rus/)
+    * [nexus](https://hub.docker.com/r/sonatype/nexus/)
+    * [Mysql mais non officiel](https://hub.docker.com/r/tozd/mysql/)
+
+
+## <a name="whyUseDocker" /> Pourquoi utiliser Docker ?
+
+
 
