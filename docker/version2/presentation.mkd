@@ -1,0 +1,40 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+![docker_logo](./imgs/Docker_logo.png)
+
+# Index
+
+# <a name="Intro" /> Introduction
+
+**Docker** est un logiciel libre qui automatise le déploiement d'applications dans des conteneurs logiciels. Selon la firme de recherche sur l'industrie __451 Research__, « Docker est un outil qui peut empaqueter une application et ses dépendances dans un conteneur isolé, qui pourra être exécuté sur n'importe quel serveur Linux ». Ceci permet d'étendre la flexibilité et la portabilité d’exécution d'une application, que ce soit sur la machine locale, un __cloud__ privé ou public, une machine nue, etc. 
+
+Ceci est une description très générale nous allons voir les détails sous peu de ce qu'est réellement __docker__.
+
+## <a name="whatIsDocker" /> Qu'est ce que Docker ?
+
+Docker vous offre la possibilité d'isoler votre application du reste du système, cette isolation est réalisé grâce au fonctionnalité du noyaux (kernel) du système d'exploitation (pour GNU/Linux : __cgroup__ et __namespace__). Nous parlons d'isolation au niveau :
+
+* **Couche réseau** : Chaque conteneur à son propre __stack IP__, chaque conteneur à son propre adresse IP.
+* **Couche applicative** : Les applications dans un conteneur ne voit que ce qui est contenu dans ce dernier, tous ce qui est à l'extérieure est inexistant.
+
+Vous avez la possibilité de limité l'utilisation des ressources (CPU, I/O, réseaux , ...) grâce au fonctionnalité du noyau. 
+
+Pourquoi l'arrivée de Docker ? À la lecture de l'énoncé ci-dessus ceci ressemble à une Machine Virtuel, les solutions de visualisation ne manque pas !
+Ceci est souvent l'analogie réalisée, mais un conteneur n'est PAS une machine virtuel, voyons les problématiques 
+
+### <a name="Objectif" /> Objectif de Docker
+
+
+L'objectif de Docker est d'offrir des conteneurs applicatif facile à déployer afin d'encapsulé l'application , incluant l'ensemble de ces dépendances et les versions de ces dernières.
+
+* **Avec Docker vous pouvez séparer votre application de l'infrastructure et traiter cette dernier comme une application**
+* Docker vous permet d'exécuter n'importe quelle application de manière sécuritaire dans un conteneur.
+* L'isolation et la sécurité vous offre la possibilité d'exécuter plusieurs conteneur sur la même machine.
+* L'absence __d'Hypervisor__ vous permet de tiré une plus grande partie du matériel, car il n'y a pas de charge additionnel pour la visualisation.
+* La distribution et les options de transfert de conteneurs vous permet d'avoir le même environnement pour l'ensemble des équipes (__Dev__, __QA__, ...)
+
+
+
