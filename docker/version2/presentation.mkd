@@ -82,7 +82,7 @@ Nous allons clarifier l'utilisation des termes ceci simplifiera le dialogue pour
 * Une **image** est l'artefact d'un conteneur , l'image est un __conteneur__ à l'état non initialisé, c'est la coquille contenant l'ensemble requis. Nous allons déplacé cette image sur le docker __host__ afin de l'exécuter. Une autre manière de le voir une image est un conteneur vierge, pas encore exécuté.
 * Un **conteneur** est une image qui fut exécuter au moins une fois, donc initialiser sur un docker __host__, avec des configurations (Variable d'environnement, assignation réseau , partage d'espace disque , ...) .
 
-Vous pouvez trouver un **GRAND** d'image sur le site [hub.docker.com](https://hub.docker.com/). 
+Vous pouvez trouver un **GRAND nombre** d'image sur le site [hub.docker.com](https://hub.docker.com/). 
 
 Prenons quelques minutes pour regarder le contenu, [hub.docker.com/explore](https://hub.docker.com/explore/), juste pour vous donner une idée du contenu.
 Il y a 2 type d'image disponible :
@@ -92,10 +92,217 @@ Il y a 2 type d'image disponible :
     * [Mysql](https://hub.docker.com/_/mysql/)
     * [Apache](https://hub.docker.com/_/httpd/)
     * [Wordpress](https://hub.docker.com/_/wordpress/)
-* **PUBLIQUE** : C'est images sont créer par des internautes, ils sont donc non valider par un tierce, il est donc important de les utiliser avec parcimonie, lors de teste ou de valider le contenu !
+* **PUBLIQUE** : C'est images sont créer par des internautes, ils sont donc non valider par un tierce, par le fait même il important de les utiliser avec parcimonie, lors de teste ou de valider le contenu !
     * [le miens :D](https://hub.docker.com/u/x3rus/)
     * [nexus](https://hub.docker.com/r/sonatype/nexus/)
     * [Mysql mais non officiel](https://hub.docker.com/r/tozd/mysql/)
+
+### <a name="Composante" /> Composante de l'architecture 
+
+Voici une représentation graphique de l'architecture dans son état la plus simple :
+
+![architecture.svg](./imgs/architecture.svg)
+
+
+Docker utilise une architecture **client-server** :
+
+* Le **client docker** communique avec le **Docker daemon (serveur)**.
+* Le **Docker daemon (serveur)** réalise l'ensemble des opérations sur les images, les conteneurs , l'assignation des ressources , ...
+* Le **client** et le **serveur** peuvent être sur la même machine ou sur 2 systèmes distinct.
+* 2 mode de communication sont possible **API REST** et **socket**.
+* Le **registry** est un lieu de stockage des images , ce **registry** peut être publique ([hub.docker.com](http://hub.docker.com)) ou privé à l'aide d'application libre ou privative (ex: [Nexus](https://www.sonatype.com/docker), [Docker registry](https://docs.docker.com/registry/) ).
+
+
+Regardons rapidement le __workflow__ de l'utilisation de docker afin de voir l'interaction des composantes !
+
+* Pré requis (voir documentation sur le site officiel : [Installation pour MacOS](https://docs.docker.com/engine/installation/mac/) , [Installation pour Windows](https://docs.docker.com/engine/installation/windows/), [Installation sous GNU/Linux](https://docs.docker.com/engine/installation/linux/ubuntulinux/) )
+    * Installation du client docker
+    * Installation du serveur docker 
+
+1. Le client récupère une image depuis un **registry**, pour les besoins de la formation je vais récupérer l'image du conteneur de __Ubuntu 16.04 (LST)__ disponible sur le __registry__ publique de docker : [https://hub.docker.com/\_/ubuntu/](https://hub.docker.com/_/ubuntu/).
+
+        $ docker pull ubuntu:16.04
+
+    * L'image est récupérer depuis le __registry__ est copié localement sur le serveur __Docker\_Host__
+
+    Bien entendu j'aurais pu utiliser d'autre distribution telle que :
+
+    * [Centos](https://hub.docker.com/_/centos/)
+    * [debian](https://hub.docker.com/_/debian/)
+    * [opensuse](https://hub.docker.com/_/opensuse/)
+
+2. Le client crée un conteneur avec comme source l'images , préalablement récupéré.
+
+        $ docker run --interactive --tty ubuntu:16.04 bash
+        root@866d8d61534a:/# 
+        root@866d8d61534a:/# cat /etc/lsb-release
+        DISTRIB_ID=Ubuntu
+        DISTRIB_RELEASE=16.04
+        DISTRIB_CODENAME=xenial
+        DISTRIB_DESCRIPTION="Ubuntu 16.04.1 LTS"
+
+3. Visualisation des conteneurs en exécution :
+
+        $ docker ps
+        CONTAINER ID    IMAGE           COMMAND      CREATED             STATUS              PORTS    NAMES
+        866d8d61534a    ubuntu:16.04    "bash"       2 minutes ago       Up 2 minutes                 tender_borg
+
+Les images sont conceptuellement minimal , si nous essayons quelques commandes considérées comme de base , nous serons surpris , voici quelques exemple :
+
+        root@866d8d61534a:/# wget
+        bash: wget: command not found
+        root@866d8d61534a:/# vim
+        bash: vim: command not found
+        root@866d8d61534a:/# vi
+        bash: vi: command not found
+        root@866d8d61534a:/# less
+        bash: less: command not found
+        root@866d8d61534a:/# sed --version
+        sed (GNU sed) 4.2.2
+        Copyright (C) 2012 Free Software Foundation, Inc.
+        [... OUTPUT COUPÉ ...]
+
+4. Si nous listons les processus en utilisation, nous allons constater l'isolation en place :
+
+        root@866d8d61534a:/# ps aux
+        USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+        root         1  2.0  0.0  18248  3136 ?        Ss   22:03   0:00 bash
+        root        11  0.0  0.0  34424  2664 ?        R+   22:03   0:00 ps aux
+
+
+Bien entendu dans le cas présent j'ai démarrer un système Ubuntu de version 16:04, mais ceci est une image vide sans application spécifique , nous verrons lors de la création d'image que nous utiliserons l'image Ubuntu:16.04 pour créer nos propres images. Prenons un autre exemple par exemple nous désirons avoir un serveur __MySQL__ de version 5.5 ou un serveur web __Apache (httpd)__ de version 2.4.
+
+1. Récupération des images depuis le [hub de docker](https://hub.docker.com).
+    * httpd : [https://hub.docker.com/\_/httpd/](https://hub.docker.com/_/httpd/)
+    * mysql : [https://hub.docker.com/\_/mysql/](https://hub.docker.com/_/mysql/)
+
+        $ docker pull mysql:5.5
+        [... OUTPUT COUPÉ ...]
+        $ docker pull httpd:2.4
+        2.4: Pulling from library/httpd
+
+        386a066cd84a: Downloading [====>                                              ] 4.718 MB/51.36 MB
+        a11d6b8e2fac: Download complete
+        c1fdc7beec37: Downloading [=====================>                             ]  4.98 MB/11.74 MB
+        bd14a67deca2: Downloading [====================================>              ] 5.504 MB/7.557 MB
+        92b34ad02810: Waiting
+
+2. Exécution du conteneur __Mysql__ version 5.5 , à l'aide de la variable **MYSQL\_ROOT\_PASSWORD** je donne en paramètre le mot de passe administrateur **root** à utiliser lors de l'initialisation de la base de donnée dans le conteneur.
+
+        $ docker run -e MYSQL_ROOT_PASSWORD=super   mysql:5.5
+        Initializing database
+        161115 21:55:39 [Note] /usr/local/mysql/bin/mysqld (mysqld 5.5.52) starting as process 60 ...
+        161115 21:55:39 [Note] /usr/local/mysql/bin/mysqld (mysqld 5.5.52) starting as process 66 ...
+        [... OUTPUT COUPÉ ...]
+        161115 21:55:45 [Warning] 'proxies_priv' entry '@ root@c78d6c624c23' ignored in --skip-name-resolve mode.
+        161115 21:55:45 [Note] Event Scheduler: Loaded 0 events
+        161115 21:55:45 [Note] mysqld: ready for connections.
+        Version: '5.5.52'  socket: '/tmp/mysql.sock'  port: 3306  MySQL Community Server (GPL)
+
+3. Nous avons donc une serveur __Mysql__ disponible initialiser avec le mot de passe fournit en paramètre. Nous voyons donc clairement la relation image , environnement dormant et le conteneur qui réalise l'initialisation de l'environnement au démarrage !
+
+4. Comme les conteneurs sont isolés les un des autres il est possible d'en démarrer plusieurs, que ce soit avec la même version ou de version différente. Ici j'ai démarrer 3 conteneurs utilisant la même images mysql:5.5 
+
+        $ docker ps
+        CONTAINER ID    IMAGE          COMMAND                  CREATED          STATUS          PORTS        NAMES
+        aca7e9170345    mysql:5.5      "docker-entrypoint.sh"   2 seconds ago    Up 1 seconds    3306/tcp     berserk_cray
+        3777a485cd3c    mysql:5.5      "docker-entrypoint.sh"   3 seconds ago    Up 2 seconds    3306/tcp     ecstatic_bhaskara
+        20b147c5b5b5    mysql:5.5      "docker-entrypoint.sh"   7 seconds ago    Up 6 seconds    3306/tcp     grave_fermi
+
+5. Même opération avec une serveur web.
+
+        $ docker run http:2.4 
+        AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
+        AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
+        [Wed Nov 16 13:11:05.338493 2016] [mpm_event:notice] [pid 1:tid 140338600580992] AH00489: Apache/2.4.23 (Unix) configured -- resuming normal operations
+        [Wed Nov 16 13:11:05.338790 2016] [core:notice] [pid 1:tid 140338600580992] AH00094: Command line: 'httpd -D FOREGROUND'
+
+6. Visualisation du résultat en allant sur l'URL : http://172.17.0.2
+    Comme ça le dis : "Ça marche :D "
+
+Ceci est vraiment intéressant pour valider des applications, vous voyez une application qui semble bien, que ce soit web base ou même une application native , vous désirez l'essayer vous télécharger le conteneur , vous valider le fonctionnement si ceci ne vous convient pas vous détruisez le conteneur et on en parle plus :D. Nommez moi une application nous la trouverons sur le **registry** publique de Docker.
+
+* Avantage 
+    * **Simplicité de réalisation  de teste d'application sans polluer l'environnement de travail**
+    * **Conteneur pré configurer et fonctionnel peut importe le lieu**
+    * **Possibilité d'avoir plusieurs application identique avec plusieurs version** (exemple __Mysql__ 5.5, 5.7 , ...)
+    * **L'exécution est possible même sur une petite machine, telle qu'un portable** (contrairement à une machine virtuel qui est très couteux en terme de ressource)
+
+# <a name="DevilIsInDetail" /> Analysons un peu le fonctionnement 
+
+Allons voir un peu le fonctionnement afin de saisir les possibilités, les limitations, les points à prendre en considération. En comprenant le fonctionnement le système vous comprendrez pourquoi il faut manipuler les images ou les conteneurs. L'objectif de cette section n'est pas de vous dire comment utiliser Docker, mais vous expliquer comment il fonctionne. À vous par la suite de trouver votre manière :D !
+
+Voici ma démarche qui sera préconisé :
+* Clarification des commandes de base de docker afin de démystifier les commandes que j'utilise.
+* Utilisation d'un conteneur apache, afin de présenter les couches (__layers__) d'un conteneur.
+* Personnalisation d'une images pour nos besoins.
+* Utilisation des données avec un conteneur.
+
+## <a name="cmdDeBaseDeDocker" /> Commande de base d'utilisation de docker.
+
+Je vais rapidement couvrir les commandes que j'ai et vais utiliser par la suite, afin que tous le monde soit confortable avec le processus.
+
+* [docker pull](https://docs.docker.com/engine/reference/commandline/pull/) : Permet de récupérer une images depuis un **registry** privé ou publique.
+* [docker images](https://docs.docker.com/engine/reference/commandline/images/) : Permet de lister les images présente sur le docker host.
+* [docker run](https://docs.docker.com/engine/reference/commandline/run/) : Permet de démarrer un nouveau conteneur avec une image comme point de départ.
+* [docker start](https://docs.docker.com/engine/reference/commandline/start/) : Permet de démarrer un conteneur qui fut initialiser avec l'instruction __docker run__ préalablement. Ceci peut être vue comme un conteneur dormant :D, contrairement à une image ce dernier fut déjà initialisé une fois.
+* [docker ps](https://docs.docker.com/engine/reference/commandline/ps/) : Liste les conteneurs en utilisation ou qui fut exécutés récemment.
+* [docker exec](https://docs.docker.com/engine/reference/commandline/exec/) : Permet d'exécuter une commande dans le conteneur , comme vous pourrez le constater, il est possible d'utiliser la commande **bash** pour être en mode interactif.
+* [docker stop](https://docs.docker.com/engine/reference/commandline/stop/) : Permet d'arrêter un conteneur en exécution.
+* [docker rm](https://docs.docker.com/engine/reference/commandline/rm/) : Permet de supprimer un conteneur.
+* [docker rmi](https://docs.docker.com/engine/reference/commandline/rmi/) : Permet de supprimer une image qui fut copier sur le serveur local , ceci ne supprime pas l'image du **registry**.
+* [docker build](https://docs.docker.com/engine/reference/commandline/build/) : Permet de créer une images en utilisant un fichier __Dockerfile__ comme référence contenant l'ensemble des instructions.
+
+Commençons avec ces instructions, nous verrons par la suite qu'il y a plusieurs autres commande disponible , pour les personnes trop curieuse :P, voici le lien vers les autres possibilité [docker commandline](https://docs.docker.com/engine/reference/commandline/).
+
+## <a name="structureConteneur" /> Structure d'un conteneur
+
+Donc maintenant que nous avons un aperçu des commandes nous allons pouvoir parler des conteneurs et mieux comprendre leur fonctionnement , premièrement je vais récupérer le conteneur **[x3rus/apache:ubuntu](https://hub.docker.com/r/x3rus/apache/)**. Ce n'est pas une image qui révolutionne le genre, mais je voulais avoir quelque chose de simple pour la présentation.
+
+        $ docker pull x3rus/apache:ubuntu
+
+Nous pouvons donc voir le conteneur avec la commande **docker images**
+
+        $ docker images | grep apache
+        x3rus/apache                  ubuntu              c135ec9e34db        32 minutes ago      265.4 MB
+
+Exécutons se dernier :
+
+        $ docker run x3rus/apache:ubuntu
+         * Starting Apache httpd web server apache2
+         * AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
+         *
+En allant sur l'URL [http://172.17.0.2/](http://172.17.0.2/), nous avons la page par défaut de Ubuntu.
+
+![defaut_apache_ubuntu.png](./imgs/defaut_apache_ubuntu.png)
+
+Lors de la description j'ai mentionné que :
+
+* " Une **image** est l'artefact d'un conteneur " : L'image est en lecture seul , cette dernière ne peux PAS être modifier.
+
+Si vous avez déjà eu un système GNU/Linux en lecture seul, vous pouvez tous simplement RIEN faire avec, il n'est pas utilisable. Donc lors de l'initialisation du conteneur le **docker** crée une couche  (**layer**) par dessus l'image qui elle peut être écrite.
+
+(désolé pour la qualité de l'image, je ne suis pas __infographe__ :P )
+
+![conteneur-x3rus-apache.png](./imgs/conteneur-x3rus-apache.png)
+
+Comme vous pouvez le voir l'image de base __x3rus/apache__ est présent au début et avec le système __d'unionfs__ qui permet d'unir des systèmes de fichier lors de l'initialisation du conteneur. 
+
+
+
+## <a name="structureImage" /> Structure d'une images
+## <a name="structureConteneurFileSysteme" /> Structure de fichier d'un conteneur
+## <a name="structureConteneurRéseau" /> Réseautique d'un conteneur
+
+
+TODO: Présenter la philosophy sous docker
+TODO: Pourquoi Docker 
+    * Faciliter de réaliser des testes d'application sans polluer l'environnement de travail
+    * Conteneur pré-configurer et fonctionnel peut importe le lieu.
+    *
+TODO: Le workflow
+
+Deep down :
 
 
 ## <a name="whyUseDocker" /> Pourquoi utiliser Docker ?
