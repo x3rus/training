@@ -176,46 +176,46 @@ Bien entendu dans le cas présent j'ai démarrer un système Ubuntu de version 1
     * httpd : [https://hub.docker.com/\_/httpd/](https://hub.docker.com/_/httpd/)
     * mysql : [https://hub.docker.com/\_/mysql/](https://hub.docker.com/_/mysql/)
 
-        $ docker pull mysql:5.5
-        [... OUTPUT COUPÉ ...]
-        $ docker pull httpd:2.4
-        2.4: Pulling from library/httpd
-
-        386a066cd84a: Downloading [====>                                              ] 4.718 MB/51.36 MB
-        a11d6b8e2fac: Download complete
-        c1fdc7beec37: Downloading [=====================>                             ]  4.98 MB/11.74 MB
-        bd14a67deca2: Downloading [====================================>              ] 5.504 MB/7.557 MB
-        92b34ad02810: Waiting
+            $ docker pull mysql:5.5
+            [... OUTPUT COUPÉ ...]
+            $ docker pull httpd:2.4
+            2.4: Pulling from library/httpd
+    
+            386a066cd84a: Downloading [====>                                              ] 4.718 MB/51.36 MB
+            a11d6b8e2fac: Download complete
+            c1fdc7beec37: Downloading [=====================>                             ]  4.98 MB/11.74 MB
+            bd14a67deca2: Downloading [====================================>              ] 5.504 MB/7.557 MB
+            92b34ad02810: Waiting
 
 2. Exécution du conteneur __Mysql__ version 5.5 , à l'aide de la variable **MYSQL\_ROOT\_PASSWORD** je donne en paramètre le mot de passe administrateur **root** à utiliser lors de l'initialisation de la base de donnée dans le conteneur.
 
-        $ docker run -e MYSQL_ROOT_PASSWORD=super   mysql:5.5
-        Initializing database
-        161115 21:55:39 [Note] /usr/local/mysql/bin/mysqld (mysqld 5.5.52) starting as process 60 ...
-        161115 21:55:39 [Note] /usr/local/mysql/bin/mysqld (mysqld 5.5.52) starting as process 66 ...
-        [... OUTPUT COUPÉ ...]
-        161115 21:55:45 [Warning] 'proxies_priv' entry '@ root@c78d6c624c23' ignored in --skip-name-resolve mode.
-        161115 21:55:45 [Note] Event Scheduler: Loaded 0 events
-        161115 21:55:45 [Note] mysqld: ready for connections.
-        Version: '5.5.52'  socket: '/tmp/mysql.sock'  port: 3306  MySQL Community Server (GPL)
+            $ docker run -e MYSQL_ROOT_PASSWORD=super   mysql:5.5
+            Initializing database
+            161115 21:55:39 [Note] /usr/local/mysql/bin/mysqld (mysqld 5.5.52) starting as process 60 ...
+            161115 21:55:39 [Note] /usr/local/mysql/bin/mysqld (mysqld 5.5.52) starting as process 66 ...
+            [... OUTPUT COUPÉ ...]
+            161115 21:55:45 [Warning] 'proxies_priv' entry '@ root@c78d6c624c23' ignored in --skip-name-resolve mode.
+            161115 21:55:45 [Note] Event Scheduler: Loaded 0 events
+            161115 21:55:45 [Note] mysqld: ready for connections.
+            Version: '5.5.52'  socket: '/tmp/mysql.sock'  port: 3306  MySQL Community Server (GPL)
 
 3. Nous avons donc une serveur __Mysql__ disponible initialiser avec le mot de passe fournit en paramètre. Nous voyons donc clairement la relation image , environnement dormant et le conteneur qui réalise l'initialisation de l'environnement au démarrage !
 
 4. Comme les conteneurs sont isolés les un des autres il est possible d'en démarrer plusieurs, que ce soit avec la même version ou de version différente. Ici j'ai démarrer 3 conteneurs utilisant la même images mysql:5.5 
 
-        $ docker ps
-        CONTAINER ID    IMAGE          COMMAND                  CREATED          STATUS          PORTS        NAMES
-        aca7e9170345    mysql:5.5      "docker-entrypoint.sh"   2 seconds ago    Up 1 seconds    3306/tcp     berserk_cray
-        3777a485cd3c    mysql:5.5      "docker-entrypoint.sh"   3 seconds ago    Up 2 seconds    3306/tcp     ecstatic_bhaskara
-        20b147c5b5b5    mysql:5.5      "docker-entrypoint.sh"   7 seconds ago    Up 6 seconds    3306/tcp     grave_fermi
+            $ docker ps
+            CONTAINER ID    IMAGE          COMMAND                  CREATED          STATUS          PORTS        NAMES
+            aca7e9170345    mysql:5.5      "docker-entrypoint.sh"   2 seconds ago    Up 1 seconds    3306/tcp     berserk_cray
+            3777a485cd3c    mysql:5.5      "docker-entrypoint.sh"   3 seconds ago    Up 2 seconds    3306/tcp     ecstatic_bhaskara
+            20b147c5b5b5    mysql:5.5      "docker-entrypoint.sh"   7 seconds ago    Up 6 seconds    3306/tcp     grave_fermi
 
 5. Même opération avec une serveur web.
 
-        $ docker run http:2.4 
-        AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
-        AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
-        [Wed Nov 16 13:11:05.338493 2016] [mpm_event:notice] [pid 1:tid 140338600580992] AH00489: Apache/2.4.23 (Unix) configured -- resuming normal operations
-        [Wed Nov 16 13:11:05.338790 2016] [core:notice] [pid 1:tid 140338600580992] AH00094: Command line: 'httpd -D FOREGROUND'
+            $ docker run http:2.4 
+            AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
+            AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
+            [Wed Nov 16 13:11:05.338493 2016] [mpm_event:notice] [pid 1:tid 140338600580992] AH00489: Apache/2.4.23 (Unix) configured -- resuming normal operations
+            [Wed Nov 16 13:11:05.338790 2016] [core:notice] [pid 1:tid 140338600580992] AH00094: Command line: 'httpd -D FOREGROUND'
 
 6. Visualisation du résultat en allant sur l'URL : http://172.17.0.2
     Comme ça le dis : "Ça marche :D "
@@ -337,7 +337,142 @@ Le système docker fut développé pour la mise en place de **micro-services** ,
 Exemple un service de ventes de tickets pour des spectacles, en temps normale un 10 serveurs sont suffisant , mais voilà 2 fois par année des gros spectacle arrives. Que faire acheter 10 autres serveurs pour une utilisation de 2 semaines par années ?!?!? 
 L'idée fut d'avoir un mécanisme simple pour déployé de web service qui ne conserve pas de donnée localement mais se réfère à une base de donnée pour faire le traitement. Avec ce mécanisme, grâce aux images l'ensemble des déploiement sont toujours identique, car tous est inclut dans le conteneur , lors de la suppression tous est effacé par de résidus.
 
-Ça c'était au début :D, bien entendu avec la monté en popularité de __Docker__ de nouveau besoin sont arrivé, donc la communauté à demandé ces nouvelles fonctionnalité. Nous allons voir maintenant ces mécanisme qui nous permettra de conserver les données.
+Ça c'était au début :D, bien entendu avec la monté en popularité de __Docker__ de nouveau besoin sont arrivé, donc la communauté a demandée ces nouvelles fonctionnalité. Nous allons voir maintenant ces mécanisme qui nous permettra de conserver les données.
+
+### <a name="NameWritableLayer" /> Nommé le conteneur donc la couche d'écriture
+
+Une des possibilités est de conserver la couche supérieur, avec cette configuration la couche supérieur est attaché au conteneur s'il y a arrêt de se dernier la couche supérieur sera réassignée au conteneur. 
+
+Voyons cette méthode :
+
+        $ docker run --name "mon_site"  x3rus/apache:ubuntu
+
+Comme vous pouvez le constater j'ai ajouter l'instruction **--name** afin de nommé le conteneur, avec la commande **docker ps** maintenant je n'ai plus un nom aléatoire mais le nom de mon conteneur.
+
+        $ docker ps
+        CONTAINER ID    IMAGE                 COMMAND        CREATED          STATUS          PORTS       NAMES
+        d92896b3aa3f    x3rus/apache:ubuntu   "/start.sh"    27 seconds ago   Up 25 seconds   80/tcp      mon_site
+
+Si j'accède à la page à l'URL [http://172.17.0.2](http://172.17.0.2) je vois la page par défaut d'Ubuntu. 
+
+Je vais modifier la page comme lors de la dernière opération . 
+
+        $ docker exec -it mon_site bash
+        root@d92896b3aa3f:/# cd /var/www/html
+        root@d92896b3aa3f:/var/www/html# vim index.html
+        root@d92896b3aa3f:/var/www/html# cat index.html
+        Conteneur nomme mon_site
+
+Super le site affiche maintenant la bonne page ... On repassera pour la "belle" page :D.
+
+J'arrête et redémarrage le conteneur .
+
+        $ docker stop mon_site
+        mon_site
+        $ docker run --name "mon_site"  x3rus/apache:ubuntu
+        docker: Error response from daemon: Conflict. The name "/mon_site" is already in use by container d92896b3aa3f5145f2f9a4643b6ff50ebc6a8a6d362e714c359733017a86a269. You have to remove (or rename) that container to be able to reuse that name..
+        See 'docker run --help'.
+
+Si j'utilise la même commande pour démarrer le conteneur j'ai un message d'erreur, car la couche supérieur ne peux être assigné qu'a **UN** conteneur, comme le conteneur fut déjà initialisé nous devons utiliser l'instruction **docker start**.
+
+        $ docker start mon_site
+        mon_site
+
+Je communique  sur l'URL [http://172.17.0.2](http://172.17.0.2) , **magie** ma page est toujours présente !!
+
+* Avantage :
+    * Dans le cadre de teste et d'exploration d'une configuration ceci peut être intéressant vous évitent de transpirer ou maudire __Docker__ si votre machine crash ou __reboot__ !!
+    * Dans le cadre d'un conteneur applicatif de production, il est possible que vous préférez avec la stabilité et surtout l'historique des opérations sur la machine.
+* **Problème** :
+    * En utilisant cette technique vous serez constamment déphasé avec vos images, dans cette situation vous utiliserez les conteneurs comme des machines virtuel. Résultat à chaque démarrage d'un nouveau conteneur, vous devrez réalisé l'ensemble des configurations et transfère des fichiers afin de l'avoir fonctionnel. Vos images auront peu de valeur et la possibilité de mettre en place un conteneur avec l'ensemble des configurations équivalent est perdu ! Vous avez simplement une installation automatique du système.
+    * Vos conteneur ne peuvent être démarrer automatiquement, sur demande pour répondre à une augmentation de charge.
+    * L'espace disque dur va augmenter de manière significatif car la couche supérieur prendra de l'espace dans le temps.
+
+
+Petit truc :D , il est possible que ce soit un conteneur nominatif ou avec un nom aléatoire de connaitre la différence entre l'image et le conteneur en exécution grâce à l'instruction **docker diff**.
+
+        $ docker diff mon_site
+        C /var
+        C /var/www
+        C /var/www/html
+        C /var/www/html/index.html
+        C /var/log
+        C /var/log/apache2
+        C /var/log/apache2/access.log
+        C /var/log/apache2/error.log
+        C /run
+        A /run/apache2
+        A /run/apache2/apache2.pid
+        C /run/lock
+        A /run/lock/apache2
+        C /root
+        A /root/.bash_history
+
+Comme je n'aime pas cette solution je vais détruire le conteneur **mon_site** :
+
+        $ docker stop mon_site
+        mon_site
+        $ docker rm mon_site
+        mon_site
+
+
+### <a name="UtilisationVolConteneur" /> Utilisation de volume pour le conteneur
+
+Une autre méthode disponible est la possibilité d'assigner un répertoire du **docker host** disponible / accessible depuis le conteneur. Équivalent pour les __GNU/Linuxiens__ d'un **mount bind**.
+
+Pour ce faire je vais démarrer un conteneur avec l'image __x3rus/apache:ubuntu__  en réassignant le répertoire __/var/www/html__ du conteneur par le répertoire __/srv/docker/x3Apache/www/__.
+
+Comme j'initialise une nouveau conteneur j'utilise la commande **docker run** et j'ajoute l'option **--volume**.
+
+        $ docker run --volume /srv/docker/x3Apache/www/:/var/www/html   x3rus/apache:ubuntu
+
+Voici le résultat quand j'accède à l'URL [http://172.17.0.2](http://172.17.0.2).
+
+![apache_ubuntu-sans-index.png](./imgs/apache_ubuntu-sans-index.png)
+
+Bizarre je n'ai pas la page par défaut d'Ubuntu :-/ ... Regardons le contenu du répertoire __/var/www/html/__ .
+Ici j'utilise la commande **docker exec**, pour faire changement je n'utilise pas **bash** pour avoir un __shell__, mais exécute la commande **ls**
+
+        $ docker exec  sleepy_lichterman ls -lR /var/www/
+        /var/www/:
+        total 4
+        drwxr-xr-x 2 root root 4096 Nov 17 22:14 html
+
+        /var/www/html:
+        total 0
+
+Le répertoire est **VIDE**, car le point de montage dans notre cas __/srv/docker/x3Apache/www/__ à prédominance sur __/var/www/html__.
+Ajoutons une page __index.html__ dans le répertoire __/srv/docker/x3Apache/www/__.
+
+
+        $ sudo vim /srv/docker/x3Apache/www/index.html  
+        $ cat /srv/docker/x3Apache/www/index.html
+        un page depuis le point de montage
+
+La page s'affiche avec le contenu du répertoire __/srv/docker/x3Apache/www/__ présent sur le docker __host__.
+
+![index_point_de_montage.png](./imgs/index_point_de_montage.png)
+
+Je peux avec cette configuration démarrer un deuxième conteneur utilisant le même répertoire de référence du docker __host__.
+
+        docker run --volume /srv/docker/x3Apache/www/:/var/www/html   x3rus/apache:ubuntu
+         * Starting Apache httpd web server apache2
+         AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.3. Set the 'ServerName' directive globally to suppress this message
+         *
+
+Si vous accédez à l'URL [http://172.17.0.3/](http://172.17.0.3/).
+
+![index_point_de_montage.png](./imgs/index_point_de_montage.png)
+
+* Avantage : 
+    * Ceci vous permet de conserver les données du conteneur en dehors du conteneur, que ce soit pour une utilisation entre 2 conteneur applicatif, ou entre le conteneur et votre système.
+    * Si vous être en mode développement il est possible que ce répertoire suit utiliser pour être traité par le conteneur, mais que vous préfériez avoir vos éditeur graphique pour faire l'ensemble des modifications sur les fichiers.
+    * Ceci vous permet si un conteneur fournissant une application __web__ et que les utilisateurs __upload__ des fichiers de les stocké en dehors du conteneur.
+    * Permet d'avoir le contenu de la base de données en dehors du conteneur.
+* **Problème** :
+    * Si vous réalisez la même opération que moi votre site web n'est PAS le conteneur, il n'est donc pas transférable avec le conteneur d'un docker __host__ à l'autre. 
+    * Vous cassez le principe du conteneur qui doit être self content, vous n'aurez pas le même application (web, ici) sur l'ensemble des environnements.
+    * Vous êtes à risque car vous réaliserez des modifications, alors que le principe est que votre images est le point de références.
 
 ### <a name="PrincipeDuConteneur" /> Philosophie lors de l'utilisation du conteneur
 
