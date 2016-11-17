@@ -255,7 +255,7 @@ Je vais rapidement couvrir les commandes que j'ai et vais utiliser par la suite,
 
 Commençons avec ces instructions, nous verrons par la suite qu'il y a plusieurs autres commande disponible , pour les personnes trop curieuse :P, voici le lien vers les autres possibilité [docker commandline](https://docs.docker.com/engine/reference/commandline/).
 
-## <a name="structureConteneur" /> Structure d'un conteneur
+## <a name="TheConteneur" /> Le Conteneur
 
 Donc maintenant que nous avons un aperçu des commandes nous allons pouvoir parler des conteneurs et mieux comprendre leur fonctionnement , premièrement je vais récupérer le conteneur **[x3rus/apache:ubuntu](https://hub.docker.com/r/x3rus/apache/)**. Ce n'est pas une image qui révolutionne le genre, mais je voulais avoir quelque chose de simple pour la présentation.
 
@@ -280,14 +280,66 @@ Lors de la description j'ai mentionné que :
 
 * " Une **image** est l'artefact d'un conteneur " : L'image est en lecture seul , cette dernière ne peux PAS être modifier.
 
+### <a name="TheConteneurLayer" /> Couche de système de fichier d'un conteneur
+
 Si vous avez déjà eu un système GNU/Linux en lecture seul, vous pouvez tous simplement RIEN faire avec, il n'est pas utilisable. Donc lors de l'initialisation du conteneur le **docker** crée une couche  (**layer**) par dessus l'image qui elle peut être écrite.
 
 (désolé pour la qualité de l'image, je ne suis pas __infographe__ :P )
 
 ![conteneur-x3rus-apache.png](./imgs/conteneur-x3rus-apache.png)
 
-Comme vous pouvez le voir l'image de base __x3rus/apache__ est présent au début et avec le système __d'unionfs__ qui permet d'unir des systèmes de fichier lors de l'initialisation du conteneur. 
+Comme vous pouvez le voir l'image de base __x3rus/apache__ est présent au début, avec l'aide du système __d'unionfs__, ce dernier permet d'unir des systèmes de fichier lors de l'initialisation du conteneur, donc d'avoir la couche d'écriture sur le dessus. 
 
+Bien entendu si vous désirez avoir un site web, il est peu probable que vous désirez avec uniquement la page par défaut d'Ubuntu :P. Afin de bien démontré cette couche (__layer__) nous allons modifier la page web, contenu dans __/var/www/html/__
+
+Pour ce faire je vais aller dans le conteneur directement et éditer la page d'index tous simplement.
+
+        $ docker exec -it awesome_feynman bash
+        root@f9e12b41da05:/# cd /var/www/html/
+        root@f9e12b41da05:/var/www/html#
+        root@f9e12b41da05:/var/www/html# mv index.html index-ori.html
+        root@f9e12b41da05:/var/www/html# vim index.html
+        root@f9e12b41da05:/var/www/html# cat index.html
+        Une super page
+
+Si nous regardons maintenant la page : [http://172.17.0.2/](http://172.17.0.2/) , nous n'avons plus la page par défaut mais le petit texte définir.
+
+![super_page_index.png](./imgs/super_page_index.png)
+
+Si j'arrête le conteneur et le redémarre .
+
+        $ docker stop awesome_feynman
+        $ docker run x3rus/apache:ubuntu
+        * Starting Apache httpd web server apache2
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
+        * 
+
+Même adresse IP , retournons à l'URL : [http://172.17.0.2/](http://172.17.0.2/) ... **OUPSS** retour de la page par défaut d'apache, POURQUOI ? 
+
+* Si nous reprenons la représentation du conteneur préalablement affiché:
+    Lors de l'initialisation du conteneur la couche (__RW__) supérieur est ajoutée, lors de l'arrêt du conteneur la couche supérieur est par défaut supprimé.
+    ![conteneur-x3rus-apache.png](./imgs/conteneur-x3rus-apache.png)
+
+* **Avantage** :
+    * À chaque démarrage vous repartez du point de référence qui est l'image , donc de l'artefact valider en amont
+    * S'il y a un problème avec le conteneur l'arrêt et redémarrage de ce dernier nous ramène à l'état original très pratique lors des testes.
+* **Desavantage**: 
+    * perte des logs sur le système lors d'un redémarrage du serveur voir crash.
+    * Si vous avez mis un conteneur __MySQL__ par exemple perte des données de la base de donnée :P
+
+Bon là vous vous dites , finalement c'est **NUL** docker !!
+
+![chevre-langue.png](./imgs/chevre-langue.png)
+
+Mise en contexte historique de la création de docker, ceci vous aidera probablement à comprendre la logique en arrière de cette configuration.
+Le système docker fut développé pour la mise en place de **micro-services** , l'objectif original était de pouvoir __scaler__  rapidement un système , lors d'une monté en charge. 
+
+Exemple un service de ventes de tickets pour des spectacles, en temps normale un 10 serveurs sont suffisant , mais voilà 2 fois par année des gros spectacle arrives. Que faire acheter 10 autres serveurs pour une utilisation de 2 semaines par années ?!?!? 
+L'idée fut d'avoir un mécanisme simple pour déployé de web service qui ne conserve pas de donnée localement mais se réfère à une base de donnée pour faire le traitement. Avec ce mécanisme, grâce aux images l'ensemble des déploiement sont toujours identique, car tous est inclut dans le conteneur , lors de la suppression tous est effacé par de résidus.
+
+Ça c'était au début :D, bien entendu avec la monté en popularité de __Docker__ de nouveau besoin sont arrivé, donc la communauté à demandé ces nouvelles fonctionnalité. Nous allons voir maintenant ces mécanisme qui nous permettra de conserver les données.
+
+### <a name="PrincipeDuConteneur" /> Philosophie lors de l'utilisation du conteneur
 
 
 ## <a name="structureImage" /> Structure d'une images
