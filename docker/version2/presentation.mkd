@@ -470,9 +470,51 @@ Si vous accédez à l'URL [http://172.17.0.3/](http://172.17.0.3/).
     * Ceci vous permet si un conteneur fournissant une application __web__ et que les utilisateurs __upload__ des fichiers de les stocké en dehors du conteneur.
     * Permet d'avoir le contenu de la base de données en dehors du conteneur.
 * **Problème** :
-    * Si vous réalisez la même opération que moi votre site web n'est PAS le conteneur, il n'est donc pas transférable avec le conteneur d'un docker __host__ à l'autre. 
+    * Si vous réalisez la même opération que moi votre site web n'est PAS dans le conteneur, il n'est donc pas transférable avec le conteneur d'un docker __host__ à l'autre. 
     * Vous cassez le principe du conteneur qui doit être self content, vous n'aurez pas le même application (web, ici) sur l'ensemble des environnements.
     * Vous êtes à risque car vous réaliserez des modifications, alors que le principe est que votre images est le point de références.
+
+Donc avant de voir la partie réseau nous allons voir comment personnaliser votre image afin d'inclure vos informations et ainsi suivre le principe de __docker__.
+
+## <a name="TheImage" /> L'image
+
+Telle que mentionné précédemment l'image est le point de référence du conteneur , **LA SOURCE** ! La création d'une image est réalisé à l'aide du fichier __Dockerfile__, ceci est un fichier texte qui d'écrit les étapes pour la réalisation de l'image.
+
+Analysons le **Dockerfile** de l'image **x3rus/apache:ubuntu** utilisé jusqu'ici : 
+
+        FROM ubuntu:16.04
+        MAINTAINER Boutry Thomas "thomas.boutry@x3rus.com"
+
+        # install apps
+        RUN apt-get update && \
+            apt-get install -y apache2 vim
+
+        COPY start.sh /
+
+        CMD ["/start.sh"]
+
+Lançons la "compilation",  le "__build__" pendant les explications .
+
+        $ time docker build -t x3rus/apache:demo .
+
+Comme vous pouvez le lire je suis partie d'une image **officiel** de Ubuntu LTS (16.04) par la suite :
+* j'installe l'application **apache2** ET **vim**
+* Je copie le fichier **start.sh** dans le conteneur à la racine
+* J'indique que lors du démarrage du conteneur il doit exécuter le script __start.sh__
+
+Et Voilà :D , pas plus compliqué , bien entendu il y énormément plus d'option disponible , pour ne pas charger la formation je vous laisse les consulter :
+
+* [https://docs.docker.com/engine/reference/builder/](https://docs.docker.com/engine/reference/builder/)
+
+Ce qui est super bien, **VIVE LE LIBRE** est que si vous cherchez des conteneurs sur [http://hub.docker.com](http://hub.docker.com), vous avez plein d'exemple de __Dockerfile__ disponible. Voici par exemple celui pour l'application de sondage : [https://hub.docker.com/r/crramirez/limesurvey/~/dockerfile/](https://hub.docker.com/r/crramirez/limesurvey/~/dockerfile/)
+
+
+### <a name="TheImageLayer" /> Couche de système de fichier d'une image
+
+Nous avons vu que lors de l'exécution d'un conteneur une couche en Lecture/Écriture était superposé sur l'image de référence , en fait l'image ELLE même est constitué de couche. Si nous reprenons l'image **x3rus/apache:ubuntu** , voici la représentation graphique des couches :
+
+![docker-filesystems-multilayer-x3rus-ubuntu.png](./imgs/docker-filesystems-multilayer-x3rus-ubuntu.png)
+
 
 ### <a name="PrincipeDuConteneur" /> Philosophie lors de l'utilisation du conteneur
 
