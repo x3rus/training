@@ -511,17 +511,129 @@ Ce qui est super bien, **VIVE LE LIBRE** est que si vous cherchez des conteneurs
 
 ### <a name="TheImageLayer" /> Couche de système de fichier d'une image
 
-Nous avons vu que lors de l'exécution d'un conteneur une couche en Lecture/Écriture était superposé sur l'image de référence , en fait l'image ELLE même est constitué de couche. Si nous reprenons l'image **x3rus/apache:ubuntu** , voici la représentation graphique des couches :
+Nous avons vu que lors de l'exécution d'un conteneur une couche en Lecture/Écriture était superposé sur l'image de référence , en fait l'image ELLE même est constitué de couche. Si nous reprenons l'image **x3rus/apache:ubuntu** , voici la représentation graphique des couches (je suis toujours pas __infographe__) :
 
 ![docker-filesystems-multilayer-x3rus-ubuntu.png](./imgs/docker-filesystems-multilayer-x3rus-ubuntu.png)
 
+Chaque instruction constitue une couche, l'avantage est que si nous modifions une des couches (ajout ou suppression) toutes les couches antérieurs sont conservé et ne doivent pas être recréer .
 
-### <a name="PrincipeDuConteneur" /> Philosophie lors de l'utilisation du conteneur
+Voici une démonstration en ajoutant une page web par défaut dans le répertoire __/var/www/html/__. 
+
+Avant tous regardons le temps que prend la création de l'image initialement.
+
+        $ time docker build -t x3rus/apache:ubuntu .
+        [ ... OUTPUT COUPÉ ... ]
+        Step 6 : CMD /start.sh
+         ---> Running in 03bbf1e21a29
+         ---> aca1ca5d565a
+        Removing intermediate container 03bbf1e21a29
+        Successfully built aca1ca5d565a
+
+        real    1m58.875s
+        user    0m0.053s
+        sys     0m0.020s
+
+Donc 1 minutes et 58 secondes.
+
+Je vais ajouter un fichier grâce à l'instruction **COPY** .
+
+        $ ls
+        Dockerfile  index.html  start.sh
+        $ cat index.html
+        un page fait par moi !
+
+Une fois la page créé je modifie le __Dockerfile__ :
+
+        FROM ubuntu:16.04
+        MAINTAINER Boutry Thomas "thomas.boutry@x3rus.com"
+
+        # install apps 
+        RUN apt-get update && \
+            apt-get install -y apache2 vim
+
+        COPY start.sh /
+        COPY index.html /var/www/html/
+        EXPOSE 80
+
+        CMD ["/start.sh"]
+
+J'ai ajouter la ligne : **COPY index.html /var/www/html/**
+
+Je refait l'image avec un autre nom :
+
+        $ time docker build -t x3rus/apache:ubuntu-cust .
+        Sending build context to Docker daemon 4.096 kB
+        Step 1 : FROM ubuntu:16.04
+         ---> c73a085dc378
+        Step 2 : MAINTAINER Boutry Thomas "thomas.boutry@x3rus.com"
+         ---> Using cache                       <<<<= CACHE !!!
+         ---> c3ffe3712728
+        Step 3 : RUN apt-get update &&     apt-get install -y apache2 vim
+         ---> Using cache                       <<<<= CACHE !!!
+         ---> 8b488091e528
+        Step 4 : COPY start.sh /
+         ---> Using cache                       <<<<= CACHE !!!
+         ---> f012c91050c3
+        Step 5 : COPY index.html /var/www/html/
+         ---> 26f40e9b85c4
+        Removing intermediate container 1dab3315a54b
+        Step 6 : EXPOSE 80
+         ---> Running in 7afdd74ae4cc
+         ---> 8e56ba0155d2
+        Removing intermediate container 7afdd74ae4cc
+        Step 7 : CMD /start.sh
+         ---> Running in dc6fe9034f03
+         ---> d31e49e2c3f5
+         Removing intermediate container dc6fe9034f03
+        Successfully built d31e49e2c3f5
+
+        real    0m6.979s
+        user    0m0.017s
+        sys     0m0.007s
+
+Dans ce cas nous n'avons pris que 0 minutes 6 secondes , car l'ensemble des opérations d'installation des pacquages ne fut pas réalisé mais la couche (__layer__) déjà généré fut utilisée.
+
+En d'autre mot le système a réutilisé les couches précédente augmentant la rapidité de déploiement, vous pouvez ainsi facilement modifier votre image pour des testes de déploiement intégré.
+
+Ce système d'utilisation de couche (__layer__) sera aussi utilisé lors du transfert de votre image vers un **registry** !
+
+Dans le même ordre d'idée, si vous avez une images **jboss** sur votre docker __host__ et que vous avez 20 conteneurs de démarrés, vous n'aurez qu'une image et 20 couches (__layers__) minimal en Lecture/Écriture.
+
+Suite à ce changement voyons le résultat en démarrant le conteneur :
+
+        $ docker run x3rus/apache:ubuntu-cust
+         * Starting Apache httpd web server apache2
+         * AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
+
+Si nous visitons la page : [http://172.17.0.2](http://172.17.0.2).
+
+![page_perso.png](./imgs/page_perso.png)
+
+Nous venons de personnaliser notre images :D.
+
+### <a name="TheImageStartup" /> Script de démarrage contenu dans l'image
+
+Comme vous pouvez le voir à la fin de la définition de l'image il y a l'instruction **CMD \["/start.sh"\]** qui définie le script qui sera utilisé au démarrage. Voici le contenu du fichier __start.sh__
+
+        #!/bin/bash
+        #
+        ###############################################
+
+        /etc/init.d/apache2 start
+
+        tail -f /var/log/apache2/access.log
+
+Comme vous pouvez voir je démarre le service **apache2** par la suite j'utilise la commande **tail -f**. 
+Afin que le conteneur reste disponible il faut que service ne s'arrête PAS et qu'il soit en premier plan. Si je n'avais mis uniquement l'instruction de démarrage **apache2** le service aurez démarré, mais comme il aurait été mis en arrière plan (__daemon__ , __background__) le conteneur se serait arrêté.
+
+Autre avantage, lors de l'utilisation de la commande **docker logs NOM_CONTENEUR** il m'affichera le résultat du fichier __access.log__
+
+# <a name="PrincipeDuConteneur" /> Philosophie lors de l'utilisation du conteneur
 
 
-## <a name="structureImage" /> Structure d'une images
-## <a name="structureConteneurFileSysteme" /> Structure de fichier d'un conteneur
-## <a name="structureConteneurRéseau" /> Réseautique d'un conteneur
+# <a name="orchestration" /> Orchestration des conteneurs
+
+# <a name="structureConteneurRéseau" /> Réseautique d'un conteneur
 
 
 TODO: Présenter la philosophy sous docker
@@ -533,8 +645,8 @@ TODO: Le workflow
 
 Deep down :
 
+# <a name="whyUseDocker" /> Pourquoi utiliser Docker ?
 
-## <a name="whyUseDocker" /> Pourquoi utiliser Docker ?
 
 
 
