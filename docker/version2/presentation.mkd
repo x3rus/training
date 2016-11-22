@@ -647,8 +647,65 @@ Pourquoi ?!?!
 * Permettre de changé un conteneur par un autre , exemple nouvelle base de données tous en conservant les même conteneurs applicatif.
 * Ceci vous permet de réutiliser des images pour d'autre conteneur.
 
+### Application de type service tomcat
+
+Si vous avez une application de contenu dans __Jboss__ ou __Tomcat__ votre application est probablement déjà segmenté selon le service, par exemple :
+
+* /admin : Section de gestion du service applicatif.
+* /api : Pour les appels d'applicatif automatisé.
+* /websocket : Pour les services web service.
+* /urlManagement : Si votre service fait de la gestion d'URL dynamique.
+
+Dans le modèle traditionnel bien souvent nous retrouverons l'ensemble sur la même machine Virtuel sous le même __Tomcat__ regroupant l'ensemble des applications. Dans le modèle **docker** nous essayerons d'avoir 4 conteneurs pour réaliser cette opération , ceci peut être sur la même machine l'un empêche pas l'autre cependant l'ensemble sera isolé l'un de l'autre. 
+Ceci permettra par exemple de réutiliser pour une autre application la section /urlManagement , car elle est autonome . De plus si nous avons une monté en charge d'application satellite réalisant un grand nombre de requête nous pourrons augmenter le nombre de conteneur avec un coût minimal afin d'assurer la monté en charge.
+
+Telle que mentionné précédemment __docker__ peut être exécuter sur un simple ordinateur portable, résultat si la personne ne travail que sur le module d'administration il n'aura que le conteneur d'administration à démarrer . Bon OK  ! Probablement l'API aussi cependant nous limitons le requis à uniquement ce qui doit être en exécution.
+
+Si nous poussons un peu plus la logique et regardons le service de cloud , telle que __AWS__ le coût des petites machines sont très abordable , le prix change significativement lors de l'allocation de ressource. Plusieurs petites machines offre donc une plus grande souplesse pour répondre au demande selon la charge.
+
 ## Ne PAS installé d'application inutile
 
+Ne pas inclure dans le conteneur des applications inutile l'objectif est d'avoir un image minimal au maximum afin d'avoir une taille le plus petit possible afin de faire un déploiement rapidement de l'image. En d'autre mot le strict minimum !
+
+Un exemple d'application inutile :
+* VIM ou __VI__ : Vous n'avez pas à modifier des fichiers dans le conteneur, l'image doit être réalisé de manière approprié . Si vous avez besoin de modifier des fichiers dans le conteneur, vous pouvez éditer sur le docker __host__ puis les copier dans le conteneur désirer.
+* SSH : S'il vous plait n'activez pas le service SSH dans un conteneur à moins que ce soit le rôles du conteneur, vous utiliserez ssh sur le docker __host__ puis établirez la connexion dans le conteneur.
+* ...
+
+Vous comprenez le principe, si vous avez besoin d'une application supplémentaire il est toujours possible de créer une autre image avec comme source l'image original. 
+
+## Évitez la duplication des couches 
+
+Lors de la création d'une images essayez de limiter le nombre de couche (__layer__), voici un exemple à éviter :
+
+        RUN apt-get update
+        RUN apt-get install apache2
+        RUN apt-get install php5
+        RUN apt-get install php5-gd
+        RUN apt-get install php5-mysql
+
+Comme nous avons pu le voir précédemment ceci va générer 5 couches (__layer__) , sachez que docker à un limite de 140 couches (__layers__) possible ... Voici une meilleur façons de l'écrire.
+
+        RUN   apt-get update \
+            && apt-get install apache2 php5 php5-gd php5-mysql 
+
+Dans la version ci-dessus nous n'avons qu'une couche (__layer__) de définie réduisant la gestion requis par docker.
+
+## Le cycle de vie d'une application dockerisé
+
+Voyons un peu le cycle de vie !!!
+
+Les requis !!!
+
+* Une source de l'application , dans le modèle traditionnel nous utiliserons un système de type __Nexus__ pour conserver nos artefacts applicatif , ce dernier reste en place !! Mais nous ajoutons un nouvelle artefact qui est **l'image docker**, donc en plus d'avoir la __release__ applicative contenant l'ensemble de l'application nous aurons un autre __release__ de l'image docker contenant l'application complète .
+    * L'objectif est de fournir un artefact fiable de l'applicatif avec l'ensemble des dépendances requis.
+* L'image utiliser doit être la même sur l'ensemble de la chaîne de développement, Le développeur est le premier à l'utiliser. L'image peut être générer avec l'aide de l'équipe **DevOps**. Le développement , la correction de __bug__ est réalisé avec ce conteneur. Bien entendu ce conteneur est un peu particulier car son but premier est d'assurer l'ensemble des dépendances requis , le contenu applicatif peut être plus dynamique. L'image résultant généré à toutes les nuits ou du moins régulièrement est déployé sur les serveurs d'intégration / QA , ...
+    * L'objectif : Comme l'ensemble des intervenants utilise la même image de l'application , la détection de problématique sera propagé sur l'ensemble des intervenant. Nous nous assurons aussi que l'ensemble est identique peut importe l'environnement déployé.
+* Configuration de l'application , bien entendu tous les environnements ne sont pas identique, si nous nous limitons uniquement au adresses courriel, URL d'accès, etc . Ceci change d'un environnement à l'autre. L'idée est que l'ensemble des ces paramètres dynamiquement modifier lors de l'initialisation du conteneur. Donc même image , même installation , même librairie, même __war__ , même code source , uniquement des variables qui sont modifier.
+
+Voyons une représentation graphique de mon propos :
+
+![docker-workflow.png](./imgs/docker-workflow.png)
 
 # <a name="structureConteneurRéseau" /> Réseautique d'un conteneur
 
