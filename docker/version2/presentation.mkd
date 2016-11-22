@@ -630,6 +630,24 @@ Autre avantage, lors de l'utilisation de la commande **docker logs NOM_CONTENEUR
 
 # <a name="PrincipeDuConteneur" /> Philosophie lors de l'utilisation du conteneur
 
+Maintenant que l'on a vu un peu le fonctionnement de __docker__ nous allons pouvoir parler des principes ou la philosophie de __docker__.
+
+## UN processus par conteneur 
+
+L'objectif n'est pas de recréer une machine Virtuel , nous reprenons le même concept que sous les systèmes GNU/Linux :
+* 1 conteneur fait une opération et il le fait BIEN !
+
+Donc lors de la création d'une images si vous avez une application à 3 partie (web, application, base de données) nous aurons au minimum 3 conteneurs.
+Dans la partie [Orchestration des conteneurs](#orchestration) nous verrons comment les lier ensemble.
+
+Pourquoi ?!?!
+* Pour être en mesure de déployer RAPIDEMENT un conteneur .
+* Assurer un démarrage rapide du conteneur, afin de supporter une monté en charge.
+* Permettre à l'utilisateur de n'utiliser qu'une partie du tous .
+* Permettre de changé un conteneur par un autre , exemple nouvelle base de données tous en conservant les même conteneurs applicatif.
+* Ceci vous permet de réutiliser des images pour d'autre conteneur.
+
+## Ne PAS installé d'application inutile
 
 
 # <a name="structureConteneurRéseau" /> Réseautique d'un conteneur
