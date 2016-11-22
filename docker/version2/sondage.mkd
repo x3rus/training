@@ -1,0 +1,46 @@
+
+Bonjour,
+
+Voici le petit sondage pour la formation __Docker__, toutes les questions sont optionnels SAUF le nom pour l'inscription.
+Je vous demande de fournir votre nom ceci servira pour l'envoie de l'invitation à la formation, j'apprécierai que vous répondiez au 4 questions optionnels afin que je puisse adapter la formation pour nos / vos besoins. Libre à vous d'en faire une formation participative :D.
+
+La formation devrait avoir le lieu Vendredi 9 Décembre de 12:00 à 13:00 et le Vendredi 16 Décembre de 12:00 à 13:00.
+
+Une fois le formulaire remplie je vous donnerez le lien vers le matériel de la formation.
+
+# Nom du participant pour la formation (sera utilisé pour l'envoie de l'invitation)
+
+# Avez-vous déjà une expérience avec Docker ?
+
+* Aucune idée du produit
+* juste entendu le nom
+* J'ai fait quelque teste sur ma machine
+* J'ai un environnement de développement interne
+* Nous l'utiliser sur l'ensemble de la chaine de développement 
+
+# Vous vous attendez à quoi pour la formation docker ?
+
+* Les principes de bases .
+* L'utilisation simple de docker pour un environnement de développement
+* Plus d'information sur la partie réseaux.
+* La gestion des conteneurs et des images.
+* Les problèmes rencontré lors de la mise en production .
+
+# Que désirez vous conteneurisez ?
+
+* Une application java 
+* Isoler des applications privatives auxquelles on ne peut pas faire confiance ;-)
+* Des applications 3 niveau ( apache , application , base de donnée )
+* Des applications légacy 
+* Autre
+
+# suggestion de contenu 
+
+
+MERCI d'avoir répondu au questionnaire , pour les personnes qui ont de la difficulté à attendre voici le lien vers le site de formation des cours finalisé:
+
+http://moodle.x3rus.com  ainsi que les vidéos https://www.youtube.com/c/thomasboutry
+
+Pour la formation docker en cours de rédaction : https://github.com/x3rus/training/blob/master/docker/version2/presentation.mkd
+
+Bonne journée.

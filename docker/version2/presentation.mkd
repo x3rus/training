@@ -631,10 +631,11 @@ Autre avantage, lors de l'utilisation de la commande **docker logs NOM_CONTENEUR
 # <a name="PrincipeDuConteneur" /> Philosophie lors de l'utilisation du conteneur
 
 
-# <a name="orchestration" /> Orchestration des conteneurs
 
 # <a name="structureConteneurRéseau" /> Réseautique d'un conteneur
 
+
+# <a name="orchestration" /> Orchestration des conteneurs
 
 TODO: Présenter la philosophy sous docker
 TODO: Pourquoi Docker 
