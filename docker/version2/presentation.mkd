@@ -604,6 +604,7 @@ Lançons la "compilation",  le "__build__" pendant les explications .
         $ time docker build -t x3rus/apache:demo .
 
 Comme vous pouvez le lire je suis partie d'une image **officiel** de Ubuntu LTS (16.04) par la suite :
+
 * j'installe l'application **apache2** ET **vim**
 * Je copie le fichier **start.sh** dans le conteneur à la racine
 * J'indique que lors du démarrage du conteneur il doit exécuter le script __start.sh__
@@ -754,8 +755,65 @@ Dans la version ci-dessus nous n'avons qu'une couche (__layer__) de définie ré
 
 # <a name="structureConteneurRéseau" /> Réseautique d'un conteneur
 
+J'avais mis volontairement de coté l'aspect réseau des conteneurs encore une fois pour charger trop la formation avec un grand nombre de concept, cependant un conteneur tous comme un système sans le réseau c'est moins intéressant ! 
+
+J'avais mentionné un peu plus tôt un point important :
+
+* **chaque conteneur à son stack ip**
+
+Voyons la gestion du réseau sur le docker __host__, pour information je démontre la structure du réseau définie par défaut avec docker , cependant il est possible de créer d'autre réseau. Nous verrons justement cette possibilité, lors de la deuxième séance pour les problèmes de mise en production de la solution.
+
+Pour les personnes désirant avoir plus de connaissance sur la réseautique j'ai une vidéo disponible sur le sujet : TODO ajouter videos network.
+
+L'ensemble des conteneurs ont leur propre réseau voici une représentation graphique :
+
+![docker-network-diagramme.png](./imgs/docker-network-diagramme.png)
+
+Partons du bas et remontons ! 
+
+* 192.168.42.45 (**eth0**) : Ceci est l'adresse IP du docker __host__ dans le réseau interne, ceci est donc l'adresse IP du serveur. 
+* 172.17.0.1 (**docker0**) : Ceci est l'adresse IP de la passerelle (__gateway__) pour passer dans le réseau interne de docker
+* 172.17.0.0/16 : Ceci est le réseau dédié pour les conteneurs, docker vient avec un service de __dhcp__ afin d'attribuer des adresses IP au conteneur.
+* **veth\*** : Représente les interfaces pour les conteneurs vue depuis le docker __host__ , ces derniers sont assigné par la suite au conteneur sous forme d'__eth0__.
+* 172.17.0.4/32 et 172.17.0.6/32 : Ceci est 2 adresses de conteneur , dans le conteneur ceci est attribué à une interface réseau (__eth0__) connu UNIQUEMENT du conteneur qui est en exécution. Dans le cas présent ceci est 2 conteneur __apache__.
+
+Regardons la table de routage sur le système docker __host__ :
+
+        $ ip route 
+        default via 192.168.42.1 dev wlp3s0 proto static metric 600
+        172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1 linkdown
+        192.168.42.0/24 dev wlp3s0 proto kernel scope link src 192.168.42.245 metric 600
 
 
+Quand j'ai communiqué avec le conteneur apache pour visualiser la page par défaut voici ce qui été contenu dans le logs d'accès d'apache :
+
+        172.17.0.1 - - [24/Nov/2016:22:00:45 +0000] "GET / HTTP/1.1" 304 180 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.0"
+        172.17.0.1 - - [24/Nov/2016:22:00:45 +0000] "GET /favicon.ico HTTP/1.1" 404 501 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.0"
+
+Comme vous pouvez le voir mon adresse IP de ma machine est 192.168.42.45, mais les des requêtes au conteneur nous voyons l'adresse IP de la passerelle du docker __host__.
+
+
+## <a name="NetworkCommFromConteneur" /> Processus de communication avec l'extérieur 
+
+Voyons maintenant le processus de communication avec l'externe quand ceci provient du conteneur, car il est fort probable que votre conteneur doive communiquer avec le monde extérieur !!
+
+Vous allez voir ils n'ont pas réinventé la roue mais il est important de le comprendre, surtout si vous mettez votre conteneur en production dans une __DMZ__ (réseau à accès limité).
+Une petit image pour simplifier le dialogue :
+
+![docker-network-NAT-diagramme.png](./imgs/docker-network-NAT-diagramme.png)
+
+Pour les administrateurs réseaux ou les personnes qui ont suivit ma formation réseau ( ;-) ) pas de problème le mot **NAT** est présent, ils ont tous compris ... :P. Pour les autres mortel prenons quelques minutes pour parler de __NAT__. 
+
+Lors de l'initialisation du service __docker.engine__ le système à configurer le service de réseau de la machine sous GNU/Linux **iptables** , afin de réaliser de la manipulation sur les paquets  réseaux. 
+
+Dans l'exemple ci-dessus:
+
+* la machine **apache** (172.17.0.6) , désire communiquer avec une IP de ubuntu , probablement pour l'installation d'un logiciel
+* ceci est transmis à la passerelle par défaut du conteneur (172.17.0.1) **docker0**.
+* Ce dernier regarde où la communication doit être transmis , si la communication est à l'extérieur , donc PAS inter-conteneur il modifie l'adresse IP source de provenance afin que soit transmis l'adresse IP de la machine du conteneur.
+* Lors du retour des paquets depuis le serveur ubuntu (91.189.89.115) le système de **NAT** a conservé une table de correspondance et refait le changement d'adresse IP mais cette fois sur la destination afin que ce soit transmis au conteneur qui a initialisé la communication :D
+
+**MAGIE** !!
 
 # <a name="orchestration" /> Orchestration des conteneurs
 
