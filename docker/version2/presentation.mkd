@@ -7,6 +7,31 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Index
 
+* [ Introduction](#Intro)
+       * [ Qu'est ce que Docker ?](#whatIsDocker)
+           * [ Objectif de Docker](#Objectif)
+           * [ La différence entre une Machine Virtuel (VM) et docker](#docker_vs_vm)
+       * [ Architecture de Docker ](#Architecture)
+           * [ Conteneur est au commencement une images](#ContainerAndImage)
+           * [ Composante de l'architecture ](#Composante)
+* [ Philosophie lors de l'utilisation du conteneur](#PrincipeDuConteneur)
+       * [ UN processus par conteneur ](#OneProcessByconteneur)
+           * [ Application de type service tomcat](#exampletomcat)
+       * [ Ne PAS installé d'application inutile](#NosoftUseless)
+       * [ Le cycle de vie d'une application dockerisé](#conteneurLife)
+       * [ Communication entre les conteneurs](#ComBetweenContener)
+* [ Analysons un peu le fonctionnement ](#DevilIsInDetail)
+       * [ Commande de base d'utilisation de docker.](#cmdDeBaseDeDocker)
+       * [ Le Conteneur](#TheConteneur)
+           * [ Couche de système de fichier d'un conteneur](#TheConteneurLayer)
+           * [ Nommé le conteneur donc la couche d'écriture](#NameWritableLayer)
+           * [ Utilisation de volume pour le conteneur](#UtilisationVolConteneur)
+       * [ L'image](#TheImage)
+           * [ Couche de système de fichier d'une image](#TheImageLayer)
+           * [ Script de démarrage contenu dans l'image](#TheImageStartup)
+       * [ Évitez la duplication des couches ](#reduceLayer)
+
+
 # <a name="Intro" /> Introduction
 
 **Docker** est un logiciel libre qui automatise le déploiement d'applications dans des conteneurs logiciels. Selon la firme de recherche sur l'industrie __451 Research__, « Docker est un outil qui peut empaqueter une application et ses dépendances dans un conteneur isolé, qui pourra être exécuté sur n'importe quel serveur Linux ». Ceci permet d'étendre la flexibilité et la portabilité d’exécution d'une application, que ce soit sur la machine locale, un __cloud__ privé ou public, une machine nue, etc. 
@@ -17,12 +42,12 @@ Ceci est une description très générale nous allons voir les détails sous peu
 
 Docker vous offre la possibilité d'isoler votre application du reste du système, cette isolation est réalisé grâce au fonctionnalité du noyaux (kernel) du système d'exploitation (pour GNU/Linux : __cgroup__ et __namespace__). Nous parlons d'isolation au niveau :
 
-* **Couche réseau** : Chaque conteneur à son propre __stack IP__, chaque conteneur à son propre adresse IP.
-* **Couche applicative** : Les applications dans un conteneur ne voit que ce qui est contenu dans ce dernier, tous ce qui est à l'extérieure est inexistant.
+* **Couche réseau** : Chaque conteneur à son propre __stack IP__, chaque conteneur à sa propre adresse IP.
+* **Couche applicative** : Les applications dans un conteneur ne voient que ce qui est contenu dans ce dernier, tous ce qui est à l'extérieure est inexistant.
 
-Vous avez la possibilité de limité l'utilisation des ressources (CPU, I/O, réseaux , ...) grâce au fonctionnalité du noyau. 
+Vous avez la possibilité de limité l'utilisation des ressources (CPU, I/O, réseaux , ...) grâce aux fonctionnalités du noyau. 
 
-Pourquoi l'arrivée de Docker ? À la lecture de l'énoncé ci-dessus ceci ressemble à une Machine Virtuel, les solutions de visualisation ne manque pas !
+Pourquoi l'arrivée de Docker ? À la lecture de l'énoncé ci-dessus ceci ressemble à une Machine Virtuel, les solutions de virtualisation ne manque pas !
 Ceci est souvent l'analogie réalisée, mais un conteneur n'est PAS une machine virtuel, voyons les problématiques 
 
 ### <a name="Objectif" /> Objectif de Docker
@@ -33,7 +58,7 @@ L'objectif de Docker est d'offrir des conteneurs applicatif facile à déployer 
 * **Avec Docker vous pouvez séparer votre application de l'infrastructure et traiter cette dernier comme une application**
 * Docker vous permet d'exécuter n'importe quelle application de manière sécuritaire dans un conteneur.
 * L'isolation et la sécurité vous offre la possibilité d'exécuter plusieurs conteneur sur la même machine.
-* L'absence __d'Hypervisor__ vous permet de tiré une plus grande partie du matériel, car il n'y a pas de charge additionnel pour la visualisation.
+* L'absence __d'Hypervisor__ vous permet de tiré une plus grande partie du matériel, car il n'y a pas de charge additionnel pour la virtualisation.
 * La distribution et les options de transfert de conteneurs vous permet d'avoir le même environnement pour l'ensemble des équipes (__Dev__, __QA__, ...)
 
 
@@ -47,7 +72,7 @@ On dit souvent une image vos mille mot donc commençons par la représentation g
     * Composante matériel , en d'autre mot la machine physique
     * Un système d'exploitation (Linux, Windows , ...)
 * Une Machine Virtuel
-    * Un système __d'hypervisor__ , __ESX__, __KVM__, __Xen__ , ... Cette couche permettra l'émulation d'une __CPU__, mémoire, carte réseau , ...
+    * Un système __d'hypervisor__ , __ESX__, __KVM__, __Xen__ , ... Cette couche permettra l'émulation de :__CPU__, mémoire, carte réseau , ...
     * Un système d'exploitation potentiellement différent du système d'exploitation native sur la machine
     * Installation des librairies et de l'application contenu dans la machine virtuel
 * Un Conteneur
@@ -230,17 +255,19 @@ Ceci est vraiment intéressant pour valider des applications, vous voyez une app
 
 # <a name="PrincipeDuConteneur" /> Philosophie lors de l'utilisation du conteneur
 
-L'important est de comprendre  les principes et la philosophie du produit , c'est un nouveau paradigme , comme la visualisation fut une nouvelle manière de gérer un parc informatique.
+L'important est de comprendre  les principes et la philosophie du produit , c'est un nouveau paradigme , comme la virtualisation fut une nouvelle manière de gérer un parc informatique.
 
 ## <a name="OneProcessByconteneur" /> UN processus par conteneur 
 
 L'objectif n'est pas de recréer une machine Virtuel , nous reprenons le même concept que sous les systèmes GNU/Linux :
-* 1 conteneur fait une opération et il le fait BIEN !
+
+* 1 conteneur fait **une opération** et il le fait BIEN !
 
 Donc lors de la création d'une images si vous avez une application à 3 partie (web, application, base de données) nous aurons au minimum 3 conteneurs.
 Dans la partie [Orchestration des conteneurs](#orchestration) nous verrons comment les lier ensemble.
 
 Pourquoi ?!?!
+
 * Pour être en mesure de déployer RAPIDEMENT un conteneur .
 * Assurer un démarrage rapide du conteneur, afin de supporter une monté en charge.
 * Permettre à l'utilisateur de n'utiliser qu'une partie du tous .
@@ -249,7 +276,7 @@ Pourquoi ?!?!
 
 ### <a name="exampletomcat" /> Application de type service tomcat
 
-Si vous avez une application de contenu dans __Jboss__ ou __Tomcat__ votre application est probablement déjà segmenté selon le service, par exemple :
+Si vous avez une application contenu dans __Jboss__ ou __Tomcat__ votre application est probablement déjà segmenté selon le service, par exemple :
 
 * /admin : Section de gestion du service applicatif.
 * /api : Pour les appels d'applicatif automatisé.
@@ -268,6 +295,7 @@ Si nous poussons un peu plus la logique et regardons le service de cloud , telle
 Ne pas inclure dans le conteneur des applications inutile l'objectif est d'avoir un image minimal au maximum afin d'avoir une taille le plus petit possible afin de faire un déploiement rapidement de l'image. En d'autre mot le strict minimum !
 
 Un exemple d'application inutile :
+
 * VIM ou __VI__ : Vous n'avez pas à modifier des fichiers dans le conteneur, l'image doit être réalisé de manière approprié . Si vous avez besoin de modifier des fichiers dans le conteneur, vous pouvez éditer sur le docker __host__ puis les copier dans le conteneur désirer.
 * SSH : S'il vous plait n'activez pas le service SSH dans un conteneur à moins que ce soit le rôles du conteneur, vous utiliserez ssh sur le docker __host__ puis établirez la connexion dans le conteneur.
 * ...
@@ -280,7 +308,7 @@ Voyons un peu le cycle de vie !!!
 
 Les requis !!!
 
-* Une source de l'application , dans le modèle traditionnel nous utiliserons un système de type __Nexus__ pour conserver nos artefacts applicatif , ce dernier reste en place !! Mais nous ajoutons un nouvelle artefact qui est **l'image docker**, donc en plus d'avoir la __release__ applicative contenant l'ensemble de l'application nous aurons un autre __release__ de l'image docker contenant l'application complète .
+* **UNE source** de l'application , dans le modèle traditionnel nous utiliserons un système de type __Nexus__ pour conserver nos artefacts applicatif , ce dernier reste en place !! Mais nous ajoutons un nouvelle artefact qui est **l'image docker**, donc en plus d'avoir la __release__ applicative contenant l'ensemble de l'application nous aurons un autre __release__ de l'image docker contenant l'application complète .
     * L'objectif est de fournir un artefact fiable de l'applicatif avec l'ensemble des dépendances requis.
 * L'image utiliser doit être la même sur l'ensemble de la chaîne de développement, Le développeur est le premier à l'utiliser. L'image peut être générer avec l'aide de l'équipe **DevOps**. Le développement , la correction de __bug__ est réalisé avec ce conteneur. Bien entendu ce conteneur est un peu particulier car son but premier est d'assurer l'ensemble des dépendances requis , le contenu applicatif peut être plus dynamique. L'image résultant généré à toutes les nuits ou du moins régulièrement est déployé sur les serveurs d'intégration / QA , ...
     * L'objectif : Comme l'ensemble des intervenants utilise la même image de l'application , la détection de problématique sera propagé sur l'ensemble des intervenant. Nous nous assurons aussi que l'ensemble est identique peut importe l'environnement déployé.
@@ -290,13 +318,15 @@ Voyons une représentation graphique de mon propos :
 
 ![docker-workflow.png](./imgs/docker-workflow.png)
 
-Éclaircissement sur la question de la configuration lors de l'exécution , nous l'avons vu précédemment lors de l'initialisation du conteneur __mysql__ , nous avions définie lors de l'initialisation le mot de passe de l'administrateur grâce à la variable **MYSQL_ROOT_PASSWORD**, exemple de la commande :
+Éclaircissement sur la question de la configuration lors de l'exécution , nous l'avons vu précédemment lors de l'initialisation du conteneur __mysql__ , nous avions définie lors de l'initialisation le mot de passe de l'administrateur grâce à la variable **MYSQL\_ROOT\_PASSWORD**, exemple de la commande :
 
             $ docker run -e MYSQL_ROOT_PASSWORD=super   mysql:5.5
 
 ## <a name="ComBetweenContener" /> Communication entre les conteneurs
 
-Les conteneurs peuvent communiquer entre eux via : ![docker-turtles-communication.jpg](./imgs/docker-turtles-communication.jpg)
+![docker-turtles-communication.jpg](./imgs/docker-turtles-communication-small.jpg)
+
+Les conteneurs peuvent communiquer entre eux via : 
 
 * Le protocole réseaux : mode privilégier, via des API ceci est donc indépendant du système docker et utilise des protocoles connu.
 * Unix socket : Si une communication réseau extérieur n'est pas requis un unix socket peut très bien faire le travail.
@@ -307,6 +337,7 @@ Les conteneurs peuvent communiquer entre eux via : ![docker-turtles-communicatio
 Allons voir un peu le fonctionnement afin de saisir les possibilités, les limitations, les points à prendre en considération. En comprenant le fonctionnement le système vous comprendrez pourquoi il faut manipuler les images ou les conteneurs. L'objectif de cette section n'est pas de vous dire comment utiliser Docker, mais vous expliquer comment il fonctionne. À vous par la suite de trouver votre manière :D !
 
 Voici ma démarche qui sera préconisé :
+
 * Clarification des commandes de base de docker afin de démystifier les commandes que j'utilise.
 * Utilisation d'un conteneur apache, afin de présenter les couches (__layers__) d'un conteneur.
 * Personnalisation d'une images pour nos besoins.
@@ -364,7 +395,7 @@ Si vous avez déjà eu un système GNU/Linux en lecture seul, vous pouvez tous s
 
 Comme vous pouvez le voir l'image de base __x3rus/apache__ est présent au début, avec l'aide du système __d'unionfs__, ce dernier permet d'unir des systèmes de fichier lors de l'initialisation du conteneur, donc d'avoir la couche d'écriture sur le dessus. 
 
-Bien entendu si vous désirez avoir un site web, il est peu probable que vous désirez avec uniquement la page par défaut d'Ubuntu :P. Afin de bien démontré cette couche (__layer__) nous allons modifier la page web, contenu dans __/var/www/html/__
+Bien entendu si vous désirez avoir un site web, il est peu probable que vous ne  désirez pas avoir uniquement la page par défaut d'Ubuntu :P. Afin de bien démontré cette couche (__layer__) nous allons modifier la page web, contenu dans __/var/www/html/__
 
 Pour ce faire je vais aller dans le conteneur directement et éditer la page d'index tous simplement.
 
@@ -392,6 +423,7 @@ Même adresse IP , retournons à l'URL : [http://172.17.0.2/](http://172.17.0.2/
 
 * Si nous reprenons la représentation du conteneur préalablement affiché:
     Lors de l'initialisation du conteneur la couche (__RW__) supérieur est ajoutée, lors de l'arrêt du conteneur la couche supérieur est par défaut supprimé.
+
     ![conteneur-x3rus-apache.png](./imgs/conteneur-x3rus-apache.png)
 
 * **Avantage** :
@@ -408,10 +440,10 @@ Bon là vous vous dites , finalement c'est **NUL** docker !!
 Mise en contexte historique de la création de docker, ceci vous aidera probablement à comprendre la logique en arrière de cette configuration.
 Le système docker fut développé pour la mise en place de **micro-services** , l'objectif original était de pouvoir __scaler__  rapidement un système , lors d'une monté en charge. 
 
-Exemple un service de ventes de tickets pour des spectacles, en temps normale un 10 serveurs sont suffisant , mais voilà 2 fois par année des gros spectacle arrives. Que faire acheter 10 autres serveurs pour une utilisation de 2 semaines par années ?!?!? 
+Exemple un service de ventes de tickets pour des spectacles, en temps normale 10 serveurs sont suffisant , mais voilà 2 fois par année des gros spectacle arrives. Que faire acheter 10 autres serveurs pour une utilisation de 2 semaines par années ?!?!? 
 L'idée fut d'avoir un mécanisme simple pour déployé de web service qui ne conserve pas de donnée localement mais se réfère à une base de donnée pour faire le traitement. Avec ce mécanisme, grâce aux images l'ensemble des déploiement sont toujours identique, car tous est inclut dans le conteneur , lors de la suppression tous est effacé par de résidus.
 
-Ça c'était au début :D, bien entendu avec la monté en popularité de __Docker__ de nouveau besoin sont arrivé, donc la communauté a demandée ces nouvelles fonctionnalité. Nous allons voir maintenant ces mécanisme qui nous permettra de conserver les données.
+Ça c'était au début :D, bien entendu avec la monté en popularité de __Docker__ de nouveau besoin sont arrivés, donc la communauté a demandée ces nouvelles fonctionnalités. Nous allons voir maintenant ces mécanisme qui nous permettra de conserver les données.
 
 ### <a name="NameWritableLayer" /> Nommé le conteneur donc la couche d'écriture
 
