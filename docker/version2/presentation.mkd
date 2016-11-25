@@ -793,6 +793,12 @@ Quand j'ai communiqué avec le conteneur apache pour visualiser la page par déf
 Comme vous pouvez le voir mon adresse IP de ma machine est 192.168.42.45, mais les des requêtes au conteneur nous voyons l'adresse IP de la passerelle du docker __host__.
 
 
+Le routage affiché plus haut n'est connu QUE de la machine docker __host__ en d'autre mot l'ensemble du réseau 192.168.42.0/24 ne sais pas comment communiquer avec le segment 172.17.0.0/16 ! Cette information n'est pas transmise sur l'ensemble des routeurs du réseaux. 
+
+Voici une schéma représentant le propos : 
+
+![network-docker-in-lan.png](./imgs/network-docker-in-lan.png)
+
 ## <a name="NetworkCommFromConteneur" /> Processus de communication avec l'extérieur 
 
 Voyons maintenant le processus de communication avec l'externe quand ceci provient du conteneur, car il est fort probable que votre conteneur doive communiquer avec le monde extérieur !!
@@ -815,18 +821,19 @@ Dans l'exemple ci-dessus:
 
 **MAGIE** !!
 
-# <a name="orchestration" /> Orchestration des conteneurs
+## <a name="NetworkCommToConteneur" /> Processus de communication vers les conteneurs
 
-TODO: Présenter la philosophy sous docker
-TODO: Pourquoi Docker 
-    * Faciliter de réaliser des testes d'application sans polluer l'environnement de travail
-    * Conteneur pré-configurer et fonctionnel peut importe le lieu.
-    *
-TODO: Le workflow
+Maintenant que l'on sait comment les communications sortent du conteneur et surtout sont en mesure de revenir une fois la communication initié. Nous allons pouvoir nous attaquer aux communications vers un conteneur.
 
-Deep down :
+Telle que mentionné précédemment les adresses IP des conteneurs ne sont pas directement disponible depuis le reste du réseau, donc si le client sur la machine 192.168.42.10 essaye de communiquer avec 172.17.0.6 il recevra le message **No route to host**, impossible d'accéder à la machine.
 
-# <a name="whyUseDocker" /> Pourquoi utiliser Docker ?
+Il y a deux possibilité de configuration , la mise en place d'un processus __docker-proxy__ ou la configuration **port forward** au niveau de la couche réseau.
+
+### <a name="dockerProxyConteneur" /> Utilisation du processus docker proxy
+### <a name="PortForwardConteneur" /> Utilisation du système iptables pour faire un Port Forward
+
+
+# <a name="ConclusionwhyUseDocker" /> Conclusion pourquoi utiliser Docker ?
 
 
 

@@ -1,0 +1,17 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+# Index
+
+# <a name="orchestration" /> Orchestration des conteneurs
+
+TODO: Présenter la philosophy sous docker
+TODO: Pourquoi Docker 
+    * Faciliter de réaliser des testes d'application sans polluer l'environnement de travail
+    * Conteneur pré-configurer et fonctionnel peut importe le lieu.
+    *
+TODO: Le workflow
+
+
