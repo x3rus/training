@@ -829,8 +829,59 @@ Telle que mentionné précédemment les adresses IP des conteneurs ne sont pas d
 
 Il y a deux possibilité de configuration , la mise en place d'un processus __docker-proxy__ ou la configuration **port forward** au niveau de la couche réseau.
 
+Voyons les 2 options :), dans les 2 cas l'activation est la même :D , donc voyons l'activation du port 8080 sur le docker __host__ qui sera redirigé vers le port 80 dans le conteneur . 
+
+Voici la représentation graphique du flux que nous désirons avoir ( je sais que vous commencez à prendre goût à mes dessins :D )
+
+![docker-network-port-fw-diagramme.png](./imsg/docker-network-port-fw-diagramme.png)
+
+Juste pour mettre des mots : 
+
+* **192.168.42.45:8080** : Le port 8080 sur la machine docker __host__ recevra les requêtes , le flux réseaux
+* **172.17.0.6:80** : Recevra le flux réseau et y répondra :D.
+
+Voici l'instruction docker __host__ pour démarrer le conteneur avec cette configuration :
+
+        $ docker run --publish=8080:80  x3rus/apache:ubuntu-cust
+
+
 ### <a name="dockerProxyConteneur" /> Utilisation du processus docker proxy
+
+L'utilisation du système de docker __proxy__, je crois que ceci fut le premier mode disponible avec docker. Le principe est simple , il y a un processus __docker__ qui écoute sur le port définie dans notre cas le port 8080 et retransmet le flux vers la destination spécifié.
+Nous pouvons voir le processus avec l'instruction **netstat** ou **ss** .
+
+        $ sudo ss -lntp
+        State      Recv-Q Send-Q         Local Address:Port         Peer Address:Port
+        LISTEN     0      128            :::8080                    :::*                   users:(("docker-proxy",pid=1846,fd=4))
+
+        $ ps auxw | grep docker-pro
+        root   1846  0.0  0.0 181824  2440 ?  Sl   16:44   0:00 /usr/sbin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 8080 -container-ip 172.17.0.2 -container-port 80
+
+Comme vous pouvez le constater le processus dans la situation présenter écoute sur l'ensemble des adresses IP sur le port 8080 et fait la redirection vers 172.17.0.2 mon conteneur apache vers le port 80.
+
 ### <a name="PortForwardConteneur" /> Utilisation du système iptables pour faire un Port Forward
+
+L'autre méthode est d'utiliser le mode de redirection de port nativement disponible dans le noyau Linux, avec le service **iptables**.
+
+Toujours suite avec la commande __docker run --publish=8080:80  x3rus/apache:ubuntu-cust__ docker a automatiquement configurer le 2 mode.
+Regardons la configuration de __iptables__ actuellement active :
+
+        $ sudo iptables -L -n -t nat -v
+        Chain PREROUTING (policy ACCEPT 26 packets, 2398 bytes)
+         pkts bytes target     prot opt in              out     source               destination
+           1    52 DOCKER     all  --  *                *       0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL
+        [... OUTPUT COUPÉ .. ]
+        Chain POSTROUTING (policy ACCEPT 59 packets, 3733 bytes)
+        pkts bytes target     prot opt in               out     source               destination
+          0     0 MASQUERADE  all  --  *                !docker0  172.17.0.0/16        0.0.0.0/0
+        Chain DOCKER (2 references)
+         pkts bytes target     prot opt in              out     source         destination
+           0     0 RETURN     all  --  docker0          *       0.0.0.0/0      0.0.0.0/0
+           0     0 DNAT       tcp  --  !docker0         *       0.0.0.0/0      0.0.0.0/0     tcp dpt:8080 to:172.17.0.2:80
+
+
+Bon l'important c'est la dernière ligne, j'ai mis l'ensemble mais la ligne **DNAT** fait l'ensemble du travail.
+À ce niveau uniquement le __kernel__ travaille aucun processus ne prend la tâche de redirection.
 
 
 # <a name="ConclusionwhyUseDocker" /> Conclusion pourquoi utiliser Docker ?
