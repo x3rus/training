@@ -5,13 +5,28 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Index
 
-# <a name="orchestration" /> Orchestration des conteneurs
+# <a name="context" /> Mise en contexte 
 
-TODO: Présenter la philosophy sous docker
-TODO: Pourquoi Docker 
-    * Faciliter de réaliser des testes d'application sans polluer l'environnement de travail
-    * Conteneur pré-configurer et fonctionnel peut importe le lieu.
-    *
-TODO: Le workflow
+Nous avons vu précédemment les grandes lignes de l'utilisation de docker
+
+# <a name="conteneurPropre" /> Création des conteneurs 
+## <a name="ConteneurCommité" /> Création d'un conteneur avec une image "moins belle"
+## <a name="UseRegistry" /> Utilisation du registry
+## <a name="ConteneurCentraliser" /> Création du conteneur de BD centraliser.
+# <a name="orchestration" /> Orchestration des conteneurs
+## <a name="ChangeVarVol" /> Organisation d'un changement de variable ou volume
+## <a name="FileStructure" /> Organisation des fichiers et volumes
+# <a name="NetworkStructure" /> Mise en place de réseau dédié à docker
+## <a name="Redirect_port" /> Redirection des ports
+### <a name="Redirect_port_srcip" /> Détection des ip d'origine
+### <a name="Redictect_port_Http" /> Conteneur http utilisation des port 80/443
+### <a name="ChallangeDynIP" /> Le défis des adresse IP dynamique
+## <a name="ConteneurVPNonly" /> Utilisation de conteneur exclusif au VPN
+# <a name="noOverHead" /> Docker n'ajoute pas d'overheard, oui MAIS ...
+
+# <a name="ProbHDFull" /> Problème lors d'un disque dur remplie
+# <a name="OptDocker" /> Optimisation de Dockers
+## <a name="OptDockerFS" /> Assignation d'un Volume Groupe
+## <a name="MonitoringDck" /> Monitoring du système Docker
 
 

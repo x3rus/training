@@ -1,0 +1,133 @@
+
+# Utilisation du vimrc
+
+## Activation du système de gestion des modules 
+
+set rtp+=~/.vim/bundle/vundle/
+call vundle#rc()
+
+" ############################ "
+" Vundle system de gestion de plugin 
+" ############################ "
+" let Vundle manage Vundle
+Bundle 'gmarik/vundle'
+
+## Activation de l'auto Indexation 
+
+" Desactivation de l'auto-Indentation
+filetype plugin indent on
+
+
+## Mise en place de power line pour avoir une ligne plus belle en bas :P :
+
+" ############################  "
+" powerline - Status bar 
+" ############################  "
+Bundle 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
+
+" Powerline setup
+" fix font error : 
+" $ wget https://github.com/powerline/powerline/raw/develop/font/PowerlineSymbols.otf
+" $ wget https://github.com/powerline/powerline/raw/develop/font/10-powerline-symbols.conf
+" $ mv PowerlineSymbols.otf ~/.fonts/
+" $ fc-cache -vf ~/.fonts/
+" $ mv 10-powerline-symbols.conf ~/.config/fontconfig/conf.d/
+set guifont=DejaVu\ Sans\ Mono
+set laststatus=2
+
+" Ajout de la configuration pour la coloration de la ligne 
+" ref: http://choorucode.com/2013/02/17/how-to-install-and-use-vim-powerline-plugin-for-vim/
+set t_Co=256
+let g:Powerline_symbols = "fancy"
+
+## Module pour Git :
+
+" ############################  "
+" Vim Fugitive - Git module 
+" ############################  "
+Bundle 'tpope/vim-fugitive'
+
+## Module pour parcourir les fichier
+
+" ############################  "
+" NerdTree - File Browser 
+" ############################  "
+
+Bundle 'scrooloose/nerdtree'
+
+" Press F2 in vim and it will take you to the current working directory
+map <F2> :NERDTreeToggle<CR>
+
+
+## Utilisation des tabs
+
+" ########################### "
+" Utilisation des TAB - Besoin de VIM 7 "
+" ########################### "
+
+" Press F4 in vim to Open New TAB
+map <F4> :tabnew<CR>
+nnoremap <F3> :tabprevious<CR>
+nnoremap <F5>   :tabnext<CR>
+
+## Plugin pour puppet 
+
+" ############################ "
+" puppet-vim                   " 
+" ############################ "
+
+Bundle "puppetlabs/puppet-syntax-vim"
+au BufRead,BufNewFile *.pp              set filetype=puppet
+
+" Ajout de la validation syntaxque 
+let g:syntastic_puppet_checkers=['puppetlint']
+
+## Avoir Grep dans vim 
+
+" ############################ "
+" grep
+" ############################ "
+Bundle 'vim-scripts/grep.vim'
+
+## TODO listes
+
+" ############################ "
+" Taklist
+" ############################ "
+Bundle 'vim-scripts/TaskList.vim'
+" map <leader>t <Plug>TaskList
+
+
+## Markdown syntax Higlight
+
+" ############################
+" Markdown
+" ############################
+
+Bundle 'godlygeek/tabular'
+Bundle 'plasticboy/vim-markdown'
+
+## Révision dans vim
+
+" ############################ "
+" Revision History             "
+" ############################ "
+
+Bundle 'sjl/gundo.vim.git'
+
+map <leader>g :GundoToggle<CR>
+
+## Theme
+
+" Full contraste interaissant !!
+Bundle 'vim-scripts/miko'
+colorscheme miko
+
+
+## Auto completion
+
+" ############################
+" YouComplete Me 
+" ############################
+" TODO : lire sur https://github.com/Valloric/YouCompleteMe
+" Bundle 'Valloric/YouCompleteMe'

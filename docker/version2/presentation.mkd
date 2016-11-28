@@ -30,6 +30,13 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
            * [ Couche de système de fichier d'une image](#TheImageLayer)
            * [ Script de démarrage contenu dans l'image](#TheImageStartup)
        * [ Évitez la duplication des couches ](#reduceLayer)
+* [ Réseautique d'un conteneur](#structureConteneurRéseau)
+       * [ Processus de communication avec l'extérieur ](#NetworkCommFromConteneur)
+       * [ Processus de communication vers les conteneurs](#NetworkCommToConteneur)
+           * [ Utilisation du processus docker proxy](#dockerProxyConteneur)
+           * [ Utilisation du système iptables pour faire un Port Forward](#PortForwardConteneur)
+* [ Conclusion pourquoi utiliser Docker ?](#ConclusionwhyUseDocker)
+* [ Référence ](#Référence)
 
 
 # <a name="Intro" /> Introduction
@@ -907,6 +914,19 @@ En conclusion de cette présentation **pourquoi utiliser Docker** ? Bien entendu
     * La mise en plus de testes unitaire plus simple car ceci peut ce faire lors de la livraison de __Release Candidate__ automatiquement , vous évitant de perdre du temps.
     * Et plus , mais je ne suis pas un on testeur :D. 
 * **Opérateur / Sysadmin** :
-    *  TODO  
+    * En utilisant docker pour le déploiement applicatif sur l'ensemble de la chaine de production, l'application est valider tous au long de son utilisation. Il ne vous reste plus qu'a ajuste les paramètres de l'application. S'il y a un problème ce ne peut être QUE dans la configuration donc votre partie.
+    * Vous êtes en mesure de conservé la version en place et de démarrer la nouvelle version avec un autre nom de conteneur , vous avez un SUPER filet présent.
+    * Le fait qu'il n'y a pas d'émulation de l'ensemble de la machine virtuel vous utilisez l'ensemble des ressources du serveur pas de perte . Résultat une meilleur utilisation des ressources en place.
+    * Vous êtes en mesure de récupérer le conteneur en fonction et de le récupérer sur une autre machine pour analyser le problème.
+    * En cas de monté en charge il est possible d'augmenter le nombre de conteneur avec la même application RAPIDEMENT . 
+    * Vous êtes en mesure de réaliser des testes sur 1 conteneur en créant du bruit afin d'essayer de générer des problèmes non pris en charge traditionnellement.
+    * Il est possible d'automatiser le déploiement , pas uniquement de l'hôte mais l'ensemble de l'applicatif.
 
-REFÉRENCE : http://fr.slideshare.net/jpetazzo/docker-quels-enjeux-pour-le-stockage-et-reseau-paris-open-source-summit-2015
+Docker juste une truc de barbu ... Heu non  [https://www.docker.com/microsoft](https://www.docker.com/microsoft) , même **Micro$oft** voit le potentiel :D.
+Docker est aussi disponible sur Mac OS! 
+
+# <a name="Référence" /> Référence 
+
+* [http://fr.slideshare.net/jpetazzo/docker-quels-enjeux-pour-le-stockage-et-reseau-paris-open-source-summit-2015](http://fr.slideshare.net/jpetazzo/docker-quels-enjeux-pour-le-stockage-et-reseau-paris-open-source-summit-2015)
+* [https://www.docker.com/microsoft](https://www.docker.com/microsoft)
+* [https://docs.docker.com/engine/getstarted/](https://docs.docker.com/engine/getstarted/)
