@@ -886,6 +886,27 @@ Bon l'important c'est la dernière ligne, j'ai mis l'ensemble mais la ligne **DN
 
 # <a name="ConclusionwhyUseDocker" /> Conclusion pourquoi utiliser Docker ?
 
+En conclusion de cette présentation **pourquoi utiliser Docker** ? Bien entendu Docker règle pas tous les problèmes, mais vous offrira de nombreuse possibilité. Voici quelque type d'utilisation qui vous facilitera la vie avec ce système :
 
+* **Utilisateur lambda** :
+    * Docker vous offre la possibilité de démarrer un **environnement isolé, pour réaliser vos testes** , combien de fois vous avez cassé votre système à cause d'une erreur de manipulation. Ou pire pas faire un teste, car vous aviez peur de cassé votre environnement. Avec Docker pas grave , il est cassé on en démarre un nouveau et c'est repartie :D. (Ça marche aussi, si t'as pris un verre de trop puis que tu veux jouer sur ton système :P )
+    * Possibilité de tester des applications rapidement , fonctionnel sans ce cassé la tête à réaliser l'ensemble de la configuration requise, ceci grâce à la liste énorme d'application disponible sur [http://hub.docker.com](http://hub.docker.com).
+* **Développeur** :
+    * Le système Docker vous offre la possibilité d'avoir un environnement IDENTIQUE peu importe le lieu ou vous êtes. Combien de fois avez vous développez sur votre poste, vous changez de machine d'un portable à un __desktop__ ou la machine d'un collègue , et voilà il manque une librairie voir plusieurs :-(. Perte de temps à identifier le problème et chercher quelle librairie est problématique... 
+    * Si le conteneur est utilisé sur l'ensemble de la chaîne de production plus de problème du type, ça marche sur mon poste ... 
+    * Vous pouvez avoir plusieurs version de la même application (ex: mysql 5.5 ou 5.7 , apache 2.2 ou 2.4  ) afin de faire des testes d'intégrations , tous en conservant l'isolation :D
+    * Contrairement à un système de virtualisation, vous n'avez pas un coût énorme sur votre système, vous pouvez utiliser docker sans avoir un ULTRA utimate portable à 4000$.
+    * Plus besoin d'établir une connexion VPN au bureau , vous avez votre environnement directement sur votre portable (s'applique uniquement si l'ensemble de l'application est en docker , pas de BD physique)
+    * Vous pouvez valider votre application avec différente savoir de GNU/Linux ( Centos , Debian , Ubuntu, OpenSuse, ...)
+    * En cas de problème en production , il est possible de récupérer le conteneur et l'extraire de l'environnement problématique sur votre poste , résultat vous pouvez faire vos testes sur l'environnement Identique à celui problématique !
+    * Et plus , mais je suis pas un développeur PURE :P 
+* **Assurance Qualité (QA)** : 
+    * Si vos environnements utilise Docker et que les environnements des développeurs et de l'intégration sont aussi dockerisé, pas de surprise vous valider Réellement l'application. Pas de problème de configuration de syslog par exemple , cette configuration fut validé en amont . Vous avez exactement l'environnement "fonctionnel" incluant les BUG humain :D.
+    * Si votre environnement de production est aussi Dockerisé , ce que vous validez sera exactement la même chose en production , il ne reste que les configurations applicative qui peuvent varié un peu.
+    * Vous êtes en mesure d'avoir l'environnement à tester sur vos postes plus besoin d'attendre un environnement disponible !
+    * La mise en plus de testes unitaire plus simple car ceci peut ce faire lors de la livraison de __Release Candidate__ automatiquement , vous évitant de perdre du temps.
+    * Et plus , mais je ne suis pas un on testeur :D. 
+* **Opérateur / Sysadmin** :
+    *  TODO  
 
 REFÉRENCE : http://fr.slideshare.net/jpetazzo/docker-quels-enjeux-pour-le-stockage-et-reseau-paris-open-source-summit-2015
