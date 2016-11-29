@@ -7,7 +7,7 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # <a name="context" /> Mise en contexte 
 
-Nous avons vu précédemment les grandes lignes de l'utilisation de docker, c'est les grand principe de l'utilisation du système après libre à vous de réaliser votre propre recette. L'informatique et plus particulièrement l'opensource c'est un peu comme les recettes de cuisine, il y a une recette qui est une base mais si vous aimez plus ingrédient rien vous empêches d'en mettre plus :P !
+Nous avons vu précédemment les grandes lignes de l'utilisation de docker, c'est les grands principes de l'utilisation du système après libre à vous de réaliser votre propre recette. L'informatique et plus particulièrement l'opensource c'est un peu comme les recettes de cuisine, il y a une recette qui est une base mais si vous aimez plus ingrédient rien vous empêches d'en mettre plus :P !
 
 Par contre le gros problèmes de l'ensemble des documentations est qu'ils donnent rarement des trucs et astuce ou relater des problème lors de l'implémentation :-/. Je vais donne vous fournir de l'information sur des problèmes que j'ai rencontré ainsi que les solutions mise en place afin d'au moins vous orienter si un problème similaire vous arrive.
 L'expérience couvre 1 an d'utilisation plus une mise en production pour un serveur personnel !
@@ -39,11 +39,54 @@ J'ai voulu mettre en place le service __tmate__ qui permet de partagé un **Shel
 
 Je n'aime pas du tous cette configuration, voici pourquoi :
 
-* 
+* La récupération d'un artefact est réalisé sur **circle-artifacts.com**, personnellement je ne connais pas ce qui ne me met pas en confiance !
+
+Je n'ai pas d'autre exemple en tête mais l'important du propos est de bien valider les images que vous prenez , je vous dirai même dans le doute prenez comme référence un __Dockerfile__ et créez le votre.
+
+Je vous invite **FORTEMENT** à utilisé un contrôleur de révision afin d'avoir une trace de l'évolution de vos images afin de pouvoir revenir en arrière ou vous inspirér des configurations réalisé.
+
+## <a name="ConteneurUnetache" /> Un conteneur pour une taches 
+
+Bon voilà , nous avons vue la théorie les principes le mode de fonctionnement et les principes. Maintenant on va voir la pratique, qui malheureusement diverge de la théorie. 
+
+Prenons le conteneur officiel de **gitlab** [https://hub.docker.com/r/gitlab/gitlab-ce/](https://hub.docker.com/r/gitlab/gitlab-ce/), cette image est très bien créer et fonctionne à merveille. De plus comme ceci est la version officiel fournit par l'entreprise **gitlab** nous avons l'avantage d'avoir une version régulièrement mise à jour nous assurant le maintient de l'application autant au niveau __bug__ que patch de sécurité !
+
+Malheureusement l'image ne suis pas le principe UNE image , UNE taches , l'images contient plusieurs application dans l'images formant un tous cohérent, mais les puristes diront qu'elles n'est pas BELLE.
+
+L'image **gitlab** est composé de :
+
+* __ngnix__ :  pour l'accès web ainsi que les commit via le protocole __http__
+* __unicorn__ : serveur web en **ruby** pour faire le traitement des requêtes, permet d'utiliser l'ensemble des fonctions de __ruby__
+* __postgress__ : Base de donnée pour stocker l'information
+* __sidekiq__ : un système de traitement en arrière plan des requêtes permettant de traiter des jobs en __batch__
+* __sshd__ : Permet de réaliser des commit dans les dépôts avec le protocole ssh
+
+Bon on est loin d'une image = un processus, suivant le principe nous aurions du avoir 5 conteneurs qui interagisse ensemble pour fournir le service, mais bon de vous à moins j'avais pas envie de faire mon propre __Dockerfile__ et surtout de devoir le maintenir dans le temps. Comme je ne suis pas un puriste pour tous , sauf le logiciel libre , j'ai pris le conteneur et il fonctionne à merveille !!!
+
+Je parle ici du conteneur __gitlab__, mais j'ai choisi de réaliser le même type de configuration pour le système de courriel, pourquoi ?
+Soyons honnête avoir soit même par paresse , mais aussi car je n'ai pas de charge sur mon système qui pourrait m'amener à devoir augmenté le nombre de processus requis pour le traitement des spams par exemple. J'ai choisie une voix de simplicité , surtout que je n'ai pas dans la planification à court terme de partagé une partie telle que le service **imap** avec un autre conteneur.
+
+Voici ce que contient mon images de courriel :
+
+* **postfix** : service de __mta__ pour faire l'envoie et gérer la réception de courriel
+* **spamd** : Réalise la traitement contre les spams
+* **clam** : Service d'antivirus 
+* **freshclam** : Service de mise à jour de la base de donnée de virus.
+* **postgrey** : Permet de faire du gray listing , afin de réduire les spams ... (bon de vous a moins j'y crois pas mais bon ... :P )
+* **opendkim** : Permet de signer les courriels sortant en lien avec les configurations réalisé dans les __DNS__ pour confirmer la provenance.
+* **dovecot** : Service de **pop3** et **imap** pour permettre la récupération des courriels par le client
+* **ngnix** : Serveur web pour fournir le __webmail__ ainsi que la page d'administration du système
+* **SOGo** : Service de webmail
+* **admin** : Service d'administration du service
+
+Comme vous pouvez le constater, c'est pas l'image la plus belle mais c'est un tous complet !!
+
+## <a name="ConteneurCentraliser" /> Création du conteneur de BD centraliser.
+
+TODO : mettre en lien avec le service mail précédement nommé
 
 ## <a name="ConteneurCommité" /> Création d'un conteneur avec une image "moins belle"
 ## <a name="UseRegistry" /> Utilisation du registry
-## <a name="ConteneurCentraliser" /> Création du conteneur de BD centraliser.
 # <a name="orchestration" /> Orchestration des conteneurs
 ## <a name="ChangeVarVol" /> Organisation d'un changement de variable ou volume
 ## <a name="FileStructure" /> Organisation des fichiers et volumes
