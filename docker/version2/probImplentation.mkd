@@ -13,6 +13,7 @@ Nous avons vu précédemment les grandes lignes de l'utilisation de docker
 ## <a name="ConteneurCommité" /> Création d'un conteneur avec une image "moins belle"
 ## <a name="UseRegistry" /> Utilisation du registry
 ## <a name="ConteneurCentraliser" /> Création du conteneur de BD centraliser.
+## <a name="UnConteneurOneTask" /> Un conteneur une tache !
 # <a name="orchestration" /> Orchestration des conteneurs
 ## <a name="ChangeVarVol" /> Organisation d'un changement de variable ou volume
 ## <a name="FileStructure" /> Organisation des fichiers et volumes
