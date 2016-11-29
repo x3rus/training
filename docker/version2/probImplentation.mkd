@@ -7,9 +7,40 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # <a name="context" /> Mise en contexte 
 
-Nous avons vu précédemment les grandes lignes de l'utilisation de docker
+Nous avons vu précédemment les grandes lignes de l'utilisation de docker, c'est les grand principe de l'utilisation du système après libre à vous de réaliser votre propre recette. L'informatique et plus particulièrement l'opensource c'est un peu comme les recettes de cuisine, il y a une recette qui est une base mais si vous aimez plus ingrédient rien vous empêches d'en mettre plus :P !
 
-# <a name="conteneurPropre" /> Création des conteneurs 
+Par contre le gros problèmes de l'ensemble des documentations est qu'ils donnent rarement des trucs et astuce ou relater des problème lors de l'implémentation :-/. Je vais donne vous fournir de l'information sur des problèmes que j'ai rencontré ainsi que les solutions mise en place afin d'au moins vous orienter si un problème similaire vous arrive.
+L'expérience couvre 1 an d'utilisation plus une mise en production pour un serveur personnel !
+
+
+# <a name="conteneurPropre" /> Création des images et conteneurs 
+
+Bien entendu en premier lieu il y a la création d'image, personnellement l'ensemble de mes images furent réalisé à 85 % dans le train sur un petit portable 64bits (__Lenovo T430__) on est loin d'un ultra portable. Les 15 % restant est sur mon poste de travail à la maison , le gros avantage est que ce fut un travail itératif, continue, le tous conservé avec **git** !
+
+J'ai identifié les applications que je désirai avoir et analyser s'il y avait des conteneurs officiel disponible !
+
+Voici les officiels que j'ai pu utiliser :
+
+* **httpd**
+* **mysql**
+* **debian**
+* **ubuntu**
+* **ngnix**
+* **gitlab/gitlab-ce:latest**
+
+Comme vous pouvez le constater ceci est principalement des images de base , sauf **gitlab** qui est considéré comme non officiel sur le site [http://hub.docker.com](http://hub.docker.com), mais qui est créé par **gitlab**.
+
+Bien entendu mon site à plus de service que __MySQL__ , __gitlab__ ou __ngnix__ ... 
+
+J'ai donc du réalisé soit des **Dockerfile** ou utiliser des images dit public !! 
+J'ai voulu mettre en place le service __tmate__ qui permet de partagé un **Shell** avec __tmux__ en __RO__ ou __RW__. Bon finalement ce n'est pas en place :P, j'ai tenté de faire le __Dockerfile__ mais les priorités ont changé en cours de réalisation. Si nous regardons sur le site de [http://hub.docker.com](http://hub.docker.com) vous trouverez une images disponible :
+
+* [https://hub.docker.com/r/dakue/tmate-slave/~/dockerfile/](https://hub.docker.com/r/dakue/tmate-slave/~/dockerfile/) 
+
+Je n'aime pas du tous cette configuration, voici pourquoi :
+
+* 
+
 ## <a name="ConteneurCommité" /> Création d'un conteneur avec une image "moins belle"
 ## <a name="UseRegistry" /> Utilisation du registry
 ## <a name="ConteneurCentraliser" /> Création du conteneur de BD centraliser.

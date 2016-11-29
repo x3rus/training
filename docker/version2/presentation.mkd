@@ -759,6 +759,13 @@ Comme nous avons pu le voir précédemment ceci va générer 5 couches (__layer_
 
 Dans la version ci-dessus nous n'avons qu'une couche (__layer__) de définie réduisant la gestion requis par docker.
 
+## <a name="DockerizeApache" /> Dockerisation d'Apache
+
+Si vous désirez avoir plus d'information et de démonstration pour la dockerisation d'apache je vous invite à consulter 
+
+* Formation Linux 202  cours 25 à 28 
+    * Matériel : [http://moodle.x3rus.com/mod/page/view.php?id=126](http://moodle.x3rus.com/mod/page/view.php?id=126)
+    * Vidéos : [https://www.youtube.com/playlist?list=PLrspRZ5MjONxxp4gr_6I3otYOlKkSFunL](https://www.youtube.com/playlist?list=PLrspRZ5MjONxxp4gr_6I3otYOlKkSFunL)
 
 # <a name="structureConteneurRéseau" /> Réseautique d'un conteneur
 
