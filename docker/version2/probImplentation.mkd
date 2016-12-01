@@ -83,10 +83,76 @@ Comme vous pouvez le constater, c'est pas l'image la plus belle mais c'est un to
 
 ## <a name="ConteneurCentraliser" /> Création du conteneur de BD centraliser.
 
-TODO : mettre en lien avec le service mail précédement nommé
+Il y a par contre un élément manquant dans mon image de gestion de mes courriels, la base de données contenant l'ensemble des informations des utilisateurs ( nom, courriel, alias, mot de passe , calendrier , contacts, ...). 
+J'ai opté pour un service de base de données dans un conteneur pour l'ensemble de mes services , car en plus du service de courriels qui utilise une base de données __MySQL__ il y a le service **moodle**, mon **CMS** , mon système de facturation, ... Ils se reposent tous sur une base de donnée , comme je n'avais pas envie d'avoir **un** conteneurs de base de donnée pour chaque service il utilise tous le même pour la production.
+
+Je précise pour la production, car dans le cadre du développement de mes images j'ai utiliser un base de donnée unique pour mes applications .
+
+Voici une représentation graphique de l'utilisation des images et conteneurs :
+
+* **Dev** :
+
+![schema_imgs-conteneur_mysql-dev.png](./imgs/schema_imgs-conteneur_mysql-dev.png)
+
+* **PROD** : 
+
+![schema_imgs-conteneur_mysql-prod.png](./imgs/schema_imgs-conteneur_mysql-prod.png)
+
+Comme vous pouvez le voir j'utilise toujours la même images, donc pas de différence au niveau du système __MySQL__ utilisé que ce soit en développement ou en production. 
+Pourquoi cette configuration différente :
+
+* **Dev** :
+    * Dans le cadre du développement / validation de la configuration je veux pouvoir détruire ma base de donnée librement pour démarrer avec ma nouvelle image de l'application.
+    * Je ne veux pas avoir aucune configuration à réaliser sur la base de donnée, donc quand elle démarrer l'utilisateur et la BD sont créer et dédier pour mon application.
+    * Je vous être en mesure de démarrer mon application peut importe le lieu ou je suis portable, ordinateur à la maison sans aucune dépendance autre que mes conteneurs.
+    * Si je réalise des stress teste applicatif aucune impacte sur d'autre application en cours.
+
+Bon là vous vous dites pourquoi alors avoir eu une pratique différente pour la production car les raisons nommé ci-dessus s'appliquerait aussi bien en production, sauf peut-être la question de la suppression des données. Réponse ...
+
+* **Prod** :
+    * Je ne veux pas a avoir à réaliser des backups sur  4 ou 5 conteneurs de base de données __SQL__ . Je veux avoir un __dump__ complet de mes données dans un fichier . J'ai trop peur d'oublier de prendre une sauvegarde de mes données !!
+    * Je n'ai qu'une base de donnée à __Monitorer__ , si nous parlons de performance ou de disponibilité.
+    * S'il y a des interactions entre mes applications elles peuvent consulter les données de l'autre système avec le même utilisateur en ajustant les permissions.
+    * Je cherche à réduire l'emprunte mémoire et CPU en réduisant le nombre de conteneur (voir section suivante).
+
+Bien entendu ceci est MON choix libre à vous de trouvez cette solution idéal ou non , bien entendu il y a des coté négatif :
+
+* Lors de maintenant l'ensemble des applications sont impacté !
+
+## <a name="noOverHead" /> Docker n'ajoute pas d'overheard, oui MAIS ...
+
+Mon dernier point pour le choix de la mutualisation des bases de données en production indique que je cherche à réduire l'emprunte CPU et mémoire !
+C'est étrange, car lors de la présentation général de Docker j'avais spécifier que Docker ne rajoute pas de charge sur le système (__overhead__).
+
+Effectivement Docker ne consomme pas plus de ressource que si l'application était exécuté native , mais si j'ai 5 applications WEB (apache + __MySQL__ ). 
+
+Voici la configuration "classique" sans conteneur : 
+
+![classique_Infra-5web-apps.png](./imgs/classique_Infra-5web-apps.png)
+
+Nous avons donc 1 processus **apache** qui prend l'ensemble des requêtes , en mode __prefork__ par défaut le système démarrer 5 processus pour être en mesure de prendre les requêtes. Lors de la monté en charge il pourra démarrer jusque 150 processus et conservera toujours 10 processus  une fois la monté en charge réalisé.
+La base de données aussi fournit le service pour l'ensemble des services, nous avons 1 processus __MySQL__ qui est démarrer pour les 5 applications.
+
+Si nous regardons le mode de fonctionnement avec Docker , nous n'aurons plus 1 processus apache mais 5 , car chaque conteneur étant isolée il devra avoir son propre processus apache pour prendre en charge les requêtes qui arrive. Est-ce grave ?!?! Non pas  pas vraiment , faut juste s'assurer que la configuration de votre apache soit approprié pour votre application . Comme il y avait mutualisation des services sur une machine nous devions permettre à apache de conservé plus de processus "dormant" , alors que pour votre application peut-être que démarrer uniquement 2 processus au startup et en conserver que 4 en cas de monté en charge serait plus adéquat.
+
+Voici la représentation graphique évidente du résultat avec des conteneurs. 
+
+![docker_Infra-5web-apps.png](./imgs/docker_Infra-5web-apps.png)
+
+Personnellement je trouve que ça vaut le coup, car si nous prenons l'économie de __l'overhead__ des __VM__ ce coût est minime.
+
+Je pense que c'est important de le signaler , car il faut le prendre en considération !! 
+Vous comprenez pourquoi j'ai mutualisé mon service de base de donnée, maintenant je ne voyais pas de plus values à avoir un processus __MySQL__ par application. L'avenir me donnera peut-être tord , il sera toujours temps de changer ma configuration à ce moment là car c'est la même image :D.
+
+## <a name="UseRegistry" /> Utilisation du registry
+
+Je vous suggère FORTEMENT d'utiliser un __registry__ pour vos images, je ne l'ai pas encore fait j'ai repousser cette opération par manque de temps , cependant sans __registry__ vous êtes obligé de compiler tous le temps vos images. Si vous utilisez un __registry__ ceci veut dire que si vous avez __buildé__ votre image sur une machine elle sera disponible sur les autres via le téléchargement depuis le __registry__ . 
+C'est vraiment pénible de devoir recréer l'image sur une nouvelle machine quand vous savez pertinemment que vous l'avez déjà fait , de plus vous pouvez grâce au système de révision (__tag__) des images , vous assurez que vous utiliser toujours la même . Si vous recompilez toujours depuis le __Dockerfile__ , il est possible qu'il y est une modification réaliser dans le __SVN__ ou le GIT résultat vous ne construisez pas l'image à l'identique que ce qui fut testé.
 
 ## <a name="ConteneurCommité" /> Création d'un conteneur avec une image "moins belle"
-## <a name="UseRegistry" /> Utilisation du registry
+
+TODO : a valider si je le fait !
+
 # <a name="orchestration" /> Orchestration des conteneurs
 ## <a name="ChangeVarVol" /> Organisation d'un changement de variable ou volume
 ## <a name="FileStructure" /> Organisation des fichiers et volumes
@@ -96,11 +162,10 @@ TODO : mettre en lien avec le service mail précédement nommé
 ### <a name="Redictect_port_Http" /> Conteneur http utilisation des port 80/443
 ### <a name="ChallangeDynIP" /> Le défis des adresse IP dynamique
 ## <a name="ConteneurVPNonly" /> Utilisation de conteneur exclusif au VPN
-# <a name="noOverHead" /> Docker n'ajoute pas d'overheard, oui MAIS ...
 
 # <a name="ProbHDFull" /> Problème lors d'un disque dur remplie
 # <a name="OptDocker" /> Optimisation de Dockers
-## <a name="OptDockerFS" /> Assignation d'un Volume Groupe
+## <a name="OptDockerFS" /> Assignation d'un Volume Groupe (LVM)
 ## <a name="MonitoringDck" /> Monitoring du système Docker
 
 
