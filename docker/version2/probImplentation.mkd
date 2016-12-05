@@ -302,9 +302,61 @@ J'ai structuré comme suit mes fichiers :
 Avec la commande **docker ps** qui me retourne le nom de l'image et du conteneur en exécution je suis en mesure de __scripter__ des opérations autant sur l'image que sur le conteneur. 
 
 # <a name="NetworkStructure" /> Mise en place de réseau dédié à docker
+
+La structure de réseau présenté lors de la session dernière faisait mention de l'utilisation du réseau __Bridge__ par défaut qui vient avec le service docker.
+C'est super bien d'avoir le réseau 172.17.0.0/16, mais voilà j'aime bien le réseau et la segmentation !! De plus je ne suis pas tous seul sur la machine je la partage avec un collègue , bien qu'il est possibilité d'avoir accès au conteneur en fonction, je voulais que les applications soit segmenté !!
+
+J'ai donc utiliser l'instruction **docker network** pour créer d'autre réseau et ainsi avoir :
+
+* Un réseau pour des application commun au 2 __sysadmins__.
+* Un réseau pour mon collègue. 
+* Un réseau pour moi.
+* Un réseau "insécure" , pour les applications que je désire ISOLER complètement .
+
+Ceci à générer un problème : **il n'est pas possible de linké des conteneurs dans 2 réseaux différents** .
+C'est une limitation du système :-/, donc certain conteneur commun purent être utilisé avec l'option **links** du conteneur. Le gros problème est qu'il n'y a PAS d'erreur au démarrage, ça ne fonctionne simplement pas ... Ennuyant !! 
+La solution à ce problème est d'utiliser l'adresse IP du conteneur, car au niveau réseau pas de problème par défaut , il est possible à une machine d'un réseau 172.18.0.5/24 de communiquer avec le réseau 172.19.0.10/24 !
+
 ## <a name="Redirect_port" /> Redirection des ports
+
+En dehors de la mise en place de réseau dédier vous allez vouloir que vos conteneur soit disponible depuis l'extérieur, que ce soit du docker __host__ ou d'Internet directement. Je fut confronté à une réalité que je n'avais pas pensé lors de mes débuts avec __docker__ rien de dramatique, mais je vais le partager avec vous !
+
+Petite précision sur le contexte mon serveur à des règles de __Firewall__ en entré ET en sortie ! C'est règle de __firewall__ sont définie et géré par __puppet__ afin de m'assurer qu'elles sont toujours intègre !!! En d'autre mot si une règle est ajouter manuellement au maximum 30 minutes après elle sera supprimé, car non définie dans __puppet__. 
+On est jamais trop prudent :P !!
+
 ### <a name="Redirect_port_srcip" /> Détection des ip d'origine
+
+Lors de la mise en place de docker, j'étais partie du principe que j'utiliserai le système de __docker-proxy__ pour faire la redirection des ports vers le conteneur. N'ayant pas un gros trafic l'utilisation d'un processus pour faire le travaille me semblait une bonne idée. De plus telle que mentionné plus tôt comme mes règles sont géré par __puppet__ c'était plus simple. 
+Je n'ouvre que la communication pour l'IP externe puis le travail en arrière ce fait tous seul.
+
+Ça fonctionne très bien, MAIS lors de l'analyse de mes logs du serveur web, j'ai constater une chose étrange , l'adresse IP de provenance été TOUJOURS l'IP de la passerelle de docker soit 172.17.0.1. Pour mes statistiques d'utilisation ou pour mettre en place des restrictions par adresse IP c'est une catastrophe !! 
+J'ai donc du me rendre à l'évidence que je devrais mettre en place l'autre solution l'utilisation de la redirection de port (**dnat**) avec __iptables__ afin d'être en mesure d'avoir l'adresse IP source. Pour le protocole __http__ il est probable d'utiliser l'en-tête **X-Forwarded-For** , bien que je ne l'ai pas essayer je voulais avoir la connexion direct au moins pour les autres applications qui n'utilise pas le protocole __http__ par exemple __SMTP__ !
+
 ### <a name="Redictect_port_Http" /> Conteneur http utilisation des port 80/443
+
+Autre problématique, mais ça je l'avais anticipé, l'utilisation des ports , si j'ai 3 conteneurs pour le service web , donc par exemple :
+
+* [www.x3rus.com](http://www.x3rus.com)
+* [moodle.x3rus.com](http://moodle.x3rus.com)
+* [mail.x3rus.com](http://mail.x3rus.com)
+
+C'est 3 conteneurs veulent utiliser le port 80 (au minimum) et éventuellement le port 443 , comment je vais 1 processus à la fois peut prendre 1 port sur la machine.
+
+* Option 1 : Utiliser 3 adresses IP externe , heu ... __Ouin__ on est pas encore en __IPv6__ pas convaincu __qu'OVH__ dans mon cas sera d'accord avec l'idée
+* Option 2 : Mettre un __proxy__ en avant qui réalise la redirection  , en voilà une bonne idée :D.
+
+J'ai donc mis en place un __proxy__ avec Apache, bon là on peut me lancer des tomates autant que vous voulez disant que c'est pas optimal que apache est trop lourd pour ce type de service! Exacte je suis complètement d'accord avec mes détracteurs , mais attention je le rappel j'ai pas beaucoup de trafic le moment venu j'analyserai d'autre option. Ce que j'ai voulu en utilisant apache en avant plan, c'est  le couteau suisse que ceci m'offre. Apache offre PLEIN de possibilité module pour manipuler les requêtes __http__ et __httpS__. 
+
+Donc voici voici une petit représentation du résultat :
+
+![haproxy-ssl-offload.jpg](./imgs/haproxy-ssl-offload.jpg)
+
+
+Je peux avoir maintenant un grand nombre de service qui sont fournit par le proxy avec comme critère :
+
+* Un nom de domaine : __www.x3rus.com__ ou __moodle.x3rus.com__
+* Un répertoire pour un sous domaine : __www.x3rus.com/cms__
+
 ### <a name="ChallangeDynIP" /> Le défis des adresse IP dynamique
 ## <a name="ConteneurVPNonly" /> Utilisation de conteneur exclusif au VPN
 
