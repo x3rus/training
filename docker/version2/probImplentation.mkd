@@ -154,8 +154,118 @@ C'est vraiment pénible de devoir recréer l'image sur une nouvelle machine quan
 TODO : a valider si je le fait !
 
 # <a name="orchestration" /> Orchestration des conteneurs
+
+Lors de l'introduction, j'ai démarrer mes conteneurs avec la commande **docker run** en passant le nom du conteneur , l'image de référence ainsi que les variables d'environnement utilisé par le conteneur. Ceci est la technique pour démarrer rapidement un conteneur, par contre ceci rencontre RAPIDEMENT la limitation car il faut mémoriser la ligne de commande avec l'ensemble des arguments. 
+Quand vous avez un grand nombre de conteneur avec beaucoup de variable vous préférerez avoir un fichier conteneur l'ensemble de l'orchestration pour un service. Heureusement la communauté à pensé à tous , vous avez [docker-compose](https://docs.docker.com/compose/) disponible pour vous aider.
+
+Voici un exemple d'un fichier docker-compose :
+
+        version: '2'
+        services:
+            x3-cmsms:
+                image: x3-cmsms
+                container_name : 'x3-cmsms-l'
+                hostname: website.x3rus.com
+                environment:
+                    - DB_HOST=mysql
+                    - DB_DATABASE=cms
+                    - DB_USERNAME=cms_user
+                    - DB_PASSWORD=superPassWord
+                    - TIMEZONE=America/Montreal
+                    - TERM=xterm
+                links:
+                    - x3-cmsms-my:mysql
+                port:
+                    - 80:80
+                volumes:
+                    - /srv/docker/cms/upload:/var/www/html/cms/upload
+            x3-cmsms-my:
+                image: mysql:5.5
+                container_name : 'x3-cmsms-my-l'
+                hostname: cms-mysql.x3rus.com
+                environment:
+                    - MYSQL_ROOT_PASSWORD=superPatate
+                    - TIMEZONE=America/Montreal
+                    - TERM=xterm
+
+Prenons une petite minute pour analyser ce fichier :
+
+* **x3-cmsms** et **x3-cmsms-my** : ceci est les 2 services géré par le __docker-compose__ respectivement le service **CMS** et la base de donnée en __backend__.
+* **x3-cmsms** :
+    * Nous utilisons l'image **x3-cmsms** , nous lui assignons un nom pour le conteneur **x3-cmsms-l** et un hostname **website.x3rus.com**
+    * Une liste de variables d'environnement serons assigné lors de l'exécution , principalement les paramètres d'authentification pour la BD ainsi que le fuseau horaire.
+    * Bien entendu la service à besoin d'une base de donnée qui est définie dans le même fichier nous réalisons un lien entre les 2 conteneur **links**
+    * Suivie de l'assignation de port et répertoire.
+* **x3-cmsms-my** :
+    * nous utilisons l'image officiel de __MySQL__ soit 5.5 
+    * Assignation d'un nom et un nom de machine
+    * encore une fois nous retrouvons les variables principalement le mot de passe __root__.
+
+Comme vous pouvez le voir ceci est mon environnement de développement, car mon service de base de donnée est directement lié à l'application en production la dynamique est différente. Je n'utilise pas un **links** mais **external-links** car ma définition de base de donnée n'est pas écrite dans le fichier __docker-compose__ de l'applicatif.
+
+En production j'ai aussi un paramètre indiquant que je veux que le service démarrer toujours après un redémarrage : **restart: always**
+
 ## <a name="ChangeVarVol" /> Organisation d'un changement de variable ou volume
+
+Rappelons nous un point important que j'ai mentionné lors de la présentation précédente , lors du démarrage d'un conteneur nous lui assignons des variables lors de l'utilisation de l'instruction **docker run** par la suit nous utilisons **docker start** car nous ne pouvons plus changer les variables d'environnement ou les volumes  !!! 
+
+Résultat regardons ma configuration pour **gitlab**  :
+
+
+        cm-gitlab:
+            image: 'gitlab/gitlab-ce:latest'
+            restart: always
+            container_name : 'cm-gitlab'
+            hostname: source.x3rus.com
+            environment:
+                TZ: America/Montreal
+                GITLAB_OMNIBUS_CONFIG: |
+                    external_url 'https://source.x3rus.com'
+                    gitlab_rails['time_zone'] = 'America/Montreal'
+                    gitlab_rails['gitlab_email_from'] = 'noreply@x3rus.com'
+                    gitlab_rails['manage_backup_path'] = true
+                    gitlab_rails['backup_path'] = "/var/opt/gitlab/backups"
+                    gitlab_rails['backup_archive_permissions'] = 0640
+                    gitlab_rails['backup_keep_time'] = 604800
+                    gitlab_rails['smtp_enable'] = true
+                    gitlab_rails['smtp_address'] = "cm-mail"
+                    gitlab_rails['smtp_port'] = 25
+                    gitlab_rails['smtp_enable_starttls_auto'] = false
+                    gitlab_rails['smtp_tls'] = false
+                    pages_nginx['redirect_http_to_https_port'] = 80
+                    registry['enable'] = true
+                    registry_external_url 'https://rg.source.x3rus.com:8443'
+                    gitlab_rails['registry_enabled'] = true
+                    gitlab_rails['registry_host'] = "rg.source.x3rus.com"
+            external_links:
+                - /cm-mailrelay
+            ports:
+                - '192.99.82.212:22:22'
+                - '192.99.82.212:80:80'
+                - '192.99.82.212:443:443'
+                - '192.99.82.212:8443:8443'
+            volumes:
+                - '/srv/source/vols/cm-gitlab/gitlab/etc:/etc/gitlab'
+                - '/srv/source/vols/cm-gitlab/gitlab/logs:/var/log/gitlab'
+                - '/srv/source/vols/cm-gitlab/gitlab/data/:/var/opt/gitlab'
+
+Un des premiers service que j'ai mis en place est le service de **GIT**, évidement lors du démarrage initial j'ai pas mis toutes les configurations possible par manque de connaissance. Si nous regardons les variables ci-dessus nous voyons une liste significative disponible. 
+
+Voici la situation à laquelle je fut confronté , j'avais mon service en place avec l'ensemble de dépôt dans mon serveur git. Je voulais activer la fonction de docker __registry__ dans __gitlab__ grâce au 4 variables suivante :
+
+        registry['enable'] = true
+        registry_external_url 'https://rg.source.x3rus.com:8443'
+        gitlab_rails['registry_enabled'] = true
+        gitlab_rails['registry_host'] = "rg.source.x3rus.com"
+
+Mais pour que ces variables soit prisent en considération, il faut que je détruise mon conteneur actuellement en fonction et le recréer avec les nouvelles variables. Vous comprenez que j'ai commencé à transpirer un peu :P, j'ai fait l'ensemble de mes backups requis et je me suis dis quelle bordel :P. 
+
+Finalement le conteneur de __gitlab__ est bien fait je n'ai rien perdu, je n'ai pas eu non plus a réimporter mes dépôts , car j'avais eu la présence d'esprit de bien suivre la documentation de __gitlab__ et que j'avais créer mes volumes adéquatement. Avec les données en dehors du conteneur le système fut en mesure de retomber sur ces pattes malgré la destruction du conteneur.
+
+Mais l'avertissement reste valide surtout pour VOS images !!
+
 ## <a name="FileStructure" /> Organisation des fichiers et volumes
+
 # <a name="NetworkStructure" /> Mise en place de réseau dédié à docker
 ## <a name="Redirect_port" /> Redirection des ports
 ### <a name="Redirect_port_srcip" /> Détection des ip d'origine
@@ -164,6 +274,7 @@ TODO : a valider si je le fait !
 ## <a name="ConteneurVPNonly" /> Utilisation de conteneur exclusif au VPN
 
 # <a name="ProbHDFull" /> Problème lors d'un disque dur remplie
+## <a name="SpaceLimitConteneur" /> Limitation d'espace par conteneur
 # <a name="OptDocker" /> Optimisation de Dockers
 ## <a name="OptDockerFS" /> Assignation d'un Volume Groupe (LVM)
 ## <a name="MonitoringDck" /> Monitoring du système Docker
