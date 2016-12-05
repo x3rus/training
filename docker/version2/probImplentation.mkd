@@ -283,11 +283,23 @@ Voici la situation à laquelle je fut confronté , j'avais mon service en place 
 
 Mais pour que ces variables soit prisent en considération, il faut que je détruise mon conteneur actuellement en fonction et le recréer avec les nouvelles variables. Vous comprenez que j'ai commencé à transpirer un peu :P, j'ai fait l'ensemble de mes backups requis et je me suis dis quelle bordel :P. 
 
-Finalement le conteneur de __gitlab__ est bien fait je n'ai rien perdu, je n'ai pas eu non plus a réimporter mes dépôts , car j'avais eu la présence d'esprit de bien suivre la documentation de __gitlab__ et que j'avais créer mes volumes adéquatement. Avec les données en dehors du conteneur le système fut en mesure de retomber sur ces pattes malgré la destruction du conteneur.
+Finalement le conteneur de __gitlab__ est bien fait je n'ai rien perdu, je n'ai pas eu non plus a réimporter mes dépôts , car j'avais eu la présence d'esprit de bien suivre la documentation de __gitlab__ et que j'avais créer mes volumes adéquatement. Avec les données en dehors du conteneur le système fut en mesure de retomber sur ces pattes malgré la destruction du conteneur, incluant la Base de donnée __Postgres__ !!
 
 Mais l'avertissement reste valide surtout pour VOS images !!
 
+Vous devez être en mesure de configurer vos conteneurs afin qu'il soit possible de les supprimer et repartir avec d'autre variables, les données doivent donc être à l'extérieur du conteneur (volumes ou base de donnée EXTERNE). 
+
 ## <a name="FileStructure" /> Organisation des fichiers et volumes
+
+Voici une suggestion d'organisation de structure que je vous offre, pour le moment ça fait le boulot pour moi, quand il y aura un problème j'ajusterai ...
+
+J'ai structuré comme suit mes fichiers :
+
+* /srv/dockers/
+    * Dockerfiles/[Nom_images]/__Dockerfiles__ , __docker-compose__, ... : Ce répertoire contient pour une images donnée mes __dockerfiles__ ainsi que mes __docker-compose__. J'utilise le nom de l'image car une images peut démarrer plusieurs conteneur de même type. Cependant je veux un point de référence sur leur construction et surtout un lieu centralisé pour le démarrage incluant paramètres ...
+    * Volumes/[Nom_conteneurs]/répertoires  : Ce répertoire contient les fichiers définie en volume par nom de conteneur me permettant d'avoir une structure intelligible quand je cherche quelque chose.
+
+Avec la commande **docker ps** qui me retourne le nom de l'image et du conteneur en exécution je suis en mesure de __scripter__ des opérations autant sur l'image que sur le conteneur. 
 
 # <a name="NetworkStructure" /> Mise en place de réseau dédié à docker
 ## <a name="Redirect_port" /> Redirection des ports
