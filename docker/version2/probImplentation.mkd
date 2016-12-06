@@ -422,15 +422,80 @@ Bon mais ça règle pas ton problème de __firewall__ géré par __puppet__ en f
 
         IP externe 192.99.13.211:80 --> ip conteneur proxy-http.dck.x3rus.com:80 (nom conteneur  proxy-http ,IP 172.17.0.45 )
 
-Quand puppet va démarrer ce dernier va faire la résolution du nom de domaine et entré l'IP dans la règle de __firewall__ lors de la prochaine exécution si l'IP à changé __puppet__ dans ça grande intélligence refera le changement .... **MAGIE**
+Quand puppet va démarrer ce dernier va faire la résolution du nom de domaine et entrer l'IP dans la règle de __firewall__ lors de la prochaine exécution si l'IP à changé __puppet__ dans ça grande intelligence refera le changement .... **MAGIE**
 
-
+Ceci me permet donc d'avoir nom toujours valide peut importe l'outil qui l'utilisera !! Ceci est bien mieux que la configuration manuelle via le docker compose.
 
 ## <a name="ConteneurVPNonly" /> Utilisation de conteneur exclusif au VPN
 
+Voici un point intéressant ne couvrant pas un problème mais plutôt un mode d'utilisation très COOL ! 
+J'ai quelques conteneur en fonction sur mon serveur, la majorité son des services "publique" donc directement disponible sur internet telle que le site de formation [http://moodle.x3rus.com](http://moodle.x3rus.com) ou "semi-publique" toujours disponible sur internet mais qui oblige une authentification telle que mon service de courriel / agenda / contact.
+
+Par contre j'ai aussi des conteneurs privé, qui ne sont pas obligatoirement disponible sur internet , par exemple un système de facturation ou de gestion de document . Il y a des informations "sensible" c'est un bien grand mot, mais bon lors utilisation est sporadique et toujours depuis un ordinateur portable ou mon ordinateur personnel . 
+
+Originalement quand je voulais accéder à ces services j'utilisai ma connexion **ssh** avec une redirection de port, ça marche très bien mais c'est pénible obligé d'établir N connexions ssh pour chaque services ... 
+
+J'ai donc mis en place un service de **VPN** avec __openvpn__ sur mon serveur , je suis donc en mesure d'établir une connexion sur mon serveur en toute sécurité , ceci me permet en autre de réaliser mes backups. J'ai réalisé la configuration afin  que la **route** soit poussée lors de l'établissement de connexion. 
+Ceci me permet donc d'avoir accès directement au conteneur sans publié sur internet les ports ... Bon un petit graphique pour représenter le tous.
+
+![vpn_route.png](./imgs/vpn_route.png)
+
+Comme vous pouvez le voir lors de l'établissement de connexion la route est poussé résultat quand je met dans mon fureteur : http://172.19.0.10 , ceci me connecte directement sur mon conteneur privé grâce au __VPN__.
+
+Je me retrouve avec un accès à un service privé avec un 2 facteurs authentification grâce au VPN + une authentification sur l'application, NON NON c'est pas **over KILL** :P.
+
+Bon maintenant reparlons du __DNS__ dynamique mentionné avant , encore une fois on voit l'utilité :D :D.
+
+
 # <a name="ProbHDFull" /> Problème lors d'un disque dur remplie
+
+Parlons maintenant d'un problème MAJEUR !! Lors de la phase de teste avec __docker__ nous avions réaliser nos preuve de concept sur des petites machines avec peu de disque dur. Résultat et vous aurez le même problème que nous vous allez remplir le disque dur , si vous avez assez d'espace vous ne rencontrerez peut-être pas tous de suite le problème . Mais je vous le dis ce ne sera que PIRE !! 
+
+Premièrement vous aurez un nombre élevé de **none** lors de la visualisation des images :
+
+        $ docker images 
+        [ ... OUTPUT COUPÉ ... ]
+        <none>                        <none>              82644215b784        9 weeks ago         385.4 MB
+        <none>                        <none>              77152151a277        9 weeks ago         368.7 MB
+        <none>                        <none>              54572d085b49        9 weeks ago         366.5 MB
+        <none>                        <none>              207b7e4658a6        9 weeks ago         366.5 MB
+        <none>                        <none>              11228a0daa42        9 weeks ago         129.3 MB
+        [ ... OUTPUT COUPÉ ... ]
+
+Ceci est dû au fait que vous avez supprimé des images mais pas les conteneurs qui lui font référence , comme docker assure l'intégrité du système il conserve l'image mais la nomme **none**. Vous aurez aussi probablement des systèmes de fichiers orphelin dans vos conteneurs ... :-/.
+
+**Spotify** on eu aussi le même problème, puis comme ils sont cool ils ont libéré leur solution : [https://github.com/spotify/docker-gc](https://github.com/spotify/docker-gc). Ceci est un __gorbage__ collecteur pour docker, il fera l'ensemble du ménage requis.
+
+Bon là on s'excite pas , on va pas mettre ça en production  directement, car par défaut il est brutale , il supprime TOUS qui n'est pas en exécution c'est CHAUD. Il faut le configurer pour définir des exceptions afin qu'il soit plus "smart" . Validez le dans un environnement de développement , mais ça marche super bien !
+
+Bon maintenant qu'arrive t'il si vous ne faites rien et attendez que le l'espace ce remplie... Comme d'habitude quand on laisse trainer quelque chose c'est PIRE !! 
+En fait il est fort probable que vos conteneur qui sont en exécution deviennent complètement inutilisable et que vous soyez obligé de les redéployez depuis l'image d'origine , résultat toutes les données contenu dans le système de fichier du conteneur sera perdu !!
+Vous aurez des erreurs du style :
+
+        [ 3089.664084] XFS (dm-4): metadata I/O error: block 0x2c230 ("xfs_buf_iodone_callbacks") error 5 numblks 16
+        [ 3089.684777] XFS (dm-5): metadata I/O error: block 0x2c230 ("xfs_buf_iodone_callbacks") error 5 numblks 16
+        [ 3089.695953] XFS (dm-4): Unmounting Filesystem
+        [ 3089.703478] XFS (dm-4): metadata I/O error: block 0x2c230 ("xfs_buf_iodone_callbacks") error 5 numblks 16
+        [ 3089.710627] XFS (dm-5): metadata I/O error: block 0x2c230 ("xfs_buf_iodone_callbacks") error 5 numblks 16
+        ...
+
+Personnellement nous n'avons pas réussie à récupérer le conteneur , mais dans notre cas ce n'était pas grave nous sommes repartie de l'image original on s'est juste amusé pour apprendre . Bien entendu on a pas pu s'amuser longtemps !!
+Avec la version de docker 1.10 nous sommes même arrivé à une situation où nous avons du désinstaller docker pour être en mesure de remettre le serveur réutilisable :-(. Avec la version 1.12 nous n'avons pas rencontré le même problème , bien que l'on a pas appris de nos erreurs et que le problème est revenu :P !!
+
+Je vous dirais donc faire attention ça peut être la catastrophe , surtout à 2:00 du matin d'analyser ce genre de problème ! Monitoring oblige.
+
 ## <a name="SpaceLimitConteneur" /> Limitation d'espace par conteneur
+
+Point important chaque conteneur à une limitation d'espace disponible DANS le conteneur , par défaut cette valeur est de 10G , bien entendu ceci ne comprend pas les données mis dans un volume donc à l'extérieur du conteneur. Il est possible d'augmenter cette valeur, par contre ceci est globale , donc s'appliquera pour TOUS les conteneurs sur le systèmes
+
+Vous retrouverez le paramètre à la page :  [https://docs.docker.com/engine/reference/commandline/dockerd/](https://docs.docker.com/engine/reference/commandline/dockerd/), l'argument est **dm.basesize**.
+
+Ça vous protège un peu  pour le problème de remplir l'espace mais ne vous fiez pas la dessus :P !
+
 # <a name="OptDocker" /> Optimisation de Dockers
+
+Mon expérience est assez limité donc pas de miracle sur les suggestions de solution, je me base plus sur mon expérience d'administrateur système 
+
 ## <a name="OptDockerFS" /> Assignation d'un Volume Groupe (LVM)
 ## <a name="MonitoringDck" /> Monitoring du système Docker
 
