@@ -357,7 +357,75 @@ Je peux avoir maintenant un grand nombre de service qui sont fournit par le prox
 * Un nom de domaine : __www.x3rus.com__ ou __moodle.x3rus.com__
 * Un répertoire pour un sous domaine : __www.x3rus.com/cms__
 
+L'image indique que c'est du __offload__ soit du déchargement __SSL__ en fait plus ou moins, car étant sur la même machine la charge du déchiffrement reste présent sur le système cependant pour le diagnostique des problèmes nous n'avons qu'un point de validation. Il est aussi possible d'avoir 1 seul certificat de type **wildcar** donc __\*.x3rus.com__ dans mon cas !
+
+Bien entendu pour le service __httpS__ c'est facile dans le cas de protocole __TCP__ brute vous devrez voir pour un service approprié , telle que mentionné apache étant un couteau suisse je n'ai pas le problème ... Après libre à vous de sélectionné le bon système pour faire la redirection des flux selon vos critères.
+
 ### <a name="ChallangeDynIP" /> Le défis des adresse IP dynamique
+
+Le défis des adresses IP fournit en __DHCP__ par docker , en fait j'ai un problème actuellement en cours de résolution , telle que mentionné plus tôt les règles de __firewall__ étant  définie dans __puppet__ je dois inscrire la règle de redirection. Voici un exemple de règles :
+
+        IP externe 192.99.13.211:80 --> ip conteneur 172.17.0.10:80 (nom conteneur  proxy-http)
+
+Parfait ça marche à merveille !! MAIS quand je reboot je n'ai pas de garantie que l'adresse IP du conteneur __proxy-http__ soit la même ceci dépend de la séquence de démarrage des conteneurs que je ne contrôle pas ! Résultat au premier redémarrage surprise plus rien ne fonctionne , transpiration et recherche pourquoi j'ai le problème !
+
+Voici quelque piste de solution.
+
+* Option 1 : assignation d'adresse IP fixe au conteneur lors du démarrage
+
+**Docker-compose** nous offre la possibilité de définir des adresses IP qui seront assigné au conteneur, [voir documentation](https://docs.docker.com/compose/compose-file/#/ipv4address-ipv6address) . Voici un exemple de __docker-compose__ incluant l'assignation d'une adresse IP :
+
+        version: '2'
+        services:
+          app:
+            image: busybox
+            command: ifconfig
+            networks:
+              app_net:
+                ipv4_address: 172.16.238.10
+                ipv6_address: 2001:3984:3989::10
+        networks:
+          app_net:
+            driver: bridge
+            driver_opts:
+              com.docker.network.enable_ipv6: "true"
+            ipam:
+              driver: default
+              config:
+              - subnet: 172.16.238.0/24
+                gateway: 172.16.238.1
+              - subnet: 2001:3984:3989::/64
+                gateway: 2001:3984:3989::1
+
+
+Ceci fut testé et fonctionne parfaitement , MAIS je ne privilégie pas cette option , principalement parce que pour être en mesure d'assigner l'adresse IP d'un réseau , vous devez définir le réseau DANS le conteneur . Pour le moment j'ai opté d'avoir 1 __docker-compose__ par service et non avoir l'ensemble dans un GROS fichier __docker-compose__ . En toute honnêteté je ne sais pas si ceci est le bon choix , je me questionne beaucoup sur ce choix , voici mes motivations pour ce choix:
+
+* Je désire avoir 1 fichier de configuration par service afin d'avoir un point de référence de configuration qui peut être utiliser peu importe le lieu (serveur, laptop, ...)
+* Je désire avoir un fichier que je peux scripté pour automatisé ou collecté de l'information (argument plus ou moins valide car avec YAML ça ce parce bien, mais bon ... )
+* J'aime pas l'idée d'avoir le network définie dans le docker compose , car il est possible que j'utilise un autre réseau selon le lieu de déploiement ...
+* Option limitative à la mise en place manuel de la configuration dans le fichier __docker-compose__ rien de dynamique.
+
+Ceci m'a donc a fait en sorte que j'ai analysé une autre option que voici .
+
+* Option 2 : Mise en place d'un __DNS__ dynamique pour Docker
+
+Voici l'option que j'analyse et commence à mettre en place malheureusement par manque de temps je n'ai pas encore de démonstration à offrir. 
+Je vais mettre en place un serveur __DNS__ avec __bind9__ ceci gérera plusieurs nom de domaine et offrira un support pour __.dck.x3rus.com__ ce sous domaine permettra la mise à jour des entrés __DNS__ !
+
+Le script **dockerDDNS.py** disponible sur le github :  [https://github.com/ggtools/docker-tools](https://github.com/ggtools/docker-tools) ,
+offre la possibilité de prendre en charge les __docker event__ lors de démarrage de conteneur et de mettre à jour les entrés __DNS__ , ceci à l'avantage d'offrir une solution qui **scale** peut importe le réseau une adresse IP sera associé à un nom __DNS__.
+
+Ceci règle en plus la problématique pour les règles de __firewall__ mais aussi permettra de communiquer avec les conteneurs directement peut importe la séquence de démarrage. Ceci fonctionnera peut importe le réseau où évolue le conteneur et me permet de resté paresseux à souhait :D et laisser la machine bossé pour moi :D .
+
+Bon mais ça règle pas ton problème de __firewall__ géré par __puppet__ en fait OUI, car dans la définition de ma règle je vais la définir comme suit :
+
+
+        IP externe 192.99.13.211:80 --> ip conteneur proxy-http.dck.x3rus.com:80 (nom conteneur  proxy-http ,IP 172.17.0.45 )
+
+Quand puppet va démarrer ce dernier va faire la résolution du nom de domaine et entré l'IP dans la règle de __firewall__ lors de la prochaine exécution si l'IP à changé __puppet__ dans ça grande intélligence refera le changement .... **MAGIE**
+
+
+
 ## <a name="ConteneurVPNonly" /> Utilisation de conteneur exclusif au VPN
 
 # <a name="ProbHDFull" /> Problème lors d'un disque dur remplie
