@@ -45,6 +45,8 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 Ceci est une description très générale nous allons voir les détails sous peu de ce qu'est réellement __docker__.
 
+![what_is_docker.png](./imgs/what_is_docker.png)
+
 ## <a name="whatIsDocker" /> Qu'est ce que Docker ?
 
 Docker vous offre la possibilité d'isoler votre application du reste du système, cette isolation est réalisé grâce au fonctionnalité du noyaux (kernel) du système d'exploitation (pour GNU/Linux : __cgroup__ et __namespace__). Nous parlons d'isolation au niveau :
@@ -899,6 +901,8 @@ Bon l'important c'est la dernière ligne, j'ai mis l'ensemble mais la ligne **DN
 
 
 # <a name="ConclusionwhyUseDocker" /> Conclusion pourquoi utiliser Docker ?
+
+![welcom_on_board-docker.png](./imgs/welcom_on_board-docker.png)
 
 En conclusion de cette présentation **pourquoi utiliser Docker** ? Bien entendu Docker règle pas tous les problèmes, mais vous offrira de nombreuse possibilité. Voici quelque type d'utilisation qui vous facilitera la vie avec ce système :
 
