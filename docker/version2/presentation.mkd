@@ -54,6 +54,9 @@ Docker vous offre la possibilité d'isoler votre application du reste du systèm
 * **Couche réseau** : Chaque conteneur à son propre __stack IP__, chaque conteneur à sa propre adresse IP.
 * **Couche applicative** : Les applications dans un conteneur ne voient que ce qui est contenu dans ce dernier, tous ce qui est à l'extérieure est inexistant.
 
+
+![docker-crab.jpg](./imgs/docker-crab.jpg)
+
 Vous avez la possibilité de limité l'utilisation des ressources (CPU, I/O, réseaux , ...) grâce aux fonctionnalités du noyau. 
 
 Pourquoi l'arrivée de Docker ? À la lecture de l'énoncé ci-dessus ceci ressemble à une Machine Virtuel, les solutions de virtualisation ne manque pas !

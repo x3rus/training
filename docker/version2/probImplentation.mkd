@@ -23,9 +23,7 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
        * [ Utilisation de conteneur exclusif au VPN](#ConteneurVPNonly) 
 * [ Problème lors d'un disque dur remplie](#ProbHDFull) 
        * [ Limitation d'espace par conteneur](#SpaceLimitConteneur) 
-* [ Optimisation de Dockers](#OptDocker) 
-       * [ Assignation d'un Volume Groupe (LVM)](#OptDockerFS) 
-       * [ Monitoring du système Docker](#MonitoringDck) 
+
 
 ![docker-fail.jpg](./imgs/docker-fail.jpg)
 
@@ -172,7 +170,6 @@ Vous comprenez pourquoi j'ai mutualisé mon service de base de donnée, maintena
 
 ## <a name="UseRegistry" /> Utilisation du registry
 
-![docker-crab.jpg](./imgs/docker-crab.jpg)
 
 Je vous suggère FORTEMENT d'utiliser un __registry__ pour vos images, je ne l'ai pas encore fait j'ai repousser cette opération par manque de temps , cependant sans __registry__ vous êtes obligé de compiler tous le temps vos images. Si vous utilisez un __registry__ ceci veut dire que si vous avez __buildé__ votre image sur une machine elle sera disponible sur les autres via le téléchargement depuis le __registry__ . 
 C'est vraiment pénible de devoir recréer l'image sur une nouvelle machine quand vous savez pertinemment que vous l'avez déjà fait , de plus vous pouvez grâce au système de révision (__tag__) des images , vous assurez que vous utiliser toujours la même . Si vous recompilez toujours depuis le __Dockerfile__ , il est possible qu'il y est une modification réaliser dans le __SVN__ ou le GIT résultat vous ne construisez pas l'image à l'identique que ce qui fut testé.
