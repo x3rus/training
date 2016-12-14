@@ -1,0 +1,49 @@
+
+Bonjour, 
+
+Merci de votre participation à la formation Docker, j'espère que vous avez apprécié la formation que ceci vous a permis d'avoir une meilleur compréhension du système. Bien entendu en 2 heures ce ne peut être qu'un aperçu , si nous avions eu 2 jours nous aurions pu faire des exercices et approfondir des sujets.
+Maintenant la balle est dans votre camps pour vous amuser et explorer les possibilités, si vous avez des questions n'hésitez pas à m'accrocher pour en parler ou m'écrire un petit courriel. 
+Dans un soucis d'amélioration de mes formations voici un petit sondage, nos stress j'ai peu d'espoir sur le taux de participation ;-) , mais j'apprécierai si vous le fêtes. 
+Bon j'avais 2 choix pour vous motiver la batte de baseball ou la carotte , donc se sera la carotte, une fois complété vous aurez un certificat de participation :D.
+
+# Appréciation général de la formation
+
+* Super bien, j'en veux d'autre !
+* Juste bien.
+* Peu d'intérêt, j'aurais préféré écouter le dernier Avenger 
+
+# J'ai apprécié
+
+* Les concepts généraux 
+* La partie de l'explication des layers
+* Le retour d'expérience, sur la mise en production
+* L'explication sur partie réseau
+* Autre : ...
+
+# Avez-vous consultez le texte rédigé de la formation ?
+
+* oui 
+* non
+
+
+    # Votre appréciation du contenu et contenant ?
+
+    * C'est très bien d'avoir écrit ça !
+    * Bien, mais la structure du document ne facilite pas la lecture
+    * Pas trop mal.
+    * C'est un torchon , ilisible à cause de la qualité du français 
+
+# Trouvez vous que la dédaction de matériel soit une bonne idée 
+
+* oui
+* non
+
+# Désiriez vous d'autre formation ?
+
+* Oui, sur docker
+* Oui, sur GNU/Linux
+* Oui, sur la sécurité
+* Non, 
+* Autre
+
+# Suggestion ...
