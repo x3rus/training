@@ -1,0 +1,68 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+
+# Index 
+
+# <a name="Intro" /> Introduction
+
+Après avoir vue le serveur web (apache) et de base de données (__MySQL__) passons au service de courriel, nous utiliserons le serveur [Postfix](https://fr.wikipedia.org/wiki/Postfix) site officiel [http://www.postfix.org/](http://www.postfix.org/). Nous commencerons par la théorie puis la mise en pratique d'un serveur de courriels. Nous couvrirons les  points suivant :
+
+* Serveur de courriel "ultra" simple, avec utilisateur locaux
+* Mise en place d'un service de récupération de courriel (__pop3__ et __imap__)
+* Utilisation d'une base de données pour stocker les informations utilisateurs
+* Mise en place d'une solution web mail pour consulter nos courriels depuis une fureteur (__browser__)
+* Ajout d'une stratégie d'antivirus et d'anti-spams 
+
+Une fois l'ensemble couvert, nous ajouterons un système collaboratif afin de pouvoir stocker nos contacts et calendrier !
+Comme vous pouvez le constater l'emploie du temps est assez chargé, ceci est les gros point nous pourrons introduire d'autre points au fur et à mesure comme d'habitude.
+
+Telle que mentionné nous utiliserons __Postfix__ , mais il existe d'autre serveur de courriel, Libre :
+
+* __Exim__
+* __OpenSMTPD__
+* __qmail__
+* __Sendmail__
+
+# <a name="Theorie" /> Théorie du système de courriel
+
+Le système de [courriel électronique](https://fr.wikipedia.org/wiki/Courrier_%C3%A9lectronique) existait avant Internet et fut un outil précieux lors de la création de celui-ci. Il prit forme en 1965 en tant que moyen de communication entre utilisateurs d’ordinateur à exploitation partagée. Le réseau __ARPANET__ fut une contribution majeure à l'évolution du courrier électronique. Un rapport y indique des transferts de messages inter systèmes peu après sa création, en 1969. En 1972, __Ray Tomlinson__ proposa l'utilisation du signe @ pour séparer le nom de l'utilisateur de celui de la machine.
+
+## <a name="Workflow" /> Acheminement du courrier électronique
+
+Le service de courrier électronique est composé d'au moins 2 partie :
+
+* [Mail Transfer Agent](https://fr.wikipedia.org/wiki/Mail_Transfer_Agent) : Le service d'envois de courriel, ce service permet de transmettre les messages d'un serveur de courriels à un autre. Nous pourrions le voir comme le service postale traditionnel, nous avons le bureau de poste recevant le message et s'assure de le livrer. Ce service est conforme au protocole [SMTP](https://fr.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol) qui régie le transfert entre domaine des courriels.
+* [Mail Delivery Agent](https://fr.wikipedia.org/wiki/Mail_Delivery_Agent) : Le service de livraison du courriel, une fois le message courriel transmis à la bonne destination le serveur le livre au [MDA](https://fr.wikipedia.org/wiki/Mail_Delivery_Agent), ce dernier dépose le courriel dans la boite au lettre du dessinateur. Comme le postier qui dépose le courrier une fois que le bureau de trie la livré dans la bonne région / quartier.
+* [Service de boite au lettre](https://fr.wikipedia.org/wiki/Internet_Message_Access_Protocol) : Ce service permet à un utilisateur de récupérer ses courriels via le protocole [IMAP](https://fr.wikipedia.org/wiki/Internet_Message_Access_Protocol). Un peu comme nous qui récupérons le courriels dans la boite au lettre. Ce service bien que essentiel pour l'utilisateur final, reste optionnel :P du point de du cheminement du courriel , l'important est de le livré pas obligatoirement de permettre de la consulter. Bon , bien entendu ici ça dépend du point de vue :D.
+
+
+Voici une représentation graphique du processus :
+
+![Etapes_envoi_email.png](./imgs/Etapes_envoi_email.png)
+
+Dans l'exemple ci-dessus, nous avons :
+
+1. L'utilisateur __expediteur@domaine1.com__ qui utilise sont client pour envoyer un courriel
+2. Le courriel est transmis à son serveur de courriel [MTA]((https://fr.wikipedia.org/wiki/Mail_Transfer_Agent) , __domaine1.com__
+3. Le serveur __MTA domaine1.com__ analyse le domaine de destination contenu dans l'adresse , dans notre cas __domaine2.org__, afin de savoir quelle serveur gère les courriels de ce domaine il réalisera une requête __DNS__. Les serveurs [DNS](https://fr.wikipedia.org/wiki/Domain_Name_System) ont une entré spécial pour identifier les serveurs de courriels, ce dernier est de type [MX](https://fr.wikipedia.org/wiki/Enregistrement_Mail_eXchanger). Regardons l'entrée __DNS__ pour le domaine __gmail.com__
+
+        $ dig mx gmail.com
+        ;; ANSWER SECTION:
+        gmail.com.              195     IN      MX      40 alt4.gmail-smtp-in.l.google.com.
+        gmail.com.              195     IN      MX      10 alt1.gmail-smtp-in.l.google.com.
+        gmail.com.              195     IN      MX      20 alt2.gmail-smtp-in.l.google.com.
+        gmail.com.              195     IN      MX      5 gmail-smtp-in.l.google.com.
+        gmail.com.              195     IN      MX      30 alt3.gmail-smtp-in.l.google.com.
+* Nous avons 5 entrées [MX](https://fr.wikipedia.org/wiki/Enregistrement_Mail_eXchanger) , si vous regardez il y a un numéro avant les __hostnames__ des serveurs 5, 10, 20, 30, 40 . Ce chiffre indique la priorisation du serveur. Si nous envoyons un courriel à __gmail.com__ votre __MTA__ essayera de transmettre le courriel au serveur __gmail-smtp-in.l.google.com__, si ce serveur n'est pas disponible , car trop chargé il prendra le suivant __alt1.gmail-smtp-in.l.google.com__ ainsi de suite.
+* S'il n'y a pas d'entré __MX__ alors le courriel est transmis au serveur qui répond à la résolution du domaine sans nom de préfixe exemple pour __gmail__ __gmail.com__ :D
+4. Dans notre cas le serveur 
+
+
+## <a name="ref_theorie" /> Référence pour la théorie 
+
+* [https://fr.wikipedia.org/wiki/Courrier_%C3%A9lectronique](https://fr.wikipedia.org/wiki/Courrier_%C3%A9lectronique)
+* [https://fr.wikipedia.org/wiki/Serveur_de_messagerie_%C3%A9lectronique](https://fr.wikipedia.org/wiki/Serveur_de_messagerie_%C3%A9lectronique)
+* [https://fr.wikipedia.org/wiki/Internet_Message_Access_Protocol](https://fr.wikipedia.org/wiki/Internet_Message_Access_Protocol)
