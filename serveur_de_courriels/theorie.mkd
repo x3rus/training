@@ -1,0 +1,351 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+
+# Index 
+
+* [ Introduction](#Intro)
+* [ Théorie du système de courriel](#Theorie)
+       * [ Acheminement du courrier électronique](#Workflow)
+       * [ Blocage du port 25 par les fournisseurs d'accès](#block_port_25)
+       * [ Exemple d'un courriel électronique ](#ContenuMsg)
+           * [ Exemple d'une image dans un courriel](#ContenuMsgImage)
+       * [ En-tête plus complexe ](#headerComplex)
+       * [ Référence pour la théorie ](#ref_theorie)
+
+# <a name="Intro" /> Introduction
+
+Après avoir vue le serveur web (apache) et de base de données (__MySQL__) passons au service de courriel, nous utiliserons le serveur [Postfix](https://fr.wikipedia.org/wiki/Postfix) site officiel [http://www.postfix.org/](http://www.postfix.org/). Nous commencerons par la théorie puis la mise en pratique d'un serveur de courriels. Nous couvrirons les  points suivant :
+
+* Serveur de courriel "ultra" simple, avec utilisateur locaux
+* Mise en place d'un service de récupération de courriel (__pop3__ et __imap__)
+* Utilisation d'une base de données pour stocker les informations utilisateurs
+* Mise en place d'une solution web mail pour consulter nos courriels depuis une fureteur (__browser__)
+* Ajout d'une stratégie d'antivirus et d'anti-spams 
+
+Une fois l'ensemble couvert, nous ajouterons un système collaboratif afin de pouvoir stocker nos contacts et calendrier !
+Comme vous pouvez le constater l'emploie du temps est assez chargé, ceci est les gros point nous pourrons introduire d'autre points au fur et à mesure comme d'habitude.
+
+Telle que mentionné nous utiliserons __Postfix__ , mais il existe d'autre serveur de courriel, Libre :
+
+* __Exim__
+* __OpenSMTPD__
+* __qmail__
+* __Sendmail__
+
+# <a name="Theorie" /> Théorie du système de courriel
+
+Le système de [courriel électronique](https://fr.wikipedia.org/wiki/Courrier_%C3%A9lectronique) existait avant Internet et fut un outil précieux lors de la création de celui-ci. Il prit forme en 1965 en tant que moyen de communication entre utilisateurs d’ordinateur à exploitation partagée. Le réseau __ARPANET__ fut une contribution majeure à l'évolution du courrier électronique. Un rapport y indique des transferts de messages inter systèmes peu après sa création, en 1969. En 1972, __Ray Tomlinson__ proposa l'utilisation du signe @ pour séparer le nom de l'utilisateur de celui de la machine.
+
+
+## <a name="Workflow" /> Acheminement du courrier électronique
+
+Le service de courrier électronique est composé d'au moins 2 partie :
+
+* [Mail Transfer Agent](https://fr.wikipedia.org/wiki/Mail_Transfer_Agent) : Le service d'envois de courriel, ce service permet de transmettre les messages d'un serveur de courriels à un autre. Nous pourrions le voir comme le service postale traditionnel, nous avons le bureau de poste recevant le message et s'assure de le livrer. Ce service est conforme au protocole [SMTP](https://fr.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol) qui régie le transfert entre domaine des courriels.
+* [Mail Delivery Agent](https://fr.wikipedia.org/wiki/Mail_Delivery_Agent) : Le service de livraison du courriel, une fois le message courriel transmis à la bonne destination le serveur le livre au [MDA](https://fr.wikipedia.org/wiki/Mail_Delivery_Agent), ce dernier dépose le courriel dans la boite au lettre du dessinateur. Comme le postier qui dépose le courrier une fois que le bureau de trie la livré dans la bonne région / quartier.
+* [Service de boite au lettre](https://fr.wikipedia.org/wiki/Internet_Message_Access_Protocol) : Ce service permet à un utilisateur de récupérer ses courriels via le protocole [IMAP](https://fr.wikipedia.org/wiki/Internet_Message_Access_Protocol). Un peu comme nous qui récupérons le courriels dans la boite au lettre. Ce service bien que essentiel pour l'utilisateur final, reste optionnel :P du point de du cheminement du courriel , l'important est de le livré pas obligatoirement de permettre de la consulter. Bon , bien entendu ici ça dépend du point de vue :D.
+
+
+Voici une représentation graphique du processus :
+
+![Etapes_envoi_email.png](./imgs/Etapes_envoi_email.png)
+
+Dans l'exemple ci-dessus, nous avons :
+
+1. L'utilisateur __expediteur@domaine1.com__ qui utilise sont client pour envoyer un courriel.
+2. Le courriel est transmis à son serveur de courriel [MTA]((https://fr.wikipedia.org/wiki/Mail_Transfer_Agent) , __domaine1.com__.
+3. Le serveur __MTA domaine1.com__ analyse le domaine de destination contenu dans l'adresse , dans notre cas __domaine2.org__, afin de savoir quelle serveur gère les courriels de ce domaine il réalisera une requête __DNS__. Les serveurs [DNS](https://fr.wikipedia.org/wiki/Domain_Name_System) ont une entré spécial pour identifier les serveurs de courriels, ce dernier est de type [MX](https://fr.wikipedia.org/wiki/Enregistrement_Mail_eXchanger). Regardons l'entrée __DNS__ pour le domaine __gmail.com__.
+
+        $ dig mx gmail.com
+        ;; ANSWER SECTION:
+        gmail.com.              195     IN      MX      40 alt4.gmail-smtp-in.l.google.com.
+        gmail.com.              195     IN      MX      10 alt1.gmail-smtp-in.l.google.com.
+        gmail.com.              195     IN      MX      20 alt2.gmail-smtp-in.l.google.com.
+        gmail.com.              195     IN      MX      5 gmail-smtp-in.l.google.com.
+        gmail.com.              195     IN      MX      30 alt3.gmail-smtp-in.l.google.com.
+    * Nous avons 5 entrées [MX](https://fr.wikipedia.org/wiki/Enregistrement_Mail_eXchanger) , si vous regardez il y a un numéro avant les __hostnames__ des serveurs 5, 10, 20, 30, 40 . Ce chiffre indique la priorisation du serveur. Si nous envoyons un courriel à __gmail.com__ votre __MTA__ essayera de transmettre le courriel au serveur __gmail-smtp-in.l.google.com__, si ce serveur n'est pas disponible , car trop chargé il prendra le suivant __alt1.gmail-smtp-in.l.google.com__ ainsi de suite.
+    * S'il n'y a pas d'entré __MX__ alors le courriel est transmis au serveur qui répond à la résolution du domaine sans nom de préfixe exemple pour __gmail__ soit __gmail.com__ :D.
+4. Dans notre cas le serveur __domaine1.com__ réalise la requête de l'entrée __MX__ pour le domaine : __domaine2.org__ une fois le serveur identifier il transmet le message en __TCP__ sur le port 25 (par défaut).
+5. Lorsque le serveur __domaine2.org__ reçoit le courriel, il le livre via le service [Mail Delivery Agent](https://fr.wikipedia.org/wiki/Mail_Delivery_Agent) sur le serveur. 
+6. L'utilisateur pourra récupérer le courriels via le service __Pop3__ ou __Imap__, bien entendu il peut y avoir des étapes intermédiaire pour le filtrage des __spams__ ou un antivirus ... Nous le verrons plus tard.
+
+Les __RFC__ définissant le protocole __SMTP__ spécifie que si le serveur de courriel n'est pas disponible lors de la tentative d'envois du courriel , le système conserve le courriel pour refaire un essaie plus tard. Nous verrons que ceci est configurable, la convention de rétention est entre 5 et 7 jours.
+
+Voici une autre représentation du processus :
+
+![800px-Email.png](./imgs/800px-Email.png)
+
+## <a name="block_port_25" /> Blocage du port 25 par les fournisseurs d'accès
+
+En 2006, __l'AFA__ recommande aux fournisseurs d'accès internet  de bloquer les paquets __TCP/IP__ sortant à destination du port 258. L'idée développée est qu'« un utilisateur résidentiel ne devrait pouvoir émettre ses messages électroniques que via le serveur de son fournisseur de messagerie électronique. »
+
+À l'époque entre 50% et 80% du spam était généré par des ordinateurs infectés.
+
+En France et au Canada, les principaux fournisseurs d'accès internet ont suivi cette recommandation : Orange, __Bell__, __Videotron__ et __CCAPcable__ bloquent le port 25 depuis juin 200710, __Free__ depuis décembre 2006 (c'est une option, le blocage peut être désactivé)11, __AOL__ depuis 2003.
+
+La pratique aujourd'hui est la soumission du message par l'utilisateur au serveur de messagerie en utilisant du __SMTP__ authentifié (port 587). Le port 25 sert uniquement aux serveurs __SMTP__ entre eux.
+
+## <a name="ContenuMsg" /> Exemple d'un courriel électronique 
+
+Comme nous avons pu le voir le protocole des courriels date de très longtemps, l'ensemble du protocole suit des règles en texte brute un peu comme le protocole __HTTP__. Bien entendu tous comme le protocole __HTTP__, il est possible d'encapsuler les communications dans un [canal sécurisé tous comme nous l'avons vu avec le protocole __HTTPS__](https://www.youtube.com/watch?v=DilZTPJFVH4).
+
+Vous trouverez une très bonne explication plus détaillé sur __wikipedia__ : [https://en.wikipedia.org/wiki/Email#Message_format](https://en.wikipedia.org/wiki/Email#Message_format).
+
+Un message de courriel est composé de 2 partie :
+
+* En-tête du message : cette section comprend les informations de livraison et de destination du courriel, chaque serveur de courriel ajoute de l'information dans l'en-tête afin de conserver une trace du traitement.
+* Corps du message : Le contenu du message, comme nous le consultons.
+
+Voyons un exemple de message très très simple :
+
+* En-tête / __Header__ :
+
+        Received: from 31.121.118.45 (EHLO serveur.fr)
+        by mta1007.mail.ukl.yahoo.com with SMTP; Fri, 23:35:22 +0200 (CEST)
+        Received: by serveur.fr (Postfix, from userid 106)
+        id 3DF2F15A0CD; Fri, 21 Sep 2012 23:31:16 +0200 (CEST)
+        From: "Thomas@serveur.fr"
+        To: david@yahoo.fr
+        Subject: Bonjour !
+        Date: Fri, 21 Sep 2012 23:31:16 +0200
+        MIME-Version: 1.0
+        Content-Transfer-Encoding: 8bit
+        Content-Type: text/plain; charset=iso-8859-1
+        X-Mailer: Mozilla Thunderbird
+        Message-Id:
+
+
+* Corps / __Body__ du message :
+    
+        Bonjour David,
+        Tiens-moi au courant pour la réunion.
+        Thomas
+
+Bon pour la partie du corps du message je pense que ça va :D, donc analysons l'en-tête , pas trop compliqué, mais profitons de l'occasion pour en prendre connaissance. La compréhension de l'en-tête est important surtout quand il y a un problème , ça tombe bien il y a toujours des problèmes :P.
+
+* Analyse de l'en-tête :
+
+    * **From: "Thomas@serveur.fr"** : L'instruction **FROM**, permet de définir l'expéditeur du message.
+    * **TO: david@yahoo.fr"** : L'instruction **TO**, permet de définir le destinataire du message.
+    * **Subject: Bonjour !** : L'instruction **Subject**, permet de définir le sujet du message.
+    * **Date: Fri, 21 Sep 2012 23:31:16 +0200**: Date de la rédaction du courriel, pas celle de la réception par le serveur de courriel final.
+    * **X-Mailer: Mozilla Thunderbird** : Indique le client utilisé pour la rédaction du courriel , bien entendu ceci est optionnel :D
+    * **Received: by serveur.fr (Postfix, from userid 106)**: L'instruction **Received** permet de savoir le chemin que le courriel à parcouru , ceci est très utile pour l'analyse lors de problématique de transmission de courriel. Si nous regardons le courriel ci-dessus :
+        * Courriel reçu par le serveur postfix à __Fri, 21 Sep 2012 23:31:16 +0200 (CEST)__ , ce dernier lui à donnée le **ID : 3DF2F15A0CD**
+        * Par la suite il a transmis le courriel au serveur __yahoo__ **mta1007.mail.ukl.yahoo.com** à __Fri, 23:35:22 +0200 (CEST)__ ceci en provenance du serveur **from 31.121.118.45 (EHLO serveur.fr)**. Nous voyons clairement le parcours du message , si nous avions plusieurs serveur aillant traité le  courriel nous aurions une liste plus longue.
+
+### <a name="ContenuMsgImage" /> Exemple d'une image dans un courriel
+
+Telle que mentionné l'ensemble des communications par courriel est réalisé en texte plat, pourtant nous sommes en mesure de transmettre des images, des fichier __zip__ , des fichiers __pdf__ sans problème. En fait votre client de courriel qu'il soit web base ou un client natif va convertir l'image en texte sous le format [Base64](https://fr.wikipedia.org/wiki/Base64) qui sera reconvertie par le client recevant le courriel .
+
+Voici un exemple d'une image dans le corps d'un message :
+
+        <br>
+        Passez une bonne journée.
+        <br>
+        --=_alternative 0079E386852580A4_=--
+        --=_related 0079E386852580A4_=
+        Content-Type: image/gif
+        Content-ID: <_1_145F56BC145F51540079E386852580A4>
+        Content-Transfer-Encoding: base64
+
+        R0lGODlhZAAoAPcAAP5sMf/XKv/98v/vpf/Nuv/wrv/NAP/QBP/kbf59Sf/bPf6iff/gWf6ATf/L
+        tf5pLf/tmv/lcv/ogf/eUv/phf/yt//pif/76v/6+P/30v+ujf/53P/08P6lgv/UGf+wkf/mef/a
+        Nf5yOf/YLv/Wxv/e0f/49f/28v/eTf/tnf/p4f/1xf7h1f+gev5hIf/t5v/++v/0wP5VEv+2mf/+
+        /v6ohv/53v/Frv5KBP/qjf6acf7Qvf/Cqv/31f/BqP6Uaf/dSf++pf+8of/OA//Zyf/n3f/bzP6C
+        T//uof/iYf/9/P/SDv6PYf/yuv/gVf/QAv/SwP/jZf/l2v/99P/87v5uNf56RP/iXf/65v/++P/2
+        zv5lKf/y7f/TFv6cdf/65P/qkP60lv/Isv/dQv/v6P/OBP/cPf6siv/WJv/2yv+5nf/aOv/UFP/g
+        B8ihGEEgwCbe0A0vFAEKl2BGMaCwECWMohC7SIYy3BGHZwyiD6PAgxHMaoU+yMMITMiDDl7wAi//
+        5GEUp1AGQzAAVYU84wdwuARnxVAIOHjhBD7YQjfcwYxCaGIa/6jBA4QR2DjIo7CHVUgQHHGGGsTB
+        HnBARQ2g0AFxYEAScYCCNI4giVC8YiG9OAIT3PEOMUBBDvKAAwCMAQwRCOETyABHCaqABwdUARQa
+        iMMO1ACHFzDkBABgwj960YD9JkAE8nABE+zxiQXcIBOSkIMuiJAHY/xjAdOt7nUNu5AWSEMhtgjC
+        KxqgkA7s4g3PcAEJLgEAQOhgB/A9QiFMUAUR8MAFRhCBBv5Rjy2wYBf0+EcReMGMDkijGLT4RB8A
+        cYqkvjXC/3hDFT7wD3JkohS2uO4P8uCDTEwj/xlW0IEXSnDiFDNEsCtuAAYwoIwWVEEJGLCDEGSR
+        hyLMwAtV+IcR5EACEoSBBxU2gULiO4p/3AARDdhCkmvwDzQbAQAEIMcZPqGBEgThBkUIgw9eIQMC
+        MIQbqJCwMgDA6RtsgQd2QCseRpFcFYhhBkF4QCH+8Qo7L0SwhAUGIgyRjCN8QA6gAIQMSNABOyTA
+        EGGQwSsK4Qgo5KEB5NCvpP+hBCsk4h+xsII6ZCCPS2TiAyKwAhlQkQA7LMAKDVADAGShBhfw4AMy
+        APJCOGCHPCgkD7aAtxWkkAk46EEOZ/ABLwYcCnKgghnRNbZCyBEHH7zBB6CQhQ5a0A0faEITPHJ4
+        wyBaEAoixEIDmlADOFRQAi+EYgFoFYwQZrBSEuhCD2RQQQfw0AI6O6APNeCGPECBjAUUgQswB4QP
+        NroQDHyABwoZxNCL/g8o6AAPGjhBCc5wAnoAIhSbKAIZLoEKwDKEHo5wgV4ZSvePaAAHIgBsQAAA
+        Ow==
+        --=_related 0079E386852580A4_=--
+        --=_mixed 0079E386852580A4_=
+
+
+Pour les petits futés qui veulent savoir ce qu'est cette image ne perdez pas de temps le contenu est incomplet par besoin d'essayer de le convertir :D.
+
+## <a name="headerComplex" /> En-tête plus complexe 
+
+Je voulais vous offrir la possibilité de voir un en-tête plus complexe, ce courriel provient de __youtube.com__
+
+
+        Delivered-To: <moi@x3rus.com>
+        Received: from goke.x3rus.com
+        	by x3-mailcow-p.x3rus.com (Dovecot) with LMTP id 1S5aLFNWclhIFwAAyy82cA
+        	for <moi@x3rus.com>; Sun, 08 Jan 2017 10:10:11 -0500
+        Received: from goke.x3rus.com (localhost [127.0.0.1])
+        	by goke.x3rus.com (Postfix) with ESMTP id 823495A44C80
+        	for <pour_moi@x3rus.com>; Sun,  8 Jan 2017 10:10:10 -0500 (EST)
+        Authentication-Results: goke.x3rus.com; dkim=pass
+        	reason="2048-bit key; unprotected key"
+        	header.d=youtube.com header.i=@youtube.com header.b=rTAlTaSE;
+        	dkim-adsp=pass; dkim-atps=neutral
+        X-Fuglu-Suspect: 624d53dbc4dc4e42a26efdcae83fd8b1
+        X-Fuglu-Spamstatus: NO
+        X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
+        	x3-mailcow-p.x3rus.com
+        X-Spam-Status: No, score=-0.1 required=5.0 tests=DKIM_SIGNED,DKIM_VALID,
+        	DKIM_VALID_AU,HTML_MESSAGE,URIBL_BLOCKED autolearn=ham autolearn_force=no
+        Received: from mail-qt0-f176.google.com (mail-qt0-f176.google.com [209.85.216.176])
+        	by goke.x3rus.com (Postfix) with ESMTPS
+        	for <pour_moi@x3rus.com>; Sun,  8 Jan 2017 10:10:10 -0500 (EST)
+        Received: by mail-qt0-f176.google.com with SMTP id v23so117270668qtb.0
+                for <pour_moi@x3rus.com>; Sun, 08 Jan 2017 07:10:05 -0800 (PST)
+        X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+                d=1e100.net; s=20161025;
+                h=x-gm-message-state:delivered-to:dkim-signature:mime-version:date
+                 :message-id:subject:from:to;
+                bh=HAJDFOfa9nZAc/ZYrBa1GheeWcSQs9ujNw2SadPKQY4=;
+                b=lksNPSzvm0JymQYQvQKVUnnzL7iCeuxqRm9A4SsabtBEjIxKw/2/ZIOLCTPzDZNsxH
+                 skLOx2sOXE4c2F3xXnWXNAg6GZ3PYBVNC+aU58iRRdzKtOph5HNbcBFoH5NTLr+AJD4n
+                 QSzMkDKvk+IaOu4zX7L1M1vmbH2EljoSFEdV+zj50shX0EKO6/CncpV3tuNBStwXz+1L
+                 puyGQnRSUqpTy/HkbN280veFZC30Q9A2xE66ZsgbaVwQIqrTaP2K5W/tnVhmj4bYnK/C
+                 2EX2to4YOxr2Sj0bMgz9o6SYlmy1UNTdTk5HHmn2UXfFRz4bidt56GU85YCu2l2lrfz0
+                 SMYw==
+        X-Gm-Message-State: AIkVDXJOcO8FXK2PVqDGbnei2osjGXAuzmz1AOPZ/kmHQF9ntepxnXdhpAd5kH/faU60x9uM3RJS/xpMPmljXXzhhYD+fuQ=
+        X-Received: by 10.200.43.5 with SMTP id 5mr78561564qtu.279.1483888202536;
+                Sun, 08 Jan 2017 07:10:02 -0800 (PST)
+        X-Forwarded-To: pour_moi@x3rus.com
+        X-Forwarded-For: thomas@gmail.com pour_moi@x3rus.com
+        Delivered-To: thomas@gmail.com
+        Received: by 10.237.50.97 with SMTP id y88csp535932qtd;
+                Sun, 8 Jan 2017 07:10:01 -0800 (PST)
+        X-Received: by 10.36.190.68 with SMTP id i65mr6162609itf.118.1483888201601;
+                Sun, 08 Jan 2017 07:10:01 -0800 (PST)
+        Received: from mail-it0-x248.google.com (mail-it0-x248.google.com. [2607:f8b0:4001:c0b::248])
+                by mx.google.com with ESMTPS id 136si46900482ioz.203.2017.01.08.07.10.01
+                for <thomas@gmail.com>
+                (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+                Sun, 08 Jan 2017 07:10:01 -0800 (PST)
+        Received-SPF: pass (google.com: domain of 3svzywacldygz03q1xaa0656nq.o0y5t0ym4.n0653asymux.o0y@youtube-subscriptions.bounces.google.com designates 2607:f8b0:4001:c0b::248 as permitted sender) client-ip=2607:f8b0:4001:c0b::248;
+        Authentication-Results: mx.google.com;
+               dkim=pass header.i=@youtube.com;
+               spf=pass (google.com: domain of 3svzywacldygz03q1xaa0656nq.o0y5t0ym4.n0653asymux.o0y@youtube-subscriptions.bounces.google.com designates 2607:f8b0:4001:c0b::248 as permitted sender) smtp.mailfrom=3SVZyWAcLDYgz03q1xAA0656nq.o0y5t0ym4.n0653Asymux.o0y@youtube-subscriptions.bounces.google.com;
+               dmarc=pass (p=REJECT dis=NONE) header.from=youtube.com
+        Received: by mail-it0-x248.google.com with SMTP id c20so21124540itb.5
+                for <thomas@gmail.com>; Sun, 08 Jan 2017 07:10:01 -0800 (PST)
+        DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+                d=youtube.com; s=20161025;
+                h=mime-version:date:message-id:subject:from:to;
+                bh=HAJDFOfa9nZAc/ZYrBa1GheeWcSQs9ujNw2SadPKQY4=;
+                b=rTAlTaSEMXvDVoqByeuGXBLH8w0PtdRvXM3xipj2gCSC5YW2cCCfmT1Tr3gISf7Yak
+                 rHFOODlh5dLNPMvjZASHT+tFtY5LGiINwBDBazR+KDgLMzcJsyGmDm+6R/dsAnA59d+S
+                 Nj/gn7hv0K8ThlzGHVsOwG6gUU/dDUaIpks7j9PCm7M6BQBR2LDIKAVCSrPBZVaKZVO3
+                 lEhCnHkZqfbH/Tp15gLVbdPme3yWkJNdBsMu/gEvIbnlDeN4aimjr83mtKSBBPmKbPB2
+         fAS2Mc2FVQYs+0XTbuwst3hrK2ZcNpLGOiH7kIuThHjrT0TSLfuepZRD/Msa2R9NWYjC
+         b8cQ==
+        MIME-Version: 1.0
+        X-Received: by 10.107.129.96 with SMTP id c93mr11504940iod.22.1483888201352;
+         Sun, 08 Jan 2017 07:10:01 -0800 (PST)
+        Date: Sun, 08 Jan 2017 07:10:01 -0800
+        X-Feedback-Id: :::YouTube
+        X-No-Auto-Attachment: 1
+        Message-ID: <001a113eceae20c577054596a55c@google.com>
+        Subject: Un Courriel de youtube .... 
+        From: YouTube <noreply@youtube.com>
+        To: Thomas Boutry <thomas@gmail.com>
+        Content-Type: multipart/alternative; boundary=001a113eceae20c54b054596a559
+
+
+Bon là je sais à froid c'est un peu chaud !!! Je comprend que ce n'est pas très agréable à lire commençons par le bas !!
+
+* Le courriel est transmis par **From: YouTube <noreply@youtube.com>**
+* Il est envoyé à **To: Thomas Boutry <thomas@gmail.com>** (bon on s'entend j'ai changé l'adresse original :P ) 
+* Le courriel fut transmis le : **Date: Sun, 08 Jan 2017 07:10:01 -0800**
+* Google / __Youtube__ utilise le système d'anti-spam [DKIM](https://fr.wikipedia.org/wiki/DomainKeys_Identified_Mail) nous aborderons le sujet plus tard vous avez le lien vers wikipedia, si vous êtes pressé. En gros les courriels sont signé , pour certifier la provenance. **DKIM-Signature:**
+* Le courriel est reçu par le serveur **mail-it0-x248.google.com**
+
+        Received: by mail-it0-x248.google.com with SMTP id c20so21124540itb.5
+                for <thomas@gmail.com>; Sun, 08 Jan 2017 07:10:01 -0800 (PST)
+* Encore une validation (les spams c'est vraiment chiant) **Authentication-Results:** , il valide la signature __DKIM__ et les DNS avec les entrées [SPF](https://fr.wikipedia.org/wiki/Sender_Policy_Framework) . Bon désolé ça aussi c'est pour plus tard :P 
+* Prochain serveur recevant le courriel **mail-it0-x248.google.com** 
+
+        Received: from mail-it0-x248.google.com (mail-it0-x248.google.com. [2607:f8b0:4001:c0b::248])
+                by mx.google.com with ESMTPS id 136si46900482ioz.203.2017.01.08.07.10.01
+                for <thomas@gmail.com>
+                (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+                Sun, 08 Jan 2017 07:10:01 -0800 (PST)
+* Le serveur **10.36.190.68** reçoit le courriel , ce dernier utilise en passant une entré **X-Received** qui est non standard (Ha well c'est google , ils ont le droit ;-) )
+
+        X-Received: by 10.36.190.68 with SMTP id i65mr6162609itf.118.1483888201601;
+                Sun, 08 Jan 2017 07:10:01 -0800 (PST)
+* Le serveur **10.237.50.97** reçoit le courriel , par la suite :P (on va y arrivé :P )
+
+        Received: by 10.237.50.97 with SMTP id y88csp535932qtd;
+                Sun, 8 Jan 2017 07:10:01 -0800 (PST)
+* Nous sommes à destination le courriel est livré à __thomas@gmail.com__
+
+        Delivered-To: thomas@gmail.com
+* Pas de chance mes courriels sont pas hébergé sur un serveur google :D , ils sont redirigé à l'adresse __pour\_moi@x3rus.com__. Oui oui c'est repartie pour un tour :D.
+
+        X-Forwarded-To: pour_moi@x3rus.com
+        X-Forwarded-For: thomas@gmail.com pour_moi@x3rus.com
+* Courriel reçu par le serveur **10.200.43.5** 
+
+        X-Received: by 10.200.43.5 with SMTP id 5mr78561564qtu.279.1483888202536;
+                Sun, 08 Jan 2017 07:10:02 -0800 (PST)
+* Courriel reçu par le serveur **mail-qt0-f176.google.com**, ce serveur semble être un serveur externe donc il ajoute les signatures __DKIM__
+
+        Received: by mail-qt0-f176.google.com with SMTP id v23so117270668qtb.0
+                for <pour_moi@x3rus.com>; Sun, 08 Jan 2017 07:10:05 -0800 (PST)
+        X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+                d=1e100.net; s=20161025;
+                h=x-gm-message-state:delivered-to:dkim-signature:mime-version:date
+                 :message-id:subject:from:to;
+                bh=HAJDFOfa9nZAc/ZYrBa1GheeWcSQs9ujNw2SadPKQY4=;
+                b=lksNPSzvm0JymQYQvQKVUnnzL7iCeuxqRm9A4SsabtBEjIxKw/2/ZIOLCTPzDZNsxH
+                 skLOx2sOXE4c2F3xXnWXNAg6GZ3PYBVNC+aU58iRRdzKtOph5HNbcBFoH5NTLr+AJD4n
+                 QSzMkDKvk+IaOu4zX7L1M1vmbH2EljoSFEdV+zj50shX0EKO6/CncpV3tuNBStwXz+1L
+                 puyGQnRSUqpTy/HkbN280veFZC30Q9A2xE66ZsgbaVwQIqrTaP2K5W/tnVhmj4bYnK/C
+                 2EX2to4YOxr2Sj0bMgz9o6SYlmy1UNTdTk5HHmn2UXfFRz4bidt56GU85YCu2l2lrfz0
+        X-Gm-Message-State: AIkVDXJOcO8FXK2PVqDGbnei2osjGXAuzmz1AOPZ/kmHQF9ntepxnXdhpAd5kH/faU60x9uM3RJS/xpMPmljXXzhhYD+fuQ=
+* **YEahhh**  on arrive à la maison mon serveur **goke.x3rus.com** reçoit le courriel
+
+        Received: from mail-qt0-f176.google.com (mail-qt0-f176.google.com [209.85.216.176])
+        	by goke.x3rus.com (Postfix) with ESMTPS
+        	for <pour_moi@x3rus.com>; Sun,  8 Jan 2017 10:10:10 -0500 (EST)
+* Mon serveur __postfix__ le transmet à une autre instance qui réalise la validation du contenu , __antispam, anti-virus, SPF, DKIM__ .... 
+
+        Received: from goke.x3rus.com (localhost [127.0.0.1])
+        	by goke.x3rus.com (Postfix) with ESMTP id 823495A44C80
+        	for <pour_moi@x3rus.com>; Sun,  8 Jan 2017 10:10:10 -0500 (EST)
+        Authentication-Results: goke.x3rus.com; dkim=pass
+        	reason="2048-bit key; unprotected key"
+        	header.d=youtube.com header.i=@youtube.com header.b=rTAlTaSE;
+        	dkim-adsp=pass; dkim-atps=neutral
+        X-Fuglu-Suspect: 624d53dbc4dc4e42a26efdcae83fd8b1
+        X-Fuglu-Spamstatus: NO
+        X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
+        	x3-mailcow-p.x3rus.com
+        X-Spam-Status: No, score=-0.1 required=5.0 tests=DKIM_SIGNED,DKIM_VALID,
+        	DKIM_VALID_AU,HTML_MESSAGE,URIBL_BLOCKED autolearn=ham autolearn_force=no
+* Le courriel est transmis au __MDA__ __Mail Delivery Agent__, dans mon cas __Dovecot__ , comme vous pouvez le constater , l'adresse ne concorde pas :P nous sommes passé de **pour_moi@x3rus.com** à **moi@x3rus.com** car j'ai un alias :D.
+
+        Delivered-To: <moi@x3rus.com>
+        Received: from goke.x3rus.com
+        	by x3-mailcow-p.x3rus.com (Dovecot) with LMTP id 1S5aLFNWclhIFwAAyy82cA
+        	for <moi@x3rus.com>; Sun, 08 Jan 2017 10:10:11 -0500
+
+Finalement c'est pas si compliqué, n'est-ce pas ?? C'est bien fait pareil :D
+
+
+## <a name="ref_theorie" /> Référence pour la théorie 
+
+* [https://fr.wikipedia.org/wiki/Courrier_%C3%A9lectronique](https://fr.wikipedia.org/wiki/Courrier_%C3%A9lectronique)
+* [https://fr.wikipedia.org/wiki/Serveur_de_messagerie_%C3%A9lectronique](https://fr.wikipedia.org/wiki/Serveur_de_messagerie_%C3%A9lectronique)
+* [https://fr.wikipedia.org/wiki/Internet_Message_Access_Protocol](https://fr.wikipedia.org/wiki/Internet_Message_Access_Protocol)
+* [https://en.wikipedia.org/wiki/Email](https://en.wikipedia.org/wiki/Email)
+* [https://fr.wikipedia.org/wiki/Base64](https://fr.wikipedia.org/wiki/Base64)

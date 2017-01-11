@@ -1,0 +1,22 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+
+# Index 
+
+# <a name="Intro" /> Introduction
+
+# <a name="Installation" /> Installation de postfix de base 
+# <a name="configuration" /> Configuration de base 
+
+## Visualisation de la configuration
+## Mise en place d'un serveur de relais 
+## Mise en place du domaine de reception
+## configuration du DNS
+## Réalisation d'un envoie de courriel manuellement (TELNET)
+## Livraison des courriels pour un utilisateur local 
+## Récupération des courriels avec dovecot (imaps / pop3) pour utilisateur local
+
+
