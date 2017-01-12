@@ -8,8 +8,82 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # <a name="Intro" /> Introduction
 
+Suite à la théorie vue précédemment nous allons passé à la pratique de mise en place d'un service [MTA]((https://fr.wikipedia.org/wiki/Mail_Transfer_Agent) avec l'application [postfix](http://www.postfix.org/). Honnêtement après avoir utilisé plusieurs système telle que __sendmail__ , __qmail__ ou __exim__ mon choix est clairement pour __postfix__. En fait le seul dans la liste mentionné précédemment que j'apprécie aussi est __exim__ , mais étant très confortable avec __postfix__ je n'ai jamais pris le temps de l'apprendre en profondeur .
+
+Pour les autres :
+
+* __sendmail__ : premier système (à ma connaissance) libre permettant le transfert de courriel, malheureusement la rédaction de la configuration est pénible 
+* __qmail__ : Un enfer à installé, le développeur principale a des positions ferme sur le fonctionnement et faut utilisé des patchs pour ajouter des fonctionnalité ... Je l'ai mis a quelques reprise en place , avec plus de maturité maintenant , je refuse de travailler avec :P. 
+
+Voici ce que nous allons couvrir :
+
+* Installation de base de __postfix__ comme serveur de relais de courriels , en d'autre mot le serveur ne livrera pas de message dans des boites local mais fera la passerelle vers d'autre serveur. Ceci nous permettra de voir la configuration la plus simple !!
+* Configuration du service __postfix__ pour qu'il livre localement au utilisateur système les courriels pour un domaine nommé
+* Nous mettrons en place le service __dovecot__ afin de permettre la récupération des courriels via le service __pop3__ et __imap__ depuis une machine distante.
+
 # <a name="Installation" /> Installation de postfix de base 
+
+Bien entendu nous utiliserons le service de pacquage de la distribution pour réaliser l'installation, afin d'être assurer d'avoir les mise à jours régulières du service, surtout qu'il est exposé sur l'Internet.
+
+Il y a un grand nombre de pacquage disponible avec __Ubuntu 16.04__ :
+
+        $ apt-cache search postfix | grep ^postfix
+        postfix - High-performance mail transport agent
+        postfix-cdb - CDB map support for Postfix
+        postfix-dev - Loadable modules development environment for Postfix
+        postfix-doc - Documentation for Postfix
+        postfix-ldap - LDAP map support for Postfix
+        postfix-mysql - MySQL map support for Postfix
+        postfix-pcre - PCRE map support for Postfix
+        postfix-pgsql - PostgreSQL map support for Postfix
+        postfix-cluebringer - anti-spam plugin for Postfix
+        postfix-cluebringer-mysql - metapackage for mysql support in postfix-cluebringer
+        postfix-cluebringer-pgsql - metapackage for postgresql support in postfix-cluebringer
+        postfix-cluebringer-sqlite3 - metapackage for sqlite3 support in postfix-cluebringer
+        postfix-cluebringer-webui - anti-spam plugin for Postfix
+        postfix-gld - greylisting daemon for postfix, written in C, uses MySQL
+        postfix-policyd-spf-perl - Simple Postfix policy server for RFC 4408/7208 SPF checking
+        postfix-policyd-spf-python - Postfix policy server for SPF checking
+        postfixadmin - Virtual mail hosting interface for Postfix
+
+Avant de s'exciter avec l'ensemble des possibilités on va commencer avec le celui de base :D.
+
+        $ sudo apt-get install postfix
+
+Lors de l'installation du pacquage nous avons la question suivante :
+
+        Postfix Configuration
+        ---------------------
+
+        Please select the mail server configuration type that best meets your needs.
+
+         No configuration:
+           Should be chosen to leave the current configuration unchanged.
+           Internet site:
+              Mail is sent and received directly using SMTP.
+           Internet with smarthost:
+              Mail is received directly using SMTP or by running a utility such
+              as fetchmail. Outgoing mail is sent using a smarthost.
+           Satellite system:
+              All mail is sent to another machine, called a 'smarthost', for delivery.
+           Local only:
+              The only delivered mail is the mail for local users. There is no network.
+
+         1. No configuration  2. Internet Site  3. Internet with smarthost  4. Satellite system  5. Local only
+         General type of mail configuration: 1
+
+J'ai opté pour ne pas avoir de configuration, car nous sommes dans le processus de monté en compétence autant profiter de l'occasion pour en chier un peu plus :P . Par contre, si je devais faire l'installation en mode "__Satellite system__" dans mon réseau, je sélectionnerai cette option, car c'est valide et me ferai gagner du temps. 
+
+Bon l'installation est complété comme d'habitude le système de pacquage fonctionne à merveille.
+
 # <a name="configuration" /> Configuration de base 
+
+La configuration de __postfix__ est bien entendu dans le répertoire **/etc**, la configuration du service est principalement dans 2 fichiers :
+
+* **master.cf** : Ce fichier de configuration définie la configuration des processus composant __postfix__ , nous verrons lors de l'analyse de l'architecture du service que __postfix__est composé d'une multitude de petit programme. Il est rare que nous sommes devons modifier ce fichier, mais ça arrive.
+* **main.cf** : Fichier de configuration principale du service __postfix__ , ce dernier définira les nom de domaines dont nous acceptons les courriels , la liste des machines pouvant utiliser le service , la définition de la configuration de la base de données (s'il y a un stockage dans cette dernière , ...). Nous allons travailler principalement ce fichier !
+
+
 
 ## Visualisation de la configuration
 ## Mise en place d'un serveur de relais 
