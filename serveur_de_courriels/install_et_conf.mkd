@@ -83,7 +83,116 @@ La configuration de __postfix__ est bien entendu dans le répertoire **/etc**, l
 * **master.cf** : Ce fichier de configuration définie la configuration des processus composant __postfix__ , nous verrons lors de l'analyse de l'architecture du service que __postfix__est composé d'une multitude de petit programme. Il est rare que nous sommes devons modifier ce fichier, mais ça arrive.
 * **main.cf** : Fichier de configuration principale du service __postfix__ , ce dernier définira les nom de domaines dont nous acceptons les courriels , la liste des machines pouvant utiliser le service , la définition de la configuration de la base de données (s'il y a un stockage dans cette dernière , ...). Nous allons travailler principalement ce fichier !
 
+Regardons le fichier **main.cf** :
 
+        $ cat /etc/postfix/main.cf
+        cat: /etc/postfix/main.cf: No such file or directory
+
+Bien entendu on a dit pas de configuration :D , bon petite critique au regarde du fichier de démarrage si vous essayez de le démarrer voici le résultat 
+
+        $ sudo  /etc/init.d/postfix start                
+        $ echo $?
+        0
+
+Pas d'erreur disant qu'il n'y a pas de fichier de configuration et le code d'erreur est convenable soit 0 :-/ . Si nous regarde le fichier d'init script ceci est du à la ligne 31 :
+
+        31  test -x $DAEMON && test -f /etc/postfix/main.cf || exit 0
+
+## <a name="configuration" /> Configuration d'un serveur de relais 
+
+Je pense que nous n'avons pas le choix de nous y mettre, donc rédigeons la configuration pour l'envoie de courriel uniquement, cette configuration ne sera pas en mesure de recevoir des courriels . 
+Cette configuration est très utilisé dans l'industrie, car vous ne voulez probablement que tous les serveurs envoie directement les courriels sur internet car : 
+
+* Si vos serveurs sont dans un réseau restreint, les communications vers le monde extérieur est limité
+* Vos postes de travaillent non pas besoin de transmettre des courriels sur internet, si ceci est un requis alors vous voulez être en mesure d'identifier une machine qui est infecter par un __malware__. En utilisant un serveur de relais vous avez un lieu à valider et non l'ensemble des postes de travail.
+* Si vous réalisez des envoies massive pour des clients, légitime, votre serveur de relais peut réalisé une gestion de l'envoie pour ne pas engorger l'ensemble .
+* En utilisant un serveur de relais ceci vous permettra d'avoir une visibilité des envoies (statistique, limitation , comptabilisation , ...)
+
+Il y a probablement beaucoup d'autre raison valide pour vous :D.
+
+Réalisons un fichier de configuration simple ! Voici un début que nous allons pouvoir nourrir / enrichir par la suite :
+
+              1  smtpd_banner = $myhostname ESMTP $mail_name
+              2  biff = no
+              3
+              4
+              5  smtpd_relay_restrictions = permit_mynetworks  defer_unauth_destination
+              6  myhostname = $myorigin
+              7  myorigin = mail.example.com
+              8  # mydestination = {{ RELAY_HOST_NAME }}
+              9  mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+             10  inet_interfaces = all
+             11  inet_protocols = ipv4
+             12
+             13  relayhost = relay_mail.fai.com
+
+Bon c'est partie , je vous invite à consulter la documentation de [postfix](http://www.postfix.org/postconf.5.html) qui est vraiment bien pour l'ensemble des paramètre, c'est en anglais, mais vraiment complet.
+
+* **smtpd_banner** : Ceci indique la banner qui sera transmise au client lors de l'établissement de connexion 
+* **smtpd_relay_restrictions** : Permet de définir la restriction de qui peut transmettre une courriel par votre serveur. Ce paramètre est **ULTRA** important , si vous laissez votre serveur __postfix__ ouvert sur internet les spameurs l'utiliseront rapidement et votre IP sera black listé. Dans la configuration présente nous permettons les réseaux autorisé (**permit_mynetworks**) et / ou si le client n'est pas lister dans les IP autorisé si le domaine de livraison est notre serveur ou si le domaine est spécifiquement lister pour être relayé .
+* **myhostname** : Le __hostname__ du serveur où est exécuté __postfix__
+* **myorigin** : le nom qui sera afficher dans l'en-tête du courriel, parfois il est différent du __hostname__
+* **mynetworks** : définition des IP et réseaux pouvant utiliser le serveur pour l'envoie des courriels librement. Dans la situation présente uniquement le serveur lui même peut envoyer des courriels vers l'extérieur. Pas très pratique mais ceci me permettra de démontré l'erreur d'envois nous le changerons par la suite :D.
+* **inet_interfaces** : Définition sur quelle interface le serveur __postfix__ va écouter , par exemple __eth0, eth1, eth2__ dans la situation présente j'écoute sur l'ensemble des interfaces .
+* **inet_protocols** : Protocole utilisé __IPv4 , IPv6__ .
+* **relayhost** : Vers quelle serveur de courriel nous allons transmettre TOUS les courriels .
+
+Ça semble bon, nous allons pouvoir démarrer le service :
+
+        $ /etc/init.d/postfix start
+
+Le système __postfix__ utilise __syslog__ pour écrire les logs vous devez donc avoir le service présent pour pouvoir consulter les logs ... Consultons les logs pour valider que tous fonctionne bien, sous Ubuntu nous avons 2 fichier **/var/log/mail.err** et **/var/log/mail.log**.
+
+Consultons les logs d'erreur pour débuter :
+
+        $ tail /var/log/mail.err
+        Jan 12 22:16:29 mail01 postfix/smtpd[1058]: error: open database /etc/aliases.db: No such file or directory
+
+        $ tail /var/log/mail.log
+        Jan 12 22:16:24 mail01 postfix/master[1054]: daemon started -- version 3.1.0, configuration /etc/postfix
+        Jan 12 22:16:29 mail01 postfix/smtpd[1058]: error: open database /etc/aliases.db: No such file or directory
+        Jan 12 22:16:29 mail01 postfix/smtpd[1058]: warning: dict_nis_init: NIS domain name not set - NIS lookups disabled
+
+Comme toujours j'aime bien laisser des erreurs de configuration dans mes exemples pour démontrer l'analyse du processus de résolution :D 
+
+### <a name="configuration_analyse_err" /> Analyse des erreurs et des configurations actives
+
+Donc premier réflex , on copie / colle l'erreur dans google :D , quand on connait pas on cherche l'information. Bien que je savais la réponse j'ai fait l'exercice pour le plaisir , voici le premier lien trouvé en date du 12 Janvier 2017 : 
+
+* http://serverfault.com/questions/683243/postfix-aliases-db-no-such-file-or-directory
+
+![err_alias_mail.png](./imgs/err_alias_mail.png)
+
+Bon super une solution, mais heu nous on a pas les entrées mentionnée :
+
+        alias_database = hash:/etc/aliases
+        alias_maps = hash:/etc/aliases, nis:mail.aliases
+
+En fait même si notre fichier **/etc/postfix/main.cf** ne contient que 13 lignes dans la réalité nous avons 979 propriétés de configuration définie :D. **Yep** __postfix__  a plein de configuration de disponible et PLEIN de configuration par défaut :D . Maintenant comment les consulter ? Grâce à la commande **postconf**
+
+        $ postconf | wc -l
+        979
+        $ postconf | head
+        2bounce_notice_recipient = postmaster
+        access_map_defer_code = 450
+        access_map_reject_code = 554
+        address_verify_cache_cleanup_interval = 12h
+        address_verify_default_transport = $default_transport
+        address_verify_local_transport = $local_transport
+        address_verify_map = btree:$data_directory/verify_cache
+        address_verify_negative_cache = yes
+        address_verify_negative_expire_time = 3d
+        address_verify_negative_refresh_time = 3h
+
+
+C'est bien tous ça, regardons pour l'instruction alias pour voir : 
+
+        $ postconf | grep alias_
+        alias_database = hash:/etc/aliases
+        alias_maps = hash:/etc/aliases, nis:mail.aliases
+        [... OUTPUT COUPÉ ...]
+
+Les Internets avait donc raison :P , nous avons bien cette entré de définie , l'important ici est vraiment la commande **postconf** :D 
 
 ## Visualisation de la configuration
 ## Mise en place d'un serveur de relais 
