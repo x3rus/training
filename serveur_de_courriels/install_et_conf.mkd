@@ -119,7 +119,6 @@ Réalisons un fichier de configuration simple ! Voici un début que nous allons 
               5  smtpd_relay_restrictions = permit_mynetworks  defer_unauth_destination
               6  myhostname = $myorigin
               7  myorigin = mail.example.com
-              8  # mydestination = {{ RELAY_HOST_NAME }}
               9  mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
              10  inet_interfaces = all
              11  inet_protocols = ipv4
@@ -192,7 +191,89 @@ C'est bien tous ça, regardons pour l'instruction alias pour voir :
         alias_maps = hash:/etc/aliases, nis:mail.aliases
         [... OUTPUT COUPÉ ...]
 
-Les Internets avait donc raison :P , nous avons bien cette entré de définie , l'important ici est vraiment la commande **postconf** :D 
+Les Internets avait donc raison :P , nous avons bien cette entré de définie , l'important ici est vraiment la commande **postconf** :D , pour information ce fichier permet de gérer les alias de courriel.
+Bon nous avons 2 choix corriger le problème ou désactivé la fonctionnalité , pour faire le choix quelle est le rôle de la machine ? 
+Permettre le transfert de courriel en mode passerelle donc pas besoin d'alias :D, pas de panique , on va le voir lors de la livraison local :D.
+
+J'ai donc ajouter les lignes suivante dans le fichier de configuration **/etc/postfix/main.cf**:
+
+        alias_database =
+        alias_maps =
+
+On redémarre et plus d'erreur :D.
+
+Validons que le service est bien disponible :
+
+        $ ps aux | grep post
+        root       165  0.0  0.0  65408  4612 ?        Ss   13:24   0:00 /usr/lib/postfix/sbin/master
+
+        $ ss -lntp
+        State      Recv-Q Send-Q                                  Local Address:Port                                                 Peer Address:Port
+        LISTEN     0      100                                                 *:25                                                              *:*
+
+Ça semble bon :D, on fait un test :D . Ha ouin y a encore un problème :P , donc pas de panique encore c'est normal . Je crois pertinemment que l'on apprend plus avec les erreur que quand tous fonctionne :D . Ceci vous offre aussi la possibilité d'analyse le processus de diagnostique.
+
+### <a name="teste_envoie_mail" /> Tentative d'envois de courriel par la passerelle et analyse des erreurs
+
+Il est temps de réaliser un teste, bien entendu nous pourrions configurer un client __libre__ :P , mais si vous êtes à distance sur des serveurs dans un segment réseau limité ça peut être difficile. Comme le protocole __SMTP__ utilise des instructions texte pour communiquer, nous serons en mesure de le simuler.
+
+Mon serveur actuellement à l'IP 172.17.0.2, nous allons utiliser une autre machine sur le réseau pour transmettre le courriel avec l'application **TELNET**.
+
+        $ telnet 172.17.0.2 25
+        Trying 172.17.0.2...
+        Connected to 172.17.0.2.
+        Escape character is '^]'.
+        220 mail.example.com ESMTP Postfix
+
+Comme vous pouvez le voir dès la connexion nous avons la bannière que nous avions défini : **220 mail.example.com ESMTP Postfix**
+
+Je me présente , en d'autre mot ma machine se présente :
+
+        ehlo hostname_de_ma_workstion.lan.com
+        250-mail.example.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+
+Le serveur me répond les protocole et informations sur son système . 
+
+J'indique le courriel provient de qui :
+
+        MAIL FROM: super_dude@x3rus.com
+        250 2.1.0 Ok
+
+C'est le temps d'indiquer à qui le courriel sera transmis :
+
+        RCPT TO: mon_ami_super_geek@x3rus.com
+        454 4.7.1 <mon_ami_super_geek@x3rus.com>: Relay access denied
+
+Et **BOOM** , message : **Relay access denied** donc le serveur refuse de transmettre mon courriel de faire le relais sur internet.
+Bon je quitte proprement :
+
+        quit
+        221 2.0.0 Bye
+        Connection closed by foreign host.
+
+Si nous regardons le __log__ **/var/log/mail.log** , même message :
+
+        Jan 13 13:37:59 mail01 postfix/smtpd[338]: connect from unknown[172.17.0.1]
+        Jan 13 13:38:16 mail01 postfix/smtpd[338]: NOQUEUE: reject: RCPT from unknown[172.17.0.1]: 454 4.7.1 <mon_ami_super_geek@x3rus.com>: Relay access denied; from=<super_dude@x3rus.com> to=<mon_ami_super_geek@x3rus.com> proto=ESMTP helo=<hostname_de_ma_workstion.lan.com>
+        Jan 13 13:38:47 mail01 postfix/smtpd[338]: disconnect from unknown[172.17.0.1] ehlo=1 mail=1 rcpt=0/1 quit=1 commands=3/4
+
+À la lecture du logs nous voyons que la connexion provient de **reject: RCPT from unknown[172.17.0.1]** , regardons la configuration du service de courriel, dans le fichiers **/etc/postfix/main.cf**, je vais porter votre attentions sur 2 paramètres :
+
+        smtpd_relay_restrictions = permit_mynetworks  defer_unauth_destination
+        mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+
+
+* **smtpd_relay_restrictions** : Dans la configuration présente nous permettons les réseaux autorisé (**permit_mynetworks**) et / ou si le client n'est pas lister dans les IP autorisé si le domaine de livraison est notre serveur ou si le domaine est spécifiquement lister pour être relayé .
+    * Comme nous ne livrons RIEN localement et n'avons pas spécifier de nom de domaine rétreints pour le relais nous allons permettre le relai basé sur l'adresse IP.
+* **mynetworks** : Actuellement nous ne permettons QUE le relais si le courriel provient du client 127.0.0.1 , donc de la machine elle même. 
+
 
 ## Visualisation de la configuration
 ## Mise en place d'un serveur de relais 
