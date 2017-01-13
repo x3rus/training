@@ -274,6 +274,187 @@ Si nous regardons le __log__ **/var/log/mail.log** , même message :
     * Comme nous ne livrons RIEN localement et n'avons pas spécifier de nom de domaine rétreints pour le relais nous allons permettre le relai basé sur l'adresse IP.
 * **mynetworks** : Actuellement nous ne permettons QUE le relais si le courriel provient du client 127.0.0.1 , donc de la machine elle même. 
 
+Maintenant que l'on a vu l'erreur nous allons ajouter le réseau approprié , j'ajoute le réseaux **172.17.0.0/16**:
+
+        mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 172.17.0.0/16
+
+On redémarre __postfix__ et on refais le teste.
+
+        $ telnet 172.17.0.2 25
+        Trying 172.17.0.2...
+        Connected to 172.17.0.2.
+        Escape character is '^]'.
+        220 mail.example.com ESMTP Postfix
+        ehlo host_workstation.example.com
+        250-mail.example.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+        MAIL FROM: toto@gmail.com
+        250 2.1.0 Ok
+        RCPT TO: demo@x3rus.com
+        250 2.1.5 Ok
+        DATA
+        354 End data with <CR><LF>.<CR><LF>
+        le corps du message qui sera dans le courriel
+        .
+        250 2.0.0 Ok: queued as DDC03A029B1
+        QUIT
+        221 2.0.0 Bye
+        Connection closed by foreign host.
+
+Comme vous pouvez le constater l'instruction **RCPT TO: demo@x3rus.com** a bien fonctionné à présent ! J'ai donc pu passer à l'autre étape soit transmettre le contenu du message soit le corps **body** du courriel avec l'aide de l'instruction **DATA**, qui ce termine par **un point** seul sur une ligne.
+Une fois terminé le serveur __postfix__ me  donne le numéro du message dans la queue de traitement **DDC03A029B1**.
+L'instruction **quit** me permet de fermer la communication .
+
+Voici le résultat dans les logs :
+
+        Jan 13 21:39:20 mail01 postfix/smtpd[167]: connect from unknown[172.17.0.1]
+        Jan 13 21:39:54 mail01 postfix/smtpd[167]: DDC03A029B1: client=unknown[172.17.0.1]
+        Jan 13 21:40:12 mail01 postfix/cleanup[170]: DDC03A029B1: message-id=<>
+        Jan 13 21:40:12 mail01 postfix/qmgr[166]: DDC03A029B1: from=<toto@gmail.com>, size=237, nrcpt=1 (queue active)
+        Jan 13 21:40:12 mail01 postfix/smtp[171]: warning: relayhost configuration problem
+        Jan 13 21:40:12 mail01 postfix/smtp[171]: DDC03A029B1: to=<demo@x3rus.com>, relay=none, delay=23, delays=23/0.01/0.3/0, dsn=4.3.5, status=deferred (Host or domain name not found. Name service error for name=relay_mail.fai.com type=A: Host not found)
+        Jan 13 21:40:14 mail01 postfix/smtpd[167]: disconnect from unknown[172.17.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 commands=5
+
+
+Bon oui oui je sais il y a encore un problème :P, faut bien que je vous montre le processus d'analyse des problèmes :D.
+
+### <a name="analyse_prob_relay" /> Analyse de la queue Postfix et du problème de relais
+
+Donc si nous regardons l'erreur :
+
+        Jan 13 21:40:12 mail01 postfix/smtp[171]: DDC03A029B1: to=<demo@x3rus.com>, relay=none, delay=23, delays=23/0.01/0.3/0, dsn=4.3.5, status=deferred (Host or domain name not found. Name service error for name=relay_mail.fai.com type=A: Host not found)
+
+Je pense que l'erreur est explicite, la configuration dans le **relayhost** de __postfix__ n'est pas bonne donc il n'est pas en mesure de réaliser le passage du témoin à l'autre machine. Comme ne transmet pas de courriel sur internet librement, il ne peut transmettre le courriel.
+Bien entendu la solution du problème est simple mettre un serveur convenable :D, bon mais profitons de l'occasion pour analyser la queue de __postfix__.
+
+Lors de la présentation de la théorie du service de courriel j'ai fait mention que le système de courriel conserve les messages s'il n'est pas en mesure de le livrer. __Yeah__ c'est exactement la situation , quelle chance :P !!! 
+
+Vous pouvez voir la queue actuel de __postfix__ cette dernière contient contient les courriels en cours de traitement ainsi que les courriels en erreur, voyons actuellement l'état de cette dernière :
+
+        $ mailq 
+        -Queue ID-  --Size-- ----Arrival Time---- -Sender/Recipient-------
+        DDC03A029B1      237 Fri Jan 13 21:39:49  toto@gmail.com
+        (Host or domain name not found. Name service error for name=relay_mail.fai.com type=A: Host not found)
+                                                 demo@x3rus.com
+
+        -- 0 Kbytes in 1 Request.
+
+Nous y retrouvons le __ID__ de la queue , la date , l'expéditeur , le message d'erreur ou du moins l'état du traitement et la destination !
+
+Où sont conservé les ses messages sur le système ??!!!  Dans un fichier binaire dans un format privatif , non je rigole :P !
+Le **spool** , le répertoire de traitement, où est contenu les fichiers en cours de traitement est dans le répertoire **/var/spool/postfix**
+
+        $ ls /var/spool/postfix
+        active  bounce  corrupt  defer  deferred  dev  etc  flush  hold  incoming  lib  maildrop  pid  private  public  saved  trace  usr
+
+Dans notre cas, les courriels sont dans le répertoire **defer** et **deferred** , nous verrons plus en détail les différentes __queue__ de __postfix__ dans/si nous réalisons une section performance. Bon , on va s'entendre dans 3 moins (je suis généreux) si vous avez un problème vous vous rappellerez pas que c'est dans le répertoire **defer** donc rappelez vous juste du répertoire **/var/spool/postfix** et faite comme moi un petit **find** avec le ID du message ;-).
+
+
+        $ find /var/spool/postfix -name "*DDC03A029B1*" 
+        /var/spool/postfix/defer/D/DDC03A029B1
+        /var/spool/postfix/deferred/D/DDC03A029B1
+
+Magie :D !! 
+
+* **/var/spool/postfix/defer/D/DDC03A029B1** : Ce fichier contient de l'information sur l'état du courriel pour __postfix__
+
+        <demo@x3rus.com>: Host or domain name not found. Name service error for name=relay_mail.fai.com type=A: Host not found
+        recipient=demo@x3rus.com
+        offset=624
+        dsn_orig_rcpt=rfc822;demo@x3rus.com
+        status=4.3.5
+        action=delayed
+        reason=Host or domain name not found. Name service error for name=relay_mail.fai.com type=A: Host not found
+* **/var/spool/postfix/deferred/D/DDC03A029B1** : Ce fichier contient le message proprement dit :
+
+        C_            237             642               1               0             237               0T1484343589 154488Acreate_time=1484343594Alog_ident=DDC03A029B1Arewrite_context=remoteStoto@gmail.comAlog_client_name=unknownAlog_client_address=172.17.0.1Alog_client_port=37250A&log_message_origin=unknown[172.17.0.1]A*log_helo_name=host_workstation.example.comAlog_protocol_name=ESMTPAclient_name=unknownAeverse_client_name=unknownAclient_address=172.17.0.1Aclient_port=37250A&helo_name=host_workstation.example.comAprotocol_name=ESMTPAclient_address_type=2A#dsn_orig_rcpt=rfc822;demo@x3rus.comOdemo@x3rus.comRdemo@x3rus.comMNBReceived: from host_workstation.example.com (unknown [172.17.0.1])N8   by mail.example.com (Postfix) with ESMTP id DDC03A029B1N<       for <demo@x3rus.com>; Fri, 13 Jan 2017 21:39:49 +0000 (UTC)NN-le corps du message qui sera dans le courrielXE
+
+C'est fichier sont utiliser comme point de référence , si nous supprimons les fichiers la queue sera "vide" car plus de fichier :
+
+        $ sudo  mailq
+        -Queue ID-  --Size-- ----Arrival Time---- -Sender/Recipient-------
+        DDC03A029B1      237 Fri Jan 13 21:39:49  toto@gmail.com
+        (Host or domain name not found. Name service error for name=relay_mail.fai.com type=A: Host not found)
+                                                 demo@x3rus.com
+
+        -- 0 Kbytes in 1 Request.
+        $ sudo  rm /var/spool/postfix/defer/D/DDC03A029B1 /var/spool/postfix/deferred/D/DDC03A029B1
+        $ sudo  mailq
+        Mail queue is empty
+
+Bien entendu ça fait très **haxor** et c'est super pratique , mais malheureusement c'est pas très optimal, il y a un risque d'erreur et si vous désirez supprimer des messages dans la queue vous êtes obligé de faire un script avec un critère , de plus ils ne sont pas obligatoirement tous dans la queue __deffered__. 
+
+Nous pouvons utiliser une autre méthode plus **belle** , je vais mettre un autre courriel dans la queue ...
+
+        $ telnet 172.17.0.2 25
+        Trying 172.17.0.2...
+        Connected to 172.17.0.2.
+        Escape character is '^]'.
+        220 mail.example.com ESMTP Postfix
+        ehlo ma_machine
+        250-mail.example.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+        MAIL FROM: un_haxor@gmail.com
+        250 2.1.0 Ok
+        RCPT TO: un_autre_geek@gmail.com
+        250 2.1.5 Ok
+        data
+        354 End data with <CR><LF>.<CR><LF>
+        bon moi aussi je veux supprimer des messages comme un haxor
+        .
+        250 2.0.0 Ok: queued as 5011DA029B1
+
+Donc sur le serveur 
+
+        $ mailq
+        -Queue ID-  --Size-- ----Arrival Time---- -Sender/Recipient-------
+        5011DA029B1      242 Fri Jan 13 22:11:32  un_haxor@gmail.com
+        (Host or domain name not found. Name service error for name=relay_mail.fai.com type=A: Host not found)
+                                                 un_autre_geek@gmail.com
+        -- 0 Kbytes in 1 Request.
+
+        $ sudo find /var/spool/postfix -name "*5011DA029B1*"
+        /var/spool/postfix/defer/5/5011DA029B1
+        /var/spool/postfix/deferred/5/5011DA029B1
+
+Vous avez l'utilitaire **postsuper** documentation : [man postsuper](http://www.postfix.org/postsuper.1.html) , cette utilitaire vous permet de manipuler les message dans la queue. Je vous laisse le plaisir de consulter le man page. Nous pourrons supprimer des courriels , mettre en pause des courriels , ... 
+
+Donc si nous réalisons l'opération pour supprimer le message le résultat  :
+
+        $ sudo postsuper -d 5011DA029B1
+        postsuper: 5011DA029B1: removed
+        postsuper: Deleted: 1 message
+        $ sudo mailq
+        Mail queue is empty
+
+Pour ceux qui pourrait dire , __ouin__ mais  ça fait moins __Hax0r__ (__Hacker__) , pas de panique, si vous regardez le man page , il est possible d'avoir l'air d'un demi dieu très facilement :P ...
+
+        $ mailq | tail -n +2 | grep -v '^ *(' | awk  'BEGIN { RS = "" }
+                          # $7=sender, $8=recipient1, $9=recipient2
+                          { if ($8 == "user@example.com" && $9 == "")
+                          print $1 } ' | tr -d '*!' | postsuper -d -
+
+L'instruction ci-dessus permet de supprimer les courriels dont le destinataire est uniquement __user@example.com__ , ouvrez le man page quand la personne au dessus de votre épaule à la tête tourné un petit copier / collé et il sera vraiment impressionné :P.
+
+### <a name="viewGoodTransfert" /> Visualisation d'une communication complète 
+
+Bon on s'amuse avec des erreurs et l'analyse de problème mais ça serait bien que vous ayez un point de référence quand ça fonctionne aussi :P. Donc je vais changé le serveur de relais pour un valide pour la démonstration.
+
+TODO : ajouter le contenu.
+
+Bon c'est moins le plaisant, mais ça fait partie du jeu :D
 
 ## Visualisation de la configuration
 ## Mise en place d'un serveur de relais 
