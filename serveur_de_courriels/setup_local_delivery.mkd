@@ -21,6 +21,90 @@ De plus cette configuration reste intéressante si vous désirez avoir un serveu
 
 # <a name="setup_local_delivery" /> Configuration pour la livraison local
 
+Reprenons depuis notre configuration de relais de courriel , nous avions la configuration suivante **/etc/postfix/main.cf** :
+
+        smtpd_banner = $myhostname ESMTP $mail_name
+
+        alias_database =
+        alias_maps =
+
+
+        smtpd_relay_restrictions = permit_mynetworks  defer_unauth_destination
+        myhostname = $myorigin
+        myorigin = mail.example.com
+        # mydestination = {{ RELAY_HOST_NAME }}
+        mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 172.17.0.0/16
+        inet_interfaces = all
+        inet_protocols = ipv4
+
+        relayhost = mail.x3rus.com
+
+Modifions la configuration pour permettre la réception  pour le domaine __mailtraining.x3rus.com__ , comme vous le voyez je crée un sous domaine de __x3rus.com__, nous serons donc en mesure de transmettre des courriels comme __toto@mailtraining.x3rus.com__. 
+
+Voici l'entrée que je vais ajouter :
+
+        mydestination = mailtraining.x3rus.com
+
+On redémarrer __postfix__ et on visualise :D :
+
+        $ telnet 172.17.0.2 25
+        Trying 172.17.0.2...
+        Connected to 172.17.0.2.
+        Escape character is '^]'.
+        220 mail.example.com ESMTP Postfix
+        ehlo toto
+        250-mail.example.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+        mail from: thomas@x3rus.com
+        250 2.1.0 Ok
+        rcpt to: toto@mailtraining.x3rus.com
+        550 5.1.1 <toto@mailtraining.x3rus.com>: Recipient address rejected: User unknown in local recipient table
+        rcpt to:root@mailtraining.x3rus.com
+        250 2.1.5 Ok
+        data
+        354 End data with <CR><LF>.<CR><LF>
+        un mail de test
+        .
+        250 2.0.0 Ok: queued as 291ACA029B1
+        quit
+        221 2.0.0 Bye
+        Connection closed by foreign host.
+
+COOL !! C'est pas trop mal :P , nous voyons que lors de l'envoie d'un courriel pour __toto__ ce dernier fut rejeté, non présent comme utilisateur local. Effectivement nous n'avons pas d'utilisateur toto sur la machine . J'ai donc fait l'envoie à l'utilisateur **root**, car lui est bien présent.
+
+Pour rappel la configuration actuelle réalise une livraison local au utilisateur SYSTÈME !.
+
+## <a name="limitation_userlist" /> Configuration de la limitation pour des courriels valide 
+
+Comme nous voyons dans l'exemple ci-dessus l'adresse courriel est validé AVANT de prendre la courriel, ceci assure que les ressources système ne sont utilisées que pour des courriels pour des bonne adresse. Si vous n'avez pas cette configuration de présente un attaquant pourrait réalisé un DDOS sur votre serveur en envoyant une grosse quantité de courriel . __Postfix__ devra traiter chaque courriel ainsi que les systèmes de filtrage tous ça pour constater qu'il n'est pas en mesure de le livrer.
+
+C'est super la configuration est maintenant par défaut (c'était pas comme ça avant :P ) , prenons le temps de voir les paramètres qui permettent cette fonctionnalité.
+
+Premier paramètre permettant cette fonctionnalité :
+
+* [smtpd_reject_unlisted_recipient](http://www.postfix.org/postconf.5.html#smtpd_reject_unlisted_recipient) (défaut : VRAI) : Valeur permet d'indiquer à __$postfix__ de rejeté les courriels qui ne sont pas des adresses connu de livraison local ou dans un domaine de relais. Le système rejettera le courriel si :
+    1. Le domaine de réception correspond  aux paramètres : __$mydestination, $inet\_interfaces ou $proxy\_interfaces__, mais l'adresse n'est pas listé dans  __$local_recipient_maps__
+    2. Le domaine de réception correspond au paramètre __$virtual\_alias\_domains__ , mais n'est pas listé dans  __$virtual\_alias\_maps__.
+    3. Le domaine de réception correspond au paramètre  __$virtual\_mailbox\_domains__, mais n'est pas listé dans __$virtual\_mailbox\_maps, et $virtual\_mailbox\_maps__ .
+    4. Le domaine de réception correspond au paramètre __$relay\_domains__, mais n'est pas listé dans  __$relay\_recipient\_maps, et $relay\_recipient\_maps__
+
+Bon dans notre cas nous parlons de la première option regardons la valeurs des valeurs __$local_recipient_maps__
+
+        $ sudo postconf  | egrep 'local_recipient_maps|local_recipient_maps'                                                                    
+        local_recipient_maps = proxy:unix:passwd.byname $alias_maps
+
+Nous voyons ici que le système va valider que le fichier **/etc/passwd** via l'entrée **proxy:unix:passwd.byname** nous voyons aussi les alias , effectivement nous aimerions que les courriels transmis à des alias passe aussi :D.
+
+
+
+
+
 ## Ajout paramètre pour la définition de la destination
 ## Mise en place du domaine de reception
 ## configuration du DNS
