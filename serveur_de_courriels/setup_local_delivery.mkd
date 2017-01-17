@@ -6,10 +6,28 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Index 
 
+# <a name="description" /> Description
 
+Après avoir vu une configuration très simple d'envois de courriel pour le réseau , nous allons voir comment recevoir des courriels et les livrer localement sur la machine. Bien que cette configuration est fonctionnel, je ne vous conseille pas de l'utiliser , voici les raisons pourquoi je vous le déconseille :
+
+* Les utilisateurs qui recevrons les courriels seront les usagers systèmes , résultat vous devrez assigner un __UID__ et un __GID__ à chaque utilisateur désirant avoir un courriel. Il faudra faire attention de ne pas leur offrir de __shell__ (__bash, zsh__, ...) !! Je n'aime pas avoir cette configuration je préfère avoir des usagés **NON-SYSTÈME** pour ce service.
+* Nous allons avoir la possibilité d'avoir plusieurs domaine , cependant comme nous utilisons des utilisateurs système nous seront limité sur l'utilisation des adresse  courriel, par exemple 2 utilisateur nommé __thomas__  il ne sera pas possible d'avoir __thomas@example.com__  et __thomas@toto.com__.
+* La configuration à la limitation de ne pas __scallé__, cette configuration ne vous permettra pas , ou du moins difficilement d'avoir 10 domaines de courriels sur la même machine !
+
+Alors pourquoi on se casse le cul à le voir :P , parce que ceci nous permet d'ajouter tranquillement des configurations simple et de voir les problématiques au fur et à mesure. Si nous mettons directement la configuration avec __Mysql__ et tous un système de gestion d'utilisateur l'identification des problématiques est plus complexe. Ceci nous offre la possibilité de voir l'ensemble du processus de configuration avec des changements "mineur". 
+
+De plus cette configuration reste intéressante si vous désirez avoir un serveur qui reçoit des courriels localement, je le déconseille pour une utilisation par des humains , mais si vous avez un service de traitement automatisé par des programmes , ceci reste très intéressant !
+
+
+# <a name="setup_local_delivery" /> Configuration pour la livraison local
+
+## Ajout paramètre pour la définition de la destination
 ## Mise en place du domaine de reception
 ## configuration du DNS
-## Livraison des courriels pour un utilisateur local 
+## Ajout du système de MDA (procmail) - Livraison des courriels pour un utilisateur local 
+## Explication de mailbox et maildir
+## Définition des alias 
+## 
 ## Récupération des courriels avec dovecot (imaps / pop3) pour utilisateur local
 
 
