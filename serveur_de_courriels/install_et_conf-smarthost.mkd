@@ -6,6 +6,15 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Index 
 
+* [ Introduction](#Intro)
+* [ Installation de postfix de base ](#Installation)
+* [ Configuration de base ](#configuration)
+    * [ Configuration d'un serveur de relais ](#configuration)
+        * [ Analyse des erreurs et des configurations actives](#configuration_analyse_err)
+        * [ Tentative d'envois de courriel par la passerelle et analyse des erreurs](#teste_envoie_mail)
+        * [ Analyse de la queue Postfix et du problème de relais](#analyse_prob_relay)
+        * [ Visualisation d'une communication complète ](#viewGoodTransfert)
+
 # <a name="Intro" /> Introduction
 
 Suite à la théorie vue précédemment nous allons passé à la pratique de mise en place d'un service [MTA]((https://fr.wikipedia.org/wiki/Mail_Transfer_Agent) avec l'application [postfix](http://www.postfix.org/). Honnêtement après avoir utilisé plusieurs système telle que __sendmail__ , __qmail__ ou __exim__ mon choix est clairement pour __postfix__. En fait le seul dans la liste mentionné précédemment que j'apprécie aussi est __exim__ , mais étant très confortable avec __postfix__ je n'ai jamais pris le temps de l'apprendre en profondeur .
@@ -452,16 +461,56 @@ L'instruction ci-dessus permet de supprimer les courriels dont le destinataire e
 
 Bon on s'amuse avec des erreurs et l'analyse de problème mais ça serait bien que vous ayez un point de référence quand ça fonctionne aussi :P. Donc je vais changé le serveur de relais pour un valide pour la démonstration.
 
-TODO : ajouter le contenu.
+Afin de permettre l'envoie de courriel, je vais modifier mon serveur afin de permettre mon adresse IP actuelle dans la configuration **mynetwork** de mon serveur . 
+
+Je vais modifier la configuration __postfix__ afin  d'utiliser mon serveur de courriel qui acceptera l'ensemble des courriels depuis mon adresse IP !
+
+Mais préalablement nous allons mettre un courriel dans la queue , afin de démontrer comment __postfix__ ce comportera lors du correctif !!
+
+Donc j'ai réutilisé la commande **telnet** pour faire l'envoie voici le résultat :
+
+         $ sudo  mailq
+         -Queue ID-  --Size-- ----Arrival Time---- -Sender/Recipient-------
+         0F04FA029B1      216 Tue Jan 17 13:11:00  thomas.boutry@x3rus.com
+         (Host or domain name not found. Name service error for name=relay_mail.fai.com type=A: Host not found)
+                                                  xerus@x3rus.com
+
+         -- 0 Kbytes in 1 Request.
+
+
+Maintenant modifions la configuration, voici le résultat de la configuration : 
+
+        $ cat /etc/postfix/main.cf | grep relay
+        smtpd_relay_restrictions = permit_mynetworks  defer_unauth_destination
+        relayhost = mail.x3rus.com
+
+On redémarre __postfix__ 
+
+Suite au changement le courriel est toujours dans la queue :
+
+        $ mailq
+        -Queue ID-  --Size-- ----Arrival Time---- -Sender/Recipient-------
+        0F04FA029B1      216 Tue Jan 17 13:11:00  thomas.boutry@x3rus.com
+        (Host or domain name not found. Name service error for name=relay_mail.fai.com type=A: Host not found)
+                                                 xerus@x3rus.com
+
+        -- 0 Kbytes in 1 Request.
+
+__Postfix__  finira par refaire l'envoie , un moment donnée :P , selon son planificateur d'envois il est aussi possible de forcer un envoie .
+
+La commande **postqueue** nous permet de forcer le traitement de l'ensemble des courriels :
+
+        $ sudo postqueue -f
+
+Voici le résultat dans les logs :
+
+        Jan 17 13:16:02 mail01 postfix/pickup[313]: 65722A03803: uid=105 from=<thomas.boutry@x3rus.com> orig_id=0F04FA029B1
+        Jan 17 13:16:02 mail01 postfix/cleanup[329]: 65722A03803: message-id=<>
+        Jan 17 13:16:02 mail01 postfix/qmgr[314]: 65722A03803: from=<thomas.boutry@x3rus.com>, size=330, nrcpt=1 (queue active)
+        Jan 17 13:16:04 mail01 postfix/smtp[331]: 65722A03803: to=<xerus@x3rus.com>, relay=mail.x3rus.com[192.99.13.211]:25, delay=303, delays=302/0.01/0.77/0.91, dsn=2.0.0, status=sent (250 2.0.0 Ok: queued as 01DC75A44D6D)
+        Jan 17 13:16:04 mail01 postfix/qmgr[314]: 65722A03803: removed
+
+Nous voyons maintenant que le serveur **relay=mail.x3rus.com[192.99.13.211]** à bien pris le courriel et la __queué__, nous avons le __ID__  pour le suivie , mais nous perdons toute visibilité maintenant :D.
 
 Bon c'est moins le plaisant, mais ça fait partie du jeu :D
-
-## Visualisation de la configuration
-## Mise en place d'un serveur de relais 
-## Mise en place du domaine de reception
-## configuration du DNS
-## Réalisation d'un envoie de courriel manuellement (TELNET)
-## Livraison des courriels pour un utilisateur local 
-## Récupération des courriels avec dovecot (imaps / pop3) pour utilisateur local
-
 
