@@ -100,9 +100,105 @@ Bon dans notre cas nous parlons de la première option regardons la valeurs des 
         local_recipient_maps = proxy:unix:passwd.byname $alias_maps
 
 Nous voyons ici que le système va valider que le fichier **/etc/passwd** via l'entrée **proxy:unix:passwd.byname** nous voyons aussi les alias , effectivement nous aimerions que les courriels transmis à des alias passe aussi :D.
+Lors de la mise en place de la base de donnée __MySQL__ comme __backend__ nous verrons aussi le mécanisme approprié .
+
+Nous retrouvons l'entrée __alias\_map__ que nous avions désactivé préalablement :D, il est donc temps de le mettre en place :D 
 
 
+## <a name="conf_alias" /> Configuration des alias
 
+Telle que nous l'avions très rapidement vue il y a 2 paramètre pour les alias :
+
+* [alias\_maps](http://www.postfix.org/postconf.5.html#alias_maps) : Ce paramètre permet de définir tous les alias , nous pouvons avoir une définition d'alias avec un fichier local ou utiliser le service de __NIS__ par exemple . 
+* [alias\_database](http://www.postfix.org/postconf.5.html#alias_database) : définie uniquement les alias **local**, il n'est pas possible d'extraire l'information depuis un serveur centrale. (pour être honnête avec le temps comme je définie l'ensemble dans mysql , ça fait très longtemps que je n'ai pas utilisé ces 2 paramètres, je me fis à la doc :P )
+
+Prenons connaissance du fichier **/etc/aliases** actuellement disponible :
+
+        $ cat /etc/aliases
+        # See man 5 aliases for format
+        postmaster:    root
+
+La structure du fichier est simple :
+
+        Nom_de_l'alias: nom_de_L'utilisateur_reel
+
+Corrigeons notre configuration postfix afin d'avoir le support pour les alias. Voici le résultat :
+
+        smtpd_banner = $myhostname ESMTP $mail_name
+
+        alias_database = hash:/etc/aliases
+        alias_maps = hash:/etc/aliases
+
+        smtpd_relay_restrictions = permit_mynetworks  defer_unauth_destination
+        myhostname = $myorigin
+        myorigin = mail.example.com
+        mydestination = mailtraining.x3rus.com
+        mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 172.17.0.0/16
+        inet_interfaces = all
+        inet_protocols = ipv4
+
+        relayhost = mail_relay.fai.com
+
+Comme vous pouvez le constatez, nous avons indiqué le nom du fichier **/etc/aliases**, mais nous avons ajouter le préfixe **hash:**. Comme le service de courriel peut gérer une quantité importante de courriel le système ce doit d'être performant, la lecture d'un fichier texte bien structuré est performant mais lire un fichier binaire pré mâché  est encore plus performant . 
+Postfix offre plusieurs mécanisme de format de recherche  (__lookup__) vous trouverez la liste dans la documentation [type de base de donnée](http://www.postfix.org/DATABASE_README.html#types). Bien entendu vue la liste importante nous ne pourrons pas tous les voir mais en couvrant le système __hash__  et __mysql__ vous aurez les principes de base vous permettant de comprendre les autres en lisant la documentation le moment venu.
+
+Bon , on ajoute un alias ? Nous allons ajouter une entré __superRoot__ qui transmettra le courriel à l'utilisateur __root__.
+
+J'édite donc le fichier **/etc/aliases** et ajoute l'entrée :
+
+         $ cat /etc/aliases
+         # See man 5 aliases for format
+         postmaster:     root
+         superRoot:      root
+
+Une fois le fichier crée / modifié nous allons générer le fichier "binaire" pour postfix.
+
+        $  postalias /etc/aliases
+        $ ls -ltr /etc/aliases*
+        -rw-r--r-- 1 root root    66 Jan 18 13:29 /etc/aliases
+        -rw-r--r-- 1 root root 12288 Jan 18 13:30 /etc/aliases.db
+
+**postalias** est la commande spécifique pour postfix , il est aussi possible d'utiliser la commande **newaliases** qui est une commande plus générique aussi utilisé par __sendmail__. La structure du fichier et le résultat est équivalent dans les 2 cas . 
+
+Voici le résultat suite à la génération, bon l'important est que postfix lui le comprenne :P :
+
+        # cat /etc/aliases.db
+        Pэh^rootsuperroot$ 
+
+Il est aussi possible de définir des alias d'un alias pour à la fin que ce soit transmis à l'utilisateur exemple :
+
+         $ cat /etc/aliases
+         # See man 5 aliases for format
+         postmaster:     root
+         wannabe:        superRoot
+         superRoot:      root
+
+Donc ici l'adresse **wannabe** pointe vers un alias **superRoot** qui lui pointe vers l'utilisateur __root__.
+
+Comme on s'amuse autant poursuivre :D , il est aussi possible de rediriger les courriels d'un alias dans la poubelle , exemple .
+
+        $ cat /etc/aliases
+        # See man 5 aliases for format
+        postmaster:     root
+        wannabe:        superRoot
+        superRoot:      root
+        noreply:        /dev/null
+
+Donc ici les courriels pour __noreply@leDomaine.com__ seront accepté par le système et directement transmis au fichier **/dev/null** donc directement à la poubelle !!! Prendre note que la personne qui aura transmis le courriel n'aura AUCUNE notification de l'opération !
+
+
+### <a name="conf_alias_script" /> Configuration d'un script comme alias 
+
+Comme on est des **Hax0r** :P , __ouin__ je pense c'est mon __buzz__  mot pour 2017 :P, nous allons mettre en place aussi un alias qui transmettra les courriels vers un script. Bon ici je vais simplement réaliser un script __bash__ , bien simple , mais si le sujet vous intéresse cherchez rapidement sur internet il y a des librairies __perl__ ou __Python__ pour faire la manipulation. Je voulais surtout vous indiquer que la fonctionnalité est présente !! Il vous restera à la creuser un peu !
+
+
+        $ cat /etc/aliases
+        # See man 5 aliases for format
+        postmaster:     root
+        wannabe:        superRoot
+        superRoot:      root
+        noreply:        /dev/null
+        script:         | /usr/local/bin/processMail.sh
 
 
 ## Ajout paramètre pour la définition de la destination
