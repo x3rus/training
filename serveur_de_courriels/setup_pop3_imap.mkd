@@ -9,6 +9,51 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # <a name="description" /> Description
 
+Suite à la mise en place d'un serveur capable de recevoir des courriels que nous avons valider que l'ensemble fonctionne, nous pouvons ouvrir la porte au client . Bien entendu il faut relativisé, nous parlons d'un environnement interne non exposé sur des courriels provenant d'Internet. Ici faut pas lire , ce que j'ai pas écrit le problème n'est pas au niveau de la sécurité !!!! C'est que si tu met pas de système anti-spam , ton serveur gobera tous puis ce sera pénible à cause du nombre de courriels reçu . Pourquoi je ne met pas tous de suite le service de l'anti-spam simplement pour avoir un flux du transfert de courriel complet ! 
+Honnêtement j'active l'anti-spam TOUJOURS en dernier , pour la simple et bonne raison que le système va m'empêcher d'utiliser la commande __telnet__ pour transmettre des courriels, le système jugeant le format invalide . De plus si j'ai un problème et que le courriel n'est pas livré, en plus de valider que ce n'est pas le __MTA__ (postfix) ou le système __MDA__ (__dovecot__ ou autre) je dois regarder l'anti-spam. 
+Maintenant libre à vous de fonctionner comme vous le désirez ...
+
+Nous utiliserons pour la démonstration [dovecot](https://fr.wikipedia.org/wiki/Dovecot) [site officiel](http://dovecot.org/).
+Une autre options est [Cyrus](https://fr.wikipedia.org/wiki/Cyrus_(logiciel) , il y a 4 ans __Cyrus__ avait plus de fonctionnalité que __dovecot__ une en particulier qui était le partage de répertoire entre les utilisateurs . __Dovecot__ a intégré cette fonctionnalité , encore une fois c'est une question de préférence , je trouve __Dovecot__ plus simple à configurer donc voilà :D.
+
+# <a name="theorie_proto" /> Théorie des protocoles de récupération 
+
+ICI ICI ICI 
+
+# <a name="Installation" /> Installation de dovecot
+
+Tous comme postfix le système est très modulaire si nous regardons les pacquages disponibles pour __dovecot__ :
+
+         $ apt-cache search dovecot
+         dovecot-core - secure POP3/IMAP server - core files
+         dovecot-dbg - secure POP3/IMAP server - debug symbols
+         dovecot-dev - secure POP3/IMAP server - header files
+         dovecot-imapd - secure POP3/IMAP server - IMAP daemon
+         dovecot-managesieved - secure POP3/IMAP server - ManageSieve server
+         dovecot-pop3d - secure POP3/IMAP server - POP3 daemon
+         dovecot-sieve - secure POP3/IMAP server - Sieve filters support
+         argonaut-dovecot - Argonaut (client-module for dovecot)
+         dovecot-antispam - Dovecot plugins for training spam filters
+         dovecot-gssapi - secure POP3/IMAP server - GSSAPI support
+         dovecot-ldap - secure POP3/IMAP server - LDAP support
+         dovecot-lmtpd - secure POP3/IMAP server - LMTP server
+         dovecot-lucene - secure POP3/IMAP server - Lucene support
+         dovecot-metadata-plugin - Experimental IMAP METADATA Extension for Dovecot
+         dovecot-mysql - secure POP3/IMAP server - MySQL support
+         dovecot-pgsql - secure POP3/IMAP server - PostgreSQL support
+         dovecot-solr - secure POP3/IMAP server - Solr support
+         dovecot-sqlite - secure POP3/IMAP server - SQLite support
+         fusiondirectory-plugin-dovecot - dovecot plugin for FusionDirectory
+         fusiondirectory-plugin-dovecot-schema - LDAP schema for FusionDirectory dovecot plugin
+         mysqmail-dovecot-logger - real-time logging system in MySQL - Dovecot traffic-logger
+         vmm - manage mail domains/accounts/aliases for Dovecot and Postfix
+
+Comme vous pouvez le voir il y a les modules pour __Mysql, Ldap, postgress, fusiondirectory__, bon comme pour postfix on va pas s'exciter trop vite on commence par la configuration local et après on va voir :D.
+L'avantage pour les personnes qui l'écoute en différé vous pouvez sauter des parties :P.
+
+        $ sudo apt-get install  dovecot-imapd dovecot-pop3d
+
+Nous allons installer le service __pop3__ et __imap__
 
 ## Ajout paramètre pour la définition de la destination
 ## Ajout du système de MDA (procmail) - Livraison des courriels pour un utilisateur local 
