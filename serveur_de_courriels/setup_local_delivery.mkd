@@ -80,6 +80,21 @@ COOL !! C'est pas trop mal :P , nous voyons que lors de l'envoie d'un courriel p
 
 Pour rappel la configuration actuelle réalise une livraison local au utilisateur SYSTÈME !.
 
+Le courriel est transmis dans le répertoire **/var/spool/mail/[nom-utilisateur]** , donc dans notre cas pour l'utilisateur __root__ **/var/spool/mail/root** , voici l'exemple du contenu :
+
+        $ sudo  cat /var/spool/mail/root
+        From thomas@x3rus.com  Tue Jan 17 21:51:04 2017
+        Return-Path: <thomas@x3rus.com>
+        X-Original-To: root@mailtraining.x3rus.com
+        Delivered-To: root@mailtraining.x3rus.com
+        Received: from toto (unknown [172.17.0.1])
+                by mail.example.com (Postfix) with ESMTP id 291ACA029B1
+        for <root@mailtraining.x3rus.com>; Tue, 17 Jan 2017 21:50:10 +0000 (UTC)
+
+        un mail de test
+
+
+
 ## <a name="limitation_userlist" /> Configuration de la limitation pour des courriels valide 
 
 Comme nous voyons dans l'exemple ci-dessus l'adresse courriel est validé AVANT de prendre la courriel, ceci assure que les ressources système ne sont utilisées que pour des courriels pour des bonne adresse. Si vous n'avez pas cette configuration de présente un attaquant pourrait réalisé un DDOS sur votre serveur en envoyant une grosse quantité de courriel . __Postfix__ devra traiter chaque courriel ainsi que les systèmes de filtrage tous ça pour constater qu'il n'est pas en mesure de le livrer.
@@ -186,10 +201,118 @@ Comme on s'amuse autant poursuivre :D , il est aussi possible de rediriger les c
 
 Donc ici les courriels pour __noreply@leDomaine.com__ seront accepté par le système et directement transmis au fichier **/dev/null** donc directement à la poubelle !!! Prendre note que la personne qui aura transmis le courriel n'aura AUCUNE notification de l'opération !
 
+Suite à la génération envoyons un courriel vers __wannabe__ et ou __superRoot__ au domaine __@mailtraining.x3rus.com__. Je ne montre plus la commande __telnet__ , car ça charge trop le document , je le mettrais s'il y a un message d'erreur significatif .
+
+        
+* Envoie à __superRoot__ :
+
+        Jan 19 13:13:30 mail01 postfix/smtpd[187]: EB790A029B1: client=unknown[172.17.0.1]
+        Jan 19 13:13:37 mail01 postfix/cleanup[190]: EB790A029B1: message-id=<>
+        Jan 19 13:13:37 mail01 postfix/qmgr[170]: EB790A029B1: from=<toto@x3rus.com>, size=205, nrcpt=1 (queue active)
+        Jan 19 13:13:37 mail01 postfix/cleanup[190]: 2229EA03804: message-id=<>
+        Jan 19 13:13:37 mail01 postfix/local[191]: EB790A029B1: to=<superroot@mailtraining.x3rus.com>, relay=local, delay=14, delays=14/0/0/0.01, dsn=2.0.0, status=sent (forwarded as 2229EA03804)
+        Jan 19 13:13:37 mail01 postfix/qmgr[170]: 2229EA03804: from=<toto@x3rus.com>, size=350, nrcpt=1 (queue active)
+        Jan 19 13:13:37 mail01 postfix/qmgr[170]: EB790A029B1: removed
+        Jan 19 13:13:37 mail01 postfix/smtp[192]: warning: relayhost configuration problem
+        Jan 19 13:13:37 mail01 postfix/smtp[192]: 2229EA03804: to=<root@mail.example.com>, orig_to=<superroot@mailtraining.x3rus.com>, relay=none, delay=0.24, delays=0.01/0/0.24/0, dsn=4.3.5, status=deferred (Host or domain name not found. Name service error for name=mail_relay.fai.com type=A: Host not found)
+* Envoie à __wannabe__ :
+
+        Jan 19 13:11:46 mail01 postfix/smtpd[187]: connect from unknown[172.17.0.1]
+        Jan 19 13:12:02 mail01 postfix/smtpd[187]: 4BCB9A029B1: client=unknown[172.17.0.1]
+        Jan 19 13:12:11 mail01 postfix/cleanup[190]: 4BCB9A029B1: message-id=<>
+        Jan 19 13:12:11 mail01 postfix/qmgr[170]: 4BCB9A029B1: from=<toto@x3rus.com>, size=215, nrcpt=1 (queue active)
+        Jan 19 13:12:11 mail01 postfix/cleanup[190]: AE80AA03803: message-id=<>
+        Jan 19 13:12:11 mail01 postfix/local[191]: 4BCB9A029B1: to=<wannabe@mailtraining.x3rus.com>, relay=local, delay=19, delays=19/0.01/0/0.01, dsn=2.0.0, status=sent (forwarded as AE80AA03803)
+        Jan 19 13:12:11 mail01 postfix/qmgr[170]: AE80AA03803: from=<toto@x3rus.com>, size=358, nrcpt=1 (queue active)
+        Jan 19 13:12:11 mail01 postfix/qmgr[170]: 4BCB9A029B1: removed
+        Jan 19 13:12:12 mail01 postfix/smtp[192]: warning: relayhost configuration problem
+        Jan 19 13:12:12 mail01 postfix/smtp[192]: AE80AA03803: to=<superRoot@mail.example.com>, orig_to=<wannabe@mailtraining.x3rus.com>, relay=none, delay=0.5, delays=0.01/0.01/0.49/0, dsn=4.3.5, status=deferred (Host or domain name not found. Name service error for name=mail_relay.fai.com type=A: Host not found)
+        Jan 19 13:12:14 mail01 postfix/smtpd[187]: disconnect from unknown[172.17.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 commands=5
+
+Donc ça marche pas , nous voyons des erreurs , le système essaye d'envoyer à __mail.example.com__ au lieu de livrer localement , COOL un problème :D.
+
+L'utilisation de **mailq** nous permet de visualiser que les courriels sont toujours dans la queue. 
+
+        $  mailq
+        -Queue ID-  --Size-- ----Arrival Time---- -Sender/Recipient-------
+        AE80AA03803      358 Thu Jan 19 13:12:11  toto@x3rus.com
+        (Host or domain name not found. Name service error for name=mail_relay.fai.com type=A: Host not found)
+                                                 superRoot@mail.example.com
+
+        2229EA03804      350 Thu Jan 19 13:13:37  toto@x3rus.com
+        (Host or domain name not found. Name service error for name=mail_relay.fai.com type=A: Host not found)
+                                                 root@mail.example.com
+
+        -- 0 Kbytes in 2 Requests.
+
+Mais pourquoi lors de l'utilisation de l'alias le système l'envoie à __mail.example.com__ pour la solution "simple, rapide et moche" serait d'écrire le fichier d'alias comme suit :
+
+        $ cat /etc/aliases
+        # See man 5 aliases for format
+        postmaster:     root@mailtraining.x3rus.com
+        wannabe:        superRoot@mailtraining.x3rus.com
+        superRoot:      root@mailtraining.x3rus.com
+        noreply:        /dev/null
+
+Comme on dit ceci est une solution de contournement , mais ça à l'avantage de nous montrer une autre possibilité  d'utilisation des alias vers un courriel externe :D.
+
+Creusons un peu pour connaître l'origine de l'entrée __mail.example.com__ , comme je suis ultra paresseux puis que j'aime pas chercher je vais utiliser **postconf** pour essayer d'identifier d'où vient ce domaine :
+
+        $ sudo postconf | grep mail.example.com 
+        myorigin = mail.example.com
+
+**Haaa** !! Voilà quand on écrit n'importe quoi dans la configuration faut pas s'étonner que ça fonctionne mal :P. Faut mettre une bonne valeur !! 
+
+Mon origine quand la machine va se présenter sur internet ou le reste du réseaux se devrait être quoi ? Son nom de machine bien entendu , nous allons donc faire ça !
+
+
+        $  hostname
+        mail01.mood.x3rus.com
+        $ cat /etc/postfix/main.cf  | grep ^myorigin
+        myorigin = mail01.mood.x3rus.com
+
+On redémarre et on regarde le comportement , mais ça ne marchera pas , regardons le logs lors de l'envoie :
+
+        Jan 19 13:32:25 mail01 postfix/smtpd[438]: connect from unknown[172.17.0.1]
+        Jan 19 13:32:46 mail01 postfix/smtpd[438]: 10B00A029B1: client=unknown[172.17.0.1]
+        Jan 19 13:32:49 mail01 postfix/cleanup[441]: 10B00A029B1: message-id=<>
+        Jan 19 13:32:49 mail01 postfix/qmgr[437]: 10B00A029B1: from=<toto@x3rus.com>, size=202, nrcpt=1 (queue active)
+        Jan 19 13:32:49 mail01 postfix/cleanup[441]: 76F69A03806: message-id=<>
+        Jan 19 13:32:49 mail01 postfix/local[442]: 10B00A029B1: to=<superRoot@mailtraining.x3rus.com>, relay=local, delay=17, delays=16/0.01/0/0.01, dsn=2.0.0, status=sent (forwarded as 76F69A03806)
+        Jan 19 13:32:49 mail01 postfix/qmgr[437]: 76F69A03806: from=<toto@x3rus.com>, size=352, nrcpt=1 (queue active)
+        Jan 19 13:32:49 mail01 postfix/qmgr[437]: 10B00A029B1: removed
+        Jan 19 13:32:49 mail01 postfix/smtp[443]: warning: relayhost configuration problem
+        Jan 19 13:32:49 mail01 postfix/smtp[443]: 76F69A03806: to=<root@mail01.mood.x3rus.com>, orig_to=<superRoot@mailtraining.x3rus.com>, relay=none, delay=0.25, delays=0.01/0.01/0.23/0, dsn=4.3.5, status=deferred (Host or domain name not found. Name service error for name=mail_relay.fai.com type=A: Host not found)
+        Jan 19 13:32:51 mail01 postfix/smtpd[438]: disconnect from unknown[172.17.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 commands=5
+
+
+Bon nous avançons , ça ne fonctionne toujours pas , mais regarder maintenant le courriel n'est pas transmis au domaine __mail.example.com__ mais bien à ma machine __mail01.mood.x3rus.com__ , c'est clairement mieux. Bon le directeur __TI__ vous dira que ça fonctionne pas plus, pas grave :D.
+
+Pourquoi ça ne fonctionne PAS ??
+
+Où avons dis que nous acceptions ce domaine ?? Le paramètre **mydestination** indique quoi ?
+
+        $ postconf | grep ^mydesti
+        mydestination = mailtraining.x3rus.com 
+
+Voilà nous indiquons que l'on n'est la destination QUE pour __mailtraining.x3rus.com__ donc si ce n'est pas pour ce domaine il balance au __smarthost__ , le serveur de relais de courriel. Fonctionne telle que configurer , nous allons donc rajouter un autre domaine .
+
+        $  cat /etc/postfix/main.cf | grep ^mydesti
+        mydestination = mailtraining.x3rus.com mail01.mood.x3rus.com
+
+On redémarre __postfix__ et voilà le résultat :
+
+        Jan 19 13:37:20 mail01 postfix/cleanup[578]: 061B1A029B1: message-id=<>
+        Jan 19 13:37:20 mail01 postfix/qmgr[572]: 061B1A029B1: from=<toto@x3rus.com>, size=210, nrcpt=1 (queue active)
+        Jan 19 13:37:20 mail01 postfix/local[579]: 061B1A029B1: to=<root@mail01.mood.x3rus.com>, orig_to=<superRoot@mailtraining.x3rus.com>, relay=local, delay=12, delays=12/0.01/0/0.01, dsn=2.0.0, status=sent (delivered to mailbox)
+        Jan 19 13:37:20 mail01 postfix/qmgr[572]: 061B1A029B1: removed
+
+
+Honnêtement ceci c'est des problèmes vraiment simple quand on a l'habitude, je pense qu'il faut le voir une fois pour bien saisir le fonctionnement !
 
 ### <a name="conf_alias_script" /> Configuration d'un script comme alias 
 
-Comme on est des **Hax0r** :P , __ouin__ je pense c'est mon __buzz__  mot pour 2017 :P, nous allons mettre en place aussi un alias qui transmettra les courriels vers un script. Bon ici je vais simplement réaliser un script __bash__ , bien simple , mais si le sujet vous intéresse cherchez rapidement sur internet il y a des librairies __perl__ ou __Python__ pour faire la manipulation. Je voulais surtout vous indiquer que la fonctionnalité est présente !! Il vous restera à la creuser un peu !
+Comme on est des **Hax0r** :P , __ouin__ je pense c'est mon __buzz word__  pour 2017 :P, nous allons mettre en place aussi un alias qui transmettra les courriels vers un script. Bon ici je vais simplement réaliser un script __bash__ , bien simple , mais si le sujet vous intéresse cherchez rapidement sur internet il y a des librairies __perl__ ou __Python__ pour faire la manipulation. Je voulais surtout vous indiquer que la fonctionnalité est présente !! Il vous restera à la creuser un peu !
 
 
         $ cat /etc/aliases
@@ -200,6 +323,52 @@ Comme on est des **Hax0r** :P , __ouin__ je pense c'est mon __buzz__  mot pour 2
         noreply:        /dev/null
         script:         | /usr/local/bin/processMail.sh
 
+Bien entendu il faut générer la configuration avec **postalias** , voici un exemple de script l'important n'est pas le traitement comme, mais simplement de voir la possibilité. 
+
+        $ cat /usr/local/bin/processMail.sh
+        #!/bin/bash
+        #
+        # Récupère le courriel depuis le stdin et l'écrit dans un fichier
+        #
+        ###############################
+
+        REP=/tmp/mails
+        FILE_TO_STORE=$REP/mails-recu
+
+        if ! [ -d $REP ] ; then
+                mkdir $REP
+        fi
+
+        echo "############# BEGIN ##################" >> $FILE_TO_STORE
+        # écriture du courriel dans le fichier
+        cat >> $FILE_TO_STORE
+        echo "#############  END  ##################" >> $FILE_TO_STORE
+
+Bien entendu le fichier doit avoir les permissions d'exécution : **chmod a+x /usr/local/bin/processMail.sh**.
+
+Réalisons l'envoie avec __telnet__ et regardons les logs :
+
+        Jan 19 13:03:41 mail01 postfix/smtpd[171]: connect from unknown[172.17.0.1]
+        Jan 19 13:04:02 mail01 postfix/smtpd[171]: C3102A029B1: client=unknown[172.17.0.1]
+        Jan 19 13:04:08 mail01 postfix/cleanup[174]: C3102A029B1: message-id=<>
+        Jan 19 13:04:08 mail01 postfix/qmgr[170]: C3102A029B1: from=<thomas@x3rus.com>, size=202, nrcpt=1 (queue active)
+        Jan 19 13:04:08 mail01 postfix/local[175]: C3102A029B1: to=<script@mailtraining.x3rus.com>, relay=local, delay=18, delays=18/0.01/0/0.01, dsn=2.0.0, status=sent (delivered to command: /usr/local/bin/processMail.sh)
+        Jan 19 13:04:08 mail01 postfix/qmgr[170]: C3102A029B1: removed
+        Jan 19 13:04:09 mail01 postfix/smtpd[171]: disconnect from unknown[172.17.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 commands=5
+
+Nous voyons bien le traitement par le script du courriel ! Bien entendu les possibilités sont énormes :D .
+
+## <a name="add_user" /> Ajout d'une boite de courriel / utilisateur
+
+Bon c'est vraiment la que moi je bloque , si nous voulons ajouter un utilisateur au domaine nous devrons créer un utilisateur système :-/. De plus comme nous n'avons pas encore mis un système de récupération des courriels à distances via le protocole __pop3__ ou __imap__ nous serons obligé de fournir un accès **ssh** pour qu'il consulte les courriels !
+
+Commençons la faut le voir pour passer à autre chose :P.
+
+Je vais donc créer un utilisateur avec son home :
+
+        $ sudo useradd toto
+        $ getent passwd toto
+        toto:x:1000:1000::/home/toto:
 
 ## Ajout paramètre pour la définition de la destination
 ## Mise en place du domaine de reception
