@@ -6,6 +6,14 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Index 
 
+* [ Description](#description)
+* [ Configuration pour la livraison local](#setup_local_delivery)
+       * [ Configuration de la limitation pour des courriels valide ](#limitation_userlist)
+       * [ Configuration des alias](#conf_alias)
+           * [ Configuration d'un script comme alias ](#conf_alias_script)
+       * [ Ajout d'une boite de courriel / utilisateur](#add_user)
+
+
 # <a name="description" /> Description
 
 Après avoir vu une configuration très simple d'envois de courriel pour le réseau , nous allons voir comment recevoir des courriels et les livrer localement sur la machine. Bien que cette configuration est fonctionnel, je ne vous conseille pas de l'utiliser , voici les raisons pourquoi je vous le déconseille :
@@ -369,14 +377,44 @@ Je vais donc créer un utilisateur avec son home :
         $ sudo useradd toto
         $ getent passwd toto
         toto:x:1000:1000::/home/toto:
+        $ sudo mkdir /home/toto
+        $ sudo chown toto /home/toto
+        $ sudo passwd toto 
 
-## Ajout paramètre pour la définition de la destination
-## Mise en place du domaine de reception
-## configuration du DNS
-## Ajout du système de MDA (procmail) - Livraison des courriels pour un utilisateur local 
-## Explication de mailbox et maildir
-## Définition des alias 
-## 
-## Récupération des courriels avec dovecot (imaps / pop3) pour utilisateur local
+Maintenant nous pouvons transmettre un courriel à l'utilisateur et voilà magie dans les logs :
 
+        Jan 19 21:46:14 mail01 postfix/smtpd[185]: connect from unknown[172.17.0.1]
+        Jan 19 21:46:33 mail01 postfix/smtpd[185]: F40D6A029B1: client=unknown[172.17.0.1]
+        Jan 19 21:46:42 mail01 postfix/cleanup[187]: F40D6A029B1: message-id=<>
+        Jan 19 21:46:42 mail01 postfix/qmgr[169]: F40D6A029B1: from=<thomas@x3rus.com>, size=214, nrcpt=1 (queue active)
+        Jan 19 21:46:42 mail01 postfix/local[188]: F40D6A029B1: to=<toto@mailtraining.x3rus.com>, relay=local, delay=17, delays=17/0.01/0/0.01, dsn=2.0.0, status=sent (delivered to mailbox)
+        Jan 19 21:46:42 mail01 postfix/qmgr[169]: F40D6A029B1: removed
+
+Bon c'est bien tout cela mais comment la personne récupère le courriel ? Dans l'état actuel des choses la seule méthode possible est d'établir une connexion __ssh__ et de consulter le fichier dans le répertoire __/var/spool/mail/__.
+
+Bien entendu tous le monde aime la ligne de commande et adore les clients texte pour consulter leur courriel :P , 2 options :
+
+* **mail** : commande assez minimaliste mais généralement présent partout :D, sauf les dockers bien sur faut l'installer
+* **mutt** : client texte SUPER puissant , le seule problème et c'est pour ça que j'ai arrêté de l'utiliser pour écrire un courriel en __HTML__ et bien faut écrire le code source en __HTML__ c'est un peu lourd :P. Mais il est super puissant pareille ;-).
+
+Donc avant de voir la mise en place d'un serveur __pop3 / imap__ voyons la commande __mail__ ça semble inutile , mais si vous avez un serveur qui n'envoie pas les courriels systèmes vers l'extérieur ceci vous permet de consulter les courriels.
+
+Voici le résultat avec l'utilisateur toto pour 2 courriels : 
+
+        $ mail
+        /var/mail/toto: 2 messages 2 new
+         N   1                    Thu Jan 19 21:46   8/326
+         N   2                    Thu Jan 19 21:59   8/309
+         ? 2
+         Return-Path: <thomas@x3rus.com>
+         X-Original-To: toto@mailtraining.x3rus.com
+         Delivered-To: toto@mailtraining.x3rus.com
+         Received: from toto (unknown [172.17.0.1])
+                 by mail01.mood.x3rus.com (Postfix) with ESMTP id 95BDEA029B1
+         for <toto@mailtraining.x3rus.com>; Thu, 19 Jan 2017 21:58:50 +0000 (UTC)
+
+         un courriel
+         ? q
+
+Bon normalement il y a le sujet, dans la liste des courriels mais comme lors de la rédaction je n'ai pas utilisé de client complet , j'ai pas mis l'en-tête comprenant le sujet. 
 
