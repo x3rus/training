@@ -53,7 +53,82 @@ L'avantage pour les personnes qui l'écoute en différé vous pouvez sauter des 
 
         $ sudo apt-get install  dovecot-imapd dovecot-pop3d
 
-Nous allons installer le service __pop3__ et __imap__
+Nous allons installer le service __pop3__ et __imap__ , l'intégration sous Ubuntu est bien fait ceci nous aidera :D.
+
+
+## <a name="config_local" /> Configuration de dovecot avec des utilisateurs locaux
+
+Regardons la structure de la configuration de dovecot, bien entendu la configuration est sous le répertoire **/etc**, plus précisément **/etc/dovecot**.
+Le fichier principale est **/etc/dovecot/dovecot.conf** , comme le système est très modulaire , le systèmes utilise le principe d'inclusion de configuration afin d'activer des types de configuration.
+
+        $ cat dovecot.conf | grep -v "^#" | grep -v ^$
+        !include_try /usr/share/dovecot/protocols.d/*.protocol
+        dict {
+          #quota = mysql:/etc/dovecot/dovecot-dict-sql.conf.ext
+          #expire = sqlite:/etc/dovecot/dovecot-dict-sql.conf.ext
+        }
+
+        !include conf.d/*.conf
+        !include_try local.conf
+
+Débutons l'analyse :
+
+* **!include_try** : Permet de définir des inclusions optionnels, dans le cas de l'inclusion des protocoles ceci nous permet de définir les protocoles que dovecot est en mesure de fournir. Comme vous le constater le __PATH__ n'est pas dans **/etc/** , mais sur le système, ceci permet à Ubuntu de divisé le __packaging__ de l'application et que ce soit dynamiquement activé.
+* **dict** : Je vais le sauté pour le moment, de toute manière l'ensemble est en commentaire, et je veux conserver une configuration "simple"
+* **!include** : Ceci force l'inclusion s'il n'y a pas au moins 1 fichier de chargé alors l'application ne va pas démarrer , l'ensemble de la configuration "réel" est dans le répertoire **conf.d** un peu comme apache sous Redhat / Centos .
+* **local.conf** : Permet de définir des configurations purement local pour nos besoins , nous y reviendrons bien entendu.
+
+Regardons le contenu du répertoire **conf.d** : 
+
+        $ ls /etc/dovecot/conf.d/
+        10-auth.conf      10-master.conf      15-mailboxes.conf  90-plugin.conf               auth-dict.conf.ext        auth-static.conf.ext
+        10-director.conf  10-ssl.conf         20-imap.conf       90-quota.conf                auth-master.conf.ext      auth-system.conf.ext
+        10-logging.conf   10-tcpwrapper.conf  20-pop3.conf       auth-checkpassword.conf.ext  auth-passwdfile.conf.ext  auth-vpopmail.conf.ext
+        10-mail.conf      15-lda.conf         90-acl.conf        auth-deny.conf.ext           auth-sql.conf.ext
+
+Comme vous pouvez le constater tous est présent , la segmentation des fichiers permet d'avoir une meilleur vue des configurations par service plutôt que d'avoir un fichier de 900 lignes difficiles à interpréter. 
+
+Bon il y a énormément de commentaire TRÈS pertinent dans les fichiers cependant pour simplifier la visibilité de la configuration je vais enlevé le ligne vide et les commentaires avec les commandes : **grep -v ^# | grep -v ^$**  , comme je suis ultra paresseux , j'ai pas envie de taper tous ces caractères je vais faire un alias pour la commande.
+
+        $ alias  ccl=' grep -v ^# | grep -v ^$ '
+
+Donc maintenant la commande **ccl** on va dire **clear configuration lines** . Je voulais juste clarifier la commande pour pas que vous ne compreniez pas pourquoi vous n'avions pas la commande **ccl** :D.
+
+### <a name="config_auth" /> Configuration d'authentification avec dovecot
+
+Visualisons la configuration contenu dans **conf.d** :
+
+        $ cat 10-auth.conf | ccl
+        auth_mechanisms = plain
+        !include auth-system.conf.ext
+
+__Yeahh__ ENCORE de l'inclusion .... __grrr__ !!! Bon c'est la vie .
+
+* **auth_mechanisms** [documentation](http://wiki2.dovecot.org/Authentication/Mechanisms) : Pour le moment nous laisserons la configuration en texte claire , ceci nous permettra d'utiliser **telnet** pour nos testes. Par la suite vous pourrez voir les autres modes d'authentification disponible, bien entendu même si le mot de passe est transmis en claire s'il est transmis via un tunnel **SSL/TLS** le problème est moins critique.
+
+Regardons l'autre fichier **auth-system.conf.ext**
+
+        $ cat auth-system.conf.ext | ccl
+        passdb {
+          driver = pam
+          # [session=yes] [setcred=yes] [failure_show_msg=yes] [max_requests=<n>]
+          # [cache_key=<key>] [<service name>]
+          #args = dovecot
+        }
+        [... OUTPUT COUPÉ ...]
+        userdb {
+          # <doc/wiki/AuthDatabase.Passwd.txt>
+          driver = passwd
+          # [blocking=no]
+          #args =
+          # Override fields from passwd
+          #override_fields = home=/home/virtual/%u
+        }
+        [... OUTPUT COUPÉ ...]
+
+Dans la configuration présente l'authentification **passdb** est réaliser grâce au système **PAM** [Pluggable Authentification Module](https://fr.wikipedia.org/wiki/Pluggable_Authentication_Modules)
+
+ICI ICI 
 
 ## Ajout paramètre pour la définition de la destination
 ## Ajout du système de MDA (procmail) - Livraison des courriels pour un utilisateur local 
