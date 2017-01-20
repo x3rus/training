@@ -18,7 +18,99 @@ Une autre options est [Cyrus](https://fr.wikipedia.org/wiki/Cyrus_(logiciel) , i
 
 # <a name="theorie_proto" /> Théorie des protocoles de récupération 
 
-ICI ICI ICI 
+Nous allons voir 2 protocoles :
+
+* [**pop3**](https://fr.wikipedia.org/wiki/Post_Office_Protocol) : le premier **pop3** est de moins en moins utilisé , avec l'augmentation de la capacité de connexion des personnes et le fait que nous sommes presque toujours connecté il est moins pertinent . **pop3** ou **pop3S** (support **SSL/TLS**) permet de récupérer les courriels depuis un serveur , la particularité du protocole est que le système va télécharger localement les fichiers et les supprimer sur le serveur. Résultat si vous utilisez votre portable pour extraire les courriels une fois sur votre poste de travail (__desktop__) vous n'avez plus les courriels. Avec l'accroissement des méthodes de connexion ceci est problématique, donc pour un utilisateur ceci n'est pas très commode d'où la perte de terrain en popularité. Cependant je ne rejetterai pas en bloc le protocole , regardons autrement l'utilisation . J'ai un script qui récupère les courriels et les traitres , le fait qu'il les télécharges et les supprimes sur le serveur est vraiment pratique , 1 ceci me permet de ne pas traiter deux fois le même courriel et 2 ceci permet de faire en sorte que les courriels ne s'accumule pas sur le serveurs utilisant de l'espace disque inutilement. Voilà pourquoi je prend le temps de le présenter ici :D.
+* [**imap**](https://fr.wikipedia.org/wiki/Internet_Message_Access_Protocol) : de son vraie nom **imap4** mais personne le nomme ainsi :P , permet aussi de consulter les courriels, mais l'avantage est qu'il ne supprime pas les courriels sur le serveur. Résultat je peux consulter les courriels depuis mon **laptop** et mon **desktop** ou une interface web. L'inconvénient est que nous devons conservé une connexion constante avec le serveur afin de lire les courriels. Certains clients courriel ont une fonctionnalité **off-line** afin de télécharger une copie localement . Il est possible de mettre en place un tunnel **SSL/TLS** pour que les communications soient chiffré avec le serveur , comme d'habitude on ajoute un S au protocole **imapS** :D.
+
+Rapidement voyons un peu le détail 
+
+## <a name="theorie_pop3" /> Théorie pop3
+
+Le protocole **pop3** utilise le port 110 par défaut et 995 pour le **pop3S** . Tout comme le protocole **SMTP** ce dernier fonctionne en mode texte , nous allons donc voir comment utiliser la commande **telnet** pour interroger  le service. Le protocole fut originalement créer en 1988 sortie du [RFC 1081](https://tools.ietf.org/html/rfc1081) modifier par la suite avec le [RFC 1939](https://tools.ietf.org/html/rfc1939).
+
+Telle que mentionné le protocole **pop3** extrait les courriels depuis le serveurs et ne laisse PAS de copie sur le serveur.
+
+Voici un exemple de communication via __TELNET__ :
+
+        $ telnet ip-du-serveur 110
+        C:    USER mrose
+        S:    +OK User accepted
+        C:    PASS tanstaaf
+        S:    +OK Pass accepted
+        C:    STAT
+        S:    +OK 2 320
+        C:    LIST
+        S:    +OK 2 messages (320 octets)
+        S:    1 120
+        S:    2 200
+        S:    .
+        C:    RETR 1
+        S:    +OK 120 octets
+        S:    <the POP3 server sends message 1>
+        S:    .
+        C:    DELE 1
+        S:    +OK message 1 deleted
+        C:    QUIT
+        S:    +OK dewey POP3 server signing off 
+
+* **C:** : Communication client
+* **S:** : Communication serveur 
+
+## <a name="theorie_imap" /> Théorie imap
+
+:Le protocole **imap** utilise le port 143 par défaut et 993 pour le **imapS** . Tout comme le protocole **SMTP** ce dernier fonctionne en mode texte , nous allons donc voir comment utiliser la commande **telnet** pour interroger  le service. Le protocole fut originalement créer par Mark Crispin en 1986 , le standard est définie par le [RFC 3501](https://tools.ietf.org/html/rfc3501).
+
+Ce protocole permet de laisser les courriels sur le serveur dans le but de pouvoir les consulter de différents clients de messagerie ou __webmail__. Il comporte des fonctionnalités avancées comme la possibilité de créer des dossiers ou de manipuler les messages directement sur le serveur. Il offre aussi la possibilité de trier ses courriels sur le serveur. Le langage Sieve a été conçu pour permettre de filtrer des messages sur des serveurs sur lesquels l'utilisateur n'a pas le droit d'exécuter des tâches.
+
+Voici un exemple de communication via __TELNET__ :
+
+        $ telnet ip-du-server 143
+        S:   * OK IMAP4rev1 Service Ready
+        C:   a001 login mrc secret
+        S:   a001 OK LOGIN completed
+        C:   a002 select inbox
+        S:   * 18 EXISTS
+        S:   * FLAGS (\Answered \Flagged \Deleted \Seen \Draft)
+        S:   * 2 RECENT
+        S:   * OK [UNSEEN 17] Message 17 is the first unseen message
+        S:   * OK [UIDVALIDITY 3857529045] UIDs valid
+        S:   a002 OK [READ-WRITE] SELECT completed
+        C:   a003 fetch 12 full
+        S:   * 12 FETCH (FLAGS (\Seen) INTERNALDATE "17-Jul-1996 02:44:25 -0700"
+              RFC822.SIZE 4286 ENVELOPE ("Wed, 17 Jul 1996 02:23:25 -0700 (PDT)"
+              "IMAP4rev1 WG mtg summary and minutes"
+              (("Terry Gray" NIL "gray" "cac.washington.edu"))
+              (("Terry Gray" NIL "gray" "cac.washington.edu"))
+              (("Terry Gray" NIL "gray" "cac.washington.edu"))
+              ((NIL NIL "imap" "cac.washington.edu"))
+              ((NIL NIL "minutes" "CNRI.Reston.VA.US")
+              ("John Klensin" NIL "KLENSIN" "MIT.EDU")) NIL NIL
+              "<B27397-0100000@cac.washington.edu>")
+              BODY ("TEXT" "PLAIN" ("CHARSET" "US-ASCII") NIL NIL "7BIT" 3028
+              92))
+        S:   a003 OK FETCH completed
+        C:   a004 fetch 12 body[header]
+        S:   * 12 FETCH (BODY[HEADER] {342}
+        S:   Date: Wed, 17 Jul 1996 02:23:25 -0700 (PDT)
+        S:   From: Terry Gray <gray@cac.washington.edu>
+        S:   Subject: IMAP4rev1 WG mtg summary and minutes
+        S:   To: imap@cac.washington.edu
+        S:   cc: minutes@CNRI.Reston.VA.US, John Klensin <KLENSIN@MIT.EDU>
+        S:   Message-Id: <B27397-0100000@cac.washington.edu>
+        S:   MIME-Version: 1.0
+        S:   Content-Type: TEXT/PLAIN; CHARSET=US-ASCII
+        S:
+        S:   )
+        S:   a004 OK FETCH completed
+        C    a005 store 12 +flags \deleted
+        S:   * 12 FETCH (FLAGS (\Seen \Deleted))
+        S:   a005 OK +FLAGS completed
+        C:   a006 logout
+        S:   * BYE IMAP4rev1 server terminating connection
+        S:   a006 OK LOGOUT completed
+
+Nous aurons l'occasion de l'utiliser pour faire des testes, on s'entend j'utilise jamais ça pour consulter mes courriels , par contre quand il y  a un problème c'est pratique. Ceci permet de supprimer les intermédiaires, vous avez quand la question est : est-ce mon client mail le problème ou le serveur ? Grâce à cette technique vous pouvez supprimer le client mail de l'équation !
 
 # <a name="Installation" /> Installation de dovecot
 
@@ -128,7 +220,41 @@ Regardons l'autre fichier **auth-system.conf.ext**
 
 Dans la configuration présente l'authentification **passdb** est réaliser grâce au système **PAM** [Pluggable Authentification Module](https://fr.wikipedia.org/wiki/Pluggable_Authentication_Modules)
 
-ICI ICI 
+Bon j'ai pas le temps de faire une formation sur __PAM__, ça serait super intéressant, mais bon ... C'est la vie on verra plus tard. Donc rapidement , le système **PAM** permet d'avoir plusieurs mode d'authentification disponible sur la machine. Par exemple nous pourrions avoir SSH qui utilise le système __LDAP__ avec __Active Directory__ pour l'authentification l'objectif est d'avoir un système centralisé pour l'ensemble des utilisateurs. Par contre pour l'authentification sur la console (__login__) uniquement les utilisateurs locaux sont permis .
+Donc en résumé , chaque application a son fichier de configuration (**/etc/pam.d/nom_app**) et il possible d'utiliser différent module d'authentification (__LDAP__, __Kerberos__ , fichier local, __Mysql__ , ...) 
+
+Voici  le contenu du répertoire :
+
+        $ ls /etc/pam.d/
+        chage      chpasswd  groupdel   lightdm            login     passwd    rsh     sshd  su-l          system-local-login   system-services  usermod
+        chfn       chsh      groupmems  lightdm-autologin  newusers  polkit-1  screen  su    system-auth   system-login         useradd          xscreensaver
+        chgpasswd  groupadd  groupmod   lightdm-greeter    other     rlogin    shadow  sudo  systemd-user  system-remote-login  userdel
+
+J'ai fait une petite représentation graphique :
+
+![dovecot-auth-pam.png](./imgs/dovecot-auth-pam.png)
+
+__Ouff__ , vraiment minimaliste comme explication désolé , quand je donnais des formations Linux c'était au moins une demi journée sur le sujet, on y reviendra. 
+
+Donc dans notre cas , nous parlons de dovecot , regardons le fichier :
+
+        $ cat /etc/pam.d/dovecot
+        #%PAM-1.0
+
+        @include common-auth
+        @include common-account
+        @include common-session
+
+ENCORE des inclusions c'est magnifique :
+
+        $ cat /etc/pam.d/common-auth  | ccl 
+        auth    [success=1 default=ignore]      pam_unix.so nullok_secure
+        auth    requisite                       pam_deny.so
+        auth    required                        pam_permit.so
+
+Donc ici ceci dit d'utiliser le module **pam_unix.so** pour réalisé l'authentification , bon en français ça veut dire **/etc/passwd** et **/etc/shadow**.
+
+### <a name="config_auth" /> Configuration d'authentification avec dovecot
 
 ## Ajout paramètre pour la définition de la destination
 ## Ajout du système de MDA (procmail) - Livraison des courriels pour un utilisateur local 
