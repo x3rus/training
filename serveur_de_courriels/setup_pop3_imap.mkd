@@ -397,6 +397,141 @@ Parfait le port 110 = **pop3** est bien présent ainsi que le port 143 = **imap*
 
 Nous avions transmis des courriels à l'utilisateur **toto** précédemment, nous allons donc extraire les courriels de cette utilisateur , je vais débuté par le protocole __pop3__ car les instructions __telnet__ sont plus simple :D.
 
+C'est partie :
+
+        $ telnet 172.17.0.2 110
+        Trying 172.17.0.2...
+        Connected to 172.17.0.2.
+        Escape character is '^]'.
+        +OK Dovecot ready.
+        USER toto
+        -ERR [AUTH] Plaintext authentication disallowed on non-secure (SSL/TLS) connections.
+
+**Oupss** c'est pas mal cool , comme configuration par défaut , je l'avais dis que c'était pratique les configurations par défaut :P. Bon on va casser ça afin de faire nos testes, nous le remettrons par la suite . À votre avis quelle est le fichier qui contient cette configuration ? On va en profiter pour faire de la révision :D .
+
+Pour ceux qui on dit : **/etc/dovecot/conf.d/10-auth.conf** Bravo ! Pour les autres bravo pareil google vous l'aurez probablement dit __anyway__ :D .
+Donc j'édite le fichier et modifier l'entrée suivante et on redémarre __dovecot__ :
+
+        disable_plaintext_auth = no
+
+On refait le test : 
+
+        $ telnet 172.17.0.2 110
+            Trying 172.17.0.2...
+            Connected to 172.17.0.2.
+            Escape character is '^]'.
+        S   +OK Dovecot ready.
+        C   USER toto
+        S   +OK
+        C   PASS toto
+        S   +OK Logged in.
+        C   LIST
+        S   +OK 1 messages:
+        S   1 334
+        S   .
+        C   RETR 1
+        S   +OK 334 octets
+        S   Return-Path: <thomas@x3rus.com>
+        S   X-Original-To: toto@mailtraining.x3rus.com
+        S   Delivered-To: toto@mailtraining.x3rus.com
+        S   Received: from moi (unknown [172.17.0.1])
+        S        by mail01.mood.x3rus.com (Postfix) with ESMTP id F40D6A029B1
+        S        for <toto@mailtraining.x3rus.com>; Thu, 19 Jan 2017 21:46:24 +0000 (UTC)
+        S 
+        S   un courriel de démonstration
+        S   .
+        C   QUIT
+        S   +OK Logging out.
+            Connection closed by foreign host.
+
+Donc rapidement :
+
+* **USER nom_utilisateur** : permet de transmettre le nom de l'utilisateur pour la connexion
+* **PASS mot_de_pass** : Transmet le mot de passe de l'utilisateur 
+* **LIST**  : Permet de lister les courriels présent dans la boite , le numéro et la taille , vous n'aurez pas le sujet !!
+* **RETR Num courriel** : Permet de récupérer le courriel à l'aide de son numéro .
+* **QUIT** : :D 
+
+Bien que nous utilisions le protocole __pop3__ le courriel récupérer n'est PAS supprimé sur le serveur , il est encore possible de le consulter une autre fois, c'est vraiment avec un client natif que la suppression est réalisé !
+
+
+On continue avec le service __imap__ , bon comme dit __pop3__ est plus claire mais on va tous de même valider le tous. 
+
+        $ telnet 172.17.0.2 143
+        Trying 172.17.0.2...
+        Connected to 172.17.0.2.
+        Escape character is '^]'.
+        S   * OK [CAPABILITY IMAP4rev1 LITERAL+ SASL-IR LOGIN-REFERRALS ID ENABLE IDLE AUTH=PLAIN] Dovecot ready.
+        C   A login toto toto
+        S   * A OK [CAPABILITY IMAP4rev1 LITERAL+ SASL-IR LOGIN-REFERRALS ID ENABLE IDLE SORT SORT=DISPLAY THREAD=REFERENCES THREAD=REFS THREAD=ORDEREDSUBJECT MULTIAPPEND U
+        S   * RL-PARTIAL CATENATE UNSELECT CHILDREN NAMESPACE UIDPLUS LIST-EXTENDED I18NLEVEL=1 CONDSTORE QRESYNC ESEARCH ESORT SEARCHRES WITHIN CONTEXT=SEARCH LIST-STATUS
+        S   * BINARY MOVE SPECIAL-USE] Logged in
+        C   B select INBOX
+        S   * FLAGS (\Answered \Flagged \Deleted \Seen \Draft)
+        S   * OK [PERMANENTFLAGS (\Answered \Flagged \Deleted \Seen \Draft \*)] Flags permitted.
+        S   * 1 EXISTS
+        S   * * 0 RECENT
+        S   * OK [UNSEEN 1] First unseen.
+        S   * OK [UIDVALIDITY 1484863226] UIDs valid
+        S   * OK [UIDNEXT 4] Predicted next UID
+        S   * OK [HIGHESTMODSEQ 1] Highest
+        S   B OK [READ-WRITE] Select completed (0.000 + 0.000 secs).
+        C   B FETCH 1 ALL
+        S   * 1 FETCH (FLAGS () INTERNALDATE "19-Jan-2017 21:46:42 +0000" RFC822.SIZE 334 ENVELOPE (NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL))
+        S   * B OK Fetch completed (0.001 + 0.000 secs).
+        C   C logout
+        S   * BYE Logging out
+        S   C OK Logout completed.
+
+Rapidement, je vous invite à __googlé__ si vous désirez avoir plus d'information sur le protocole __imap__ , ce n'est pas l'objectif ici , mon premier but est vraiment de cous offrir une méthode de faire une première validation.
+
+* **ID login nom\_user mot\_de\_pass** : Le système __d'imap__ fonctionne avec un ID de préfixe de commande dans mon cas **A** mais ce peux être n'importe quoi ceci est pour faire du regroupement de commande. (pour ceux qui se dise pourquoi , réponse : __google it !!__)
+* **ID select INBOX** : Ici je définie quelle répertoire je veux extraire , par défaut les courriels arrive dans __INBOX__  si  j'avais plusieurs répertoire j'aurais pu le spécifier. Je dois avouer que je n'ai jamais vraiment poussé la logique.
+* **ID FETCH ID-MAIL ALL** : Permet de récupérer l'information d'un courriel
+* **ID STATUS INBOX (MESSAGES)** : Permet de savoir combien de courriel son contenu dans le répertoire.
+* **ID logout** : Permet de se déconnecter
+
+Si vous voulez plus de commande consulter le site [https://busylog.net/telnet-imap-commands-note/](https://busylog.net/telnet-imap-commands-note/), vraiment pas mal , selon vaut besoin.
+
+## <a name="dovecot_effect" /> Suite au teste de connections ...
+
+La section suivant , est elle essentiel , je ne sais pas, mais comme on dit le diable est dans les détails :D. Suite à la connexion avec le protocole __imap__ dovecot a créer quelques fichier et répertoire. 
+
+Si nous regardons l'utilisateur toto :
+
+        $  getent passwd toto
+        toto:x:1000:1000::/home/toto:
+
+Le répertoire personnel de l'utilisateur est **/home/toto**, regardons le contenu :
+
+        $ ls -ltr /home/toto/
+        total 0
+        drwx------ 3 toto toto 19 Jan 23 21:42 mail
+
+Un répertoire fut créé par dovecot , si vous regardez le contenu semble n'avoir aucun fichier, il faut afficher les fichiers "caché" avec l'option **-a**.
+
+         $ ls -ltRa /home/toto/mail             
+         /home/toto/mail:
+         total 0
+         drwxr-xr-x 3 toto root 39 Jan 23 22:10 ..
+         drwx------ 3 toto toto 19 Jan 23 21:42 .
+         drwx------ 3 toto toto 19 Jan 23 21:42 .imap
+
+         /home/toto/mail/.imap:
+         total 0
+         drwx------ 2 toto toto 58 Jan 23 21:42 INBOX
+         drwx------ 3 toto toto 19 Jan 23 21:42 .
+         drwx------ 3 toto toto 19 Jan 23 21:42 ..
+
+         /home/toto/mail/.imap/INBOX:
+         total 8
+         -rw------- 1 toto toto  780 Jan 23 22:02 dovecot.index.log
+         -rw------- 1 toto toto 1092 Jan 23 21:50 dovecot.index.cache
+         drwx------ 2 toto toto   58 Jan 23 21:42 .
+         drwx------ 3 toto toto   19 Jan 23 21:42 ..
+
+Dovecot va créer un répertoire pour chaque répertoire créé via __imap__ , de plus il conservera un cache et un index des fichiers. Bon en temps normale 98% du temps on s'en fou :) , mais si un jours vous avez une migration à réalisé ou une corruption d'index, c'est bien de le savoir. Donc selon votre niveau c'est une information pertinente. 
+
 ## Ajout paramètre pour la définition de la destination
 ## Ajout du système de MDA (procmail) - Livraison des courriels pour un utilisateur local 
 ## Explication de mailbox et maildir
