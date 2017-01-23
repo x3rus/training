@@ -6,6 +6,19 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Index 
 
+* [ Description](#description)
+* [ Théorie des protocoles de récupération ](#theorie_proto)
+       * [ Théorie pop3](#theorie_pop3)
+       * [ Théorie imap](#theorie_imap)
+* [ Installation de dovecot](#Installation)
+       * [ Configuration de dovecot avec des utilisateurs locaux](#config_local)
+           * [ Configuration d'authentification avec dovecot](#config_auth)
+           * [ Configuration des boites de courriels](#config_mailbox)
+           * [ Configuration général du système](#config_master)
+           * [ Configuration des mailbox ](#config_setupMailBox)
+           * [ Configuration du service pop3 et imap](#config_pop_imap)
+* [ Validation du fonctionnement (pop3 et imap)](#check_setup)
+       * [ Suite au teste de connections ...](#dovecot_effect)
 
 # <a name="description" /> Description
 
@@ -531,11 +544,4 @@ Un répertoire fut créé par dovecot , si vous regardez le contenu semble n'avo
          drwx------ 3 toto toto   19 Jan 23 21:42 ..
 
 Dovecot va créer un répertoire pour chaque répertoire créé via __imap__ , de plus il conservera un cache et un index des fichiers. Bon en temps normale 98% du temps on s'en fou :) , mais si un jours vous avez une migration à réalisé ou une corruption d'index, c'est bien de le savoir. Donc selon votre niveau c'est une information pertinente. 
-
-## Ajout paramètre pour la définition de la destination
-## Ajout du système de MDA (procmail) - Livraison des courriels pour un utilisateur local 
-## Explication de mailbox et maildir
-## Définition des alias 
-## Récupération des courriels avec dovecot (imaps / pop3) pour utilisateur local
-
 
