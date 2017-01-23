@@ -254,7 +254,148 @@ ENCORE des inclusions c'est magnifique :
 
 Donc ici ceci dit d'utiliser le module **pam_unix.so** pour réalisé l'authentification , bon en français ça veut dire **/etc/passwd** et **/etc/shadow**.
 
-### <a name="config_auth" /> Configuration d'authentification avec dovecot
+
+Comme vous pouvez le voir il y a 2 entrées :
+
+* **passdb** : comprend le mécanisme de validation du mot de passe l'équivalent de **/etc/shadow**
+* **userdb** : comprend le mécanisme de collecte d'information de l'utilisateur telle que le répertoire personnel , les critères de quota , le nom :P , ... Soit l'équivalent de **/etc/passwd**
+
+### <a name="config_mailbox" /> Configuration des boites de courriels
+
+Telle que mentionné __dovecot__ ne réalise pas de gestion d'envois et de réception de courriels au niveau __SMTP__, il ne gère que les boites de courriels. Nous pouvons donc définir le lieu des boites de courriels . Regardons le fichier **/etc/dovecot/conf.d/10-mail.conf**, ce fichier contient la définition :
+
+         $ cat 10-mail.conf | ccl | grep -v "#"
+         mail_location = mbox:~/mail:INBOX=/var/mail/%u
+         namespace inbox {
+           inbox = yes
+         }
+
+Dans la configuration présente il y a 2 __mailbox__ , le système va regarder dans le répertoire __mail__ dans le répertoire personnel de l'utilisateur (**home directory**) et dans le fichier **/var/mail/Nom_Utilisateur**.
+
+Nous aurons l'occasion de le voir plus loin mais il y a 2 type de format pour le stockage de courriel :
+
+* **mbox** : Ce format est convenable pour une utilisation système cependant il ne "__scale__" pas , en effet ce format contient l'ensemble des courriels dans 1 fichiers !!! Résultat si vous avez un répertoire contenant 3G de courriels l'ensemble sera contenu dans 1 fichiers, ce n'est pas super . 
+* **maildir** : Ce format de stockage sépare chaque courriel dans un fichier , ceci permet d'avoir une meilleur gestion et bien entendu plus facile de gestion.
+
+### <a name="config_master" /> Configuration général du système
+
+Il existe un fichier générale de configuration qui définie les limites des processus __dovecot__ ainsi que les ports d'écoute , il est possible de les modifier, cependant attention ceci pourrait avoir une répercutions négatif. En d'autre mot faite de petit changement et gardez un œil sur le système.
+
+Voici le fichier **/etc/dovecot/conf.d/10-master.conf**
+
+        $ cat 10-master.conf | head -40                                                                                                
+        #default_process_limit = 100
+        #default_client_limit = 1000
+
+        # Default VSZ (virtual memory size) limit for service processes. This is mainly
+        # intended to catch and kill processes that leak memory before they eat up
+        # everything.
+        #default_vsz_limit = 256M
+
+        # Login user is internally used by login processes. This is the most untrusted
+        # user in Dovecot system. It shouldn't have access to anything at all.
+        #default_login_user = dovenull
+
+        # Internal user is used by unprivileged processes. It should be separate from
+        # login user, so that login processes can't disturb other processes.
+        #default_internal_user = dovecot
+
+        service imap-login {
+            inet_listener imap {
+              #port = 143
+            }
+            inet_listener imaps {
+              #port = 993
+              #ssl = yes
+            }
+
+            # Number of connections to handle before starting a new process. Typically
+            # the only useful values are 0 (unlimited) or 1. 1 is more secure, but 0
+            # is faster. <doc/wiki/LoginProcess.txt>
+            #service_count = 1
+            # Number of processes to always keep waiting for more connections.
+            #process_min_avail = 0
+            # If you set service_count=0, you probably need to grow this.
+            #vsz_limit = $default_vsz_limit
+        }
+        [... OUTPUT COUPÉ ...]
+
+### <a name="config_setupMailBox" /> Configuration des mailbox 
+
+Il est possible de définir des répertoires qui auront une fonctionnalité particulière et qui seront automatiquement créer , bon ceci s'applique vraiment plus lors d'une "vraie" configuration avec des utilisateurs. À ce stade de notre configuration est-ce vraiment pertinent, honnêtement étant en **mbox** je ne vois pas vraiment ça pertinent, mais nous y reviendrons.
+
+Voici le fichier **/etc/dovecot/conf.d/15-mailboxes.conf**
+
+        $ cat 15-mailboxes.conf  | ccl
+        namespace inbox {
+          # These mailboxes are widely used and could perhaps be created automatically:
+            mailbox Drafts {
+                special_use = \Drafts
+            }
+            mailbox Junk {
+                special_use = \Junk
+            }
+            mailbox Trash {
+                special_use = \Trash
+            }
+            # For \Sent mailboxes there are two widely used names. We'll mark both of
+            # them as \Sent. User typically deletes one of them if duplicates are created.
+            mailbox Sent {
+                special_use = \Sent
+            }
+            mailbox "Sent Messages" {
+                special_use = \Sent
+            }
+            # If you have a virtual "All messages" mailbox:
+            #mailbox virtual/All {
+                #  special_use = \All
+                #  comment = All my messages
+            #}
+            # If you have a virtual "Flagged" mailbox:
+            #mailbox virtual/Flagged {
+                #  special_use = \Flagged
+                #  comment = All my flagged messages
+            #}
+                                                                          }
+
+### <a name="config_pop_imap" /> Configuration du service pop3 et imap
+
+Bon honnêtement on y touchera pas pour le moment ! Je vais juste nommé les fichiers : 
+
+* **pop3** : **/etc/dovecot/conf.d/20-pop3.conf**
+* **imap** : **/etc/dovecot/conf.d/20-imap.conf**
+
+Pourquoi je change rien à ce stade, car je vais d'abord voir si ça fonctionne , car les configurations par défaut sont souvent très bien :P, petit anecdote .
+Je suis arrivé chez un client pour des problèmes avec Samba 3 (à l'époque) , plein de problème avec le serveur de fichier . 
+J'arrive et consulte le fichier de configuration , **woww** je suis même pas sûr que j'avais vu autant de configuration dans samba dans le passé. Prends en note les problèmes et les simules pour avoir un point de référence. Quand je demande c'est quoi toutes ces configurations ont me répond que c'était pour corriger les problèmes mais sans succès. Bon SUPER :P.
+Je réalise la mise à jour du système et arrache l'ensemble des configurations "__bizarre__" en fait tous ce qui est pas requis , vraiment stricte minimum. 
+On refait les testes , 90% fonctionne sans problème , 3 paramètres de plus et voila 100% de réussite , j'avais supprimé je pense 50 paramètres :D.
+
+# <a name="check_setup" /> Validation du fonctionnement (pop3 et imap)
+
+Bon terminé le blabla de configuration , quand je suis rendu à raconter des anecdotes je parle trop :). Place au spectacle, validons la configuration !
+
+Démarrons le service __dovecot__ :
+
+        $ sudo  /etc/init.d/dovecot start
+         * Starting IMAP/POP3 mail server dovecot               [ OK ]
+
+Validons que les ports sont bien en écoutes  :
+
+        $ sudo ss -lntp
+        State      Recv-Q Send-Q                                  Local Address:Port                                                 Peer Address:Port
+        LISTEN     0      100                                                 *:110                                                             *:*
+        users:(("dovecot",pid=139,fd=24))
+        LISTEN     0      100                                                 *:143                                                             *:*
+        users:(("dovecot",pid=139,fd=36))
+        LISTEN     0      100                                                :::110                                                            :::*
+        users:(("dovecot",pid=139,fd=25))
+        LISTEN     0      100                                                :::143                                                            :::*
+        users:(("dovecot",pid=139,fd=37))
+
+Parfait le port 110 = **pop3** est bien présent ainsi que le port 143 = **imap**.
+
+Nous avions transmis des courriels à l'utilisateur **toto** précédemment, nous allons donc extraire les courriels de cette utilisateur , je vais débuté par le protocole __pop3__ car les instructions __telnet__ sont plus simple :D.
 
 ## Ajout paramètre pour la définition de la destination
 ## Ajout du système de MDA (procmail) - Livraison des courriels pour un utilisateur local 
