@@ -1,0 +1,75 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+
+# Index 
+
+* [ Introduction](#Intro)
+
+# <a name="Intro" /> Introduction
+
+À la lumière de votre intérêt pour docker , nous allons voir la partie de la __dockerisation__ du serveur de relais , le gros avantage de __dockeriser__ ce service est qu'il change très peu. J'ai créer une images spécialement pour la formation afin de réduire le nombre de paramètre, afin de simplifier la démonstration. 
+Pour la petite mise en contexte , cette image est utilisé sur l'ensemble des mes "__datacenters__", bon bon __ok__ je m'excite un peu là , je devrais dire sur mon serveur au centre de donnée et chez moi :P . Il ne reste que l'avantage est que je me suis fait chier une fois et maintenant je peux l'utiliser partout en définissant des paramètres selon le lieu :D. 
+En d'autre mot je vais passez en paramètre le nom du serveur de relais , par le fait même que mon __FAI__ soit __BELL__ , __Videotron__ , __Roger__ peut importe lors du démarrage, je vais indiquer la destination. Ceci sera le même principe pour les réseaux que j'autorise à utiliser le service __SMTP__ de mon serveur.
+
+Voyons la configuration maintenant que l'on est confortable avec postfix , ce sera plus simple.
+
+La définition de l'image est disponible ICI : [SrcMailRelay conteneur](https://github.com/x3rus/training/tree/master/serveur_de_courriels/dockers/srvMailRelay)
+
+# <a name="image" /> Image du conteneur srvmailrelay 
+
+C'est partie , pour le plaisir des petits comme des grands :D.
+
+Débutons avec le __DockerFile__ puis nous verrons les fichiers utilisés .
+
+## <a name="image_dockerfile" /> DockerFile 
+
+Voici le contenu : 
+
+        FROM debian:jessie
+        MAINTAINER Uri Savelchev <alterrebe@gmail.com>
+
+        # Ignore APT warnings about not having a TTY
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Packages: update
+        RUN apt-get update -qq && \
+            apt-get install -qq -y --no-install-recommends postfix ca-certificates \
+                    libsasl2-modules python-pip supervisor rsyslog && \
+            pip install j2cli
+
+        # Fix timezone
+        RUN ln -s -f /usr/share/zoneinfo/Canada/Eastern /etc/localtime
+
+        # Add files
+        ADD conf /root/conf
+
+        # Configure: supervisor
+        ADD bin/dfg.sh /usr/local/bin/
+        ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
+
+        # Runner
+        ADD run.sh /root/run.sh
+        RUN chmod +x /root/run.sh
+
+        # Declare
+        EXPOSE 25
+
+        CMD ["/root/run.sh"]
+
+Bon maintenant que je le regarde, il y a des points qui m'ennuie , ce conteneur date et il y a des choses que j'aime moins ... Mais bon . Comme vous pouvez le voir j'ai laissé le nom du __maintener__ original. J'étais partie d'une image disponible sur internet et j'ai réaliser quelques modifications.
+
+* **FROM debian:jessie** : Donc je suis partie d'une __debian__ version __jessie__ , [Debian 8.7 was released January 14th, 2017)(https://www.debian.org/releases/stable/).
+* **ENV DEBIAN_FRONTEND noninteractive** : Une  définition d'une variable d'environnement afin qu'il ne pose pas de question , qui ne pourrait pas être répondu car ce doit être automatique.
+* **RUN apt-get update , apt-get install et pip install** : Nous réalisons l'installation des pacquages requis pour le système comme vous pouvez le voir il y a bien entendu **postfix** ainsi que le système de __log__ **rsyslog**. De plus il y a d'autre pacquage **python-pip** et **supervisor** , j'installe le système __python-pip__ car afin de modifier le fichier de configuration de postfix je vais utiliser le système [jinja2](http://jinja.pocoo.org/docs/2.9/) qui est un système de template. Ceci me permettra de modifier la configuration de postfix en passant des paramètres lors du démarrage. L'application que je vais utiliser est **j2cli** [documentation](https://pypi.python.org/pypi/j2cli/0.3.0-0). Pour **supervisor** cette application permet de démarrer des applications en premier plan (__Forground__) ceci permettra de conserver le conteneur en exécution tout en utilisant la commande __service__ , même si l'application est par défaut mis en arrière plan. 
+* **RUN ln -s -f /usr/share/zoneinfo/Canada/Eastern /etc/localtime** : Bon ici c'est moins beau , je définie directement dans l'image le timezone du conteneur au lieu d'utiliser la variable d'environnement **TZ=America/Montreal** . Ceci est moins bien car si j'avais un "__datacenter__" au Maroc par exemple je devrais créer une autre image pour que le serveur est la bonne heure. Alors que si j'avais passé la variable au démarrage ceci aurait pu être configuration lors de l'initialisation.  (je fus paresseux , de la changer :P , on se reprendra pour les autres :D )
+* **ADD conf /root/conf** : Copie des fichier de configuration , nous allons le voir ceci est les fichiers "__templates__" de postfix
+* **ADD bin/dfg.sh /usr/local/bin/** : Ajout d'un script réaliser par __Uri__ , bon ça marche , je trouve qu'il s'est cassé un peu le tête , mais apprenons des méthodes de tous pour créer notre configuration :D. Nous jetterons un œil sur le script aussi.
+* **ADD conf/supervisor-all.conf /etc/supervisor/conf.d/** : fichier de configuration du système de démarrage des applications en premier plan (__forground__)
+* **ADD run.sh /root/run.sh et RUN chmod +x /root/run.sh** : Script de démarrage du conteneur 
+* **EXPOSE 25** : Indique que le port 25 doit être exposé , personnellement je sur définie cette configuration avec lors de l'initialisation du conteneur.
+* **CMD ["/root/run.sh"]** : Point d'entré lors du démarrage du conteneur.
+
+Rien de fabuleux l'ensemble du traitement est vraiment dans le script de démarrage et la modification des fichiers de configuration.
