@@ -235,3 +235,13 @@ __Yep__ c'est pas long :D, puis on aime ça, c'est plus facile à comprendre !!
 * Démarrage de __supervisord__ pour le service .
 
 Et voilà on a notre image prête à l'usage !!!
+
+## <a name="image_creation" /> Création de l'image depuis le Dockerfile
+
+Petit rapelle de l'utilisation de **docker build** afin de créer l'image finale que vous pourrez déplacer où bon vous semble. Nous avons déjà vu la commande, mais pour ceux qui n'on pas suivie les autres formations ou tous simplement un rappel car vous ne l'avez pas utilisé beaucoup .
+
+ICI ICI ICI
+
+# <a name="conteneur" /> Utilisation du conteneur depuis l'image
+
+J'espère que l'explication ne furent pas trop rapide, vous aurez le temps digérer le tous tranquillement 
