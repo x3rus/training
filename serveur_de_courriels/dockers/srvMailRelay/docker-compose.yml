@@ -1,15 +1,16 @@
-cm-mailrelay:
-    image: 'srvMailRelay'
-    restart: always
+mailrelay:
+    image: 'srvmailrelay'
+    restart: unless-stopped
     container_name : 'mailrelay'
     hostname: 'relais.example.com'
     environment:
         - ENABLE_SASL_AUTH=no
         - RELAY_HOST_NAME=monServerDeRelaisInterne.example.com
         - ACCEPTED_NETWORKS=172.17.0.0/16
-        - EXT_RELAY_HOST=Not_DEFINE
+       #- EXT_RELAY_HOST=Not_DEFINE
+        - EXT_RELAY_HOST=relai.fai.com
         - OTHER_MY_DEST="localhost.example.com, localhost"
     volumes:
-        - '/srv/dockers/mailrelay/var-spool-postfix:/var/spool/postfix'
-    ports:
-        - "IP_INTERNE:25:25"
+        - '/tmp/mailrelay/var-spool-postfix:/var/spool/postfix'
+#    ports:
+        # - "IP_INTERNE:25:25"
