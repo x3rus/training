@@ -183,6 +183,13 @@ Débutons l'analyse :
 * **!include** : Ceci force l'inclusion s'il n'y a pas au moins 1 fichier de chargé alors l'application ne va pas démarrer , l'ensemble de la configuration "réel" est dans le répertoire **conf.d** un peu comme apache sous Redhat / Centos .
 * **local.conf** : Permet de définir des configurations purement local pour nos besoins , nous y reviendrons bien entendu.
 
+Dovecot à l'équivalant de **postconf** :
+
+* **dovecot -n** : Liste les variables qui ne sont pas par défaut , donc que vous avez sur définie
+* **dovecot -a** : Liste TOUTES les variables :D
+
+Nous allons tous de même voir les fichiers, nous les utiliserons plus tard ... (__ok ok__ pour être honnête je connaissais pas la commande  :P , c'est en réalisant la configuration pour changer les formats de stockage des courriels que j'ai découvert la commande :P) 
+
 Regardons le contenu du répertoire **conf.d** : 
 
         $ ls /etc/dovecot/conf.d/
@@ -544,4 +551,58 @@ Un répertoire fut créé par dovecot , si vous regardez le contenu semble n'avo
          drwx------ 3 toto toto   19 Jan 23 21:42 ..
 
 Dovecot va créer un répertoire pour chaque répertoire créé via __imap__ , de plus il conservera un cache et un index des fichiers. Bon en temps normale 98% du temps on s'en fou :) , mais si un jours vous avez une migration à réalisé ou une corruption d'index, c'est bien de le savoir. Donc selon votre niveau c'est une information pertinente. 
+
+# <a name="Switch_to_maildir" /> Modification de la configuration pour utiliser MailDir
+
+Telle que mentionné il existe 2 format de stockage de courriel :
+
+* **mbox** : Ce format est convenable pour une utilisation système cependant il ne "__scale__" pas , en effet ce format contient l'ensemble des courriels dans 1 fichiers !!! Résultat si vous avez un répertoire contenant 3G de courriels l'ensemble sera contenu dans 1 fichiers, ce n'est pas super . 
+* **maildir** : Ce format de stockage sépare chaque courriel dans un fichier , ceci permet d'avoir une meilleur gestion et bien entendu plus facile de gestion.
+
+Nous avons vu le format **mbox** c'est celui que l'on utilise depuis le début , donc un fichier seule fichier, avec l'ensemble des courriels de l'utilisateur. 
+Nous avons décidé de __dockeriser__ les services de courriel en les séparant par conteneur , résultat nous aurons 2 systèmes "indépendant" ou du moins isolé qui devront accéder au fichier de courriel. En continuant à utiliser un fichier pour tous les courriels , si dans mon client __imap__ je supprimer un courriel et que __postfix__ ajoute un courriel en même temps. Le système aura probablement de la difficulté à réaliser un verrou (__lock__) du fichier car les 2 sont isolé. Je ne parle pas d'expérience ici , j'anticipe un problème réel ou imaginaire ... Dans tous les cas **maildir** c'est  mieux :D
+
+Nous allons donc convertir la configuration actuelle afin d'être prêt pour docker !!!
+
+Arrêtez postfix et dovecot pour l'exercice nous les redémarrons par la suite :
+
+        $ sudo service postfix stop 
+        $ sudo service dovecot stop 
+
+ 
+## <a name="Switch_maildir_dovecot" /> Modification de la configuration de Dovecot
+
+Nous allons modifier la configuration de Dovecot pour débuter puis nous passerons à postfix , vous allez voir c'est pas sorcier :D.
+
+Nous allons changer la variable : **mail_location**
+
+        $  dovecot  -n | grep mail_location                                                                                                    
+        mail_location = mbox:~/mail:INBOX=/var/mail/%u
+
+C'est partie :
+
+        $ sudo vim /etc/dovecot/conf.d/10-mail.conf
+        mail_location = maildir:~/Maildir
+
+
+## <a name="Switch_maildir_postfix" /> Modification de la configuration de Postfix
+
+Dans le cadre de postfix nous allons définir la variable : **home_mailbox**
+
+        $ postconf  | grep home_mailbox
+        home_mailbox =
+
+Nous allons donc modifier le fichier **/etc/postfix/main.cf**
+
+        $ sudo vim /etc/postfix/main.cf
+        [... OUTPUT COUPÉ ...]
+        home_mailbox = Maildir/
+        [... OUTPUT COUPÉ ...]
+
+## <a name="Switch_maildir_test" /> Validation de la configuration et identification des problèmes 
+
+ICI ICI 
+
+* Référence :
+    * [https://help.ubuntu.com/community/Dovecot](https://help.ubuntu.com/community/Dovecot)
 

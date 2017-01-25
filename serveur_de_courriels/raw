@@ -1,0 +1,8 @@
+
+Redirection de courriel sans résolution DNS 
+    transport postfix
+
+Utilisation d'un fichier pour les nom d'utilisateur valide 
+
+LMTP dovecot + postfix
+    http://wiki2.dovecot.org/HowTo/PostfixDovecotLMTP
