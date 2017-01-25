@@ -238,10 +238,178 @@ Et voilà on a notre image prête à l'usage !!!
 
 ## <a name="image_creation" /> Création de l'image depuis le Dockerfile
 
-Petit rapelle de l'utilisation de **docker build** afin de créer l'image finale que vous pourrez déplacer où bon vous semble. Nous avons déjà vu la commande, mais pour ceux qui n'on pas suivie les autres formations ou tous simplement un rappel car vous ne l'avez pas utilisé beaucoup .
+Petit rappelle de l'utilisation de **docker build** afin de créer l'image finale que vous pourrez déplacer où bon vous semble. Nous avons déjà vu la commande, mais pour ceux qui n'ont pas suivie les autres formations ou tous simplement un rappel car vous ne l'avez pas utilisé beaucoup .
 
-ICI ICI ICI
+Réalisation de la création de l'image , allez dans le répertoire où ce trouve le __Dockerfile__ :
+
+        $ docker build -t srvmailrelay .
+
+* **-t srvmailrelay** : ceci est le nom de l'image que je lui ai assigné bien entendu libre à vous de le changer.
+
+Validons le tous :
+
+        $ docker images | grep srvmailrelay
+        srvmailrelay                  latest              d42998a69f7c        23 hours ago        182 MB
+
+**Yeah** on peut passer à l'autre section :D.
 
 # <a name="conteneur" /> Utilisation du conteneur depuis l'image
 
-J'espère que l'explication ne furent pas trop rapide, vous aurez le temps digérer le tous tranquillement 
+J'espère que l'explication ne furent pas trop rapide, vous aurez le temps digérer le tous tranquillement , passons à présent à l'utilisation du conteneur.
+Comment l'initialiser adéquatement , nous verrons l'opération manuel et l'opération plus jolie avec le __docker-compose__.
+
+## <a name="conteneur_manual_init" /> Initialisation manuel du conteneur 
+
+Quand je dis manuel, je veux dire avec l'instruction **docker run** et l'ensemble des paramètres sur la ligne de commande, ceci est très pratique lors de testes mais lors de la mise en "production" ceci à ces limites.
+
+Pour rappel nous avions quelques variable disponible :
+
+* `RELAY_HOST_NAME=relay.example.com`: Nom de machine (__hostname__) qui sera assigné au serveur smtp
+* `ACCEPTED_NETWORKS=192.168.0.0/16 172.16.0.0/12 10.0.0.0/8`: La liste des réseaux qui sont autorisé à transmettre leur courriel par le serveur
+* `EXT_RELAY_HOST=email-smtp.us-east-1.amazonaws.com`: Nom du serveur de relais si utilisé.
+
+Nous aurions pu avoir plus d'option, mais c'est déjà bien :D, libre à vous de rajouter ce que vous avez besoin :). 
+
+Donc si nous initialisons le conteneur , voici un exemple d'utilisation :
+
+        $ docker run -d -h relay.example.com -e ACCEPTED_NETWORKS='192.168.0.0/16 172.16.0.0/12 10.0.0.0/8' -e EXT_RELAY_HOST=relay.mon_fai.com srvmailrelay
+        4670b8a8ea8a86381ed77d08f1cf603128b0adbf3c7f720dad4d7e86820e5e24
+
+        $ docker ps
+        CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+        4670b8a8ea8a      srvmailrelay        "/root/run.sh"      45 seconds ago      Up 44 seconds       25/tcp              distracted_lamport
+
+Nous allons récupérer un __shell__ sur le conteneur afin de valider la configuration .
+
+        $ docker exec -it mailrelay bash
+        root@relay:/# cat /etc/postfix/main.cf
+        smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)
+        biff = no
+
+        # appending .domain is the MUA's job.
+        append_dot_mydomain = no
+
+        # Uncomment the next line to generate "delayed mail" warnings
+        #delay_warning_time = 4h
+
+        readme_directory = no
+
+        # See /usr/share/doc/postfix/TLS_README.gz in the postfix-doc package for
+        # information on enabling SSL in the smtp client.
+
+        smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
+        myhostname = $myorigin
+        alias_maps = hash:/etc/aliases
+        alias_database = hash:/etc/aliases
+        myorigin = relay.example.com
+        mydestination = relay.example.com
+        relayhost = relay.mon_fai.com
+        mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
+        mailbox_size_limit = 0
+        recipient_delimiter = +
+        inet_interfaces = all
+        inet_protocols = ipv4
+        root@relay:/#
+
+Vous pouvez reprendre le __template jinja2__ et valider que l'ensemble des variables furent substitué , rapidement :
+
+* **relayhost = relay.mon_fai.com** : utilise la variable **EXT\_RELAY\_HOST=relay.mon_fai.com**
+* **mynetworks = ...192.168.0.0/16 172.16.0.0/12 10.0.0.0/8** : Utilise la variable **ACCEPTED\_NETWORKS='192.168.0.0/16 172.16.0.0/12 10.0.0.0/8'**
+
+J'aimerai porter votre attention sur le paramètre **myorigin** : si nous regardons le fichier de __template__ ce devrait être la valeur de la variable **RELAY\_HOST\_NAME**. Une valeur fut attribué lors de l'initialisation du conteneur , lors de l'appel du script **run.sh**. 
+
+On valide l'autre configuration SANS __relayhost__ :D.
+
+        $ docker run -d -h relay.example.com  -e ACCEPTED_NETWORKS='192.168.0.0/16 172.16.0.0/12 10.0.0.0/8' -e EXT_RELAY_HOST=Not_DEFINE srvmailrelay       614f2846a28e5b1adbeac48a199d0e3f117e42822137493d7fbb425b0df73136
+
+        $ docker ps
+        CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+        614f2846a28e        srvmailrelay        "/root/run.sh"      13 seconds ago      Up 11 seconds       25/tcp              ecstatic_bose
+        4670b8a8ea8a        srvmailrelay        "/root/run.sh"      3 minutes ago       Up 3 minutes        25/tcp              distracted_lamport
+
+        $ docker exec -it ecstatic_bose bash
+        root@relay:/# cat /etc/postfix/main.cf
+        smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)
+        biff = no
+
+        # appending .domain is the MUA's job.
+        append_dot_mydomain = no
+
+        # Uncomment the next line to generate "delayed mail" warnings
+        #delay_warning_time = 4h
+
+        readme_directory = no
+
+        # See /usr/share/doc/postfix/TLS_README.gz in the postfix-doc package for
+        # information on enabling SSL in the smtp client.
+
+        smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
+        myhostname = $myorigin
+        alias_maps = hash:/etc/aliases
+        alias_database = hash:/etc/aliases
+        myorigin = relay.example.com
+        mydestination = relay.example.com
+
+        mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
+        mailbox_size_limit = 0
+        recipient_delimiter = +
+        inet_interfaces = all
+        inet_protocols = ipv4
+
+**Yeah** ça fonctionne , comme vous pouvez le voir maintenant l'entrée __relayhost__ n'est plus présent :D, car dans le __template__ si la variable **EXT\_RELAY\_HOST** == __Not\_DEFINE__ il laisse le système transmettre directement sur internet. Je sais ma condition est pas super , du moins __Not\_DEFINE__ devrait être autre chose genre __DIRECT\_TO\_THE\_WORLD__ , ça vous fera un exercice :P.
+
+Comme vous pouvez le voir j'ai les 2 conteneurs qui sont en exécution en même temps très pratique pour les testes !!
+
+Bon c'est bien, ça fonctionne mais dans 3 mois si faut le redémarrer, vous chercherez dans votre __bash history__ et il est probable que la commande ni soit plus . Alors là "Panique au Bureau" :P , voilà pourquoi je vous invite FORTEMENT à utiliser un fichier de type __docker-compose__
+
+Bon je vais supprimer les conteneurs actuelle :
+
+        $ docker ps
+        CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+        614f2846a28e        srvmailrelay        "/root/run.sh"      8 minutes ago       Up 8 minutes        25/tcp              ecstatic_bose
+        4670b8a8ea8a        srvmailrelay        "/root/run.sh"      11 minutes ago      Up 11 minutes       25/tcp              distracted_lamport
+        $ docker stop ecstatic_bose distracted_lamport
+        ecstatic_bose
+        distracted_lamport
+        $ docker rm ecstatic_bose distracted_lamport                                                                                                         
+        ecstatic_bose
+        distracted_lamport
+
+
+## <a name="conteneur_compose_init" /> Initialisation du conteneur  avec Docker-Compose
+
+
+Vous pouvez utiliser un fichier de configuration qui permettra l'initialisation de votre conteneur, l'avantage bien entendu est d'avoir un fichier présent sur le système avec l'ensemble des informations d'initialisation. Ceci vous permet aussi d'ajouter Beaucoup d'options simplement et de les consulter facilement.
+
+J'ai mis un exemple du fichier dans le répertoire de la définition du conteneur [srvmailrelay](https://github.com/x3rus/training/tree/master/serveur_de_courriels/dockers/srvMailRelay) .
+
+Voici le contenu :
+
+          mailrelay:
+              image: 'srvmailrelay'
+              restart: unless-stopped
+              container_name : 'mailrelay'
+              hostname: 'relais.example.com'
+              environment:
+                  - ENABLE_SASL_AUTH=no
+                  - RELAY_HOST_NAME=monServerDeRelaisInterne.example.com
+                  - ACCEPTED_NETWORKS=172.17.0.0/16
+                 #- EXT_RELAY_HOST=Not_DEFINE
+                  - EXT_RELAY_HOST=relai.fai.com
+                  - OTHER_MY_DEST="localhost.example.com, localhost"
+              volumes:
+                  - '/tmp/mailrelay/var-spool-postfix:/var/spool/postfix'
+          #    ports:
+                  # - "IP_INTERNE:25:25"
+
+Ligne par ligne :
+
+* **mailrelay:** : ceci est le nom du service , quand nous utiliserons plusieurs conteneur pour la gestion d'un service nous verrons plus l'utilité on ce garde ça pour plus tard :D
+* **images: srvmailrelay**  : Ceci indique quelle image docker utilisé , si nous utilisons une images disponible dans un registry le système va automatiquement le télécharger pour pouvoir la démarrer
+* **restart: unless-stopped**: restart , si le service de docker redémarre (voir un reboot du serveur) , est-ce que ce conteneur doit être redémarrer , avec ce paramêtre il sera automatiquement redémarrer sauf s'il fut arrété manuellement préalablement.
+* **hostname: 'relais.example.com'**: le nom de la "machine" (__hostname__ )
+* **environment:** : ceci définie une liste de variable d'environnement qui seront transmis au conteneur lors de l'initialisation , comme vous pouvez le voir il y a plus de variable ici , ceci est du au fait que mon image __docker__ est légèrement différente :P.
+    * **- RELAY\_HOST\_NAME=monServerDeRelaisInterne.example.com**
+    * **- ACCEPTED\_NETWORKS=172.17.0.0/16**
+    * **- EXT\_RELAY\_HOST=relai.fai.com**
+* **volumes:** : définie la liste des répertoires qui seront lié entre la machine local ET le conteneur 
