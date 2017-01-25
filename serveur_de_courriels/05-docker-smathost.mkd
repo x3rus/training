@@ -13,6 +13,10 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
        * [ DockerFile fichier exécutable (bin) ](#image_dockerfile_bin)
            * [ DockerFile fichier exécutable (bin) DFG](#image_dockerfile_bin_dfg)
            * [ DockerFile fichier exécutable (bin) run](#image_dockerfile_bin_run)
+       * [ Création de l'image depuis le Dockerfile](#image_creation)
+* [ Utilisation du conteneur depuis l'image](#conteneur)
+       * [ Initialisation manuel du conteneur ](#conteneur_manual_init)
+       * [ Initialisation du conteneur  avec Docker-Compose](#conteneur_compose_init)
 
 # <a name="Intro" /> Introduction
 
@@ -383,7 +387,7 @@ Vous pouvez utiliser un fichier de configuration qui permettra l'initialisation 
 
 J'ai mis un exemple du fichier dans le répertoire de la définition du conteneur [srvmailrelay](https://github.com/x3rus/training/tree/master/serveur_de_courriels/dockers/srvMailRelay) .
 
-Voici le contenu :
+Voici le contenu du fichier __docker-compose.yml__ :
 
           mailrelay:
               image: 'srvmailrelay'
@@ -413,3 +417,66 @@ Ligne par ligne :
     * **- ACCEPTED\_NETWORKS=172.17.0.0/16**
     * **- EXT\_RELAY\_HOST=relai.fai.com**
 * **volumes:** : définie la liste des répertoires qui seront lié entre la machine local ET le conteneur 
+    * Dans la situation présente je reprend le répertoire **/var/spool/postfix** pourquoi ? L'objectif est de conserver les courriels qui sont en attente si je recréer le conteneur. :D
+* **ports** : Permet de réaliser l'association pour l'utilisation du __docker-proxy__ afin d'offrir le service sur les réseaux externe à la machine.
+
+Ça semble bon , on l'essaye ? 
+
+Je me déplace dans le répertoire où ce trouve le fichier __docker-compose.yml__ : 
+
+        $ ls
+        bin  conf  docker-compose.yml  Dockerfile  README.md  run.sh
+        $ docker-compose up
+        Creating mailrelay
+        Attaching to mailrelay
+        mailrelay    | /usr/lib/python2.7/dist-packages/supervisor/options.py:296: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+        mailrelay    |   'Supervisord is running as root and it is searching '
+        mailrelay    | 2017-01-25 16:42:25,336 CRIT Supervisor running as root (no user in config file)
+        mailrelay    | 2017-01-25 16:42:25,336 WARN Included extra file "/etc/supervisor/conf.d/supervisor-all.conf" during parsing
+        mailrelay    | 2017-01-25 16:42:25,351 INFO RPC interface 'supervisor' initialized
+        mailrelay    | 2017-01-25 16:42:25,351 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+        mailrelay    | 2017-01-25 16:42:25,351 INFO supervisord started with pid 1
+        mailrelay    | 2017-01-25 16:42:26,354 INFO spawned: 'postfix' with pid 11
+        mailrelay    | 2017-01-25 16:42:26,358 INFO spawned: 'rsyslogd' with pid 12
+        mailrelay    | 2017-01-25 16:42:27,397 INFO success: rsyslogd entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+        mailrelay    | 2017-01-25 16:42:29,909 INFO success: postfix entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+
+Par défaut la commande **docker-compose up** démarre le conteneur en avant plan (__forground__) nous devrons ajouter l'option **-d** pour qu'il soit en arrière plan (__background__)
+
+        $ docker ps
+        CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+        aed60f4756cf        srvmailrelay        "/root/run.sh"      19 seconds ago      Up 18 seconds       25/tcp              mailrelay
+
+Validation de la configuration :
+
+        $ docker exec -it mailrelay bash
+        root@relais:/# cat /etc/postfix/main.cf
+        smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)
+        biff = no
+
+        # appending .domain is the MUA's job.
+        append_dot_mydomain = no
+
+        # Uncomment the next line to generate "delayed mail" warnings
+        #delay_warning_time = 4h
+
+        readme_directory = no
+
+        # See /usr/share/doc/postfix/TLS_README.gz in the postfix-doc package for
+        # information on enabling SSL in the smtp client.
+
+        smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
+        myhostname = $myorigin
+        alias_maps = hash:/etc/aliases
+        alias_database = hash:/etc/aliases
+        myorigin = monServerDeRelaisInterne.example.com
+        mydestination = monServerDeRelaisInterne.example.com
+        relayhost = relai.fai.com
+        mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 172.17.0.0/16
+        mailbox_size_limit = 0
+        recipient_delimiter = +
+        inet_interfaces = all
+        inet_protocols = ipv4
+        root@relais:/#
+
+Comme on dit , c'est magnifique :D
