@@ -601,7 +601,34 @@ Nous allons donc modifier le fichier **/etc/postfix/main.cf**
 
 ## <a name="Switch_maildir_test" /> Validation de la configuration et identification des problèmes 
 
-ICI ICI 
+Donc démarrage des services :
+
+        $ /etc/init.d/postfix start && tail -f /var/log/mail.log
+        $ /etc/init.d/dovecot start
+        $  ss -lntp
+        State      Recv-Q Send-Q                                  Local Address:Port                                                 Peer Address:Port
+        LISTEN     0      100                                                 *:110                                                             *:*
+        users:(("dovecot",pid=203,fd=24))
+        LISTEN     0      100                                                 *:143                                                             *:*
+        users:(("dovecot",pid=203,fd=36))
+        LISTEN     0      100                                                 *:25                                                              *:*
+        LISTEN     0      100                                                :::110                                                            :::*
+        users:(("dovecot",pid=203,fd=25))
+        LISTEN     0      100                                                :::143                                                            :::*
+        users:(("dovecot",pid=203,fd=37))
+
+Nous allons pouvoir transmettre un courriel à toto étant un utilisateur local et voir le comportement, j'ai utilisé **telnet** , voici le résultat dans les logs :
+
+        Jan 26 13:45:45 mail01 postfix/smtpd[213]: connect from unknown[172.17.0.1]
+        Jan 26 13:46:02 mail01 postfix/smtpd[213]: 4D32EA04008: client=unknown[172.17.0.1]
+        Jan 26 13:46:06 mail01 postfix/cleanup[216]: 4D32EA04008: message-id=<>
+        Jan 26 13:46:06 mail01 postfix/qmgr[186]: 4D32EA04008: from=<toto@x3rus.com>, size=197, nrcpt=1 (queue active)
+        Jan 26 13:46:06 mail01 postfix/local[217]: 4D32EA04008: to=<toto@mailtraining.x3rus.com>, relay=local, delay=12, delays=12/0.01/0/0.01, dsn=2.0.0, status=sent (delivered to maildir)
+        Jan 26 13:46:06 mail01 postfix/qmgr[186]: 4D32EA04008: removed
+        Jan 26 13:46:07 mail01 postfix/smtpd[213]: disconnect from unknown[172.17.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 unknown=0/1 commands=5/6
+
+
+ICI ICI ICI montre le répertoire maildire
 
 * Référence :
     * [https://help.ubuntu.com/community/Dovecot](https://help.ubuntu.com/community/Dovecot)
