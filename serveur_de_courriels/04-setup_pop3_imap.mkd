@@ -19,6 +19,10 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
            * [ Configuration du service pop3 et imap](#config_pop_imap)
 * [ Validation du fonctionnement (pop3 et imap)](#check_setup)
        * [ Suite au teste de connections ...](#dovecot_effect)
+* [ Modification de la configuration pour utiliser MailDir](#Switch_to_maildir)
+        * [ Modification de la configuration de Dovecot](#Switch_maildir_dovecot)
+        * [ Modification de la configuration de Postfix](#Switch_maildir_postfix)
+        * [ Validation de la configuration et identification des problèmes ](#Switch_maildir_test)
 
 # <a name="description" /> Description
 
@@ -628,7 +632,49 @@ Nous allons pouvoir transmettre un courriel à toto étant un utilisateur local 
         Jan 26 13:46:07 mail01 postfix/smtpd[213]: disconnect from unknown[172.17.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 unknown=0/1 commands=5/6
 
 
-ICI ICI ICI montre le répertoire maildire
+Donc le courriel fut bien livré dans le répertoire __maildir__ de l'utilisateur comme nous pouvons le voir dans le logs : **(delivered to maildir)**.
+Regardons le contenu : 
+
+        $ ls -l /home/toto
+        total 0
+        drwx------ 5 toto toto 39 Jan 26 13:46 Maildir
+
+        $ ls -lR /home/toto/Maildir/
+        /home/toto/Maildir/:
+        total 0
+        drwx------ 2 toto toto  6 Jan 26 13:46 cur
+        drwx------ 2 toto toto 66 Jan 26 13:46 new
+        drwx------ 2 toto toto  6 Jan 26 13:46 tmp
+
+        /home/toto/Maildir/cur:
+        total 0
+
+        /home/toto/Maildir/new:
+        total 4
+        -rw------- 1 toto toto 307 Jan 26 13:46 1485438366.Vfe01I402882M412365.mail01.mood.x3rus.com
+
+        /home/toto/Maildir/tmp:
+        total 0
+
+Voici le contenu du courriel :
+
+         $ cat /home/toto/Maildir/new/1485438366.Vfe01I402882M412365.mail01.mood.x3rus.com
+         Return-Path: <toto@x3rus.com>
+         X-Original-To: toto@mailtraining.x3rus.com
+         Delivered-To: toto@mailtraining.x3rus.com
+         Received: from toto (unknown [172.17.0.1])
+                 by mail01.mood.x3rus.com (Postfix) with ESMTP id 4D32EA04008
+         for <toto@mailtraining.x3rus.com>; Thu, 26 Jan 2017 13:45:54 +0000 (UTC)
+
+         un courriel
+
+Juste pour confirmer qu'il y a bien un fichier par courriel, j'envoie un deuxième.
+
+        $ ls -l /home/toto/Maildir/new
+        total 8
+        -rw------- 1 toto toto 307 Jan 26 13:46 1485438366.Vfe01I402882M412365.mail01.mood.x3rus.com
+        -rw------- 1 toto toto 313 Jan 26 21:49 1485467383.Vfe01I402880M135181.mail01.mood.x3rus.com
+
 
 * Référence :
     * [https://help.ubuntu.com/community/Dovecot](https://help.ubuntu.com/community/Dovecot)
