@@ -1,0 +1,51 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+
+# Index 
+
+# <a name="Intro" /> Introduction
+
+Nous avons donc vue la mise en place du système de réception de courriel localement ainsi que la possibilité pour les utilisateurs de récupérer leur courriel grâce au système __pop3__ et __imap__. Nous avions fait l'exercice avec un [pet container](http://rhelblog.redhat.com/2016/06/08/in-defense-of-the-pet-container-part-1-prelude-the-only-constant-is-complexity/) en d'autre mot avec un conteneur docker comme si c'était une __VM__. C'est mal , c'est bien je vous laisse lire le blog de RedHat sur le sujet, je suis un puriste sur l'utilisation du logiciel libre après je ne suis pas rigide sur les méthodes. Donc pour moi un pet conteneur c'est pas la fin du monde. 
+Par contre il reste que c'est mieux d'avoir des vraies conteneurs qui sont indépendant , bien structuré que l'on peut modifier manipulé de manière indépendante ! Comme nous sommes dans le cadre de la formation nous allons faire l'exercice. 
+Mettons tous de suite quelque chose au claire, ma configuration actuelle est un __pet conteneur__ , dû à des contrainte de temps de migration de serveur je n'avais pas eu le temps de faire l'exercice que l'on fait ici !!!
+En d'autre mot pas de stress :D .
+
+La grande particularité de la configuration qui suit est que nous allons pour la première fois depuis notre utilisation dans la formation connecter 2 conteneurs ensemble . 
+
+* __postfix__ : réception et envoie de courriel
+* __dovecot__ : Récupération des courriels.
+
+# <a name="setup_images" /> Création des images 
+
+Pour débuter du bon pieds nous allons définir les critères de configuration afin de ne pas tourné en rond lors de la mise en place de postfix , voici les critère à répondre . 
+
+* **réception** : Permettre la réception de courriel pour 1 ou plusieurs domaines
+* **envoie** : Permettre l'envoie de courriel sans authentification pour un ou plusieurs réseaux nommé (quand nous mettrons la configuration avec __Mysql__ nous ajouterons l'authentification)
+* **MailDir** : Utilisation du système de stockage __maildir__ afin de limité les risques de corruption du fichier unique de courriel définie avec le format __mbox__
+* **Validation des adresses à la source** : Nous voulons conservé la validation des adresses de courriels au niveau de postfix afin de ne pas avoir une charge élevé de courriels .
+* **imap** : Permettre la réception de courriel via le protocole __imap__ , je vais mettre de coté le __pop3__ pour le moment.
+
+Ça semble bon :D , maintenant passons au variable que nous désirons avoir configurable :
+
+* **domaines** : Avoir une variable configurable pour que l'image soit utilisable pour n'importe quelle domaine
+* **mynetwork** : Avoir une variable configuration pour la définition des réseaux qui peuvent transmettre des courriels.
+* **relayhost** : Si le déploiement est fait dans un réseau restrictif permettre l'envoie pour via un __relayhost__.
+* **authentification en claire** : Paramètre permettant l'authentification en claire sans chiffrement , bon vraiment pas obligatoire mais sinon j'ai rien pour dovecot :P
+
+Comme la formation est sous Ubuntu , nous allons prendre la dernière __LTS__ pour le besoin donc Ubuntu:16.04
+
+## <a name="setup_postfix" /> Création de l'image SMTP (postfix)
+
+Nous allons reprendre bêtement les étapes vue dans la formation pour faire la création du __Dockerfile__ :
+
+1. Installation des packages postfix
+2. Mise en place d'un fichier de configuration en __template__ [Jinja2](http://jinja.pocoo.org/docs/2.9/)
+3. Script de démarrage de postfix
+
+Nous avons déjà débuter cette configuration lors de la mise en place du conteneur pour le __relayhost__ bien entendu on va s'en inspirer on l'a déjà étudier :D.
+
+# les logs 
+http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
