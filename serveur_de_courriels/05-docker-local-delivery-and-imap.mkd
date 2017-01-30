@@ -104,6 +104,8 @@ Bien simple :
 
 L'ensemble des fichiers sont disponible sur [github](https://github.com/x3rus/training/tree/master/serveur_de_courriels/dockers/srvMailWithImap/smtp).
 
+### <a name="setup_postfix_install_pkg" /> Installation des packages dans l'image
+
 Passons à la génération de l'image , bien entendu la configuration n'est pas terminé !! 
 
         $ docker build -t srvsmtp .
@@ -291,8 +293,145 @@ Si nous regardons , un des packages recommencés il y a **python-setuptools** , 
         root@8f4caf46401e:/# echo $?
         0
 
-**Yeahhh** du premier coup :P
+**Yeahhh** du premier coup :P, nous allons donc ajuster le fichier __Dockerfile__ , voici donc la nouvelle ligne avec la liste des packages :
 
 
+        # Packages: update
+        RUN apt-get update -qq && \
+            apt-get install -qq -y --no-install-recommends postfix \
+                    python-pip supervisor rsyslog python-wheel python-setuptools  && \
+                    pip install j2cli
+
+
+On reconstruit l'image :
+
+        $ docker build -t srvsmtp .                                                                                                                          
+        Sending build context to Docker daemon 6.656 kB
+        Step 1 : FROM ubuntu:16.04
+         ---> c73a085dc378
+         Step 2 : MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
+         [ ... OUTPUT COUPÉ ...]
+
+        Removing intermediate container ba87a471cb7a
+        Step 5 : ADD bin/dfg.sh /usr/local/bin/
+         ---> b842eee6ca8a
+         Removing intermediate container 4631078aaad4
+        Step 6 : ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
+         lstat conf/supervisor-all.conf: no such file or directory
+
+Je suis sûr que vous pensez que je l'ai fait volontairement, mais même pas je vous jure ... En temps normale je le cache ça :P . Bon on va capitalisé sur le problème j'ai opté pour vous montrer tous, donc ça sera tous , le bon et le moins bon .
+
+### <a name="setup_postfix_setup_conf" /> Mise en place des fichiers de configuration
+
+Donc suite à l'erreur de mon oublie du fichier de __supervisor__ je vais le mettre dans le répertoire conf , voici le contenu , c'est le même que pour le __relayhost__ je ne prendrai pas le temps d'écrire.
+
+        [supervisord]
+        logfile = /var/log/supervisord.log
+        logfile_backups = 0
+
+        [program:rsyslogd]
+        command = /usr/sbin/rsyslogd -n
+
+        [program:postfix]
+        command = /usr/local/bin/dfg.sh /var/spool/postfix/pid/master.pid /etc/init.d/postfix start
+        startsecs = 3
+
+Donc on reprend :D : 
+
+        $ docker build -t srvsmtp .
+        [... OUTPUT COUPÉ ...]
+        Step 3 : ENV DEBIAN_FRONTEND noninteractive
+         ---> Using cache
+         ---> 7bb41adacabf
+        Step 4 : RUN apt-get update -qq &&     apt-get install -qq -y --no-install-recommends postfix         python-pip supervisor rsyslog python-wheel python-setuptools  &&     pip install j2cli
+         ---> Using cache
+         ---> db7a6b374677
+        Step 5 : ADD bin/dfg.sh /usr/local/bin/
+         ---> Using cache
+         ---> b842eee6ca8a
+        [... OUTPUT COUPÉ ...]
+
+Ce qui est super est que le temps pris pour l'installation n'est pas repris maintenant car __docker__ va utiliser le cache des couches (__layers__) déjà compilé. 
+
+État de la situation nous avons un conteneur qui à l'ensemble des packages d'installer ainsi que la configuration minimal pour le démarrage du conteneur , il nous reste :
+
+1. Mettre en place la configuration pour postfix , en __template__
+2. Modifier le script **run.sh** afin qu'il traite notre fichier de configuration en __template__ et le dispose dans le bon répertoire
+3. Ajuster les valeurs par défaut de notre image si besoin est !
+
+Voici notre fichier de configuration en __template__  (**conf/postfix-main.j2**) : 
+
+        smtpd_banner = $myhostname ESMTP $mail_name
+
+        alias_database = hash:/etc/aliases
+        alias_maps = hash:/etc/aliases
+
+        # Si vous le désirez nous pourrions avoir ce paramètre en option
+        home_mailbox = Maildir/
+
+        smtpd_relay_restrictions = permit_mynetworks  defer_unauth_destination
+        myhostname = $myorigin
+        myorigin = {{ SMTP_HOSTNAME }}
+
+        mydestination = {{ ACCEPT_DOMAIN }}
+        mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 {{ PERMIT_NETWORK }}
+        inet_interfaces = all
+        inet_protocols = ipv4
+
+        {% if (EXT_RELAY_HOST != "DIRECT") %}relayhost = {{ EXT_RELAYHOST }} {% endif %}
+
+Nous allons donc l'ajouter dans le __Dockerfile__
+
+        [...OUTPUT COUPÉ ...]
+        ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
+
+        # Setup postfix conf
+        ADD conf/postfix-main.j2 /root/
+
+        # Runner
+        ADD run.sh /root/run.sh
+        [...OUTPUT COUPÉ...]
+
+Comme vous pouvez le constater j'ai mis la configuration **après** la définition des packages, ceci principalement pour ne pas à avoir à les réinstaller et profiter du caches de __docker__.
+
+Le fichier sera donc dans le répertoire **/root** , nous devons ajuster le fichier **run.sh** pour le traitement du fichier , voici le nouveau contenu :
+
+        #! /usr/bin/env bash
+        set -e # exit on error
+
+        # Variables
+        export EXT_RELAY_HOST=${EXT_RELAY_HOST:-"DIRECT"}
+        export SMTP_HOSTNAME=${SMTP_HOSTNAME:-"relay.example.com"}
+        export PERMIT_NETWORK=${PERMIT_NETWORK:-"192.168.0.0/16"}
+        export ACCEPT_DOMAIN=${ACCEPT_DOMAIN:-"localhost $SMTP_HOSTNAME"}
+                              
+        echo $SMTP_HOSTNAME > /etc/mailname
+             
+        # Templates
+        j2 /root/postfix-main.j2 > /etc/postfix/main.cf
+
+        # Launch
+        rm -f /var/spool/postfix/pid/*.pid
+        exec /usr/bin/supervisord -n
+
+Principale changement :
+
+* Les variables  et les valeurs par défaut
+* Le patch pour le fichier postfix de __template__
+
+On reconstruit l'image :D :
+
+        $ docker build -t srvsmtp . 
+        [... OUTPUT COUPÉ ...]
+         ---> b842eee6ca8a
+         Step 6 : ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
+          ---> Using cache
+          ---> 98fd86c1b2a2
+         Step 7 : ADD conf/postfix-main.j2 /root/
+          ---> e6bbe80dbe93
+        [... OUTPUT COUPÉ ...]
+
+
+Comme vous pouvez  le constater le système à utiliser le cache jusqu'à la première modification
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log

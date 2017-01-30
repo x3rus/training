@@ -10,12 +10,15 @@ ENV DEBIAN_FRONTEND noninteractive
 # Packages: update
 RUN apt-get update -qq && \
     apt-get install -qq -y --no-install-recommends postfix \
-        python-pip supervisor rsyslog && \
+        python-pip supervisor rsyslog python-wheel python-setuptools  && \
     pip install j2cli
 
 # Configure: supervisor
 ADD bin/dfg.sh /usr/local/bin/
 ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
+
+# Setup postfix conf
+ADD conf/postfix-main.j2 /root/
 
 # Runner
 ADD run.sh /root/run.sh
