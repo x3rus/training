@@ -1,7 +1,7 @@
 # Using debian
 # Start Exemple:
 # ou can add -p 25:25 for LAN access
-FROM Ubuntu:16.04
+FROM ubuntu:16.04
 MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
 
 # Ignore APT warnings about not having a TTY

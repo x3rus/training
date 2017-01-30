@@ -70,7 +70,7 @@ Voici le contenu du fichier **Dockerfile**
         # Using debian
         # Start Exemple:
         # ou can add -p 25:25 for LAN access
-        FROM Ubuntu:16.04
+        FROM ubuntu:16.04
         MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
 
         # Ignore APT warnings about not having a TTY
@@ -102,7 +102,197 @@ Bien simple :
 * Nous installons aussi __j2cli__ , toujours dans l'optique d'utiliser le système __jinja2__ comme __template__ pour les fichiers de configuration.
 * Installation des fichiers de configuration pour __supervisor__ , j'ai simplement repris ceux déjà présenter lors de la présentation de la __dockerisation__ du serveur de relais.
 
-L'ensemble des fichiers sont disponible sur [github]()
+L'ensemble des fichiers sont disponible sur [github](https://github.com/x3rus/training/tree/master/serveur_de_courriels/dockers/srvMailWithImap/smtp).
+
+Passons à la génération de l'image , bien entendu la configuration n'est pas terminé !! 
+
+        $ docker build -t srvsmtp .
+        Sending build context to Docker daemon 6.144 kB
+        Step 1 : FROM ubuntu:16.04
+         ---> c73a085dc378
+        Step 2 : MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
+         ---> Running in d42a4e80f101
+         ---> 9421a73877a6
+       [... OUTPUT COUPÉ ...]
+
+Cette compilation est un peu plus longue, car ceci comprend l'installation des applications.
+
+Super , j'en attendait pas autant :) , on a déjà une erreur :D , la voici :
+
+       [... OUTPUT COUPÉ ...]
+        Running hooks in /etc/ca-certificates/update.d...
+        done.
+        Collecting j2cli
+          Downloading j2cli-0.3.1_0-py2-none-any.whl
+        Collecting jinja2>=2.7.2 (from j2cli)
+          Downloading Jinja2-2.9.5-py2.py3-none-any.whl (340kB)
+        Collecting MarkupSafe>=0.23 (from jinja2>=2.7.2->j2cli)
+          Downloading MarkupSafe-0.23.tar.gz
+        Complete output from command python setup.py egg_info:
+          Traceback (most recent call last):
+          File "<string>", line 1, in <module>
+          ImportError: No module named setuptools
+          ----------------------------------------
+          Command "python setup.py egg_info" failed with error code 1 in /tmp/pip-build-Gs2DNu/MarkupSafe/
+          You are using pip version 8.1.1, however version 9.0.1 is available.
+          You should consider upgrading via the 'pip install --upgrade pip' command.
+         The command '/bin/sh -c apt-get update -qq &&     apt-get install -qq -y --no-install-recommends postfix         python-pip supervisor rsyslog &&     pip install j2cli' returned a non-zero code: 1
+
+
+
+Vous me direz , mais pourquoi ça fonctionnait très bien avec le serveur de relais , effectivement mais nous étions avec une Debian __jessie__ , maintenant nous sommes avec Ubuntu.
+
+Comment analyser le problème , voici comment je procède :
+
+        $ docker run -it ubuntu:16.04 bash
+        root@6c3da44d101c:/# apt-get update && apt-get install python-pip
+	The following additional packages will be installed:
+	  binutils build-essential bzip2 ca-certificates cpp cpp-5 dpkg-dev fakeroot file g++ g++-5 gcc gcc-5 gcc-5-base ifupdown iproute2 isc-dhcp-client
+	  isc-dhcp-common libalgorithm-diff-perl libalgorithm-diff-xs-perl libalgorithm-merge-perl libasan2 libatm1 libatomic1 libc-dev-bin libc6 libc6-dev libcc1-0
+	  libcilkrts5 libdns-export162 libdpkg-perl libexpat1 libexpat1-dev libfakeroot libffi6 libfile-fcntllock-perl libgcc-5-dev libgdbm3 libgmp10 libgomp1
+	  libisc-export160 libisl15 libitm1 liblsan0 libmagic1 libmnl0 libmpc3 libmpfr4 libmpx0 libperl5.22 libpython-all-dev libpython-dev libpython-stdlib
+	  libpython2.7 libpython2.7-dev libpython2.7-minimal libpython2.7-stdlib libquadmath0 libsqlite3-0 libssl1.0.0 libstdc++-5-dev libstdc++6 libtsan0 libubsan0
+	  libxtables11 linux-libc-dev make manpages manpages-dev mime-support netbase openssl patch perl perl-modules-5.22 python python-all python-all-dev
+	  python-dev python-minimal python-pip-whl python-pkg-resources python-setuptools python-wheel python2.7 python2.7-dev python2.7-minimal rename xz-utils
+	Suggested packages:
+	  binutils-doc bzip2-doc cpp-doc gcc-5-locales debian-keyring g++-multilib g++-5-multilib gcc-5-doc libstdc++6-5-dbg gcc-multilib autoconf automake libtool
+	  flex bison gdb gcc-doc gcc-5-multilib libgcc1-dbg libgomp1-dbg libitm1-dbg libatomic1-dbg libasan2-dbg liblsan0-dbg libtsan0-dbg libubsan0-dbg
+	  libcilkrts5-dbg libmpx0-dbg libquadmath0-dbg ppp rdnssd iproute2-doc resolvconf avahi-autoipd isc-dhcp-client-ddns apparmor glibc-doc libstdc++-5-doc
+	  make-doc man-browser ed diffutils-doc perl-doc libterm-readline-gnu-perl | libterm-readline-perl-perl python-doc python-tk python-setuptools-doc
+	  python2.7-doc binfmt-support
+	The following NEW packages will be installed:
+	  binutils build-essential bzip2 ca-certificates cpp cpp-5 dpkg-dev fakeroot file g++ g++-5 gcc gcc-5 ifupdown iproute2 isc-dhcp-client isc-dhcp-common
+	  libalgorithm-diff-perl libalgorithm-diff-xs-perl libalgorithm-merge-perl libasan2 libatm1 libatomic1 libc-dev-bin libc6-dev libcc1-0 libcilkrts5
+	  libdns-export162 libdpkg-perl libexpat1 libexpat1-dev libfakeroot libffi6 libfile-fcntllock-perl libgcc-5-dev libgdbm3 libgmp10 libgomp1 libisc-export160
+	  libisl15 libitm1 liblsan0 libmagic1 libmnl0 libmpc3 libmpfr4 libmpx0 libperl5.22 libpython-all-dev libpython-dev libpython-stdlib libpython2.7
+	  libpython2.7-dev libpython2.7-minimal libpython2.7-stdlib libquadmath0 libsqlite3-0 libssl1.0.0 libstdc++-5-dev libtsan0 libubsan0 libxtables11
+	  linux-libc-dev make manpages manpages-dev mime-support netbase openssl patch perl perl-modules-5.22 python python-all python-all-dev python-dev
+	  python-minimal python-pip python-pip-whl python-pkg-resources python-setuptools python-wheel python2.7 python2.7-dev python2.7-minimal rename xz-utils
+	The following packages will be upgraded:
+	  gcc-5-base libc6 libstdc++6
+	3 upgraded, 87 newly installed, 0 to remove and 25 not upgraded.
+	Need to get 88.4 MB of archives.
+	After this operation, 268 MB of additional disk space will be used.
+	Do you want to continue? [Y/n] y
+	 
+        [... Isshhh c beaucoup de packages requis :P ...]
+
+Je démarre un Ubuntu éphémère uniquement pour valider la procédure , ceci me permettra de réaliser l'analyse du problème en mode interactif. 
+
+Recherche du package __j2cli__ 
+
+        root@6c3da44d101c:/# pip search j2cli
+        j2cli3 (0.0.7.post0)  - Command-line interface to Jinja2 for templating in shell scripts.
+        j2cli (0.3.1-0)       - Command-line interface to Jinja2 for templating in shell scripts.
+
+__Humm__ ça semble bon :-/ on va tenter de l'installer alors :
+
+        root@6c3da44d101c:/# pip install j2cli
+        Collecting j2cli
+          Downloading j2cli-0.3.1_0-py2-none-any.whl
+        Collecting jinja2>=2.7.2 (from j2cli)
+          Downloading Jinja2-2.9.5-py2.py3-none-any.whl (340kB)
+          100% |################################| 348kB 1.1MB/s
+        Collecting MarkupSafe>=0.23 (from jinja2>=2.7.2->j2cli)
+        Downloading MarkupSafe-0.23.tar.gz
+        Building wheels for collected packages: MarkupSafe
+        Running setup.py bdist_wheel for MarkupSafe ... done
+        Stored in directory: /root/.cache/pip/wheels/a3/fa/dc/0198eed9ad95489b8a4f45d14dd5d2aee3f8984e46862c5748
+        Successfully built MarkupSafe
+        Installing collected packages: MarkupSafe, jinja2, j2cli
+        Successfully installed MarkupSafe-0.23 j2cli-0.3.1-0 jinja2-2.9.5
+        You are using pip version 8.1.1, however version 9.0.1 is available.
+        You should consider upgrading via the 'pip install --upgrade pip' command.
+
+Donc :
+
+        $ docker build -t srvsmtp .
+
+Aucun problème ... On va refaire un teste alors avec le __Dockerfile__ :
+
+        Command "python setup.py egg_info" failed with error code 1 in /tmp/pip-build-cpjQyz/MarkupSafe/
+        You are using pip version 8.1.1, however version 9.0.1 is available.
+        You should consider upgrading via the 'pip install --upgrade pip' command.
+        The command '/bin/sh -c apt-get update -qq &&     apt-get install -qq -y --no-install-recommends postfix         python-pip supervisor rsyslog &&     pip install j2cli' returned a non-zero code: 1
+
+Pourquoi ? Si nous regardons une des différences entre la configuration dans le __Dockerfile__ et mon teste est que lors de l'installation dans le __Dockerfile__ il y a l'instruction **--no-install-recommends**. Résultat il manque des packages requis pour l'utilisation de **pip**. 
+
+Bien entendu 2 options s'offre à nous :
+
+* Supprimer le paramètre **--no-install-recommends** dans le __Dockerfile__ , résultat une image plus grosse , est-ce vraiment critique ?!?! À vous de voir.
+* Ajuster les packages lors de l'installation afin de conserver l'option d'installation des packages requis uniquement.
+
+Bon , comme la suppression du paramètre est assez simple , je vais prendre l'option, car l'important n'est pas la solution mais le processus pour y arrivé, sinon vous ne seriez pas là :D. 
+
+Donc je quitte mon conteneur de teste , car pollué par trop de packages et en redémarre un nouveau et reprend :
+
+        root@6c3da44d101c:/# exit
+        ٩(◠◡◠)۶ $ docker run -it ubuntu:16.04 bash
+        root@8f4caf46401e:/#  apt-get update && apt-get --no-install-recommends install python-pip
+        The following additional packages will be installed:
+          ca-certificates libexpat1 libffi6 libpython-stdlib libpython2.7-minimal libpython2.7-stdlib libsqlite3-0 libssl1.0.0 mime-support openssl python
+          python-minimal python-pip-whl python2.7 python2.7-minimal
+        Suggested packages:
+          python-doc python-tk python2.7-doc binutils binfmt-support
+        Recommended packages:
+          file build-essential python-all-dev python-setuptools python-wheel
+        The following NEW packages will be installed:
+          ca-certificates libexpat1 libffi6 libpython-stdlib libpython2.7-minimal libpython2.7-stdlib libsqlite3-0 libssl1.0.0 mime-support openssl python
+          python-minimal python-pip python-pip-whl python2.7 python2.7-minimal
+        0 upgraded, 16 newly installed, 0 to remove and 28 not upgraded.
+        Need to get 7450 kB of archives.
+        After this operation, 24.9 MB of additional disk space will be used.
+
+Pas mal moins de packages, bon maintenant nous allons être dans le détail pour le problème spécifique . Regardons le message d'erreur que nous avons avec le conteneur :
+
+        Collecting MarkupSafe>=0.23 (from jinja2>=2.7.2->j2cli)
+          Downloading MarkupSafe-0.23.tar.gz
+        Complete output from command python setup.py egg_info:
+          Traceback (most recent call last):
+          File "<string>", line 1, in <module>
+          ImportError: No module named setuptools
+
+Si nous regardons , un des packages recommencés il y a **python-setuptools** , ceci correspond au message d'erreur que nous avons :D , installons le pour voir et testons à nouveau .
+
+
+        root@8f4caf46401e:/# apt-get --no-install-recommends install python-setuptools
+        Collecting j2cli
+          Downloading j2cli-0.3.1_0-py2-none-any.whl
+        Collecting jinja2>=2.7.2 (from j2cli)
+          Downloading Jinja2-2.9.5-py2.py3-none-any.whl (340kB)
+          100% |################################| 348kB 1.1MB/s
+        Collecting MarkupSafe>=0.23 (from jinja2>=2.7.2->j2cli)
+          Downloading MarkupSafe-0.23.tar.gz
+          Building wheels for collected packages: MarkupSafe
+          Running setup.py bdist_wheel for MarkupSafe ... error
+          Complete output from command /usr/bin/python -u -c "import setuptools, tokenize;__file__='/tmp/pip-build-NleDVW/MarkupSafe/setup.py';exec(compile(getattr(tokenize, 'open', open)(__file__).read().replace('\r\n', '\n'), __file__, 'exec'))" bdist_wheel -d /tmp/tmp2aCAjppip-wheel- --python-tag cp27:
+          usage: -c [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
+          or: -c --help [cmd1 cmd2 ...]
+          or: -c --help-commands
+          or: -c cmd --help
+          error: invalid command 'bdist_wheel'
+          ----------------------------------------
+          Failed building wheel for MarkupSafe
+          Running setup.py clean for MarkupSafe
+          Failed to build MarkupSafe
+          Installing collected packages: MarkupSafe, jinja2, j2cli
+          Running setup.py install for MarkupSafe ... done
+          Successfully installed MarkupSafe-0.23 j2cli-0.3.1-0 jinja2-2.9.5
+
+**COOL** encore une erreur mais PAS la même , si nous regardons encore le message il y a le mot __wheel__ de présent , il est aussi dans un des packages recommandés pour l'installation ajoutons le :D .
+
+        root@8f4caf46401e:/# apt-get --no-install-recommends install python-wheel                                                                                     
+        root@8f4caf46401e:/# pip install j2cli
+        Requirement already satisfied (use --upgrade to upgrade): j2cli in /usr/local/lib/python2.7/dist-packages
+        Requirement already satisfied (use --upgrade to upgrade): jinja2>=2.7.2 in /usr/local/lib/python2.7/dist-packages (from j2cli)
+        Requirement already satisfied (use --upgrade to upgrade): MarkupSafe>=0.23 in /usr/local/lib/python2.7/dist-packages (from jinja2>=2.7.2->j2cli)
+        You are using pip version 8.1.1, however version 9.0.1 is available.
+        You should consider upgrading via the 'pip install --upgrade pip' command.
+        root@8f4caf46401e:/# echo $?
+        0
+
+**Yeahhh** du premier coup :P
+
 
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
