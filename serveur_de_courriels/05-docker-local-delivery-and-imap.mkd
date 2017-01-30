@@ -45,7 +45,64 @@ Nous allons reprendre bêtement les étapes vue dans la formation pour faire la 
 2. Mise en place d'un fichier de configuration en __template__ [Jinja2](http://jinja.pocoo.org/docs/2.9/)
 3. Script de démarrage de postfix
 
-Nous avons déjà débuter cette configuration lors de la mise en place du conteneur pour le __relayhost__ bien entendu on va s'en inspirer on l'a déjà étudier :D.
+Nous avons déjà débuter cette configuration lors de la mise en place du conteneur pour le __relayhost__ bien entendu on va s'en inspirer on l'a déjà étudier :D. J'ai tendance à présenter un produit fini quand je présente docker, malheureusement vous n'avez pas la chance de voir le processus de création incluant les erreur :D . Nous allons donc faire la démarche ensemble afin de voir l'avantage de l'utilisation de docker avec l'utilisation des couches (__layer__) en cache . 
+
+Débutons je crée la structure :
+
+        $ ls -R srvMailWithImap/
+        srvMailWithImap/:
+        imap  smtp
+
+        srvMailWithImap/imap:
+
+        srvMailWithImap/smtp:
+        bin  Dockerfile  run.sh
+
+        srvMailWithImap/smtp/bin:
+        dfg.sh
+
+Comme vous pouvez le voir , dans le répertoire __srvMailWithImap/__ il y a 2 répertoires 1 pour le service __smtp__ et l'autre pour le service __imap__ . 
+Dans le répertoire __smtp__ j'ai repris une partie de la configuration du serveur __srvMailRelay__ , soit le script __dfg.sh__ ainsi que le script de démarrage. Nous le modifierons peut-être par la suite, mais pour le moment ceci nous donne un point de départ, et nous savons qu'il fonctionne !!
+
+Voici le contenu du fichier **Dockerfile**
+
+        $ cat Dockerfile
+        # Using debian
+        # Start Exemple:
+        # ou can add -p 25:25 for LAN access
+        FROM Ubuntu:16.04
+        MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
+
+        # Ignore APT warnings about not having a TTY
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Packages: update
+        RUN apt-get update -qq && \
+            apt-get install -qq -y --no-install-recommends postfix \
+                    python-pip supervisor rsyslog && \
+            pip install j2cli
+
+        # Configure: supervisor
+        ADD bin/dfg.sh /usr/local/bin/
+        ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
+
+        # Runner
+        ADD run.sh /root/run.sh
+        RUN chmod +x /root/run.sh
+
+        # Declare
+        EXPOSE 25
+
+        CMD ["/root/run.sh"]
+
+Bien simple :
+
+* Nous débutons avec l'image **Ubuntu:16.04** comme nous avons utilisé cette distribution depuis le début.
+* Installation des packages pour postfix et __supervisor__ ainsi que le système __rsyslog__ pour les logs.
+* Nous installons aussi __j2cli__ , toujours dans l'optique d'utiliser le système __jinja2__ comme __template__ pour les fichiers de configuration.
+* Installation des fichiers de configuration pour __supervisor__ , j'ai simplement repris ceux déjà présenter lors de la présentation de la __dockerisation__ du serveur de relais.
+
+L'ensemble des fichiers sont disponible sur [github]()
 
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
