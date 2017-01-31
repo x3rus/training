@@ -18,7 +18,7 @@ La grande particularité de la configuration qui suit est que nous allons pour l
 * __postfix__ : réception et envoie de courriel
 * __dovecot__ : Récupération des courriels.
 
-# <a name="setup_images" /> Création des images 
+# <a name="setup_images" /> Définition des images 
 
 Pour débuter du bon pieds nous allons définir les critères de configuration afin de ne pas tourné en rond lors de la mise en place de postfix , voici les critère à répondre . 
 
@@ -37,7 +37,7 @@ Pour débuter du bon pieds nous allons définir les critères de configuration a
 
 Comme la formation est sous Ubuntu , nous allons prendre la dernière __LTS__ pour le besoin donc Ubuntu:16.04
 
-## <a name="setup_postfix" /> Création de l'image SMTP (postfix)
+# <a name="setup_postfix" /> Création de l'image SMTP (postfix)
 
 Nous allons reprendre bêtement les étapes vue dans la formation pour faire la création du __Dockerfile__ :
 
@@ -104,7 +104,7 @@ Bien simple :
 
 L'ensemble des fichiers sont disponible sur [github](https://github.com/x3rus/training/tree/master/serveur_de_courriels/dockers/srvMailWithImap/smtp).
 
-### <a name="setup_postfix_install_pkg" /> Installation des packages dans l'image
+## <a name="setup_postfix_install_pkg" /> Installation des packages dans l'image
 
 Passons à la génération de l'image , bien entendu la configuration n'est pas terminé !! 
 
@@ -321,7 +321,7 @@ On reconstruit l'image :
 
 Je suis sûr que vous pensez que je l'ai fait volontairement, mais même pas je vous jure ... En temps normale je le cache ça :P . Bon on va capitalisé sur le problème j'ai opté pour vous montrer tous, donc ça sera tous , le bon et le moins bon .
 
-### <a name="setup_postfix_setup_conf" /> Mise en place des fichiers de configuration
+## <a name="setup_postfix_setup_conf" /> Mise en place des fichiers de configuration
 
 Donc suite à l'erreur de mon oublie du fichier de __supervisor__ je vais le mettre dans le répertoire conf , voici le contenu , c'est le même que pour le __relayhost__ je ne prendrai pas le temps d'écrire.
 
@@ -432,6 +432,153 @@ On reconstruit l'image :D :
         [... OUTPUT COUPÉ ...]
 
 
-Comme vous pouvez  le constater le système à utiliser le cache jusqu'à la première modification
+Comme vous pouvez  le constater le système à utiliser le cache jusqu'à la première modification . **Woot** donc la compilation est un succès on passe à la phase de teste !!
+
+## <a name="setup_postfix_setup_validation" /> Validation de l'image
+
+Bon idéalement on pourrait faire un système de unit teste pour confirmer que tous fonctionne bien mais on est pas encore en mode "production" , on s'amuse plus qu'autre chose :D.
+
+Donc nous allons démarrer un conteneur et valider manuellement , par la suite nous réaliserons un **docker-compose.yml** pour faciliter l'utilisation. J'ai définie des variables :
+
+* __SMTP\_HOSTNAME=mailtraining.x3rus.com__
+* __PERMIT\_NETWORK=172.17.0.0/16__
+* __ACCEPT\_DOMAIN="mailtraining.x3rus.com toto.x3rus.com"__ 
+
+        $ docker run -h mailtraining.x3rus.com -e SMTP_HOSTNAME=mailtraining.x3rus.com -e PERMIT_NETWORK=172.17.0.0/16 -e ACCEPT_DOMAIN="mailtraining.x3rus.com toto.x3rus.com" srvsmtp
+        /usr/lib/python2.7/dist-packages/supervisor/options.py:297: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+          'Supervisord is running as root and it is searching '
+          2017-01-31 13:10:13,071 CRIT Supervisor running as root (no user in config file)
+          2017-01-31 13:10:13,071 WARN Included extra file "/etc/supervisor/conf.d/supervisor-all.conf" during parsing
+          2017-01-31 13:10:13,090 INFO RPC interface 'supervisor' initialized
+          2017-01-31 13:10:13,090 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+          2017-01-31 13:10:13,090 INFO supervisord started with pid 1
+          2017-01-31 13:10:14,097 INFO spawned: 'postfix' with pid 11
+          2017-01-31 13:10:14,100 INFO spawned: 'rsyslogd' with pid 12
+          2017-01-31 13:10:15,456 INFO success: rsyslogd entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+          2017-01-31 13:10:17,459 INFO success: postfix entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+
+Prenons un autre terminal et validons l'ensemble :
+
+        $ docker ps
+        CONTAINER ID        IMAGE               COMMAND             CREATED              STATUS              PORTS               NAMES
+        21b0aa433d27        srvsmtp             "/root/run.sh"      About a minute ago   Up About a minute   25/tcp              grave_jones
+        $ docker exec -it grave_jones bash
+
+        root@mailtraining:/# cat /etc/postfix/main.cf
+        smtpd_banner = $myhostname ESMTP $mail_name
+
+        alias_database = hash:/etc/aliases
+        alias_maps = hash:/etc/aliases
+
+        # Si vous le désirez nous pourrions avoir ce paramètre en option
+        home_mailbox = Maildir/
+
+        smtpd_relay_restrictions = permit_mynetworks  defer_unauth_destination
+        myhostname = $myorigin
+        myorigin = mailtraining.x3rus.com
+
+        mydestination = mailtraining.x3rus.com toto.x3rus.com
+        mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 172.17.0.0/16
+        inet_interfaces = all
+        inet_protocols = ipv4
+
+        root@mailtraining:/# tail /var/log/mail.log
+        Jan 31 13:10:14 mailtraining postfix[87]: Postfix is running with backwards-compatible default settings
+        Jan 31 13:10:14 mailtraining postfix[87]: See http://www.postfix.org/COMPATIBILITY_README.html for details
+        Jan 31 13:10:14 mailtraining postfix[87]: To disable backwards compatibility use "postconf compatibility_level=2" and "postfix reload"
+        Jan 31 13:10:14 mailtraining postfix/master[132]: daemon started -- version 3.1.0, configuration /etc/postfix
+
+Ça semble pas mal :D , on valide en transmettant un petit courriel à l'utilisateur __root__ !!
+Je récupère l'IP du conteneur : 
+
+        $ docker inspect grave_jones | grep IPAddress
+            "SecondaryIPAddresses": null,
+            "IPAddress": "172.17.0.2",
+                "IPAddress": "172.17.0.2",
+
+Un petit __telnet__ rapide :
+
+        $ telnet 172.17.0.2 25
+        Trying 172.17.0.2...
+        Connected to 172.17.0.2.
+        Escape character is '^]'.
+        220 mailtraining.x3rus.com ESMTP Postfix
+        ehlo toto
+        250-mailtraining.x3rus.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+        mail from: toto@x3rus.com
+        250 2.1.0 Ok
+        rcpt to: root@mailtraining.x3rus.com
+        250 2.1.5 Ok
+        data
+        354 End data with <CR><LF>.<CR><LF>
+        un courriel
+        .
+        250 2.0.0 Ok: queued as 9A2B460758E
+        quit
+        221 2.0.0 Bye
+        Connection closed by foreign host.
+
+Visualisons les logs et confirmons que le répertoire **Maildir** fut créé .
+
+        $ docker exec grave_jones tail /var/log/mail.log
+        Jan 31 13:10:14 mailtraining postfix[87]: See http://www.postfix.org/COMPATIBILITY_README.html for details
+        Jan 31 13:10:14 mailtraining postfix[87]: To disable backwards compatibility use "postconf compatibility_level=2" and "postfix reload"
+        Jan 31 13:10:14 mailtraining postfix/master[132]: daemon started -- version 3.1.0, configuration /etc/postfix
+        Jan 31 13:16:15 mailtraining postfix/smtpd[1589]: connect from unknown[172.17.0.1]
+        Jan 31 13:16:36 mailtraining postfix/smtpd[1589]: 9A2B460758E: client=unknown[172.17.0.1]
+        Jan 31 13:16:40 mailtraining postfix/cleanup[1676]: 9A2B460758E: message-id=<>
+        Jan 31 13:16:40 mailtraining postfix/qmgr[135]: 9A2B460758E: from=<toto@x3rus.com>, size=198, nrcpt=1 (queue active)
+        Jan 31 13:16:40 mailtraining postfix/local[1693]: 9A2B460758E: to=<root@mailtraining.x3rus.com>, relay=local, delay=18, delays=18/0.01/0/0.01, dsn=2.0.0, status=sent (delivered to maildir)
+        Jan 31 13:16:40 mailtraining postfix/qmgr[135]: 9A2B460758E: removed
+        Jan 31 13:16:42 mailtraining postfix/smtpd[1589]: disconnect from unknown[172.17.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 commands=5
+
+        $ docker exec grave_jones ls -R /root/Maildir
+        /root/Maildir:
+        cur
+        new
+        tmp
+
+        /root/Maildir/cur:
+
+        /root/Maildir/new:
+        1485868600.Vfe01Ie0699bM516582.mailtraining.x3rus.com
+
+        /root/Maildir/tmp:
+
+**SUPER** , l'image fonctionne bien pour la réception des courriels __yeahh__ félicitation !!
+
+Bon avant de débuter la définition du __docker-compose__ prenons un peu de recule sur l'utilisation de l'image .
+
+# <a name="workflow_conteneur_smtp" /> Définition de l'utilisation du conteneur postfix
+
+Le gros défis de **docker** réside ici , faire l'image n'est pas très difficile , par contre nous nous retrouvons maintenant avec un conteneur qui peu être éphémère .Telle que mentionné plus tôt actuellement mon serveur de courriel est un **pet conteneur** il n'y a pas de honte , mais essayons de nous améliorer c'est l'objectif , sinon on ne progresse pas. 
+Dans cette objectif nous allons essayer de s'assurer que le conteneur __smtp__ puisse être changé à tous moment.
+
+État de l'image et de son utilisation comme conteneur initialisé :
+
+* Le système accepte les courriels pour le / les domaines fournit en paramètre 
+* Le système démarre :P 
+* Le système stocke le(s) courriel(s) dans le répertoire personnel de l'utilisateur 
+* Le système n'a qu'un seul utilisateur disponible : **root*** et les autres utilisateurs systèmes :-(
+* La définition des alias sont statique dans le conteneur (comme les utilisateurs)
+* Les courriels sont dans le conteneur :-/ (__issshh__ :P )
+
+Bon regardons les "problèmes" , pour la question des courriels qui sont dans le conteneur , quelle est la solution ? 
+
+__Yep__ la création d'un volume qui réalisera l'association du répertoire **/home** dans le conteneur avec un répertoire sur le __docker host__. COOL problème réglé.
+
+La définition des utilisateurs maintenant , ici ça se complique un peu , en fait faut prendre la bonne approche, voici quelques options :
+
+1. Passez en **paramètre une liste d'utilisateur** pour réaliser la création lors de l'initialisation du conteneur. Pour ce faire nous devrions modifier le script **run.sh** afin de faire la création des utilisateurs ainsi que le répertoire personnel. Point à prendre en considération :
+    * Les variables d'environnement ne sont interpréter QUE et UNIQUEMENT lors de l'initialisation initiale du conteneur (nominatif) en d'autre mot , si la liste des utilisateurs est : Robert, Peter et Bonny . Que vous désirez rajouter Bob , vous ne pouvez pas simplement redémarrer le conteneur avec la nouvelle valeur à la variable, il vous faudra détruire le conteneur et en créer un nouveau . Bien entendu même processus lors de la suppression d'un utilisateur !
+
+
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
