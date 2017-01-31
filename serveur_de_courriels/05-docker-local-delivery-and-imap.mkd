@@ -578,6 +578,16 @@ La définition des utilisateurs maintenant , ici ça se complique un peu , en fa
 
 1. Passez en **paramètre une liste d'utilisateur** pour réaliser la création lors de l'initialisation du conteneur. Pour ce faire nous devrions modifier le script **run.sh** afin de faire la création des utilisateurs ainsi que le répertoire personnel. Point à prendre en considération :
     * Les variables d'environnement ne sont interpréter QUE et UNIQUEMENT lors de l'initialisation initiale du conteneur (nominatif) en d'autre mot , si la liste des utilisateurs est : Robert, Peter et Bonny . Que vous désirez rajouter Bob , vous ne pouvez pas simplement redémarrer le conteneur avec la nouvelle valeur à la variable, il vous faudra détruire le conteneur et en créer un nouveau . Bien entendu même processus lors de la suppression d'un utilisateur !
+    * **Contre** : votre premier reflex est probablement , __woww__ c'est vraiment pas une bonne options, commençons par vous conforter dans votre idée :P
+        * La suppression du conteneur est "risqué" si ce dernier est mal configurer et surtout si vous réalisez des modifications directement dans le conteneur. Par exemple une personne ajoute manuellement un utilisateur dans le conteneur , lors de la recréation il sera perdu !
+        * S'il y a eu une modification dans l'image de références, lors de la recréation il est possible que le service ne fonctionne plus du tous ! 
+        * Il peut être difficile sans système autour de déléguer à un __help desk__ l'ajout d'un utilisateur, car il y a l'implication de redémarrage de la production.
+        * Mais surtout ceci nous oblige à changer nos habitudes de fonctionnement.
+    * **Pour** : Bon maintenant que vous êtes bien conforté dans l'idée que c'est une mauvaise idée, voyons le positif de cette solution.
+        * Comme nous sommes obligé de recréer le conteneur, ceci sera une occasion de nous forcer à mettre à jour le conteneur. J'aimerai faire une parenthèse sur le cycle de mise à jour. Mettre en lumière une réalité avec __Docker__ . Regardons le schéma suivant :
+        ![docker-update_cycle.png](./imgs/docker-update_cycle.png)
+        Lors de la création de l'image du conteneur les versions sont figé dans le temps, résultat s'il y a une faille de sécurité découvert nous la trainerons dans le temps au lieu de la fixer ! Le fait que nous devons détruire le conteneur nous obligera à réaliser une mise à jour des packages. Ceci est particulièrement important pour les services exposés sur Internet.
+        * TOTO
 
 
 # les logs 
