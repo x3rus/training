@@ -6,3 +6,7 @@ Utilisation d'un fichier pour les nom d'utilisateur valide
 
 LMTP dovecot + postfix
     http://wiki2.dovecot.org/HowTo/PostfixDovecotLMTP
+
+lmtp network :
+http://wiki.dovecot.org/LMTP
+http://www.postfix.org/lmtp.8.html

@@ -585,10 +585,21 @@ La définition des utilisateurs maintenant , ici ça se complique un peu , en fa
         * Mais surtout ceci nous oblige à changer nos habitudes de fonctionnement.
     * **Pour** : Bon maintenant que vous êtes bien conforté dans l'idée que c'est une mauvaise idée, voyons le positif de cette solution.
         * Comme nous sommes obligé de recréer le conteneur, ceci sera une occasion de nous forcer à mettre à jour le conteneur. J'aimerai faire une parenthèse sur le cycle de mise à jour. Mettre en lumière une réalité avec __Docker__ . Regardons le schéma suivant :
-        ![docker-update_cycle.png](./imgs/docker-update_cycle.png)
-        Lors de la création de l'image du conteneur les versions sont figé dans le temps, résultat s'il y a une faille de sécurité découvert nous la trainerons dans le temps au lieu de la fixer ! Le fait que nous devons détruire le conteneur nous obligera à réaliser une mise à jour des packages. Ceci est particulièrement important pour les services exposés sur Internet.
-        * TOTO
-
+        
+            ![docker-update_cycle.png](./imgs/docker-update_cycle.png)
+        
+            Lors de la création de l'image du conteneur les versions sont figé dans le temps, résultat s'il y a une faille de sécurité découvert nous la trainerons dans le temps au lieu de la fixer ! Le fait que nous devons détruire le conteneur nous obligera à réaliser une mise à jour des packages. Ceci est particulièrement important pour les services exposés sur Internet.
+        * L'autre point positif de cette opération est que nous avons un système éphémère, qui est régulièrement généré résultat nous avons un niveau de confiance dans le système car régulièrement testé lors de l'ajout d'un utilisateur. S'il y a un problème on le recréer , on pourrait même y voir un système qui augmente le nombre de serveur postfix s'il y a une monté en charge des courriels et qui modifie les DNS afin d'ajouter la définition MX pour la réception . Le système est donc autonome dans ça définition.
+2. Avoir un fichier local des utilisateurs qui est à l'extérieur du conteneur !
+    * Regardons d'un œil froid, où est définie les utilisateurs ? Dans le fichier **/etc/passwd** , le fichier est présent par défaut sur le système mais pouvons nous le surdéfinir. En fait pas de problème , nous avons le système de volume dans docker qui nous permet d'assigner un répertoire ou un fichier de l'hôte docker dans le conteneur !! Nous n'avons pas besoin du fichier **/etc/shadow** car l'utilisateur n'établis pas de connexion sur ce conteneur.
+    * **Contre** : Bon je présume que vous êtes pour mais je peux pas changé le pour / contre d'une section à l'autre trop tard :P
+        * La problématique avec cette solution est la définition du fichier **/etc/passwd** qui est sur 1 hôte docker , donc s'il y a un problème avec l'hôte votre conteneur en est dépendant. Vous n'êtes pas en mesure de redémarrer le conteneur sur un autre hôtes de manière transparente. Bien entendu il y a la question des courriels reçu __anyway__ qui seront non disponible. Mais attention , le conteneur postfix ne stock pas obligatoirement le courriel ce dernier reçoit et livre les courriels , il peut aussi agir comme __buffer__ si le service dovecot n'est pas disponible.
+        * L'ajout d'un utilisateur se fera sur la machine hôte , il faudra donc éventuellement conserver le fichier dans un contrôleur de révision (git, svn) pour voir les changements et conserver une copie à l'extérieur.
+        * Si nous éditons le fichier manuellement , il faudra faire attention de ne pas avoir les même UID , voir les mêmes nom avec un répertoire personnel différent.
+    * **Pour** : L'utilisation d'un fichier **/etc/passwd** local , sans être obligé de recréer le conteneur nous rassure nous avons presque le même comportement qu'une VM.
+        * Change peu nos habitudes donc c'est réconfortant :P
+        * Le fichier **/etc/passwd** pourrait être utilisé par un autre conteneur par exemple __dovecot__ pour la liste des utilisateurs ;-)
+3. Autre option , ne pas avoir de définition local d'utilisateur mais unique
 
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
