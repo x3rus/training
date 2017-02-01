@@ -574,7 +574,15 @@ Bon regardons les "problèmes" , pour la question des courriels qui sont dans le
 
 __Yep__ la création d'un volume qui réalisera l'association du répertoire **/home** dans le conteneur avec un répertoire sur le __docker host__. COOL problème réglé.
 
-La définition des utilisateurs maintenant , ici ça se complique un peu , en fait faut prendre la bonne approche, voici quelques options :
+
+La définition des utilisateurs maintenant , ici ça se complique un peu , en fait faut prendre la bonne approche, mais avant rappelons nous pourquoi nous avons besoins d'avoir la liste des utilisateurs  :
+
+* **Validation des adresses courriels** : Comme nous avions pu le voir postfix est en mesure de valider que l'adresse courriel existe avant d'accepter le courriel. Par défaut il utilise la liste des utilisateurs système.
+* **Livraison dans le répertoire personnel de l'utilisateur** : Lors de la livraison par postfix , le système va créer les fichiers avec le __UID__ et __GID__ de l'utilisateur que ce soit en __mbox__ ou __maildr__. Bien entendu en __maildir___ en plus il y a la livraison dans le répertoire personnel de l'utilisateur.
+* **PAS Authentification** : Il n'y aura pas d'authentification dans ce conteneur , car l'authentification de récupération de courriel sera réalisé dans le conteneur __imap__.
+
+Donc voici quelques options 
+
 
 1. Passez en **paramètre une liste d'utilisateur** pour réaliser la création lors de l'initialisation du conteneur. Pour ce faire nous devrions modifier le script **run.sh** afin de faire la création des utilisateurs ainsi que le répertoire personnel. Point à prendre en considération :
     * Les variables d'environnement ne sont interpréter QUE et UNIQUEMENT lors de l'initialisation initiale du conteneur (nominatif) en d'autre mot , si la liste des utilisateurs est : Robert, Peter et Bonny . Que vous désirez rajouter Bob , vous ne pouvez pas simplement redémarrer le conteneur avec la nouvelle valeur à la variable, il vous faudra détruire le conteneur et en créer un nouveau . Bien entendu même processus lors de la suppression d'un utilisateur !
@@ -599,7 +607,29 @@ La définition des utilisateurs maintenant , ici ça se complique un peu , en fa
     * **Pour** : L'utilisation d'un fichier **/etc/passwd** local , sans être obligé de recréer le conteneur nous rassure nous avons presque le même comportement qu'une VM.
         * Change peu nos habitudes donc c'est réconfortant :P
         * Le fichier **/etc/passwd** pourrait être utilisé par un autre conteneur par exemple __dovecot__ pour la liste des utilisateurs ;-)
-3. Autre option , ne pas avoir de définition local d'utilisateur mais unique
+        * Pas besoin de porter une action sur le conteneur lors de l'ajout d'un utilisateur.
+3. Utilisation d'un système de gestion de configuration telle que **puppet** ou **ansible** .
+    * Une autre possibilité serait d'avoir un système de gestion de configuration telle que __puppet__ ou __ansible__ externe au conteneur qui communiquerai avec un serveur contenant la définition des utilisateurs qui doivent être présent dans le conteneur. Lors de l'initialisation du conteneur une première synchronisation de la configuration avec le serveur serait réalisé récupérant la liste des utilisateurs . Par la suite un processus (__agent__) synchroniserai la configuration de manière régulière. Selon la solution utilisé, la configuration pourrait être poussée par le serveur de configuration.
+    * **Contre** : Le problème de cette solution est qu'elle suit moins le principe de __docker__ et d'une utilisation indépendante de l'infrastructure
+        * Le principe de l'utilisation des conteneurs est la possibilité d'être utilisé sur un portable, dans un __datacenter__, dans le __cloud__, ... Ceci indépendamment de l'infrastructure en place. La création d'une dépendance avec une infrastructure externe **serveur de configuration** va à l'encontre du principe. 
+        * Généralement les solutions de gestion de configuration utilise le nom de la machine pour l'identifier (__hostname__) , ceci risque d'être un problème si nous désirons avoir un déploiement dynamique en cas de monté en charge de la réception de courriel. En d'autre mot il risque d'être difficile de dynamiquement faire le déploiement dynamiquement mais surtout automatiquement sans action humaine.
+        * Si nous continuons avec le principe de docker , si vous désirez réellement mettre en place cette solution le processus __puppet__ ou __ansible__ devrez être exécuté sur l'hôte docker et non dans le conteneur afin de ne pas pollué le conteneur avec une application non essentiel .
+    * **Pour** : Uniformité de la configuration et conservation à l'externe
+        * Bien entendu , la solution nous permet d'avoir une référence de la configuration en dehors du conteneur nous permettant de le recréer avec la même définition . Nous limitons le risque de perte d'information possible comparativement en aillant un fichier local sur le docker hôte.
+        * Si vous avez un parc significatif utilisant déjà une solution de gestion de configuration l'intégration est facile et ne demande pas de monté en compétence .
+        * Uniformité de la configuration entre les conteneurs, si les conteneurs utilisent le même __playbook__ (__ansible__) ou le même module (__puppet__) le conteneur __smtp__ et __imap__ auront la même liste des utilisateurs.
+4. Utilisation d'une source externe de définition des utilisateurs **LDAP**, **NIS**, **SQL**.
+    * Bon l'utilisation d'une source externe telle que __mysql__ sera couverte par la source, est-ce que l'on va la __dockerisé__ , honnêtement je le sais pas encore :-) . J'aimerai souligner un propos mentionné plus tôt , l'indépendance des conteneurs , il faut idéalement gardé le principe que le système sera utilisé sur un __laptop__ dans le train pour travailler ! L'utilisation en soit de **LDAP** , **SQL** n'est pas un problème de fond car nous allons l'avoir pour augmenté les fonctionnalités possible des courriels ( **contacts** , **calendrier**, ... ) . Donc si cette approche est préconisé il faudrait livré un conteneur __SQL__ ou __LDAP__ avec le conteneur __smtp__ et __imap__. Ceci étant rappeler reprenons le **Contre/Pour** 
+    * **Contre** : 
+        * Dans le cadre du service postfix, étant donnée qu'il ne réalise que de la validation de courriel et la récupération des __UID__ il y a peu de plus value d'avoir un système __LDAP__ en particulier. Les données changes si ce service est déjà mis en place pour l'augmentation de fonctionnalité pour l'utilisateur.
+        * Si la configuration __LDAP__ se base sur un serveur d'infrastructure interne uniquement , ceci ne suit pas le principe de __docker__ permettant le déploiement n'importe où en s'affranchissant de l'infrastructure .
+        * De mon point de vue si vous avez déjà une base de donnée __SQL__ et que vous ajoutez un serveur __LDAP__ pour la gestion des utilisateurs ceci ajoute un système qui peut avoir des problèmes. La gestion de la prise de backup , afin d'être en mesure de remettre en fonction en cas de problème du docker hôte.
+    * **Pour** : oui oui vous pouvez dire que je suis un peu trop rigide sur le principe de docker , mais mon objectif et de générer une réflexion toute les solution sont possible l'important est de faire un choix éclairé. Puis surtout être en mesure de constater son erreur si on a fait le mauvais choix ça arrive :D.
+        * Si vous déjà l'ensemble de vos utilisateur dans un __ldap__ (exemple AD), ceci vous facilite grandement la vie et oui c'est vraie, dans ce cas peut-être faire une copie synchronisé afin d'avoir un conteneur indépendant pour le gars dans le train :P.
+        * Mise à jour "instantané" des utilisateurs grâce à la solution AD
+        * Avoir des utilisateurs locaux et dans une sources externe **optionel** afin d'avoir l'autonomie du conteneur et la pluralité des utilisateurs corporatif. (je suis mitigé , car je ne vois pas de solution dans une production __cloud__ mais bon ça reste une possibilité)
+5. 
+4. Autre option , ne pas avoir de définition local d'utilisateur mais unique
 
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
