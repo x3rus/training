@@ -1,0 +1,93 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+
+# Index 
+
+
+# <a name="description" /> Description
+
+Maintenant que nous avons vu la base de l'utilisation de postfix grâce à la mise en place d'un serveur de relais et la livraison local **très simpliste** regardons un peu plus l'architecture et quelques configuration plus "spécial".
+Pour information quand je donnais la formation postfix pour les entreprises la formations était de 4 jours complet. Vous comprendrez qu'en 7 heures x 4 (jours) on peut couvrir pas mal plus de matière. En d'autre mot si vous cherchez à faire quelque chose qui ne fut pas couvert dans la formation faut __googler__ ça existe peut-être :P.
+
+# <a name="Architecture" /> Présentation de l'architecture Postfix
+
+Lors de la première session j'ai fait mention que postfix est constitué de plusieurs application qui sont définie dans le fichier **/etc/postfix/master.cf** , ce fichier contient la liste ainsi que des paramètres disponible spécifiquement pour le processus. 
+
+Consultons le fichier pour nous donner un aperçue : 
+
+        cat /etc/postfix/master.cf | grep -v "^#"
+        # ==========================================================================
+        # service type  private unpriv  chroot  wakeup  maxproc command + args
+        #               (yes)   (yes)   (no)    (never) (100)
+        # ==========================================================================
+        smtp      inet  n       -       y       -       -       smtpd
+        pickup    unix  n       -       y       60      1       pickup
+        cleanup   unix  n       -       y       -       0       cleanup
+        qmgr      unix  n       -       n       300     1       qmgr
+        tlsmgr    unix  -       -       y       1000?   1       tlsmgr
+        rewrite   unix  -       -       y       -       -       trivial-rewrite
+        bounce    unix  -       -       y       -       0       bounce
+        defer     unix  -       -       y       -       0       bounce
+        trace     unix  -       -       y       -       0       bounce
+        verify    unix  -       -       y       -       1       verify
+        flush     unix  n       -       y       1000?   0       flush
+        proxymap  unix  -       -       n       -       -       proxymap
+        proxywrite unix -       -       n       -       1       proxymap
+        smtp      unix  -       -       y       -       -       smtp
+        relay     unix  -       -       y       -       -       smtp
+        showq     unix  n       -       y       -       -       showq
+        error     unix  -       -       y       -       -       error
+        retry     unix  -       -       y       -       -       error
+        discard   unix  -       -       y       -       -       discard
+        local     unix  -       n       n       -       -       local
+        virtual   unix  -       n       n       -       -       virtual
+        lmtp      unix  -       -       y       -       -       lmtp
+        anvil     unix  -       -       y       -       1       anvil
+        scache    unix  -       -       y       -       1       scache
+        maildrop  unix  -       n       n       -       -       pipe
+          flags=DRhu user=vmail argv=/usr/bin/maildrop -d ${recipient}
+        uucp      unix  -       n       n       -       -       pipe
+          flags=Fqhu user=uucp argv=uux -r -n -z -a$sender - $nexthop!rmail ($recipient)
+        ifmail    unix  -       n       n       -       -       pipe
+          flags=F user=ftn argv=/usr/lib/ifmail/ifmail -r $nexthop ($recipient)
+        bsmtp     unix  -       n       n       -       -       pipe
+          flags=Fq. user=bsmtp argv=/usr/lib/bsmtp/bsmtp -t$nexthop -f$sender $recipient
+        scalemail-backend unix  -       n       n       -       2       pipe
+          flags=R user=scalemail argv=/usr/lib/scalemail/bin/scalemail-store ${nexthop} ${user} ${extension}
+        mailman   unix  -       n       n       -       -       pipe
+          flags=FR user=list argv=/usr/lib/mailman/bin/postfix-to-mailman.py
+          ${nexthop} ${user}
+
+Ça fait un gros 30 processus que postfix peut utiliser , chaque processus à bien entendu une utilité (GNU/Linux est __bloaté__ mais pas tant que ça :P )
+
+Un image facilite souvent la compréhension de l'interaction , nous allons donc commencer avec une version "simple" :
+
+Utilisation des processus lorsque le serveur postfix est utilisé comme serveur de relais :
+
+![POSTFIX_Envoi_Externe.png](./imgs/POSTFIX_Envoi_Externe.png)
+
+Description des processus :
+
+* **smtpd** : Le service [smtpd](http://www.postfix.org/smtpd.8.html) est le service qui supporte le protocole __SMTP__ il reçoit les connexions sur le port 25 et les transmets au autre processus. C'est aussi lui qui réalisera l'envoie de la communication vers les autres serveur __smtp__.
+* **cleanup** : Le service [cleanup](http://www.postfix.org/cleanup.8.html) réalisera une validation du courriel (en-tête et contenu) , s'il détecte un problème il informera le client , de plus le service réalisera des opérations sur le courriels :
+    * S'il y a des en-tête qui manque (__From:__,  __To:__,  __Message-Id:__, et __Date:__)
+    * Suppression des adresses de destinations en double
+    * Suppression de l'en-tête __bcc__ (pour faire la création d'un deuxième courriel )
+    * De plus il est possible d'avoir de la réécriture d'adresse , d'ajout de nom de domaine , ... (voir le manuel)
+* __incoming__ : __incoming__ n'est pas un processus mais une queue , tous courriel nouvellement reçu est placé dans cette queue , dans le prochain diagramme les processus et les queues sont mieux représentés. Postfix utilise plusieurs queue, quand vous avez un problème de performance de postfix il y a une commandes pour voir dans quelles queue les courriels sont , ceci vous permet de mieux identifier la source du problème .
+* __active__ : __active__ est aussi une queue , cette dernière est la queue actuellement en traitement, un nombre limité de courriel est autorisés dans cette queue. 
+* **qmgr** : Le service [qmgr](http://www.postfix.org/qmgr.8.html) est le système qui gère les queues ce dernier va prendre les courriels dans la queue __active__ et en faire le traitement si le courriel ne peut être livré il le renverra dans la queue __deferred__ comme nous avions pu le voir lors de l'erreur du serveur de relais. Ce processus réalisera aussi la suppression des courriels __double-bounce__ en d'autre mot si un courriel est refusé et que le message de refus est aussi transmis à une adresse invalide. Ce processus peut transmettre le courriel à un autre processus **[TRIVIAL-REWRITE](http://www.postfix.org/trivial-rewrite.8.html)** pour faire de la réécriture du contenu. 
+    * **qmgr** utilisera la bonne méthode pour la livraison , __smtpd__ , __local__, selon la situation.
+
+Voici le processus lors de la réception d'un courriel.
+
+![POSTFIX_Reception_UNIX.png](./imgs/POSTFIX_Reception_UNIX.png)
+
+Prendre note que j'ai pas pris un cours d'infographie mais les 2 images ci-dessus sont prise sur le site [http://wiki.ncad.fr/index.php?title=Postfix](http://wiki.ncad.fr/index.php?title=Postfix). Sous la même licence que cette formation :D. (__CC by nc sa__)
+
+Il existe d'autre représentation du processus de traitement plus détaillé comme celui ci trouvé sur wikipedia :
+
+![Postfix_architecture.png](./imgs/Postfix_architecture.png)

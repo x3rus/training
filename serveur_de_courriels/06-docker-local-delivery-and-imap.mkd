@@ -627,9 +627,8 @@ Donc voici quelques options
     * **Pour** : oui oui vous pouvez dire que je suis un peu trop rigide sur le principe de docker , mais mon objectif et de générer une réflexion toute les solution sont possible l'important est de faire un choix éclairé. Puis surtout être en mesure de constater son erreur si on a fait le mauvais choix ça arrive :D.
         * Si vous déjà l'ensemble de vos utilisateur dans un __ldap__ (exemple AD), ceci vous facilite grandement la vie et oui c'est vraie, dans ce cas peut-être faire une copie synchronisé afin d'avoir un conteneur indépendant pour le gars dans le train :P.
         * Mise à jour "instantané" des utilisateurs grâce à la solution AD
-        * Avoir des utilisateurs locaux et dans une sources externe **optionel** afin d'avoir l'autonomie du conteneur et la pluralité des utilisateurs corporatif. (je suis mitigé , car je ne vois pas de solution dans une production __cloud__ mais bon ça reste une possibilité)
-5. 
-4. Autre option , ne pas avoir de définition local d'utilisateur mais unique
+        * Avoir des utilisateurs locaux et une sources externe **optionel** afin d'avoir l'autonomie du conteneur et la pluralité des utilisateurs corporatif. (je suis mitigé , car je ne vois pas de solution dans une production __cloud__ mais bon ça reste une possibilité)
+5. Ne pas avoir de définition d'utilisateur local et ne pas faire la livraison avec postfix.
 
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
