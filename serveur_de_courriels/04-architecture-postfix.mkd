@@ -91,3 +91,131 @@ Prendre note que j'ai pas pris un cours d'infographie mais les 2 images ci-dessu
 Il existe d'autre représentation du processus de traitement plus détaillé comme celui ci trouvé sur wikipedia :
 
 ![Postfix_architecture.png](./imgs/Postfix_architecture.png)
+
+En plus de cette configuration en place il est possible d'en définir d'autre par exemple lors de la mise en place d'un système __d'anti-spam__ ajouter un service de traitement des courriels avant livraison. 
+
+Reprenons le fichier **master.cf** :
+
+        # ==========================================================================
+        # service type  private unpriv  chroot  wakeup  maxproc command + args
+        #               (yes)   (yes)   (no)    (never) (100)
+        # ==========================================================================
+        smtp      inet  n       -       y       -       -       smtpd
+        pickup    unix  n       -       y       60      1       pickup
+        cleanup   unix  n       -       y       -       0       cleanup
+        qmgr      unix  n       -       n       300     1       qmgr
+        [... OUPUT COUPÉ ...]
+
+Bien entendu il y a le non du service , son type ,  j'aimerai porter votre attention sur la colonne **chroot** , comme vous pouvez le voir certain processus son **chrooté** en d'autre mot ils sont limités dans un répertoire pour le traitement. Ceci est principalement pour une question de sécurité, vous pourrez constater que la majorité des services qui sont __chroot__ sont des services exposé à l'externe ou qui traite des données qui ne furent pas encore validées. Ceci permet que s'il y a par exemple un __buffer overflow__ dans le service __smtpd__ l'attaquant n'aura accès qu'au répertoire où évolue le service. 
+
+Je vous laisserai regarder avec plaisir :P , les options de __canonical__ , __trivial-rewrite__, ... 
+
+# <a name="other_conf" /> Présentation d'autre configuration 
+
+Sans allé dans un gros détail nous allons voir d'autre type de configuration de postfix, comme dit je ne peux malheureusement pas prendre autant de temps que je le voudrais mais bon ... C'est pour vous motivez à chercher plus :D.
+
+## <a name="relais_for_other_smtpd" /> Mise en place de postfix comme relais de courriel vers l'interne.
+
+Nous avons vu la configuration pour la réception de courriel avec livraison local ainsi que la configuration d'un postfix comme serveur de relais pour l'envoie de courriel vers l'externe. Réalisons un mixe maintenant , voici un diagramme d'une configuration possible :
+
+![postfix_relais_exchange.png](./imgs/postfix_relais_exchange.png)
+
+Un peu de texte , nous avons donc :
+
+* Le domaine **coco.com** avec la configuration DNS ( __mx coco.com__ = 66.32.12.33 )
+* Par choix le service __exchange__ n'est PAS exposé sur Internet.
+* Postfix reçoit donc les courriels , idéalement réalise du traitement dessus ( __anti-spam__ , réécriture d'adresse si requis ... ) par la suite il renvoie le courriel à __exchange__.
+
+Nous avons vu comment accepter les courriels , et le renvoie ... Mais car il y a un mais sinon j'écrirai pas cette section :P. Nous allons devoir adresser  quelque point :
+
+1. Comme les utilisateurs ne sont pas localement définie comment allons nous réaliser la validation des adresses et alias ?
+2. Le service postfix doit faire le relais des courriels peu importe la provenance sur internet , donc pas de limitation sur la source IP comme nous l'avions fait préalablement. Nous devons a présent limiter le relais non pas sur l'IP mais sur le nom de domaine de destination. Nous ne voulons surtout pas ouvrir un service __smtp__ publique sur internet qui autorise l'envoie de courriel pour n'importe quelle domaine.
+3. Lors du passage du courriel vers le serveur __exchange.com__, malheureusement la résolution DNS risque de fournir l'information du __MX__ comme le serveur postfix qui traite déjà le courriel :-/ . Il faudra voir comment la redirection du courriel pourra être réalisé pour que l'IP soit celle du __exchange__ interne. Bon quand c'est notre domaine on peut faire un passe passe avec les DNS mais nous allons voir une méthode purement postfix , car malheureusement on ne contrôle pas toujours les DNS.
+
+Voilà c'est les 3 points à adresser pour être en mesure de le faire .
+
+C'est partie , mon kiki !!! 
+
+### <a name="liste_users" /> Définition d'une liste d'utilisateur
+
+Pour rappel, nous avions vu que la limitation des utilisateurs est définie par l'instruction :
+
+        $ sudo  postconf | grep local_recipient_maps
+        local_recipient_maps = proxy:unix:passwd.byname $alias_maps
+
+Regardons la documentation rapide : [local\_recipient\_maps](http://www.postfix.org/postconf.5.html#local_recipient_maps) et [LOCAL\_RECIPIENT\_README](http://www.postfix.org/LOCAL_RECIPIENT_README.html) , bon ceci est pour vous si vous voulez aller plus loin ou valider que j'ai pas dis un gros mensonge plus loin ;-). C'est possible que parfois j'ai mal compris aussi :D, si c'est le cas un petit courriel ça me ferai plaisir :D.
+
+Donc si nous regardons le système actuellement utilise le fichier __/etc/passwd__ et la valeur de __$alias\_maps__ . Donc l'instruction __proxy__ et le résultat de __alias\_map__ c'est quoi déjà la valeur pour __l'aliases__ 
+
+        $ postconf | grep ^alias_maps
+        alias_maps = hash:/etc/aliases
+
+**Woww** ça ressemble à un système de [lookup table types](http://www.postfix.org/DATABASE_README.html#types) , si vous cliquez vous verrez les autres type disponible !! 
+
+Comme vous pouvez le voir il est possible d'utiliser plusieurs type , pour le moment nous allons mettre en place un fichier plat de définition des utilisateurs , mais techniquement il est possible aussi de définir une connexion __LDAP__ pour avoir la liste des utilisateurs directement depuis AD. J'y reviendrais j'ai un avertissement à vous communiquez avant que vous ne choisissez cette solution :D. (Un peu comme une émission de radio faut que je garde mon publique :P ) 
+
+Commençons par bien démontré la limitation , j'essaye de transmettre un courriel à __moi@mailtraining.x3rus.com__
+
+        $ telnet 172.17.0.2 25
+        Trying 172.17.0.2...
+        Connected to 172.17.0.2.
+        Escape character is '^]'.
+        ehtlo 220 mail01.mood.x3rus.com ESMTP Postfix
+
+        502 5.5.2 Error: command not recognized
+        ehlo toto
+        250-mail01.mood.x3rus.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+        mail from: toto@x3rus.com
+        250 2.1.0 Ok
+        rcpt to:moi@mailtraining.x3rus.com
+        550 5.1.1 <moi@mailtraining.x3rus.com>: Recipient address rejected: User unknown in local recipient table
+        quit
+        221 2.0.0 Bye
+        Connection closed by foreign host.
+
+Le courriel est bien rejeté car pas dans la liste, COOL ça marche PAS comme prévue
+
+        local_recipient_maps = proxy:unix:passwd.byname $alias_maps dbm:/etc/postfix/lst-user
+
+        postmap /etc/postfix/lst-user
+
+        moi@mailtraining.x3rus.com OK
+
+
+Feb  2 13:47:12 mail01 postfix/master[307]: daemon started -- version 3.1.0, configuration /etc/postfix
+Feb  2 13:47:15 mail01 postfix/smtpd[312]: error: unsupported dictionary type: dbm
+Feb  2 13:47:15 mail01 postfix/smtpd[312]: connect from unknown[172.17.0.1]
+Feb  2 13:47:27 mail01 postfix/smtpd[312]: warning: dbm:/etc/postfix/lst-user is unavailable. unsupported dictionary type: dbm
+Feb  2 13:47:27 mail01 postfix/smtpd[312]: warning: dbm:/etc/postfix/lst-user lookup error for "moi@mailtraining.x3rus.com"
+Feb  2 13:47:27 mail01 postfix/smtpd[312]: NOQUEUE: reject: RCPT from unknown[172.17.0.1]: 451 4.3.0 <moi@mailtraining.x3rus.com>: Temporary lookup failure; from=<toto@x3rus.com> to=<moi@mailtraining.x3rus.com> proto=ESMTP helo=<toto>
+
+
+        $ telnet 172.17.0.2 25
+        Trying 172.17.0.2...
+        Connected to 172.17.0.2.
+        Escape character is '^]'.
+        220 mail01.mood.x3rus.com ESMTP Postfix
+        ehlo toto
+        250-mail01.mood.x3rus.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+        mail from:toto@x3rus.com
+        250 2.1.0 Ok
+        rcpt to:moi@mailtraining.x3rus.com
+        451 4.3.0 <moi@mailtraining.x3rus.com>: Temporary lookup failure
+        ^]
+        telnet> q
+        Connection closed.
+
