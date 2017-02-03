@@ -180,22 +180,21 @@ Commençons par bien démontré la limitation , j'essaye de transmettre un courr
         221 2.0.0 Bye
         Connection closed by foreign host.
 
-Le courriel est bien rejeté car pas dans la liste, COOL ça marche PAS comme prévue
+Le courriel est bien rejeté car pas dans la liste, COOL ça marche PAS comme prévue, ajoutons à présent la liste des utilisateurs autorisés via un fichier texte. Nous allons prendre un format de __lookup table__ disons **dbm** c'est partie !!
+
+Modification de **/etc/postfix/main.cf** :
 
         local_recipient_maps = proxy:unix:passwd.byname $alias_maps dbm:/etc/postfix/lst-user
 
-        postmap /etc/postfix/lst-user
+Création du fichier , je ne vais ajouter que l'utilisateur **moi** pour le domaine :
 
         moi@mailtraining.x3rus.com OK
 
+Génération du fichier binaire :
 
-Feb  2 13:47:12 mail01 postfix/master[307]: daemon started -- version 3.1.0, configuration /etc/postfix
-Feb  2 13:47:15 mail01 postfix/smtpd[312]: error: unsupported dictionary type: dbm
-Feb  2 13:47:15 mail01 postfix/smtpd[312]: connect from unknown[172.17.0.1]
-Feb  2 13:47:27 mail01 postfix/smtpd[312]: warning: dbm:/etc/postfix/lst-user is unavailable. unsupported dictionary type: dbm
-Feb  2 13:47:27 mail01 postfix/smtpd[312]: warning: dbm:/etc/postfix/lst-user lookup error for "moi@mailtraining.x3rus.com"
-Feb  2 13:47:27 mail01 postfix/smtpd[312]: NOQUEUE: reject: RCPT from unknown[172.17.0.1]: 451 4.3.0 <moi@mailtraining.x3rus.com>: Temporary lookup failure; from=<toto@x3rus.com> to=<moi@mailtraining.x3rus.com> proto=ESMTP helo=<toto>
+        $ sudo postmap /etc/postfix/lst-user
 
+On redémarre **postfix** et on valide :
 
         $ telnet 172.17.0.2 25
         Trying 172.17.0.2...
@@ -218,4 +217,185 @@ Feb  2 13:47:27 mail01 postfix/smtpd[312]: NOQUEUE: reject: RCPT from unknown[17
         ^]
         telnet> q
         Connection closed.
+
+**oupss** , les logs disent quoi ? **/var/log/mail.log**
+
+        Feb  2 13:47:12 mail01 postfix/master[307]: daemon started -- version 3.1.0, configuration /etc/postfix
+        Feb  2 13:47:15 mail01 postfix/smtpd[312]: error: unsupported dictionary type: dbm
+        Feb  2 13:47:15 mail01 postfix/smtpd[312]: connect from unknown[172.17.0.1]
+        Feb  2 13:47:27 mail01 postfix/smtpd[312]: warning: dbm:/etc/postfix/lst-user is unavailable. unsupported dictionary type: dbm
+        Feb  2 13:47:27 mail01 postfix/smtpd[312]: warning: dbm:/etc/postfix/lst-user lookup error for "moi@mailtraining.x3rus.com"
+        Feb  2 13:47:27 mail01 postfix/smtpd[312]: NOQUEUE: reject: RCPT from unknown[172.17.0.1]: 451 4.3.0 <moi@mailtraining.x3rus.com>: Temporary lookup failure; from=<toto@x3rus.com> to=<moi@mailtraining.x3rus.com> proto=ESMTP helo=<toto>
+
+
+Bon si vous pensez que je l'ai fait exprès même pas :P , je savais juste pas quelle type utiliser j'ai choisi n'importe lequel :P , voilà le résultat :P . Donc nous allons reprendre la configuration et voir les modules __postfix__ actuellement disponible on va pas faire des essayes erreur pour trouver un supporté ! On peut mais c'est moins beau :P.
+
+        $ postconf -m
+        btree
+        cidr
+        environ
+        fail
+        hash
+        inline
+        internal
+        memcache
+        nis
+        pipemap
+        proxy
+        randmap
+        regexp
+        socketmap
+        sqlite
+        static
+        tcp
+        texthash
+        unionmap
+        unix
+
+Maintenant nous pouvons voir l'ensemble des type supporter . Je vais donc choisir **hash** 
+
+        local_recipient_maps = proxy:unix:passwd.byname $alias_maps hash:/etc/postfix/lst-user
+
+Je régénère le fichier avec **portmap** afin que le format soit le bon :D. On redémarre postfix et on teste !
+
+        $ telnet 172.17.0.2 25
+        Trying 172.17.0.2...
+        Connected to 172.17.0.2.
+        Escape character is '^]'.
+        220 mail01.mood.x3rus.com ESMTP Postfix
+        ehlo toto
+        250-mail01.mood.x3rus.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+        mail from:toto@xiuehfeu.com
+        250 2.1.0 Ok
+        rcpt to: moi@mailtraining.x3rus.com
+        250 2.1.5 Ok
+        data
+        354 End data with <CR><LF>.<CR><LF>
+        un courriel Woww
+        .
+        250 2.0.0 Ok: queued as 15190A04008
+        quit
+        221 2.0.0 Bye
+        Connection closed by foreign host.
+
+**Youppii** ça marche , du premier coup ;-). Consultons les logs pour en apprendre plus .
+
+        Feb  3 13:16:56 mail01 postfix/smtpd[189]: 15190A04008: client=unknown[172.17.0.1]
+        Feb  3 13:17:01 mail01 postfix/cleanup[192]: 15190A04008: message-id=<>
+        Feb  3 13:17:01 mail01 postfix/qmgr[188]: 15190A04008: from=<toto@xiuehfeu.com>, size=201, nrcpt=1 (queue active)
+        Feb  3 13:17:01 mail01 postfix/local[193]: 15190A04008: to=<moi@mailtraining.x3rus.com>, relay=local, delay=18, delays=17/0.01/0/0.02, dsn=5.1.1, status=bounced (unknown user: "moi")
+        Feb  3 13:17:01 mail01 postfix/cleanup[192]: 6E0BBA0400D: message-id=<20170203131701.6E0BBA0400D@mail01.mood.x3rus.com>
+        Feb  3 13:17:01 mail01 postfix/bounce[194]: 15190A04008: sender non-delivery notification: 6E0BBA0400D
+        Feb  3 13:17:01 mail01 postfix/qmgr[188]: 6E0BBA0400D: from=<>, size=2040, nrcpt=1 (queue active)
+        Feb  3 13:17:01 mail01 postfix/qmgr[188]: 15190A04008: removed
+        Feb  3 13:17:01 mail01 postfix/smtp[195]: warning: relayhost configuration problem
+        Feb  3 13:17:01 mail01 postfix/smtp[195]: 6E0BBA0400D: to=<toto@xiuehfeu.com>, relay=none, delay=0.35, delays=0.01/0.01/0.33/0, dsn=4.3.5, status=deferred (Host or domain name not found. Name service error for name=mail_relay.fai.com type=A: Host not found)
+        Feb  3 13:17:03 mail01 postfix/smtpd[189]: disconnect from unknown[172.17.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 commands=5
+
+Donc le courriel est accepté par le système __postfix__ bien entendu lors de la livraison il n'est pas en mesure de réaliser l'opération car il n'y a pas d'utilisateur associé . Le système n'étant pas en mesure de livrer le courriel essaye d'informer l'envoyeur pour lui indiquer qu'il y a eu un problème lors de la livraison.
+
+Avant de passer à l'étape de la redirection vers l'interne de courriel, j'aimerai vous partager une expérience. 
+
+
+
+### <a name="redirection_courriel" /> Redirection de courriel vers l'interne 
+
+Maintenant que nous avons vue comment mettre en place une redirection de courriel vers un serveur interne !
+
+Nous allons permettre la redirection des courriels pour le domaine __coco.com__ , afin de l'identifier comme domaine permit nous allons mettre à jour l'entrée [relay\_domains](http://www.postfix.org/postconf.5.html#relay_domains) dans le fichier **/etc/postfix/main.cf** :
+
+        $ postconf  | grep "relay_domains ="                                                                                                  
+        relay_domains = ${{$compatibility_level} < {2} ? {$mydestination} : {}}
+
+C'est partie :
+
+        mydestination = mailtraining.x3rus.com mail01.mood.x3rus.com
+        relay_domains = coco.com
+        mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 172.17.0.0/16
+
+Bon si nous avions déjà couvert la formation de la création d'un conteneur pour la réception de courriel, j'aurais pu juste mettre la commande pour le démarrage ... En fait je l'ai déjà, j'ai de l'avance sur la formation nous le verrons au prochain cours :P . 
+
+        $ docker run --hostname mail.coco.com -e SMTP_HOSTNAME=mail.coco.com -e ACCEPT_DOMAIN=coco.com srvsmtp
+
+        $ docker ps | grep smt
+        1f1bda628647        srvsmtp             "/root/run.sh"      About a minute ago   Up About a minute   25/tcp              mad_jepsen
+
+        $ docker inspect mad_jepsen | grep IPA                                                                                                                
+          "SecondaryIPAddresses": null,
+          "IPAddress": "172.17.0.3",
+           "IPAMConfig": null,
+               "IPAddress": "172.17.0.3",
+
+Bon idéalement on ferait une validation, mais je suis super confiant de mon conteneur :P, mais il n'y a pas d'utilisateur autre que **root** donc **root@coco.com** . 
+
+Nous allons ajouter cette adresse courriel dans la liste des adresses acceptés. Donc dans le fichier précédemment créer .
+
+        $ echo ""root@coco.com OK" >> lst-user
+        $ cat lst-user
+        moi@mailtraining.x3rus.com OK
+        root@coco.com OK
+
+On régénère le fichier (FAUT PAS L'OUBLIER):
+
+        $ postmap /etc/postfix/lst-user
+
+On redémarre postfix ou __reload__ à cause de la modification du paramètre __relay\_domains__ . C'est partie pour un teste qui ne fonctionnera pas :P 
+
+        $ telnet 172.17.0.2 25
+        Trying 172.17.0.2...
+        Connected to 172.17.0.2.
+        Escape character is '^]'.
+        220 mail01.mood.x3rus.com ESMTP Postfix
+        ehlo toto
+        250-mail01.mood.x3rus.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+        mail from: toto@ofjifj.com
+        250 2.1.0 Ok
+        rcpt to:root@coco.com
+        250 2.1.5 Ok
+        data
+        354 End data with <CR><LF>.<CR><LF>
+        un courriel
+        .
+        250 2.0.0 Ok: queued as 6835AA04008
+        quit
+        221 2.0.0 Bye
+        Connection closed by foreign host.
+
+Consultons les logs :
+
+        Feb  3 13:42:26 mail01 postfix/smtpd[237]: connect from unknown[172.17.0.1]
+        Feb  3 13:42:40 mail01 postfix/smtpd[237]: 6835AA04008: client=unknown[172.17.0.1]
+        Feb  3 13:42:45 mail01 postfix/cleanup[240]: 6835AA04008: message-id=<>
+        Feb  3 13:42:45 mail01 postfix/qmgr[234]: 6835AA04008: from=<toto@ofjifj.com>, size=183, nrcpt=1 (queue active)
+        Feb  3 13:42:46 mail01 postfix/smtpd[237]: disconnect from unknown[172.17.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 commands=5
+        Feb  3 13:43:05 mail01 postfix/smtp[241]: 6835AA04008: to=<root@coco.com>, relay=none, delay=31, delays=11/0.01/20/0, dsn=4.4.3, status=deferred (Host or domain name not found. Name service error for name=mail_relay.fai.com type=MX: Host not found, try again)
+
+Le système essaye de transmettre le courriels vers l'externe via la configuration du serveur de relais, mais nous on veut que ce soit la machine à l'interne (__aka__ notre conteneur à coté).
+
+Comment faire ?? On va profité d'avoir couvert l'architecture pour jeter un œil sur le processus de traitement , un petit zoom sur la section que je veux mettre en valeur :
+
+![postfix_transport.png](./imgs/postfix_transport.png)
+
+ICI ICI ICI
+
+### <a name="liste_users_txt_vs_ldap" /> Une fichier plat ou une interrogation du Ldap
+
+Comme nous avons vue dans la liste des [__LookUp Table__](http://www.postfix.org/DATABASE_README.html#types) , il est aussi possible d'avoir des connecteurs de type __ldap__ ou __mysql__ . 
+Personnellement je suis du type fichier texte plat généré automatiquement et voici pourquoi , pas juste parce qu'un fichier texte c'est facile à lire !
+
+
 
