@@ -390,12 +390,73 @@ Comment faire ?? On va profité d'avoir couvert l'architecture pour jeter un œi
 
 ![postfix_transport.png](./imgs/postfix_transport.png)
 
-ICI ICI ICI
+Comme vous pouvez le voir il est possible lors de la gestion de la queue de réaliser une réécriture avec comme référence le système de transport. Essayons le !! Nous allons définir l'entrée [transport\_map](http://www.postfix.org/postconf.5.html#transport_maps) dans le fichier **/etc/postfix/main.cf** 
+
+        transport_maps = hash:/etc/postfix/transport
+
+Création du fichier et génération du format binaire :
+
+        $ cat /etc/postfix/transport
+        coco.com smtp:172.17.0.3:25
+        .coco.com smtp:172.17.0.3:25
+
+        $ sudo postmap /etc/postfix/transport
+
+On __reload__ la configuration et valide la configuration :D et **BOOM**
+
+        Feb  3 22:24:37 mail01 postfix/qmgr[232]: 2F0AAA04008: from=<toot@cejf.com>, size=183, nrcpt=1 (queue active)
+        Feb  3 22:24:37 mail01 postfix/smtp[243]: 2F0AAA04008: to=<root@coco.com>, relay=172.17.0.3[172.17.0.3]:25, delay=11, delays=11/0.01/0.16/0.03, dsn=2.0.0, status=sent (250 2.0.0 Ok: queued as 76AE960758E)
+        Feb  3 22:24:37 mail01 postfix/qmgr[232]: 2F0AAA04008: removed
+        Feb  3 22:24:38 mail01 postfix/smtpd[239]: disconnect from unknown[172.17.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 commands=5
+
+Comme on est jamais trop sûr validons que le courriel fut VRAIMENT reçu par le serveur :
+
+        $ docker exec mad_jepsen ls -R /root/Maildir
+        /root/Maildir:
+        cur
+        new
+        tmp
+
+        /root/Maildir/cur:
+
+        /root/Maildir/new:
+        1486160677.Vfe02Ie0699bM508368.mail.coco.com
+
+        /root/Maildir/tmp:
+
+        $ docker exec mad_jepsen cat  /root/Maildir/new/1486160677.Vfe02Ie0699bM508368.mail.coco.com
+        Return-Path: <toot@cejf.com>
+        X-Original-To: root@coco.com
+        Delivered-To: root@coco.com
+        Received: from mail01.mood.x3rus.com (unknown [172.17.0.2])
+                by mail.coco.com (Postfix) with ESMTP id 76AE960758E
+                        for <root@coco.com>; Fri,  3 Feb 2017 22:24:37 +0000 (UTC)
+        Received: from toto (unknown [172.17.0.1])
+                by mail01.mood.x3rus.com (Postfix) with ESMTP id 2F0AAA04008
+                for <root@coco.com>; Fri,  3 Feb 2017 22:24:26 +0000 (UTC)
+
+        un courriel
+
+Ces magnifique :D.
+
+Bon c'est le temps de parler philosophie un peu, vous en faites ce que vous voulez de la prochaine section :P
 
 ### <a name="liste_users_txt_vs_ldap" /> Une fichier plat ou une interrogation du Ldap
 
 Comme nous avons vue dans la liste des [__LookUp Table__](http://www.postfix.org/DATABASE_README.html#types) , il est aussi possible d'avoir des connecteurs de type __ldap__ ou __mysql__ . 
 Personnellement je suis du type fichier texte plat généré automatiquement et voici pourquoi , pas juste parce qu'un fichier texte c'est facile à lire !
 
+Si vous avez un service __exchange__  donc avec toutes la quincaillerie __Active directory__ , __kerberos__ , __LDAP__, ... Vous serez probablement tenté de vous dire cool , __Fuck__ le fichier plat moi direct __LDAP__ pour avoir la liste des adresses. 
+En soit je vous dis oui bonne idée car :
 
+1. Lors de l'ajout d'une adresse courriel , ceci sera instantanément disponible sur le serveur postfix de relais , pas de rajout manuelle dans le fichier plat
+2. Pas de gestion du fichier plat en place du __exchange__ .
+
+Par contre j'aimerai mettre en lumière des points à prendre en considération :
+
+* **Indisponibilité du LDAP** : Lors de mon premier teste d'utilisation du format **dbm** lors de la réception du courriel , comme postfix n'était pas en mesure de réaliser un __lookup__ du fichier il a refusé le courriel. Ce comportement sera équivalent si votre service __LDAP__ est non disponible, résultat si vous réalisé un mise à jour de votre __AD__ les courriels ne pourrons pas être reçu . Bon vous pourriez vous dire de toute manière le service __AD/LDAP__ est sur la même machine que __exchange__ (honnêtement je ne sais pas si c'est possible ;-) ) donc les courriels ne pourront pas être livré de toute manière. Peut-être mais le service **smtp** quand il communique à un autre serveur __smtp__  respect le __RFC__ donc conservera dans la queue chez vous le courriel et vous pourrez forcer le traitement de la queue , car sous votre contrôle. Nous parlons de __ldap__ mais c'est tout aussi valide avec __mysql__ ou autre. Originalement même les courriels __bouncé__ ce qui était très problématique pour l'image de marque de la compagnie , il semble que ce ne soit plus le cas ... Mais j'avoue que j'ai pas envie de faire un teste :P.
+
+* **Autonomie du service postfix** : Mon objectif est de faire ne sorte que mon service de courriel soit indépendant des services de l'infrastructure afin de permettre des interruptions pour mise à jour et indisponibilité du service . Tous en conservant les courriels conformément au __RFC__ localement en attendant que le service distant retombe sur ces pattes !
+
+* **Génération du fichier** : 
 
