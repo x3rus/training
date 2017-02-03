@@ -628,7 +628,30 @@ Donc voici quelques options
         * Si vous déjà l'ensemble de vos utilisateur dans un __ldap__ (exemple AD), ceci vous facilite grandement la vie et oui c'est vraie, dans ce cas peut-être faire une copie synchronisé afin d'avoir un conteneur indépendant pour le gars dans le train :P.
         * Mise à jour "instantané" des utilisateurs grâce à la solution AD
         * Avoir des utilisateurs locaux et une sources externe **optionel** afin d'avoir l'autonomie du conteneur et la pluralité des utilisateurs corporatif. (je suis mitigé , car je ne vois pas de solution dans une production __cloud__ mais bon ça reste une possibilité)
-5. Ne pas avoir de définition d'utilisateur local et ne pas faire la livraison avec postfix.
+
+Bon l'ensemble des suggestions mentionnés ci-dessus est général peut importe le système , l'idée est d'essayer de trouve une solution optimal voici en gros les critères que je désires :
+
+* Ne pas avoir de gestion des utilisateurs manuel sur chaque conteneur , ajout ou suppression .
+* Permettre le déploiement des conteneurs "simplement" peut importe l'environnement (portable, __datacenter__, ...).
+* Je veux avoir une limitation des adresses courriels dans le systèmes postfix .
+
+Reprenons le diagramme simplifié de l'architecture postfix :
+
+![POSTFIX_Envoi_Externe.png](./imgs/POSTFIX_Envoi_Externe.png) 
+
+J'aimerai porter votre attention sur les autres possibiliter soit :
+
+* ltmp
+* virtual
+* pipe
+
+En d'autre mot il y d'autre méthode pour transmettre les courriels vers un autre système , en fait principalement le protocol [lmtp](https://fr.wikipedia.org/wiki/Local_Mail_Transfer_Protocol) soit **Local Mail Transfer Protocol** . ET ça tombe bien car **dovecot** supporte ce protocole [dovecot et ltmp](http://wiki2.dovecot.org/HowTo/PostfixDovecotLMTP) , elle est pas belle la vie :P.
+
+Avec cette solution nous aurons , les utilisateurs uniquement définie dans le conteneur __dovecot__ , __postfix__ sera en mesure de faire une validation via le protocole __LMTP__ telle que spécifier dans la documentation  [dovecot et ltmp](http://wiki2.dovecot.org/HowTo/PostfixDovecotLMTP). Comme nous aurons qu'une source d'utilisateur et pas de définition dans un serveur d'infrastructure de type __LDAP__ nous pourrons le déployé peu importe l'environnement. 
+
+**COOL** , bon le petit malin qui se dit ouin mais avec cette solution tu n'as rien réglé car comment on va définir les utilisateurs dans le conteneur __dovecot__ , effectivement il faudra prendre tous de même une des options plus haut. Bien entendu quand nous serons rendu avec un système complet avec une base de données **requise** pour plus de fonctionnalité nous n'aurons plus le choix. 
+Mais 1 problème à la fois :D.
+
 
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
