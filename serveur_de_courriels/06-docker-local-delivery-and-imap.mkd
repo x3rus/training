@@ -649,9 +649,44 @@ En d'autre mot il y d'autre méthode pour transmettre les courriels vers un autr
 
 Avec cette solution nous aurons , les utilisateurs uniquement définie dans le conteneur __dovecot__ , __postfix__ sera en mesure de faire une validation via le protocole __LMTP__ telle que spécifier dans la documentation  [dovecot et ltmp](http://wiki2.dovecot.org/HowTo/PostfixDovecotLMTP). Comme nous aurons qu'une source d'utilisateur et pas de définition dans un serveur d'infrastructure de type __LDAP__ nous pourrons le déployé peu importe l'environnement. 
 
-**COOL** , bon le petit malin qui se dit ouin mais avec cette solution tu n'as rien réglé car comment on va définir les utilisateurs dans le conteneur __dovecot__ , effectivement il faudra prendre tous de même une des options plus haut. Bien entendu quand nous serons rendu avec un système complet avec une base de données **requise** pour plus de fonctionnalité nous n'aurons plus le choix. 
+**COOL** , bon le petit malin qui se dit __ouin__ mais avec cette solution tu n'as rien réglé car comment on va définir les utilisateurs dans le conteneur __dovecot__ , effectivement il faudra prendre tous de même une des options plus haut. Bien entendu quand nous serons rendu avec un système complet avec une base de données **requise** pour plus de fonctionnalité nous n'aurons plus le choix. 
 Mais 1 problème à la fois :D.
 
+# <a name="Postfix_with_lmtp" /> Configuration postfix avec LTMP 
+
+Telle que mentionné plus tôt nous allons utiliser postfix uniquement comme **MTA** (**Mail Transport Agent**) et laisser la gestion de la livraison **MDA** (**Mail Delivery Agent**) à dovecot via le protocole __lmtp__. Le gros avantage d'utiliser __lmtp__ est que nous seront donc en mesure de changer dovecot par une autre solution, il faudra simplement que cette solution supporte le protocole ouvert __lmtp__.
+
+Si nous regardons la documentation [dovecot et ltmp](http://wiki2.dovecot.org/HowTo/PostfixDovecotLMTP) vous constaterez que le système utilise un __socket__ Unix pour la communication. Quand nous avons une configuration d'une machine réalisant l'ensemble de l'opération y a pas de problème, mais dans notre cas nous utiliseront le port __tcp__ . Une vraie communication réseau nous offrant plus de possibilité surtout avec les conteneurs. Pour voir l'ensemble des configurations disponible voir la documentation [postfix lmtp](http://linuxcommand.org/man_pages/lmtp8.html). 
+
+Comme nous pouvons le voir dans le diagramme du traitement des courriels par postfix : 
+
+![POSTFIX_Reception_UNIX.png](./imgs/POSTFIX_Reception_UNIX.png)
+
+Par défaut postfix utilise le service **local** pour livrer les courriels nous allons modifier cette configuration, en changeant la valeur de [mailbox_transport](http://www.postfix.org/postconf.5.html#mailbox_transport). Voici ce que nous allons définir :
+
+        mailbox_transport = lmtp:dovecot-lmtp:24
+
+Juste par clarification :
+
+* **lmtp** : le protocole 
+* **dovecot-lmtp** : le __hostname__ du serveur de destination , si nous étions dans une logique avec des machines virtuel j'aurais définie un __hostname__ valide , comme nous sommes avec docker ceci sera réalisé avec un __link__ de conteneur nous y reviendrons.
+* **24** : Le port , bon la selon wikipedia ils disent qu'il n'y a pas de port standard, mais selon la documentation de __lmtp__ de postfix il mentionne que le port par défaut est 24 ... Donc si je suis pour choisir n'importe quoi autant en prendre un presque standard :D. 
+
+Bon la pour ceux qui se disent,  aille __woww__ __pépito__  puis la validation des courriels tu en fais quoi , la liste des adresses et alias . Bon point mais pas de panique :D voici la solution que nous allons mettre en place :
+
+        Dynamic address verification with LMTP
+
+        With Dovecot 2.0 you can also use LMTP and the Postfix setting "reject_unverified_recipient" for dynamic address verification. It's really nice because Postfix doesn't need to query an external datasource (MySQL, LDAP...). Postfix maintain a local database with existing/non existing addresses (you can configure how long positive/negative results should be cached).
+
+        To use LMTP and dynamic address verification you must first get Dovecot working. Then you can configure Postfix to use LMTP and set "reject_unverified_recipient" in the smtpd_recipient_restrictions.
+
+        On every incoming email Postfix will probe if the recipient address exists. You will see similar entries in your logfile:
+
+                Recipient address rejected: undeliverable address: host tux.example.com[private/dovecot-lmtp] said: 550 5.1.1 < tzknvtr@example.com > User doesn't exist: tzknvtr@example.com (in reply to RCPT TO command); from=< cnrilrgfclra@spammer.org > to=< tzknvtr@example.com >
+
+        If the recipient address exists (status=deliverable) Postfix accepts the mail. 
+
+On y reviens ce sera une amélioration , avec de mettre cette limitation on va confirmer que tous fonctionne , sinon c'est gênant pour diagnostique le problème :D.
 
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
