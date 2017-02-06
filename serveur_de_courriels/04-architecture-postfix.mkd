@@ -6,6 +6,14 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Index 
 
+* [ Description](#description)
+* [ Présentation de l'architecture Postfix](#Architecture)
+* [ Présentation d'autre configuration ](#other_conf)
+       * [ Mise en place de postfix comme relais de courriel vers l'interne.](#relais_for_other_smtpd)
+           * [ Définition d'une liste d'utilisateur](#liste_users)
+           * [ Redirection de courriel vers l'interne ](#redirection_courriel)
+           * [ Une fichier plat ou une interrogation du Ldap](#liste_users_txt_vs_ldap)
+
 
 # <a name="description" /> Description
 
