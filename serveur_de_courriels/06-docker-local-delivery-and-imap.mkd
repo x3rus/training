@@ -686,7 +686,150 @@ Bon la pour ceux qui se disent,  aille __woww__ __pépito__  puis la validation 
 
         If the recipient address exists (status=deliverable) Postfix accepts the mail. 
 
-On y reviens ce sera une amélioration , avec de mettre cette limitation on va confirmer que tous fonctionne , sinon c'est gênant pour diagnostique le problème :D.
+On y reviens ce sera une amélioration , avant de mettre cette limitation on va confirmer que tous fonctionne , sinon c'est gênant pour diagnostique le problème :D.
+
+Voici donc le résultat de notre configuration postfix en __template__ :
+
+        $ cat conf/postfix-main.j2
+        smtpd_banner = $myhostname ESMTP $mail_name
+
+        alias_database = hash:/etc/aliases
+        alias_maps = hash:/etc/aliases
+
+        # Si vous le désirez nous pourrions avoir ce paramètre en option
+        home_mailbox = Maildir/
+
+        smtpd_relay_restrictions = permit_mynetworks  defer_unauth_destination
+        myhostname = $myorigin
+        myorigin = {{ SMTP_HOSTNAME }}
+
+        mydestination = {{ ACCEPT_DOMAIN }}
+        mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 {{ PERMIT_NETWORK }}
+        inet_interfaces = all
+        inet_protocols = ipv4
+
+        # Configuration pour l'envoie vers lmtp (aka dovecot)
+        mailbox_transport = lmtp:dovecot-lmtp:24
+
+        {% if (EXT_RELAY_HOST != "DIRECT") %}relayhost = {{ EXT_RELAYHOST }} {% endif %}
+
+
+Oublié pas de reconstruire votre image :
+
+        $ docker build -t srvsmtp .
+
+Le problème à ce stade est que la validation de la configuration est "difficile", car nous avons besoin du conteneur dovecot pour valider l'ensemble , je pense donc que c'est le bon moment pour créer l'image du second conteneur.
+
+# <a name="setup_dovecot" /> Création de l'image IMAP / LMTP (dovecot)
+
+Juste pour être sûr que l'on s'entend sur le besoin du conteneur :
+
+* **imap** : Service __imap__ pour que les utilisateurs consultent leurs courriels
+* **lmtp** : Service __lmtp__ pour que le transfert des courriels entre postfix et dovecot
+
+Nous allons reprendre bêtement les étapes vue dans la formation pour faire la création du __Dockerfile__ :
+
+1. Installation des packages pour dovecot : imap et lmtp
+2. Mise en place d'un fichier de configuration en __template__ [Jinja2](http://jinja.pocoo.org/docs/2.9/)
+3. Script de démarrage de dovecot
+
+Pour rappel la structure :
+
+        $ ls -R srvMailWithImap/
+        srvMailWithImap/:
+        imap  smtp
+
+        srvMailWithImap/imap/:
+        bin  conf  Dockerfile  run.sh
+
+        srvMailWithImap/imap/bin:
+        dfg.sh
+
+        srvMailWithImap/imap/conf:
+        supervisor-all.conf
+
+        srvMailWithImap/smtp:
+        bin  Dockerfile  run.sh
+
+        srvMailWithImap/smtp/bin:
+        dfg.sh
+
+Nous allons nous attaquer à la partie __imap__ , avec le recule j'aurais dû aussi mettre le mot __lmtp__, mais je savais pas au début que nous allions avoir ce service :P ( oui oui la formation est vraiment rédigé et réfléchie au fur et à mesure :D **free style** ).
+
+Faut ce lancer donc un premier jet du fichier __Dockerfile__ on le corrigera  au fur et à mesure :D. :
+
+        # Using debian
+        # Start Exemple:
+        # ou can add -p 25:25 for LAN access
+        FROM ubuntu:16.04
+        MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
+
+        # Ignore APT warnings about not having a TTY
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Packages: update
+        RUN apt-get update -qq && \
+            apt-get install -qq -y --no-install-recommends dovecot-imap dovecot-lmtp \
+                    python-pip supervisor rsyslog python-wheel python-setuptools  && \
+                    pip install j2cli
+
+        # Configure: supervisor
+        ADD bin/dfg.sh /usr/local/bin/
+        ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
+
+        # Runner
+        ADD run.sh /root/run.sh
+        RUN chmod +x /root/run.sh
+
+        # Declare
+        EXPOSE 143 993 24
+
+        CMD ["/root/run.sh"]
+
+* Nous débutons avec l'image **Ubuntu:16.04** comme nous avons utilisé cette distribution depuis le début.
+* Installation des packages pour dovecot et __supervisor__ ainsi que le système __rsyslog__ pour les logs.
+* Nous installons aussi __j2cli__ , toujours dans l'optique d'utiliser le système __jinja2__ comme __template__ pour les fichiers de configuration.
+* Installation des fichiers de configuration pour __supervisor__ , j'ai simplement repris ceux déjà présenter lors de la présentation de la __dockerisation__ du serveur de relais.
+
+L'ensemble des fichiers sont disponible sur [github](https://github.com/x3rus/training/tree/master/serveur_de_courriels/dockers/srvMailWithImap/smtp).
+
+J'ai fait quelque modification du fichier __supervisor-all.conf__ ET __run.sh__ afin que ceci soit adapté à la configuration de dovecot , pour visualiser les changement un petit __diff__ ou __vimdiff__ entre celui de postfix et dovecot vous fournira l'ensemble des données 
+
+        $ vimdiff smtp/conf/supervisor-all.conf  imap/conf/supervisor-all.conf 
+
+On se lance dans la compilation :D de l'image . 
+
+## <a name="setup_dovecot_install_pkg" /> Installation des packages dans l'image
+
+Bon j'ai encore le même problème de nom de package ... Donc je vais refaire l'opération , comme avec postfix en démarrant un conteneur Ubuntu 16:04  pour faire l'analyse et trouver le bon nom de package
+
+        Step 4 : RUN apt-get update -qq &&     apt-get install -qq -y --no-install-recommends dovecot-imap dovecot-lmtp         python-pip supervisor rsyslog python-wheel python-setuptools  &&     pip install j2cli
+         ---> Running in 3e58129c72bc
+         E: Unable to locate package dovecot-imap
+         E: Unable to locate package dovecot-lmtp
+
+Résultat fallait ajouter un D à la fin :P  :
+
+         apt-get install -qq -y --no-install-recommends dovecot-imapd dovecot-lmtpd \
+
+Bon je montre le processus pourquoi ?  Juste pour vous démontrer que c'est pas parce que ça fait 15 ans que t'es sous GNU/Linux que ça marche du premier coup :P en fait vraiment pas , mes 15 ans d'expérience me donne juste plus d'outils pour trouver le correctif rapidement. :P
+
+Suite à la modification la compilation a bien fonctionné :
+
+        $ docker build -t srvimap .
+        [ ... OUTPUT COUPÉ ... ]
+        Step 10 : CMD /root/run.sh
+         ---> Running in 735c2152fd8c
+         ---> 6547ceb2a3f1
+        Removing intermediate container 735c2152fd8c
+        Successfully built 6547ceb2a3f1
+
+## <a name="setup_dovecot_setup_conf" /> Mise en place des fichiers de configuration avec la méthode (docker diff :D)
+
+Telle que mentionné au début de la formation, vous avez l'air motivé pour l'utilisation de **docker**, donc on creuse plus loin et surtout on voit des méthodes de travail disponible. Je suis tous de même nouveau dans docker , bon en même temps ça fait pas 10 ans que ça existe, je ne sais pas la position des puristes sur ce qui suit , mais moi j'aime bien . 
+
+Bon lors de la configuration de postfix c'était 1 fichier de configuration et nous étions , en tout cas moi :P , très confortable avec postfix . Dans le cadre de dovecot nous avons 2 services à mettre en place et la structure des fichiers de configurations est très divisé. Nous allons voir maintenant un autre technique pour faire de l'analyse de mise en place pour nous aider pour le conteneur final.
+
 
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
