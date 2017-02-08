@@ -726,6 +726,7 @@ Juste pour être sûr que l'on s'entend sur le besoin du conteneur :
 
 * **imap** : Service __imap__ pour que les utilisateurs consultent leurs courriels
 * **lmtp** : Service __lmtp__ pour que le transfert des courriels entre postfix et dovecot
+* **maildir** : Nous désirons que les fichiers de courriels soit individuel par communication 
 
 Nous allons reprendre bêtement les étapes vue dans la formation pour faire la création du __Dockerfile__ :
 
@@ -830,6 +831,186 @@ Telle que mentionné au début de la formation, vous avez l'air motivé pour l'u
 
 Bon lors de la configuration de postfix c'était 1 fichier de configuration et nous étions , en tout cas moi :P , très confortable avec postfix . Dans le cadre de dovecot nous avons 2 services à mettre en place et la structure des fichiers de configurations est très divisé. Nous allons voir maintenant un autre technique pour faire de l'analyse de mise en place pour nous aider pour le conteneur final.
 
+Donc nous avons l'image de base avec les packages et le démarrage de dovecot , on va initialiser le conteneur , pour le moment nous n'avons pas de variables ceci viendra par la suite :
+
+        $ docker images | head                                                                                                                               
+        REPOSITORY                    TAG                 IMAGE ID            CREATED             SIZE
+        srvimap                       latest              6547ceb2a3f1        23 hours ago        217.2 MB
+
+        $ docker run srvimap
+        /usr/lib/python2.7/dist-packages/supervisor/options.py:297: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+          'Supervisord is running as root and it is searching '
+        2017-02-08 13:13:01,165 CRIT Supervisor running as root (no user in config file)
+        2017-02-08 13:13:01,165 WARN Included extra file "/etc/supervisor/conf.d/supervisor-all.conf" during parsing
+        2017-02-08 13:13:01,180 INFO RPC interface 'supervisor' initialized
+        2017-02-08 13:13:01,181 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+        2017-02-08 13:13:01,181 INFO supervisord started with pid 1
+        2017-02-08 13:13:02,188 INFO spawned: 'dovecot' with pid 10
+        2017-02-08 13:13:02,199 INFO spawned: 'rsyslogd' with pid 11
+        2017-02-08 13:13:03,261 INFO success: rsyslogd entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+        2017-02-08 13:13:05,263 INFO success: dovecot entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+
+Comme vous pouvez le constater je n'ai pas nommé le conteneur pour le moment je cherche uniquement à avoir un environnement volatile pour faire des testes.
+
+        $ docker ps
+        CONTAINER ID        IMAGE               COMMAND             CREATED              STATUS              PORTS               NAMES
+        9c93ab3c3243        srvimap             "/root/run.sh"      About a minute ago   Up About a minute   25/tcp              sick_brahmagupta
+
+Bon on voit déjà une erreur :P , le Port **25/tcp** , je vais corriger mon **serveur_de_courriels/dockers/srvMailWithImap/imap/Dockerfile** :
+
+        # Declare
+        EXPOSE 143 24
+
+On reconstruira l'image plus tard pas critique à ce stade , maintenant je vais établir une connexion dans le conteneur volatile :
+
+        $ docker exec -it sick_brahmagupta bash
+        root@9c93ab3c3243:/#
+
+Comme je vais travailler dans le conteneur je vais installer **vim** dans le conteneur volatile , je ne vais **pas** l'ajouter dans le __Dockerfile__ , donc lors de la suppression du conteneur ce ne sera pas présent.
+
+
+### <a name="setup_dovecot_setup_imap_conf" /> Validation de la configuration imap 
+
+Visualisation du fichier de configuration :
+
+         root@9c93ab3c3243:/etc/dovecot/# cat dovecot.conf | grep -v "^#" | grep -v ^$
+         !include_try /usr/share/dovecot/protocols.d/*.protocol
+         dict {
+           #quota = mysql:/etc/dovecot/dovecot-dict-sql.conf.ext
+           #expire = sqlite:/etc/dovecot/dovecot-dict-sql.conf.ext
+         }
+         !include conf.d/*.conf
+         !include_try local.conf
+
+Si nous regardons dans le répertoire **/usr/share/dovecot/protocols.d/**, nous voyons bien le fichier pour __imap__ : 
+
+        root@9c93ab3c3243:/etc/dovecot# ls /usr/share/dovecot/protocols.d/*.protocol
+        /usr/share/dovecot/protocols.d/imapd.protocol  /usr/share/dovecot/protocols.d/lmtpd.protocol
+
+Et le contenu spécifie bien l'activation du protocole __imap__
+
+        root@9c93ab3c3243:/etc/dovecot# cat /usr/share/dovecot/protocols.d/imapd.protocol
+        protocols = $protocols imap
+
+        root@9c93ab3c3243:/etc/dovecot/conf.d# cat /etc/dovecot/conf.d/20-imap.conf  | grep -v ^# | grep -v ^$
+        protocol imap {
+          # Space separated list of plugins to load (default is global mail_plugins).
+          #mail_plugins = $mail_plugins
+          # Maximum number of IMAP connections allowed for a user from each IP address.
+          # NOTE: The username is compared case-sensitively.
+          #mail_max_userip_connections = 10
+        }
+
+Tous semble bon on peut valider avec la commande **ss** ou **netstat** , mais faut installer un package :P 
+
+        root@9c93ab3c3243:/etc/dovecot# apt-get install iproute2
+        root@9c93ab3c3243:/etc/dovecot# ss -lntp
+        State      Recv-Q Send-Q                                  Local Address:Port                                                 Peer Address:Port
+        LISTEN     0      100                                                 *:143                                                             *:*
+        users:(("dovecot",pid=22,fd=34))
+        LISTEN     0      100                                                :::143                                                            :::*
+        users:(("dovecot",pid=22,fd=35))
+
+Le __imap__ semble, convenable du moins pour ce que l'on a vue :D.
+
+### <a name="setup_dovecot_setup_lmtp_conf" /> Validation de la configuration lmtp
+
+Validons la configuration comme pour __imap__
+
+         root@9c93ab3c3243:/etc/dovecot/# cat dovecot.conf | grep -v "^#" | grep -v ^$
+         !include_try /usr/share/dovecot/protocols.d/*.protocol
+         dict {
+           #quota = mysql:/etc/dovecot/dovecot-dict-sql.conf.ext
+           #expire = sqlite:/etc/dovecot/dovecot-dict-sql.conf.ext
+         }
+         !include conf.d/*.conf
+         !include_try local.conf
+
+Si nous regardons dans le répertoire **/usr/share/dovecot/protocols.d/**, nous voyons bien le fichier pour __ltmp__: 
+
+        root@9c93ab3c3243:/etc/dovecot# ls /usr/share/dovecot/protocols.d/*.protocol
+        /usr/share/dovecot/protocols.d/imapd.protocol  /usr/share/dovecot/protocols.d/lmtpd.protocol
+
+Et le contenu spécifie bien l'activation du protocole __lmtp__
+
+        root@9c93ab3c3243:/etc/dovecot# cat /usr/share/dovecot/protocols.d/lmtpd.protocol
+        protocols = $protocols lmtp
+
+        root@9c93ab3c3243:/etc/dovecot/conf.d# cat 20-lmtp.conf  | grep -v ^# | grep -v ^$
+        protocol lmtp {
+          # Space separated list of plugins to load (default is global mail_plugins).
+          #mail_plugins = $mail_plugins
+        }
+
+Bon comme on a pas vu le détail de la configuration dans passé dans le doute il y a une définition donc ça doit être ok :P ... 
+
+Tous semble bon on peut valider avec la commande **ss** ou **netstat** , mais faut installer un package :P 
+
+        root@9c93ab3c3243:/etc/dovecot# ss -lntp
+        State      Recv-Q Send-Q                                  Local Address:Port                                                 Peer Address:Port
+        LISTEN     0      100                                                 *:143                                                             *:*
+        users:(("dovecot",pid=22,fd=34))
+        LISTEN     0      100                                                :::143                                                            :::*
+        users:(("dovecot",pid=22,fd=35))
+
+**OUPSSss** : le port 24 n'est **PAS** ouvert , ça va être compliquer pour le passage via le réseau des communications entre le postfix et dovecot, reprenons le site de configuration comme point de référence : [http://wiki.dovecot.org/LMTP](http://wiki.dovecot.org/LMTP).
+
+Donc nous allons la définition du service de __lmtp__ :
+
+        root@9c93ab3c3243:/etc/dovecot# grep "service lmtp" -R *
+        conf.d/10-master.conf:service lmtp {
+
+Bon __ok ok__, je me rappeler plus du nom du fichier :P , mais **grep** a une bien meilleur mémoire :P .
+
+Voici la configuration présente :
+
+        service lmtp {
+          unix_listener lmtp {
+              #mode = 0666
+            }
+
+            # Create inet listener only if you can't use the above UNIX socket
+            #inet_listener lmtp {
+            # Avoid making LMTP visible for the entire internet
+            #address =
+            #port = 
+            #}
+        }
+
+Ceci indique de ne pas utiliser le protocole réseau mais un __socket__ sur la machine qui permet de simulé via un fichier la communication réseau, bien entendu 90% du temps quand les services sont sur la même machine s'est très bien !! L'avantage est qu'il n'y a pas de port d'ouvert sur le réseau , alors que ce n'est pas pertinent. Pour notre cas par contre nous devons changer cette configuration.
+
+        service lmtp {
+          unix_listener lmtp {
+              #mode = 0666
+          }
+
+          inet_listener lmtp {
+            address = 0.0.0.0
+            port = 24
+          }
+
+          # Create inet listener only if you can't use the above UNIX socket
+          #inet_listener lmtp {
+          # Avoid making LMTP visible for the entire internet
+          #address =
+          #port = 
+          #}
+        }
+
+Je redémarre le service et valide avec **ss** 
+
+        root@9c93ab3c3243:/etc/dovecot# /etc/init.d/dovecot restart
+        root@9c93ab3c3243:/etc/dovecot# ss -lntp                   
+        State      Recv-Q Send-Q                                  Local Address:Port                                                 Peer Address:Port
+        LISTEN     0      100                                                 *:143                                                             *:*                   users:(("dovecot",pid=7509,fd=35))
+        LISTEN     0      100                                                 *:24                                                              *:*                   users:(("dovecot",pid=7509,fd=25))
+        LISTEN     0      100                                                :::143                                                            :::*                   users:(("dovecot",pid=7509,fd=36))
+
+Bon ça semble bon , on validera quand postfix va transmettre ses courriel :D 
+
+### <a name="setup_dovecot_setup_maildir_conf" /> Mise en place de la configuration maildir
+
+Dans les requis nous avions aussi la mise en place du système __Maildir__ au lieu de __mailbox__ c'est partie ...
 
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
