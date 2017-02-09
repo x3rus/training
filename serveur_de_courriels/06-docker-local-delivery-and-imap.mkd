@@ -1144,7 +1144,9 @@ On reconstruit l'image :
 
 Donc nous sommes au point ou nous avons 2 conteneurs qui ont des services réseau qui ont une configuration théoriquement (on l'a pas encore testé) compatible , il est temps de les combiner. Allez chercher , la colle et les ciseaux !! 
 
-Telle que mentionné je vous invite **FORTEMENT** à utiliser **docker-compose** , ça aide énormément !!
+Telle que mentionné je vous invite **FORTEMENT** à utiliser **docker-compose** , ça aide énormément !! Donc nous allons l'utiliser ici :D.
+
+
 
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
