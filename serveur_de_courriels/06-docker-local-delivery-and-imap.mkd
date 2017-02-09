@@ -1012,5 +1012,139 @@ Bon ça semble bon , on validera quand postfix va transmettre ses courriel :D
 
 Dans les requis nous avions aussi la mise en place du système __Maildir__ au lieu de __mailbox__ c'est partie ...
 
+Pour rappel nous devons modifier l'entrée **mail\_location** :
+
+        $ grep mail_location /etc/dovecot/conf.d/*
+        mail_location = mbox:~/mail:INBOX=/var/mail/%u
+
+La nouvelle valeur :
+
+        mail_location = maildir:~/Maildir
+
+On peut __reloader__ la configuration et on peut valider les logs qu'il n'y a pas un processus qui pleure du à un problème de configuration :
+
+        root@9c93ab3c3243:/etc/dovecot# /etc/init.d/dovecot reload
+         * Reloading IMAP/POP3 mail server dovecot
+         ...done.
+        root@9c93ab3c3243:/var/log# tail mail.log
+        Feb  8 13:13:02 9c93ab3c3243 dovecot: master: Dovecot v2.2.22 (fe789d2) starting up for imap, lmtp
+        Feb  8 13:13:02 9c93ab3c3243 dovecot: ssl-params: Generating SSL parameters
+        Feb  8 13:13:04 9c93ab3c3243 dovecot: ssl-params: SSL parameters regeneration completed
+        Feb  8 13:43:09 9c93ab3c3243 dovecot: master: Warning: Killed with signal 15 (by pid=7504 uid=0 code=kill)
+        Feb  8 13:43:10 9c93ab3c3243 dovecot: master: Dovecot v2.2.22 (fe789d2) starting up for imap, lmtp
+        Feb  8 13:49:47 9c93ab3c3243 dovecot: master: Warning: Killed with signal 15 (by pid=0 uid=0 code=kill)
+        Feb  8 13:49:47 9c93ab3c3243 dovecot: anvil: Warning: Killed with signal 15 (by pid=0 uid=0 code=kill)
+        Feb  8 13:49:47 9c93ab3c3243 dovecot: log: Warning: Killed with signal 15 (by pid=0 uid=0 code=kill)
+        Feb  9 13:10:03 9c93ab3c3243 dovecot: master: Dovecot v2.2.22 (fe789d2) starting up for imap, lmtp
+        Feb  9 13:14:00 9c93ab3c3243 dovecot: master: Warning: SIGHUP received - reloading configuration
+
+### <a name="setup_dovecot_setup_extraction_conf" /> Extraction de la configuration mise en place
+
+Bon maintenant vous êtes peut-être septiques , vous vous dites ouin mais la il vient de nous faire un __pet container__ , moi je voulais avoir quelques chose de propre dans le __Dockerfile__ on peut pas reproduire la configure . 
+
+Généralement à ce moment je réponds : **Minutes papillons, ça arrive** :D. 
+
+L'objectif de l'ensemble de la configuration dans un conteneur est de valider que nous sommes en mesure de faire la configuration , l'utilisation des layer de docker c'est vraiment génial. Cependant lors de la période d'exploration c'est assez casse couille de devoir refaire : le changement de configuration, le __build__ ,  le redémarrage du conteneur puis la validation . 
+
+Maintenant que nous avons configurer le conteneur qu'il n'a pas d'erreur nous allons reprendre les fichiers que nous avons modifier ramener pour faire la création du __Dockerfile__. Bien entendu nous pouvons faire référence à notre mémoire pour lister les fichiers, mais soyons honnête selon le nombre de fichier nous allons en oublier , MOI le premier. 
+
+Nous avons une super fonctionnalité dans docker qui est : **docker diff**  , ceci nous permet de lister les fichiers qui furent modifié entre l'image de référence et le conteneur en activité.
+
+        $ docker diff sick_brahmagupta | wc -l                                                                                                                
+        2979
+
+**Woww**, __ouin__ on a installé des logiciels ça explose tous de suite le nombre de fichier modifier :P ... Comme j'ai pas envie de lire l'ensemble et que je sais que nous avons modifier uniquement des fichiers dans __/etc/dovecot__ nous allons faire un __grep__ sur ce répertoire.
+
+Voilà Magie :
+
+        $ docker diff sick_brahmagupta | grep '/etc/dovecot'
+        C /etc/dovecot
+        C /etc/dovecot/conf.d
+        C /etc/dovecot/conf.d/10-master.conf
+        C /etc/dovecot/conf.d/10-mail.conf
+
+Bien entendu en changeant le grep pour uniquement __/etc__ vous aurez une plus grande couverture. Donc nous voyons que nous avons finalement touchez que 2 fichiers de configuration . 
+
+Je vais maintenant copier ces fichiers dans le répertoire de conf dans le répertoire du __Dockerfile__ afin  de pouvoir les copier lors de la génération de l'image srvimap. Bon j'ai 2 fichiers on va pas s'énerver mais j'aimerai vous présenter une méthode de copie , particulièrement pertinente si vous avions 20 ou 50 fichiers.
+
+        $ docker diff sick_brahmagupta | grep '/etc/dovecot' | grep \.conf$ | cut -d " " -f 2
+        /etc/dovecot/conf.d/10-mail.conf
+        /etc/dovecot/conf.d/10-master.conf
+
+Avec quelques __grep__ et un __cut__ je filtre le résultat , bon les fanatiques de __awk__ :P je vous laisse le plaisir de convertir :P.
+J'assigne le résultat à une variable :
+
+        $ LST_FILE=$(docker diff sick_brahmagupta | grep '/etc/dovecot' | grep \.conf$ | cut -d " " -f 2)
+
+Une petite validation pré exécution :D
+
+        $ for x in $LST_FILE; do echo $x; done
+        /etc/dovecot/conf.d/10-master.conf
+        /etc/dovecot/conf.d/10-mail.conf
+
+Et on fait la même chose avec __docker copy__ :
+
+        $ for x in $LST_FILE; do docker cp sick_brahmagupta:$x . ; done
+        $ ls
+        10-mail.conf  10-master.conf  supervisor-all.conf
+
+C'est comme de la magie :D
+
+### <a name="setup_dovecot_setup_dovecot_conf" /> Définition des fichiers de configuration dans le Dockerfile
+
+Maintenant que nous avons les fichiers de configuration pour **dovecot** , dans le répertoire conf , nous allons pouvoir ajuster le __Dockerfile__.
+
+        ADD conf/10-*.conf /etc/dovecot/conf.d/
+
+Voici le résultat "final" jusqu'au prochain problème :P 
+
+        $ cat Dockerfile
+        # Using debian
+        # Start Exemple:
+        # ou can add -p 25:25 for LAN access
+        FROM ubuntu:16.04
+        MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
+
+        # Ignore APT warnings about not having a TTY
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Packages: update
+        RUN apt-get update -qq && \
+            apt-get install -qq -y --no-install-recommends dovecot-imapd dovecot-lmtpd \
+                    python-pip supervisor rsyslog python-wheel python-setuptools  && \
+                    pip install j2cli
+
+        # Configure: supervisor
+        ADD bin/dfg.sh /usr/local/bin/
+        ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
+
+        # Add dovecot configuration
+        ADD conf/10-*.conf /etc/dovecot/conf.d/
+
+        # Runner
+        ADD run.sh /root/run.sh
+        RUN chmod +x /root/run.sh
+
+        # Declare
+        EXPOSE 143 24
+
+        CMD ["/root/run.sh"]
+
+On reconstruit l'image :
+
+        $ docker build -t srvimap .
+        Sending build context to Docker daemon 28.16 kB
+        Step 1 : FROM ubuntu:16.04
+         ---> c73a085dc378
+        [ ...  OUTPUT ... ]
+        Removing intermediate container 4f496692783f
+        Successfully built f57aa93b57e1
+
+# <a name="integration" /> Mise en symbiose des images :D
+
+Donc nous sommes au point ou nous avons 2 conteneurs qui ont des services réseau qui ont une configuration théoriquement (on l'a pas encore testé) compatible , il est temps de les combiner. Allez chercher , la colle et les ciseaux !! 
+
+Telle que mentionné je vous invite **FORTEMENT** à utiliser **docker-compose** , ça aide énormément !!
+
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log

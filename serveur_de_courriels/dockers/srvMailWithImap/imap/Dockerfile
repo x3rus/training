@@ -17,6 +17,9 @@ RUN apt-get update -qq && \
 ADD bin/dfg.sh /usr/local/bin/
 ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
 
+# Add dovecot configuration
+ADD conf/10-*.conf /etc/dovecot/conf.d/
+
 # Runner
 ADD run.sh /root/run.sh
 RUN chmod +x /root/run.sh
