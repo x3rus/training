@@ -1,0 +1,29 @@
+version: '2'
+services:
+    smtp-coco:
+        image: srvsmtp
+        restart: unless-stopped
+        container_name : 'coco-smtp-t'
+        hostname: mail.coco.com
+        environment:
+            - SMTP_HOSTNAME=mail.coco.com 
+            - ACCEPT_DOMAIN=coco.com
+            - TIMEZONE=America/Montreal
+            - TERM=xterm
+        links:
+            - imap-coco:dovecot-lmtp 
+        ports:
+            - '25:25'
+        volumes:
+            - /tmp/docker/coco-smtp-t/var_spool/mails:/var/spool/postfix
+    imap-coco :
+        image: srvimap
+        container_name : 'coco-imap-t'
+        hostname: mail.coco.com
+        environment:
+            - TIMEZONE=America/Montreal
+            - TERM=xterm
+        ports:
+            - 143:143
+        volumes:
+            - /tmp/docker/coco-imap-t/home:/home

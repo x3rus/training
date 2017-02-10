@@ -1180,8 +1180,8 @@ Telle que mentionné je vous invite **FORTEMENT** à utiliser **docker-compose**
 Nous avions déjà vu la configuration d'un __docker-compose__ lors de la présentation de conteneur pour le relais de courriel , si vous avez besoin de vous rafraichir la mémoire je vous invite à voir la documentation. Je vais me concentrer sur les nouveautés :
 
 * **environment** (**TIMEZONE=America/Montreal**) : contrairement à la dernière fois je définie le __timezone__ à l'initialisation du conteneur , me permettant de déplacé mon image dans le MONDE :D. 
-* **links** (**imap-coco:dovecot-lmtp**) : Nous 
-TODO à compléter
+* **links** (**imap-coco:dovecot-lmtp**) : Nous réalisons le lien entre le conteneur **smtp** et le conteneur **imap** si vous vous rappeler dans la configuration postfix la définition du lien **lmtp** fut réaliser en donnant le nom __dovecot-lmtp__. Avec l'instruction **link** nous indiquons que le service **imap-coco** est associé au nom __dovecot-lmtp__. Nous le verrons à l'utilisation mais le conteneur aura une entré dans le fichier **/etc/hosts** associant le conteneur __coco-imap-t*__ avec ce nom :D. La magie de docker, ceci permet de gérer le problème d'IP dynamique.
+* **ports** : Définition des ports qui seront accessible depuis l'externe, comme vous pouvez le constater le port 24 (__lmtp__) n'est pas mentionné, car ce n'est pas un port publique mais inter docker. Entre les conteneur il n'y aura pas de problème de communication peut importe le port.
 
 
 ## <a name="visualisation_volumes" /> Visualisation du résultat du volumes
@@ -1296,6 +1296,252 @@ Donc voici le résultat :
             - '25:25'
                             -
 On réinitialise les conteneurs.
+
+        $ docker-compose up
+        Creating coco-imap-t
+        Creating coco-smtp-t
+        Attaching to coco-imap-t, coco-smtp-t
+
+        $ docker ps
+        CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                  PORTS                          NAMES
+        8dde07090918        srvsmtp             "/root/run.sh"      1 seconds ago       Up Less than a second   0.0.0.0:25->25/tcp             coco-smtp-t
+        f8f28a4c2dae        srvimap             "/root/run.sh"      2 seconds ago       Up Less than a second   24/tcp, 0.0.0.0:143->143/tcp   coco-imap-t
+
+Voilà tout est bon maintenant :D
+
+## <a name="teste_contener" /> Teste de la configuration
+
+Bon on y croit :P à font on se dit que ça va fonctionner du premier coup :P , l'espoir fait vivre que l'on dit :D.
+
+        $ docker inspect coco-smtp-t | grep IPA
+                "SecondaryIPAddresses": null,
+                "IPAddress": "",
+                "IPAMConfig": null,
+                       "IPAddress": "172.21.0.3",
+
+Envoie du courriel au seul utilisateur existant donc __root__ :
+
+        $ telnet 172.21.0.3 25
+        Trying 172.21.0.3...
+        Connected to 172.21.0.3.
+        Escape character is '^]'.
+        220 mail.coco.com ESMTP Postfix
+        ehlo toto
+        250-mail.coco.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+        mail from:toto@ejhfk.com
+        250 2.1.0 Ok
+        rcpt to: root@coco.com
+        250 2.1.5 Ok
+        data
+        354 End data with <CR><LF>.<CR><LF>
+        un courriel
+        .
+        250 2.0.0 Ok: queued as 1A9048F41
+        quit
+        221 2.0.0 Bye
+        Connection closed by foreign host.
+
+Pour le moment c'est bon , regardons les logs de postfix :
+
+        $ docker exec coco-smtp-t tail -20 /var/log/mail.log
+        Feb 10 21:52:28 mail postfix/smtpd[788]: connect from unknown[172.21.0.1]
+        Feb 10 21:52:53 mail postfix/smtpd[788]: 1A9048F41: client=unknown[172.21.0.1]
+        Feb 10 21:52:57 mail postfix/cleanup[930]: 1A9048F41: message-id=<>
+        Feb 10 21:52:57 mail postfix/qmgr[127]: 1A9048F41: from=<toto@ejhfk.com>, size=173, nrcpt=1 (queue active)
+        Feb 10 21:52:57 mail postfix/lmtp[948]: 1A9048F41: to=<root@coco.com>, relay=dovecot-lmtp[172.21.0.2]:24, delay=12, delays=12/0.01/0.02/0.05, dsn=5.1.1, status=bounced (host dovecot-lmtp[172.21.0.2] said: 550 5.1.1 <root@coco.com> User doesn't exist: root@coco.com (in reply to RCPT TO command))
+        Feb 10 21:52:57 mail postfix/cleanup[930]: 4342C92C4: message-id=<20170210215257.4342C92C4@mail.coco.com>
+        Feb 10 21:52:57 mail postfix/bounce[949]: 1A9048F41: sender non-delivery notification: 4342C92C4
+        Feb 10 21:52:57 mail postfix/qmgr[127]: 4342C92C4: from=<>, size=2050, nrcpt=1 (queue active)
+        Feb 10 21:52:57 mail postfix/qmgr[127]: 1A9048F41: removed
+        Feb 10 21:52:58 mail postfix/smtpd[788]: disconnect from unknown[172.21.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 commands=5
+        Feb 10 21:53:17 mail postfix/smtp[950]: 4342C92C4: to=<toto@ejhfk.com>, relay=none, delay=20, delays=0/0.01/20/0, dsn=4.4.3, status=deferred (Host or domain name not found. Name service error for name=ejhfk.com type=MX: Host not found, try again)
+
+Bon ça n'a pas tous à fait fonctionné :D , mais on va se consoler un peu pour commencer , qu'est-ce qui marche et marche pas :
+
+* Fonctionne :
+    * Le système d'acceptation de courriel fonctionne !! Le courriel fut accepté pour le domaine __coco.com__ pour un utilisateur existant !
+    * Le système postfix à communiquer avec l'IP **dovecot-lmtp[172.21.0.2]** pour faire le transfère du courriel !
+    * Le système **lmtp** à même répondu que l'adresse courriel n'était PAS valide ... 
+* Fonctionne pas :
+    * La livraison des courriels par __dovecot__
+    * La validation de la liste des utilisateurs !
+
+Donc si on prend un pas de recule le constat est assez positif :D , nous avons 2 conteneurs qui se parlent sans problème :D (**Think positif**)
+
+## <a name="analyse_prob_lmtp" /> Analyse du problème lmtp
+
+Nous devons à présent voir pourquoi __dovecot__ n'a pas pris le courriel , bon toujours dans un soucis de transparence ça fait des années que j'ai pas utilisé __lmtp__ donc c'est de ma faute :D . Chanceux pareil :D.
+
+Voyons les logs :
+
+        $ docker exec coco-imap-t tail -20 /var/log/mail.log
+        Feb 10 21:49:28 mail dovecot: master: Dovecot v2.2.22 (fe789d2) starting up for imap, lmtp
+        Feb 10 21:49:28 mail dovecot: ssl-params: Generating SSL parameters
+        Feb 10 21:49:31 mail dovecot: ssl-params: SSL parameters regeneration completed
+        Feb 10 21:52:57 mail dovecot: lmtp(851): Connect from 172.21.0.3
+        Feb 10 21:52:57 mail dovecot: lmtp(851): Disconnect from 172.21.0.3: Successful quit
+
+__Woww__ :D , magnifique , très verbeux :D.
+
+Donc là j'ai __googlé__ :P car google sait tous :D. (http://www.dovecot.org/list/dovecot/2016-February/103298.html)[http://www.dovecot.org/list/dovecot/2016-February/103298.html] . 
+
+        The solution was
+        auth_username_format = %Ln
+
+        in /etc/dovecot/conf.d/10-auth.conf
+
+        I saw it on another thread. Thanks Pascal
+
+La validation réalisé par dovecot prend le nom de domaine pour réaliser la validation , ceci est parfait car normalement on utilise ce système pour gérer plusieurs domaine donc ceci est convenable. Dans notre cas c'est un peu particulier comme nous ne réalisons pas une configuration de masse mais pour s'amuser ... 
+N'est  pas que l'on s'amuse bien :D !!
+
+Je passe donc en mode exploration de la solution ... 
+Je vais copier le fichier, le modifier et le repousser dans le conteneur , par la suite , je vais allé dans le conteneur pour redémarrer le service .
+
+        $ docker cp coco-imap-t:/etc/dovecot/conf.d/10-auth.conf /tmp/
+        $ vim 10-auth.conf
+
+        Je change :
+
+        auth_username_format = %Lu
+        pour 
+        auth_username_format = %Ln
+
+J'en ai profiter aussi pour changer l'authentification en mode __plain text__ (__disable\_plaintext\_auth = yes__).
+
+Je repousse la configuration :
+
+         $ docker cp 10-auth.conf coco-imap-t:/etc/dovecot/conf.d/10-auth.conf
+
+Je redémarre le service dovecot :
+
+         $ docker exec -it coco-imap-t /etc/init.d/dovecot restart
+
+On peut refaire le test :D 
+
+* logs smtp :
+
+       Feb 10 22:16:27 mail postfix/qmgr[125]: 65A3A12CA1: from=<toto@chekf.com>, size=188, nrcpt=1 (queue active)
+       Feb 10 22:16:28 mail postfix/lmtp[547]: 65A3A12CA1: to=<root@coco.com>, relay=dovecot-lmtp[172.21.0.3]:24, delay=11, delays=11/0.01/0.01/0.05, dsn=4.3.0, status=deferred (host dovecot-lmtp[172.21.0.3] said: 451 4.3.0 <root@coco.com> Invalid user settings. Refer to server log for more information. (in reply to RCPT TO command))
+
+* logs __imap__ :
+
+        Feb 10 22:10:02 mail dovecot: master: Dovecot v2.2.22 (fe789d2) starting up for imap, lmtp
+        Feb 10 22:16:28 mail dovecot: lmtp(401): Connect from 172.21.0.2
+        Feb 10 22:16:28 mail dovecot: lmtp(root@coco.com): Error: Invalid settings in userdb: userdb returned 0 as uid
+        Feb 10 22:16:28 mail dovecot: lmtp(401): Disconnect from 172.21.0.2: Successful quit
+
+
+Création d'un utilisateur dans le conteneur __imap__ pour faire un teste autre qu'avec l'utilisateur __root__ qui  cause problème
+
+        root@mail:/etc/dovecot/conf.d# adduser toto
+        Adding user `toto' ...
+        Adding new group `toto' (1000) ...
+        Adding new user `toto' (1000) with group `toto' ...
+        Creating home directory `/home/toto' ...
+        Copying files from `/etc/skel' ...
+        Enter new UNIX password:
+        Retype new UNIX password:
+        passwd: password updated successfully
+        Changing the user information for toto
+        Enter the new value, or press ENTER for the default
+        Full Name []:
+        Room Number []:
+        Work Phone []:
+        Home Phone []:
+        Other []:
+        Is the information correct? [Y/n] y
+
+
+Crotte ça marche pas plus :P
+
+        $ telnet 172.21.0.2 25
+        Trying 172.21.0.2...
+        Connected to 172.21.0.2.
+        Escape character is '^]'.
+        220 mail.coco.com ESMTP Postfix
+        ehlo toto
+        250-mail.coco.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+        mail from:toto@jrjfe.com
+        250 2.1.0 Ok
+        rcpt to:toto@coco.com
+        550 5.1.1 <toto@coco.com>: Recipient address rejected: User unknown in local recipient table
+
+Bon pour le moment je veux valider l'interconnexion de mes conteneurs donc je vais désactivé la configuration de validation des adresses sur le serveur postfix. 
+
+J'utilise la commande **postconf** pour faire un changement rapide .. validation 
+
+        root@mail:/# postconf | grep local_recipient_maps 
+        local_recipient_maps = proxy:unix:passwd.byname $alias_maps
+        root@mail:/# postconf local_recipient_maps=
+        root@mail:/# postconf | grep local_recipient_maps
+        local_recipient_maps =
+
+**magie** ça passe :P
+
+        $ telnet 172.21.0.2 25
+        Trying 172.21.0.2...
+        Connected to 172.21.0.2.
+        Escape character is '^]'.
+        220 mail.coco.com ESMTP Postfix
+        ehlo toto
+        250-mail.coco.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+        mail from: toto@jerkjf.com
+        250 2.1.0 Ok
+        rcpt to: toto@coco.com
+        250 2.1.5 Ok
+        data
+        354 End data with <CR><LF>.<CR><LF>
+        un test sans filtrage courriel     
+        .
+        250 2.0.0 Ok: queued as DE2C615FB1
+        quit
+        221 2.0.0 Bye
+        Connection closed by foreign host.
+
+Et maintenant dans les logs de dovecot 
+
+        Feb 10 22:24:42 mail dovecot: lmtp(2414): Disconnect from 172.21.0.2: Successful quit
+        Feb 10 22:27:23 mail dovecot: lmtp(3060): Connect from 172.21.0.2
+        Feb 10 22:27:23 mail dovecot: lmtp(toto): EqsFNks+nlj0CwAABKaThQ: msgid=unspecified: saved mail to INBOX
+        Feb 10 22:27:23 mail dovecot: lmtp(3060): Disconnect from 172.21.0.2: Successful quit
+
+Validation du courriel sur le docker host :
+
+        $ ls -R  /tmp/docker/coco-imap-t/home/toto/
+        /tmp/docker/coco-imap-t/home/toto/:
+        Maildir
+
+        /tmp/docker/coco-imap-t/home/toto/Maildir:
+        cur  dovecot.index.cache  dovecot.index.log  dovecot-uidlist  dovecot-uidvalidity  dovecot-uidvalidity.589e3e4b  new  tmp
+
+        /tmp/docker/coco-imap-t/home/toto/Maildir/cur:
+
+        /tmp/docker/coco-imap-t/home/toto/Maildir/new:
+        '1486765643.M950101P3060.mail.coco.com,S=409,W=419'
+
+        /tmp/docker/coco-imap-t/home/toto/Maildir/tmp:
 
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
