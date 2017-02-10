@@ -1146,7 +1146,156 @@ Donc nous sommes au point ou nous avons 2 conteneurs qui ont des services résea
 
 Telle que mentionné je vous invite **FORTEMENT** à utiliser **docker-compose** , ça aide énormément !! Donc nous allons l'utiliser ici :D.
 
+        version: '2'
+        services:
+            smtp-coco:
+                image: srvsmtp
+                restart: unless-stopped
+                container_name : 'coco-smtp-t'
+                hostname: mail.coco.com
+                environment:
+                    - SMTP_HOSTNAME=mail.coco.com
+                    - ACCEPT_DOMAIN=coco.com
+                    - TIMEZONE=America/Montreal
+                    - TERM=xterm
+                links:
+                    - imap-coco:dovecot-lmtp
+                ports:
+                    - 25:25
+                volumes:
+                    - /tmp/docker/coco-smtp-t/var_spool/mails:/var/spool/postfix
+            imap-coco :
+                image: srvimap
+                container_name : 'coco-imap-t'
+                hostname: mail.coco.com
+                environment:
+                    - TIMEZONE=America/Montreal
+                    - TERM=xterm
+                ports:
+                    - 143:143
+                volumes:
+                    - /tmp/docker/coco-imap-t//home:/home
 
+
+Nous avions déjà vu la configuration d'un __docker-compose__ lors de la présentation de conteneur pour le relais de courriel , si vous avez besoin de vous rafraichir la mémoire je vous invite à voir la documentation. Je vais me concentrer sur les nouveautés :
+
+* **environment** (**TIMEZONE=America/Montreal**) : contrairement à la dernière fois je définie le __timezone__ à l'initialisation du conteneur , me permettant de déplacé mon image dans le MONDE :D. 
+* **links** (**imap-coco:dovecot-lmtp**) : Nous 
+TODO à compléter
+
+
+## <a name="visualisation_volumes" /> Visualisation du résultat du volumes
+
+Prenons quelques minutes avant de valider nos conteneur pour voir le résultat de la définition du volumes , suite à l'initialisation du conteneur ce dernier à associé le répertoire :
+
+* **/tmp/docker/coco-smtp-t/var_spool/mails** sur le docker __host__ dans le conteneur sous le répertoire **/var/spool/postfix**
+* **/tmp/docker/coco-imap-t/var_spool/home** sur le docker __host__ dans le conteneur sous le répertoire **/home**
+
+Si nous réalisons visualisons uniquement les répertoire voici le résultat :
+
+        /tmp/docker/
+        /tmp/docker/coco-smtp-t
+        /tmp/docker/coco-smtp-t/var_spool
+        /tmp/docker/coco-smtp-t/var_spool/mails
+        /tmp/docker/coco-smtp-t/var_spool/mails/trace
+        /tmp/docker/coco-smtp-t/var_spool/mails/saved
+        /tmp/docker/coco-smtp-t/var_spool/mails/pid
+        /tmp/docker/coco-smtp-t/var_spool/mails/public
+        /tmp/docker/coco-smtp-t/var_spool/mails/maildrop
+        /tmp/docker/coco-smtp-t/var_spool/mails/private
+        /tmp/docker/coco-smtp-t/var_spool/mails/incoming
+        /tmp/docker/coco-smtp-t/var_spool/mails/hold
+        /tmp/docker/coco-smtp-t/var_spool/mails/flush
+        /tmp/docker/coco-smtp-t/var_spool/mails/deferred
+        /tmp/docker/coco-smtp-t/var_spool/mails/defer
+        /tmp/docker/coco-smtp-t/var_spool/mails/corrupt
+        /tmp/docker/coco-smtp-t/var_spool/mails/bounce
+        /tmp/docker/coco-smtp-t/var_spool/mails/active
+        /tmp/docker/coco-smtp-t/var_spool/mails/lib
+        /tmp/docker/coco-smtp-t/var_spool/mails/lib/x86_64-linux-gnu
+        /tmp/docker/coco-smtp-t/var_spool/mails/usr
+        /tmp/docker/coco-smtp-t/var_spool/mails/usr/lib
+        /tmp/docker/coco-smtp-t/var_spool/mails/usr/lib/zoneinfo
+        /tmp/docker/coco-smtp-t/var_spool/mails/dev
+        /tmp/docker/coco-smtp-t/var_spool/mails/etc
+        /tmp/docker/coco-smtp-t/var_spool/mails/etc/ssl
+        /tmp/docker/coco-smtp-t/var_spool/mails/etc/ssl/certs
+        /tmp/docker/coco-imap-t
+        /tmp/docker/coco-imap-t/home
+
+
+## <a name="visualisation_port_redirect" /> Redirection de port
+
+J'aurais pas pris le temps, mais j'ai eu un comportement étrange et comme souvent les petits problèmes étrange sont les plus long à diagnostiquer. Je ne sais pas si lors de la présentation le problème sera aussi présent. 
+
+J'ai initialisé les conteneurs avec l'instruction **docker-compose** :
+
+        $ docker-compose up
+        Creating coco-imap-t
+        Creating coco-smtp-t
+        Attaching to coco-imap-t, coco-smtp-t
+        coco-imap-t  | /usr/lib/python2.7/dist-packages/supervisor/options.py:297: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+        coco-imap-t  |   'Supervisord is running as root and it is searching '
+        coco-imap-t  | 2017-02-10 13:37:00,582 CRIT Supervisor running as root (no user in config file)
+
+Pas de problème mais quand je liste les ports je devrais en avoir 2 conformément au __docker-compose__ :
+
+        $ ss -lntp
+        State      Recv-Q Send-Q                                  Local Address:Port                                                 Peer Address:Port
+        LISTEN     0      128                                                :::143                                                            :::*
+        LISTEN     0      128                                                :::32771                                                          :::*
+
+* 143 : OK pas problème c'est bon.
+* 32771 : heu .. __what__ !!
+
+Réalisation d'un **docker ps** :
+
+        $ docker ps
+        CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS                             NAMES
+        d81f664c8613        srvsmtp             "/root/run.sh"      49 seconds ago      Up 48 seconds       25/tcp, 0.0.0.0:32771->1525/tcp   coco-smtp-t
+        fc3f3a80fffb        srvimap             "/root/run.sh"      50 seconds ago      Up 49 seconds       24/tcp, 0.0.0.0:143->143/tcp      coco-imap-t
+
+J'ai changé la définition du __docker-compose__ pour n'avoir que le port 25 d'associer :
+
+                ports:
+                    - 25
+
+Suppression des conteneurs et ré initialisation :
+
+        coco-imap-t  | 2017-02-10 13:30:27,901 INFO success: dovecot entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+        coco-smtp-t  | 2017-02-10 13:30:29,662 INFO success: postfix entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+        ^[^[[A^CGracefully stopping... (press Ctrl+C again to force)
+        Stopping coco-smtp-t ... done
+        Stopping coco-imap-t ... done
+        $ docker-compose rm
+        Going to remove coco-smtp-t, coco-imap-t
+        Are you sure? [yN] y
+        Removing coco-smtp-t ... done
+        Removing coco-imap-t ... done
+
+Redémarrage des conteneurs :
+
+        $ docker-compose up
+        Creating coco-imap-t
+        Creating coco-smtp-t
+
+Résultat encore très étonnant : 
+
+        $ docker ps
+        CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS                          NAMES
+        701d9449fb94        srvsmtp             "/root/run.sh"      3 seconds ago       Up 2 seconds        0.0.0.0:32772->25/tcp          coco-smtp-t
+        2761155e3d08        srvimap             "/root/run.sh"      4 seconds ago       Up 3 seconds        24/tcp, 0.0.0.0:143->143/tcp   coco-imap-t
+
+Après recherche je suis tombé sur ce problème signalé sur __github__ : https://github.com/docker/compose/issues/1906
+
+Résultat simplement mettre des " autour du port ... Je fait mention du problème, car c'est le genre de détail qui peut prendre une demi journée a résoudre , voir plus quand on est pas confortable et que l'on doute de ça configuration !
+
+Donc voici le résultat :
+
+        ports:
+            - '25:25'
+                            -
+On réinitialise les conteneurs.
 
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
