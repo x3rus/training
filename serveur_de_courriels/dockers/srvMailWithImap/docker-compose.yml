@@ -16,15 +16,18 @@ services:
             - '25:25'
         volumes:
             - /tmp/docker/coco-smtp-t/var_spool/mails:/var/spool/postfix
+            - /tmp/docker/coco-t/etc/mails.lst:/etc/postfix/mails-coco.com.lst
     imap-coco :
         image: srvimap
         container_name : 'coco-imap-t'
         hostname: mail.coco.com
         environment:
             - ACCEPT_DOMAIN=coco.com
+            - LST_USER=robert bob peter benny lee
             - TIMEZONE=America/Montreal
             - TERM=xterm
         ports:
             - 143:143
         volumes:
             - /tmp/docker/coco-imap-t/home:/home
+            - /tmp/docker/coco-t/etc/:/etc/dovecot/mails.lst

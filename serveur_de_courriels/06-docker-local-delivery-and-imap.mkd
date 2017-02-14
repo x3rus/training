@@ -1629,7 +1629,7 @@ Nous allons donc modifier le script de démarrage pour qu'il crée les utilisate
         # Variables
         export LST_USERS=${LST_USERS:"NONE"}
 
-        export LST_MAILS=${LST_MAILS:"/etc/dovecot/mails-$ACCEPT_DOMAIN.lst"}
+        export LST_MAILS=${LST_MAILS:"/etc/dovecot/mails.lst"}
 
         # Création des utilisateurs 
         if [ "$LST_USERS" == "NONE" ] ; then
@@ -1639,12 +1639,13 @@ Nous allons donc modifier le script de démarrage pour qu'il crée les utilisate
 
             # Creation des utilisateur 
             for user in $LST_USER ; do
-                adduser $user
-                # set password motpasse 
-                echo "${user}:motpasse" | chpasswd 
-
-                # Création de la liste des adresses courriels valides 
-                echo "$user@$ACCEPT_DOMAIN OK" >> $LST_MAILS
+                    useradd $user
+                    mkdir /home/$user
+                    chown $user /home/$user
+                    # set password motpasse 
+                    echo "${user}:motpasse" | chpasswd
+                    # Création de la liste des adresses courriels valides 
+                    echo "$user@$ACCEPT_DOMAIN OK" >> $LST_MAILS
             done
 
 
@@ -1655,10 +1656,218 @@ Nous allons donc modifier le script de démarrage pour qu'il crée les utilisate
 
 On reconstruit l'image !!
 
-ICI ICI ICI
-    changement du docker-compose 
-ICI ICI ICI
 
+## <a name="correction_dockercompose" /> Changement du docker-compose
+
+Suite à l'ajout de la variable pour les utilisateurs et l'utilisation du nom de domaine nous allons modifier le fichier __docker-compose.yaml__ afin d'avoir une définition convenable lors de l'initialisation du conteneur .
+
+        version: '2'
+        services:
+            smtp-coco:
+                image: srvsmtp
+                restart: unless-stopped
+                container_name : 'coco-smtp-t'
+                hostname: mail.coco.com
+                environment:
+                    - SMTP_HOSTNAME=mail.coco.com
+                    - ACCEPT_DOMAIN=coco.com
+                    - TIMEZONE=America/Montreal
+                    - TERM=xterm
+                links:
+                    - imap-coco:dovecot-lmtp
+                ports:
+                    - '25:25'
+                volumes:
+                    - /tmp/docker/coco-smtp-t/var_spool/mails:/var/spool/postfix
+            imap-coco :
+                image: srvimap
+                container_name : 'coco-imap-t'
+                hostname: mail.coco.com
+                environment:
+                    - ACCEPT_DOMAIN=coco.com
+                    - LST_USER="robert bob peter benny lee"
+                    - TIMEZONE=America/Montreal
+                    - TERM=xterm
+                ports:
+                    - 143:143
+                volumes:
+                    - /tmp/docker/coco-imap-t/home:/home
+
+Ça semble bon :D on redémarre le tout :D.
+
+Je supprimer les anciens conteneur pour être certain :
+
+        $ docker-compose rm
+        Going to remove coco-imap-t
+        Are you sure? [yN] y
+        Removing coco-imap-t ... done
+
+Je supprime les volumes afin de ne pas avoir d'ancienne configuration causant un problème, qui sera plus difficile à identifier.
+
+        $ sudo rm -rf /tmp/docker/
+
+On redémarre :D
+
+        $ docker-compose up
+        Creating coco-imap-t
+        Creating coco-smtp-t
+        Attaching to coco-imap-t, coco-smtp-t
+        coco-imap-t  | /root/run.sh: line 24: $LST_MAILS: ambiguous redirect
+        coco-imap-t exited with code 1
+        coco-smtp-t  | /usr/lib/python2.7/dist-packages/supervisor/options.py:297: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+        coco-smtp-t  |   'Supervisord is running as root and it is searching '
+        coco-smtp-t  | 2017-02-14 13:19:21,041 CRIT Supervisor running as root (no user in config file)
+        coco-smtp-t  | 2017-02-14 13:19:21,041 WARN Included extra file "/etc/supervisor/conf.d/supervisor-all.conf" during parsing
+        coco-smtp-t  | 2017-02-14 13:19:21,050 INFO RPC interface 'supervisor' initialized
+        coco-smtp-t  | 2017-02-14 13:19:21,050 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+        coco-smtp-t  | 2017-02-14 13:19:21,051 INFO supervisord started with pid 1
+        coco-smtp-t  | 2017-02-14 13:19:22,054 INFO spawned: 'postfix' with pid 11
+        coco-smtp-t  | 2017-02-14 13:19:22,057 INFO spawned: 'rsyslogd' with pid 12
+        coco-smtp-t  | 2017-02-14 13:19:23,358 INFO success: rsyslogd entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+        coco-smtp-t  | 2017-02-14 13:19:25,360 INFO success: postfix entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+
+
+        $ docker ps
+        CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS                NAMES
+        0085f6c10929        srvsmtp             "/root/run.sh"      21 seconds ago      Up 19 seconds       0.0.0.0:25->25/tcp   coco-smtp-t
+
+Si nous lisons le résultat nous voyons que le conteneur **coco-imap-t** n'a pas pu être initialisé car le script **run.sh** à eu un problème , ceci est dû a un problème de redirection nous allons analyser.
+
+Alors là œil de lynx pour trouver le problème :P ... 
+
+Ligne original du fichier **imap/run.sh**
+
+        export LST_MAILS=${LST_MAILS:"/etc/dovecot/mails.lst"}
+
+Ligne convenable  :
+
+        export LST_MAILS=${LST_MAILS:-"/etc/dovecot/mails.lst"}
+
+Oublié pas de reconstruire l'image !!
+
+        $ docker build -t srvimap .
+
+On recommence :
+
+        $ docker-compose up                                                                                                                                  
+        Recreating coco-imap-t
+        Recreating coco-smtp-t
+        Attaching to coco-imap-t, coco-smtp-t
+        coco-imap-t  | mkdir: cannot create directory '/home/robert': File exists
+        coco-smtp-t  | /usr/lib/python2.7/dist-packages/supervisor/options.py:297: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+        coco-smtp-t  |   'Supervisord is running as root and it is searching '
+        coco-imap-t exited with code 1
+        coco-smtp-t  | 2017-02-14 13:24:02,295 CRIT Supervisor running as root (no user in config file)
+        coco-smtp-t  | 2017-02-14 13:24:02,295 WARN Included extra file "/etc/supervisor/conf.d/supervisor-all.conf" during parsing
+        coco-smtp-t  | 2017-02-14 13:24:02,303 INFO RPC interface 'supervisor' initialized
+        coco-smtp-t  | 2017-02-14 13:24:02,303 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+        coco-smtp-t  | 2017-02-14 13:24:02,303 INFO supervisord started with pid 1
+        coco-smtp-t  | 2017-02-14 13:24:03,307 INFO spawned: 'postfix' with pid 11
+        coco-smtp-t  | 2017-02-14 13:24:03,309 INFO spawned: 'rsyslogd' with pid 12
+        coco-smtp-t  | 2017-02-14 13:24:04,330 INFO success: rsyslogd entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+        coco-smtp-t  | 2017-02-14 13:24:06,835 INFO success: postfix entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+
+Bon faut encore modifier le script **run.sh** , vous voyez je suis pas meilleur que vous , j'avance aussi à petit pas tranquillement , parfois une bière à la main avec le sourire et du plaisir de voir le progrès :D.
+
+Donc voici la nouvelle version de la boucle **for** pour la création des utilisateurs pour le conteneur __imap__:
+
+        # Creation des utilisateur 
+        for user in $LST_USER ; do
+            if ! getent passwd $user ; then
+                useradd $user
+                mkdir /home/$user
+                chown $user /home/$user
+                # set password motpasse 
+                echo "${user}:motpasse" | chpasswd
+                # Création de la liste des adresses courriels valides 
+                echo "$user@$ACCEPT_DOMAIN OK" >> $LST_MAILS
+            fi
+        done
+
+Bon ça va finir par fonctionner ou pas :P !! Courage le bon coté c'est que ça fini toujours par fonctionner on sait juste PAS quand :D et parfois où :P.
+
+On reconstruit l'image ,  on détruit les conteneurs et on recommence :
+
+        $ docker build -t srvimap .
+        $ cd ..
+        $ docker-compose rm 
+        $ sudo rm -rf /tmp/docker
+
+**OK let's GO !!** 
+
+        $ docker-compose up
+        Creating coco-imap-t
+        Creating coco-smtp-t
+        Attaching to coco-imap-t, coco-smtp-t
+        coco-imap-t  | /usr/lib/python2.7/dist-packages/supervisor/options.py:297: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+        coco-imap-t  |   'Supervisord is running as root and it is searching '
+        coco-imap-t  | 2017-02-14 13:35:39,247 CRIT Supervisor running as root (no user in config file)
+        coco-imap-t  | 2017-02-14 13:35:39,247 WARN Included extra file "/etc/supervisor/conf.d/supervisor-all.conf" during parsing
+        coco-imap-t  | 2017-02-14 13:35:39,256 INFO RPC interface 'supervisor' initialized
+        coco-imap-t  | 2017-02-14 13:35:39,256 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+        coco-imap-t  | 2017-02-14 13:35:39,259 INFO supervisord started with pid 1
+        coco-smtp-t  | /usr/lib/python2.7/dist-packages/supervisor/options.py:297: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+        coco-smtp-t  |   'Supervisord is running as root and it is searching '
+        coco-smtp-t  | 2017-02-14 13:35:39,385 CRIT Supervisor running as root (no user in config file)
+        coco-smtp-t  | 2017-02-14 13:35:39,385 WARN Included extra file "/etc/supervisor/conf.d/supervisor-all.conf" during parsing
+        coco-smtp-t  | 2017-02-14 13:35:39,394 INFO RPC interface 'supervisor' initialized
+        coco-smtp-t  | 2017-02-14 13:35:39,394 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+
+
+        $ docker ps
+        CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS                          NAMES
+        32a621a290b1        srvsmtp             "/root/run.sh"      47 seconds ago      Up 45 seconds       0.0.0.0:25->25/tcp             coco-smtp-t
+        b06f68de4806        srvimap             "/root/run.sh"      47 seconds ago      Up 47 seconds       24/tcp, 0.0.0.0:143->143/tcp   coco-imap-t
+
+
+**Yeahhh !!! Du premier coup !**
+
+## <a name="correction_status" /> Validation de la configuration
+
+* Liste des utilisateurs créer dans le conteneur **dovecot** :
+
+        $ docker exec -it coco-imap-t tail /etc/passwd
+        systemd-bus-proxy:x:103:105:systemd Bus Proxy,,,:/run/systemd:/bin/false
+        _apt:x:104:65534::/nonexistent:/bin/false
+        syslog:x:105:106::/home/syslog:/bin/false
+        dovecot:x:106:108:Dovecot mail server,,,:/usr/lib/dovecot:/bin/false
+        dovenull:x:107:109:Dovecot login user,,,:/nonexistent:/bin/false
+        robert:x:1000:1000::/home/robert:
+        bob:x:1001:1001::/home/bob:
+        peter:x:1002:1002::/home/peter:
+        benny:x:1003:1003::/home/benny:
+        lee:x:1004:1004::/home/lee:
+* Liste des adresses de courriels dans le conteneur **dovecot** :
+
+        $ docker exec -it coco-imap-t cat /etc/dovecot/mails.lst
+        robert@coco.com OK
+        bob@coco.com OK
+        peter@coco.com OK
+        benny@coco.com OK
+        lee@coco.com OK
+
+* Liste des adresses courriels sur le serveur **smtp** :
+
+        $ docker exec -it coco-smtp-t cat /etc/postfix/mails-coco.com.lst
+        cat: /etc/postfix/mails-coco.com.lst: No such file or directory
+
+HA __ouin__ ... C'est pas encore ça !! Notre problème est que la liste des utilisateurs est définie dans le conteneur __dovecot__ mais dois aussi être présent sur le conteneur __smtp__. Je le répète la solution est d'avoir une source externe __BD__ ou autre car ma solution ne "__scale__" pas , mais ça reste un bonne exemple.
+
+## <a name="correction_share_file" /> Partage de la liste des adresses courriels 
+
+Nous allons modifier la configuration afin de permettre le partage d'un fichier entre les 2 conteneurs ! 
+On détruit tous et on recommence :
+
+        $ sudo rm -rf /tmp/docker/
+        docker-compose rm                                                                                                                                  
+        Going to remove coco-smtp-t, coco-imap-t
+        Are you sure? [yN] y
+        Removing coco-smtp-t ... done
+        Removing coco-imap-t ... done
+
+Je vais modifier le fichier **docker-compose.yml**
+
+ICI ICI ICI 
 
 # note pour apres :
 
