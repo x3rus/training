@@ -1865,9 +1865,145 @@ On détruit tous et on recommence :
         Removing coco-smtp-t ... done
         Removing coco-imap-t ... done
 
-Je vais modifier le fichier **docker-compose.yml**
+Je vais modifier le fichier **docker-compose.yml** afin d'associer le fichier le fichier **/etc/dovecot/mails.lst** à l'extérieur du conteneur et le définir aussi dans le conteneur **smtp**.
 
-ICI ICI ICI 
+        version: '2'
+        services:
+            smtp-coco:
+                image: srvsmtp
+                restart: unless-stopped
+                container_name : 'coco-smtp-t'
+                hostname: mail.coco.com
+                environment:
+                    - SMTP_HOSTNAME=mail.coco.com
+                    - ACCEPT_DOMAIN=coco.com
+                    - TIMEZONE=America/Montreal
+                    - TERM=xterm
+                links:
+                    - imap-coco:dovecot-lmtp
+                ports:
+                    - '25:25'
+                volumes:
+                    - /tmp/docker/coco-smtp-t/var_spool/mails:/var/spool/postfix
+                    - /tmp/docker/coco-t/etc/mails.lst:/etc/postfix/mails-coco.com.lst
+            imap-coco :
+                image: srvimap
+                container_name : 'coco-imap-t'
+                hostname: mail.coco.com
+                environment:
+                    - ACCEPT_DOMAIN=coco.com
+                    - LST_USER=robert bob peter benny lee
+                    - TIMEZONE=America/Montreal
+                    - TERM=xterm
+                ports:
+                    - 143:143
+                volumes:
+                    - /tmp/docker/coco-imap-t/home:/home
+                    - /tmp/docker/coco-t/etc/mails.lst:/etc/dovecot/mails.lst
+
+Détail mais je préfère le nommé vous pouvez constater que les chemins de mes volumes contienne le nom de mes conteneurs , si j'ai un fichier qui doit être partagé je le met dans un répertoire distinct qui est commun. Ai-je raison ou tord honnêtement je le sais pas encore ;-), j'ai pris cette orientation pour avoir une structure l'avenir répondra à la question :D. 
+
+On redémarre le tous ! 
+
+        $ docker-compose up
+        Creating coco-imap-t
+        Creating coco-smtp-t
+        Attaching to coco-imap-t, coco-smtp-t
+        coco-imap-t  | /root/run.sh: line 25: /etc/dovecot/mails.lst: Is a directory
+        coco-imap-t exited with code 1
+        coco-smtp-t  | /usr/lib/python2.7/dist-packages/supervisor/options.py:297: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+
+**BOOM** encore une erreur , on en fini plus :P . Regardons l'erreur **/root/run.sh: line 25: /etc/dovecot/mails.lst: Is a directory** .
+
+Il mentionne que lors de l'exécution du script **run.sh** le fichier **/etc/dovecot/mails.lst** est un répertoire. Quand nous définissons des **volumes** dans le fichier **docker-compose** si le premier paramètre n'existe pas ce dernier va réaliser la création. Comme 99% du temps ceci est pour des associations de répertoire il crée un répertoire par défaut, malheureusement dans notre cas ce n'est pas le besoin :D.
+
+**Solution:** 
+
+Je refais un __clean up__ de la configuration :
+
+        $ docker-compose rm
+        Going to remove coco-smtp-t, coco-imap-t
+        Are you sure? [yN] y
+        Removing coco-smtp-t ... done
+        Removing coco-imap-t ... done
+        $ sudo rm -rf /tmp/docker
+
+On est de retour à une configuration vierge, je vais créer le répertoire manuellement et réalisé un **touch** pour définir un fichier vierge :
+
+        $ mkdir -p /tmp/docker/coco-t/etc/
+        $ sudo touch /tmp/docker/coco-t/etc/mails.lst
+
+C'est repartie :D .
+
+        $ docker-compose up 
+        Creating coco-imap-t
+        Creating coco-smtp-t
+        Attaching to coco-imap-t, coco-smtp-t
+        coco-imap-t  | /usr/lib/python2.7/dist-packages/supervisor/options.py:297: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+        coco-imap-t  |   'Supervisord is running as root and it is searching '
+
+**Yeahh** encore une fois du premier coup :P .
+
+**Validation** :
+
+        $ docker exec -it coco-imap-t cat /etc/dovecot/mails.lst
+        robert@coco.com OK
+        bob@coco.com OK
+        peter@coco.com OK
+        benny@coco.com OK
+        lee@coco.com OK
+
+        $ docker exec -it coco-smtp-t cat /etc/postfix/mails-coco.com.lst
+        robert@coco.com OK
+        bob@coco.com OK
+        peter@coco.com OK
+        benny@coco.com OK
+        lee@coco.com OK
+
+Donc nos 2 conteneurs on bien le même fichier avec les informations des utilisateurs :D.
+On fait un teste ?? **sortez pas tous de suite le champagne :P , on arrête pas d'avancer, mais on est pas arrivé :P** 
+
+        $ telnet 172.21.0.3 25
+        Trying 172.21.0.3...
+        Connected to 172.21.0.3.
+        Escape character is '^]'.
+         
+        [ ... PAS DE RETOUR ON EST COINCÉ ... ] 
+
+Regardons les logs du serveurs de courriel :
+
+        $ docker exec -it coco-smtp-t tail /var/log/mail.log
+        Feb 14 22:27:21 mail postfix[87]: Postfix is running with backwards-compatible default settings
+        Feb 14 22:27:21 mail postfix[87]: See http://www.postfix.org/COMPATIBILITY_README.html for details
+        Feb 14 22:27:21 mail postfix[87]: To disable backwards compatibility use "postconf compatibility_level=2" and "postfix reload"
+        Feb 14 22:27:21 mail postfix/master[178]: daemon started -- version 3.1.0, configuration /etc/postfix
+        Feb 14 22:30:32 mail postfix/smtpd[938]: fatal: open dictionary: expecting "type:name" form instead of "/etc/postfix/mails-coco.com.lst"
+        Feb 14 22:30:33 mail postfix/master[178]: warning: process /usr/lib/postfix/sbin/smtpd pid 938 exit status 1
+        Feb 14 22:30:33 mail postfix/master[178]: warning: /usr/lib/postfix/sbin/smtpd: bad command startup -- throttling
+
+Effectivement le fichier **/etc/postfix/mails-coco.com.lst** est bien présent mais on a pas exécuté la commande **postmap** dessus , résultat ça plante.
+
+Bien entendu nous pourrions l'ajouter à la fin du __run.sh__ du conteneur **smtp**, mais on ne sait pas vraiment si le conteneur **imap** sera initialisé en premier ou le serveur **smtp**. De plus s'il y a une modification, ce serait bien que le fichier se génère aussi. 
+
+
+# <a name="integration_conteneur" /> Intégration et cohabitation des conteneurs
+
+## <a name="integration_conteneur_postmap" /> Génération automatique du fichier de courriels (postmap)
+
+Bon je dois vous avouer, là je me fais vachement plaisir !! Ça fait super longtemps que je veux utiliser ce truc, mais j'avais jamais eu l'occasion :D .
+Ce qui suit n'est PAS propre à docker, vous pouvez l'utiliser sur des machines classique sans problème , après faut avoir l'occasion.
+
+Une option qui est possible pour que le fichier ce génère est d'avoir un __crontab__ qui s'exécutera toutes les minutes voir 5 minutes pour générer le fichier. Malheureusement n'ayant pas l'application **postmap** sur le conteneur **imap** je ne peux pas le générer à la fin du script **run.sh** du conteneur **imap**. 
+Mais ça me fait chier, d'avoir un __cron__ qui est exécuter pour RIEN toutes les minutes juste pour valider si peut-être éventuellement le fichier a changé, sachant que ce dernier risque de ne pas changer souvent !
+
+Bon comme j'ai toujours des petites merveille dans mon sac de produit open source :D, j'ai cette article : [http://linuxfr.org/news/exploiter-inotify-c-est-simple](http://linuxfr.org/news/exploiter-inotify-c-est-simple) , si vous regardez la date de parution : **24/11/14** j'ai attendu pour l'utiliser, mais aujourd'hui ENFIN je l'utilise !! Pour ça je vous dis merci :D.
+
+Bon ça fait quoi ça ?? En gros **incron** va intercepter les messages du __kernel__ (ça tombe bien les systèmes partage le même __kernel__ ) et portera une action SI et uniquement s'il y a modification du fichier :D.
+
+Bien entendu, je me suis pas lancé dans la modification du fichier __Dockerfile__ directement :P,  ICI ICI ICI 
+
+        root@mail:~# cat incron-postfix
+        /etc/postfix/mails-coco.com.lst IN_MODIFY postmap /etc/postfix/mails-coco.com.lst
 
 # note pour apres :
 

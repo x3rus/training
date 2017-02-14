@@ -30,4 +30,4 @@ services:
             - 143:143
         volumes:
             - /tmp/docker/coco-imap-t/home:/home
-            - /tmp/docker/coco-t/etc/:/etc/dovecot/mails.lst
+            - /tmp/docker/coco-t/etc/mails.lst:/etc/dovecot/mails.lst
