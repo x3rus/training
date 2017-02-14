@@ -1543,5 +1543,129 @@ Validation du courriel sur le docker host :
 
         /tmp/docker/coco-imap-t/home/toto/Maildir/tmp:
 
+L'interconnexion entre les conteneurs fonctionne mais ce n'est vraiment pas optimal nous avons du faire des ajustements de configuration "live" sur le système . Prenons un temps de recule et analysons le problème.
+
+# <a name="analyse_prob_interconnexion" /> Recule et analyse de la situation
+
+Analysons la situation :
+
+* **Validation adresses** : Postfix réalise la validation des adresses courriels lors de la réception du courriel pour le domaine ! Voici les options possibles 
+    * **désactivation** : Nous pourrions supprimer cette validation , pas vraiment agréable mais nous l'avons validé ça marche.
+    * **lister les adresses** : Nous pourrions aussi mettre en place un script qui crée une liste des adresses courriels.
+    * **configuration lmtp** : Pousser la réflexion pour avoir une validation avec **lmtp** pour avoir la validation avec le nom de domaine, le problème est que nous avons modifier la configuration pour que la validation de l'usager n'inclut pas l'adresse courriel.
+* **Gestion des utilisateurs** : Actuellement pour les besoins de la validation de l'interconnexion des conteneurs j'ai créé manuellement l'utilisateur dans le conteneur __imap__. J'ai déjà mentionné des méthodes possible de mise en place quand nous avons parlé de postfix , je vais en sortir proposer une.
+    * **Définition par variable** : Je vais opté pour la mise en place d'utilisateur dans dovecot via le système de variables lors de l'initialisation, cependant nous allons aussi permettre la création "rapide" d'utilisateur afin de répondre à une demande immédiate. Bien entendu nous utiliserons un script pour le faire plus simplement.
+
+En conclusion nous avons l'impression que l'on est loin de la solution, mais on a 2 points majeur bloquant, ce n'est pas si mal :D. On est loin de la catastrophe comme on pourrait le penser au début . Il est important de prendre le recule pour saisir l'ampleur de la situation.
+
+# <a name="correction_setup" /> Correction de la configuration postfix et dovecot
+
+C'est repartie , j'espère que le processus n'est pas trop long pour vous ... 
+
+## <a name="correction_setup_postfix" /> Correction de la configuration postfix 
+
+Nous allons modifier notre fichier de configuration postfix afin d'avoir un argument additionnel pour le fichier de validation des adresses courriels. Par défaut nous avons 
+
+        local_recipient_maps = proxy:unix:passwd.byname $alias_maps
+
+Nous allons mettre définir un fichier en plus , de type __hash__ car j'ai pas voulu me prendre la tête encore :P. Voici donc le nouveau fichier de configuration **srvMailWithImap/smtp/conf/postfix-main.j2** : 
+
+        smtpd_banner = $myhostname ESMTP $mail_name
+
+        alias_database = hash:/etc/aliases
+        alias_maps = hash:/etc/aliases
+
+        # Si vous le désirez nous pourrions avoir ce paramètre en option
+        home_mailbox = Maildir/
+
+        smtpd_relay_restrictions = permit_mynetworks  defer_unauth_destination
+        myhostname = $myorigin
+        myorigin = {{ SMTP_HOSTNAME }}
+
+        mydestination = {{ ACCEPT_DOMAIN }}
+        mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 {{ PERMIT_NETWORK }}
+        inet_interfaces = all
+        inet_protocols = ipv4
+
+        # Configuration pour l'envoie vers lmtp (aka dovecot)
+        mailbox_transport = lmtp:dovecot-lmtp:24
+
+        local_recipient_maps = proxy:unix:passwd.byname $alias_maps /etc/postfix/mails-{{ ACCEPT_DOMAIN }}.lst
+
+        {% if (EXT_RELAY_HOST != "DIRECT") %}relayhost = {{ EXT_RELAYHOST }} {% endif %}
+
+J'ai donc ajouter le fichier **/etc/postfix/mails-{{ ACCEPT_DOMAIN }}.lst** à la variable **local\_reciepient\_maps**
+
+On reconstruit l'image !!
+
+Parfait nous aurons une autre modification à réaliser par la suite, mais j'y reviendrais :D. Passons à la configuration de dovecot .
+
+## <a name="correction_setup_dovecot" /> Correction de la configuration dovecot
+
+Nous avions fait 2 modification :
+
+1. La validation du nom de l'utilisateur
+2. La désactivation de la restriction du passage en claire du mot de passe , ça tombe bien les 2 paramètres sont dans le fichier **10-auth**
+
+
+        $ cd srvMailWithImap/imap/conf
+        $ docker cp coco-imap-t:/etc/dovecot/conf.d/10-auth.conf .
+
+
+Le fichier __Dockerfile__ contient la ligne suivante :
+
+        # Add dovecot configuration
+        ADD conf/10-*.conf /etc/dovecot/conf.d/
+
+Donc il sera prit en considération lors de la reconstruction de l'image.
+
+Nous devons aussi mettre en place la configuration de la liste des usagers, bon je le répète, ces conteneurs sont pour des fin de présentation !! En d'autre mot non viable pour une utilisation de production. Car nous allons définir des mot de passe au utilisateur, qu'ils ne pourront pas changer autrement que de se connecter sur le conteneur. L'autre méthode serait de mettre une page web et un script en arrière , mais ce serait ridicule autant utiliser une base de donnée pour stocker les informations . Ça nous aurait aussi simplifié la vie pour postfix, mais bon trop tard j'ai trop écrit pour revenir en arrière :P.
+
+Nous allons donc modifier le script de démarrage pour qu'il crée les utilisateurs lors de l'initialisation du conteneur, voici donc le nouveau fichier **run.sh** :
+
+        #! /usr/bin/env bash
+        set -e # exit on error
+
+        # Variables
+        export LST_USERS=${LST_USERS:"NONE"}
+
+        export LST_MAILS=${LST_MAILS:"/etc/dovecot/mails-$ACCEPT_DOMAIN.lst"}
+
+        # Création des utilisateurs 
+        if [ "$LST_USERS" == "NONE" ] ; then
+            echo "You must define variable LST_USER to create at leat one user !!"
+                exit 2
+            fi   
+
+            # Creation des utilisateur 
+            for user in $LST_USER ; do
+                adduser $user
+                # set password motpasse 
+                echo "${user}:motpasse" | chpasswd 
+
+                # Création de la liste des adresses courriels valides 
+                echo "$user@$ACCEPT_DOMAIN OK" >> $LST_MAILS
+            done
+
+
+         # Launch
+         rm -f /var/run/dovecot/*.pid
+         exec /usr/bin/supervisord -n
+
+
+On reconstruit l'image !!
+
+ICI ICI ICI
+    changement du docker-compose 
+ICI ICI ICI
+
+
+# note pour apres :
+
+REF: http://linuxfr.org/news/exploiter-inotify-c-est-simple
+
+        apt-get install incron
+
+
 # les logs 
 http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log

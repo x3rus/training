@@ -21,6 +21,7 @@ services:
         container_name : 'coco-imap-t'
         hostname: mail.coco.com
         environment:
+            - ACCEPT_DOMAIN=coco.com
             - TIMEZONE=America/Montreal
             - TERM=xterm
         ports:
