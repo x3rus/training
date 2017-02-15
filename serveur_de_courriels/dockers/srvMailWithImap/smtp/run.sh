@@ -17,6 +17,8 @@ echo "/etc/postfix/mails-$ACCEPT_DOMAIN.lst IN_MODIFY postmap /etc/postfix/mails
 echo "root" >> /etc/incron.allow
 /usr/bin/incrontab /root/incron-postfix
 
+postmap /etc/postfix/mails-$ACCEPT_DOMAIN.lst
+
 # Launch
 rm -f /var/spool/postfix/pid/*.pid
 exec /usr/bin/supervisord -n

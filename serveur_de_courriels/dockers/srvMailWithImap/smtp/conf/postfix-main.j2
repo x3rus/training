@@ -18,7 +18,7 @@ inet_protocols = ipv4
 # Configuration pour l'envoie vers lmtp (aka dovecot)
 mailbox_transport = lmtp:dovecot-lmtp:24
 
-local_recipient_maps = proxy:unix:passwd.byname $alias_maps /etc/postfix/mails-{{ ACCEPT_DOMAIN }}.lst
+local_recipient_maps = proxy:unix:passwd.byname $alias_maps hash:/etc/postfix/mails-{{ ACCEPT_DOMAIN }}.lst
 
 {% if (EXT_RELAY_HOST != "DIRECT") %}relayhost = {{ EXT_RELAYHOST }} {% endif %}
 

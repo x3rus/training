@@ -26,6 +26,8 @@ services:
             - LST_USER=robert bob peter benny lee
             - TIMEZONE=America/Montreal
             - TERM=xterm
+#        depends_on:
+#            - smtp-coco
         ports:
             - 143:143
         volumes:

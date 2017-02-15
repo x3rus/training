@@ -1414,7 +1414,7 @@ Je vais copier le fichier, le modifier et le repousser dans le conteneur , par l
         pour 
         auth_username_format = %Ln
 
-J'en ai profiter aussi pour changer l'authentification en mode __plain text__ (__disable\_plaintext\_auth = yes__).
+J'en ai profiter aussi pour changer l'authentification en mode __plain text__ (__disable\_plaintext\_auth = no__).
 
 Je repousse la configuration :
 
@@ -2237,6 +2237,11 @@ Reconstruire l'image , et nettoyage
         Removing coco-imap-t ... done
         $ sudo rm -rf  /tmp/docker/coco-smtp-t/ /tmp/docker/coco-imap-t/
 
+Validation que le fichier pour volume est bien présent :
+
+        $ ls -l /tmp/docker/coco-t/etc/mails.lst
+        -rw-r--r-- 1 root root 0 Feb 15 16:47 /tmp/docker/coco-t/etc/mails.lst
+
 C'est repartie :
 
         $ docker-compose up
@@ -2264,7 +2269,235 @@ C'est repartie :
         coco-smtp-t  | 2017-02-15 13:17:39,851 INFO spawned: 'postfix' with pid 13
         coco-smtp-t  | 2017-02-15 13:17:39,854 INFO spawned: 'rsyslogd' with pid 14
 
-**YEahh**, bon est-ce que ça marche vraiment ?? Maintenant :P
+**YEahh**, bon est-ce que ça marche vraiment ?? Maintenant :P , listons les fichiers dans le répertoire **/etc/postfix/** du conteneur **smtp** :
+
+        $ docker exec -it coco-smtp-t ls -ltr /etc/postfix
+        total 88
+        drwxr-xr-x 2 root root     6 Apr 13  2016 sasl
+        -rwxr-xr-x 1 root root  9344 Apr 13  2016 postfix-script
+        -rw-r--r-- 1 root root 21233 Apr 13  2016 postfix-files
+        -rwxr-xr-x 1 root root 29446 Apr 13  2016 post-install
+        -rw-r--r-- 1 root root  6068 Jan 30 21:57 master.cf
+        -rw-r--r-- 1 root root   108 Jan 30 21:57 dynamicmaps.cf
+        -rw-r--r-- 1 root root    87 Feb 15 21:52 mails-coco.com.lst
+        -rw-r--r-- 1 root root   658 Feb 15 21:52 main.cf
+
+La je sens une pointe de découragement !! Il ne faut pas , voyez vraiment comme l'occasion de visualiser des problèmes avec des solutions quand vous aurez les même problème, vous ne vous rappellerez pas de la solution. Il faut être honnête, par contre vous vous direz , ha oui !! Thomas en avais parlé ... Puis vous consulterez ce document :D .
+
+Pourquoi ça marche ?? Regardons les premières lignes lors de l'exécution du **docker-compose** 
+
+        $ docker-compose up
+        Creating coco-imap-t
+        Creating coco-smtp-t
+        Attaching to coco-imap-t, coco-smtp-t
+
+Car le conteneur **coco-imap-t** qui génère le fichier est créer en premier !! Mon premier réflexe fut de définir la séquence dans le __docker-compose__ via l'option [depends-on](https://docs.docker.com/compose/compose-file/#depends-on)
+
+J'avais donc modifier la définition du service **coco-imap-t** dans le __docker-compose__ 
+
+            imap-coco :
+                image: srvimap
+                container_name : 'coco-imap-t'
+                hostname: mail.coco.com
+                environment:
+                    - ACCEPT_DOMAIN=coco.com
+                    - LST_USER=robert bob peter benny lee
+                    - TIMEZONE=America/Montreal
+                    - TERM=xterm
+                depends_on:
+                    - smtp-coco
+                ports:
+                    - 143:143
+                volumes:
+                    - /tmp/docker/coco-imap-t/home:/home
+                    - /tmp/docker/coco-t/etc/mails.lst:/etc/dovecot/mails.lst
+
+Le système [depends-on](https://docs.docker.com/compose/compose-file/#depends-on) permet de définir une séquence entre les conteneurs ! Quand j'ai voulu démarrer mon conteneur ... __isshh__ !!
+
+        $ docker-compose up
+        ERROR: Circular dependency between imap-coco and smtp-coco
+
+Le problème est que dans la définition du conteneur **smtp-coco** , j'ai aussi l'instruction **links** qui indique un lien entre les conteneurs et qui attends l'initialisation du premier conteneur pour démarrer le suivant . Pas de chance :P .
+
+Cependant ceci veut dire quoi ?? Que le conteneur **imap-coco** sera toujours initialisé en premier avant le conteneur **smtp** nous allons donc modifier le script **run.sh** afin de réaliser le **postmap** à la fin de son initialisation :D.
+
+C'est repartie !! 
+
+        $ docker-compose stop && docker-compose rm
+        Going to remove coco-smtp-t, coco-imap-t
+        Are you sure? [yN] y
+        Removing coco-smtp-t ... done
+        Removing coco-imap-t ... done
+
+        $ sudo rm -rf  /tmp/docker/coco-smtp-t/ /tmp/docker/coco-imap-t/
+
+        $ sudo rm /tmp/docker/coco-t/etc/mails.lst
+        $ sudo touch /tmp/docker/coco-t/etc/mails.lst
+
+Modification du script **smtp/run.sh**
+
+        [... OUTPUT COUPÉ ...]
+        # Incron 
+        echo "/etc/postfix/mails-$ACCEPT_DOMAIN.lst IN_MODIFY postmap /etc/postfix/mails-$ACCEPT_DOMAIN.lst" > /root/incron-postfix
+        echo "root" >> /etc/incron.allow
+        /usr/bin/incrontab /root/incron-postfix
+
+        postmap /etc/postfix/mails-$ACCEPT_DOMAIN.lst
+
+        # Launch
+
+        [... OUTPUT COUPÉ ...]
+
+On reconstruit :
+
+        $ docker build -t srvsmtp .
+
+Une petite dernière ?? Ou pas :D
+
+
+        $ docker-compose up
+        Creating coco-imap-t
+        Creating coco-smtp-t
+        Attaching to coco-imap-t, coco-smtp-t
+        coco-imap-t  | /usr/lib/python2.7/dist-packages/supervisor/options.py:297: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+
+Validation :
+
+        $ docker exec -it coco-smtp-t ls -ltr /etc/postfix                                                                                                    
+        total 100
+        drwxr-xr-x 2 root root     6 Apr 13  2016 sasl
+        -rwxr-xr-x 1 root root  9344 Apr 13  2016 postfix-script
+        -rw-r--r-- 1 root root 21233 Apr 13  2016 postfix-files
+        -rwxr-xr-x 1 root root 29446 Apr 13  2016 post-install
+        -rw-r--r-- 1 root root  6068 Jan 30 21:57 master.cf
+        -rw-r--r-- 1 root root   108 Jan 30 21:57 dynamicmaps.cf
+        -rw-r--r-- 1 root root    87 Feb 15 22:07 mails-coco.com.lst
+        -rw-r--r-- 1 root root   658 Feb 15 22:07 main.cf
+        -rw-r--r-- 1 root root 12288 Feb 15 22:07 mails-coco.com.lst.db
+
+C'est tellement plaisant quand si veut faire quelque chose puis du premier coup ça fonctionne :D !!! ( oui faut en rire un peu , mais on a tous compris des raison :D ) 
+
+__LOL__ !!! OK heu ... Je n'avais pas vu mais il y a une erreur dans ma configuration ... lol , la génération à bien passé, cependant quand je fait le __telnet__ ça passe pas plus :P 
+
+        $ telnet 172.21.0.3 25
+        Trying 172.21.0.3...
+        Connected to 172.21.0.3.
+        Escape character is '^]'.
+
+        [ ... HANG ... ]
+
+        $ docker exec -it coco-smtp-t tail /var/log/mail.log                                                                                                 
+        Feb 15 22:07:07 mail postfix[90]: Postfix is running with backwards-compatible default settings
+        Feb 15 22:07:07 mail postfix[90]: See http://www.postfix.org/COMPATIBILITY_README.html for details
+        Feb 15 22:07:07 mail postfix[90]: To disable backwards compatibility use "postconf compatibility_level=2" and "postfix reload"
+        Feb 15 22:07:07 mail postfix/master[181]: daemon started -- version 3.1.0, configuration /etc/postfix
+        Feb 15 22:08:54 mail postfix/smtpd[611]: fatal: open dictionary: expecting "type:name" form instead of "/etc/postfix/mails-coco.com.lst"
+
+En fait ma ligne de définition ne contient pas le type de __Lookup table__ ... :P  ( Vraiment pas voulu j'espère que je vous décourage pas :P ) .
+
+        $ cat smtp/conf/postfix-main.j2 | grep local
+        local_recipient_maps = proxy:unix:passwd.byname $alias_maps /etc/postfix/mails-{{ ACCEPT_DOMAIN }}.lst
+
+Ce doit être 
+
+        local_recipient_maps = proxy:unix:passwd.byname $alias_maps hash:/etc/postfix/mails-{{ ACCEPT_DOMAIN }}.lst
+
+Bon ben ... On recommence ...J'ai reconstruis l'image et fait le nettoyage , vous en faite pas vous serez meilleur que moi :P !! 
+
+        $ docker-compose up
+        Creating coco-imap-t
+        Creating coco-smtp-t
+        Attaching to coco-imap-t, coco-smtp-t
+
+On valide encore !!!
+
+        $ telnet 172.21.0.3 25
+        Trying 172.21.0.3...
+        Connected to 172.21.0.3.
+        Escape character is '^]'.
+        220 mail.coco.com ESMTP Postfix
+        ehlo toto
+        250-mail.coco.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+        mail from:toto@fjkjf.com
+        250 2.1.0 Ok
+        rcpt to:bob@coco.com
+        250 2.1.5 Ok
+        data
+        354 End data with <CR><LF>.<CR><LF>
+        un courriel de validatoin
+        .
+        250 2.0.0 Ok: queued as 8619212361
+        quit
+        221 2.0.0 Bye
+        Connection closed by foreign host.
+
+
+        $ docker exec -it coco-smtp-t tail /var/log/mail.log                                                                                                 
+        Feb 15 22:15:32 mail postfix[90]: See http://www.postfix.org/COMPATIBILITY_README.html for details
+        Feb 15 22:15:32 mail postfix[90]: To disable backwards compatibility use "postconf compatibility_level=2" and "postfix reload"
+        Feb 15 22:15:32 mail postfix/master[181]: daemon started -- version 3.1.0, configuration /etc/postfix
+        Feb 15 22:16:02 mail postfix/smtpd[297]: connect from unknown[172.21.0.1]
+        Feb 15 22:16:16 mail postfix/smtpd[297]: 8619212361: client=unknown[172.21.0.1]
+        Feb 15 22:16:21 mail postfix/cleanup[355]: 8619212361: message-id=<>
+        Feb 15 22:16:21 mail postfix/qmgr[184]: 8619212361: from=<toto@fjkjf.com>, size=187, nrcpt=1 (queue active)
+        Feb 15 22:16:21 mail postfix/lmtp[379]: 8619212361: to=<bob@coco.com>, relay=dovecot-lmtp[172.21.0.2]:24, delay=11, delays=11/0.01/0.02/0.04, dsn=2.0.0, status=sent (250 2.0.0 <bob@coco.com> VHlVLjXTpFgYAQAABKaThQ Saved)
+        Feb 15 22:16:21 mail postfix/qmgr[184]: 8619212361: removed
+        Feb 15 22:16:23 mail postfix/smtpd[297]: disconnect from unknown[172.21.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 commands=5
+
+
+        $ sudo cat /tmp/docker/coco-imap-t/home/bob/Maildir/new/'1487196981.M820895P280.mail.coco.com,S=400,W=410'
+        Return-Path: <toto@fjkjf.com>
+        Delivered-To: bob@coco.com
+        Received: from mail.coco.com ([172.21.0.3])
+                by mail.coco.com (Dovecot) with LMTP id VHlVLjXTpFgYAQAABKaThQ
+                for <bob@coco.com>; Wed, 15 Feb 2017 22:16:21 +0000
+        Received: from toto (unknown [172.21.0.1])
+                by mail.coco.com (Postfix) with ESMTP id 8619212361
+                for <bob@coco.com>; Wed, 15 Feb 2017 22:16:10 +0000 (UTC)
+
+        un courriel de validatoin
+
+**YEAHHH** bon pas du premier coup , mais au deuxième ?!?! :P 
+
+Et l'accès IMAP :
+
+        $ telnet 172.21.0.2 143
+        Trying 172.21.0.2...
+        Connected to 172.21.0.2.
+        Escape character is '^]'.
+        * OK [CAPABILITY IMAP4rev1 LITERAL+ SASL-IR LOGIN-REFERRALS ID ENABLE IDLE AUTH=PLAIN] Dovecot ready.
+        * a login bob motpasse
+        * a OK [CAPABILITY IMAP4rev1 LITERAL+ SASL-IR LOGIN-REFERRALS ID ENABLE IDLE SORT SORT=DISPLAY THREAD=REFERENCES THREAD=REFS THREAD=ORDEREDSUBJECT MULTIAPPEND URL-PARTIAL CATENATE UNSELECT CHILDREN NAMESPACE UIDPLUS LIST-EXTENDED I18NLEVEL=1 CONDSTORE QRESYNC ESEARCH ESORT SEARCHRES WITHIN CONTEXT=SEARCH LIST-STATUS
+        * BINARY MOVE SPECIAL-USE] Logged in
+        * a002 select inbox
+        * FLAGS (\Answered \Flagged \Deleted \Seen \Draft)
+        * OK [PERMANENTFLAGS (\Answered \Flagged \Deleted \Seen \Draft \*)] Flags permitted.
+        * 1 EXISTS
+        * 1 RECENT
+        * OK [UNSEEN 1] First unseen.
+        * OK [UIDVALIDITY 1487197434] UIDs valid
+        * OK [UIDNEXT 2] Predicted next UID
+        * OK [HIGHESTMODSEQ 1] Highest
+        * a002 OK [READ-WRITE] Select completed (0.000 + 0.000 secs).
+        * a003 fetch 1 full
+        * * 1 FETCH (FLAGS (\Recent) INTERNALDATE "15-Feb-2017 22:23:54 +0000" RFC822.SIZE 410 ENVELOPE (NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL) BODY ("text" "plain" ("charset" "us-ascii") NIL NIL "7bit" 27 1))
+        * a003 OK Fetch completed (0.001 + 0.000 secs).
+        * a004 fetch 1 BODY
+        * * 1 FETCH (BODY ("text" "plain" ("charset" "us-ascii") NIL NIL "7bit" 27 1))
+        * a004 OK Fetch completed (0.001 + 0.000 secs).
+        * z logout
+        * * BYE Logging out
+        * z OK Logout completed.
+        * Connection closed by foreign host.
+
+C'est magnifique :D !!
 
 # note pour apres :
 
