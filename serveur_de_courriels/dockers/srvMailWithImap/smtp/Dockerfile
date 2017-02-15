@@ -13,6 +13,9 @@ RUN apt-get update -qq && \
         python-pip supervisor rsyslog python-wheel python-setuptools  && \
     pip install j2cli
 
+# TODO mettre l'installation dans le layer précédent 
+RUN apt-get install --no-install-recommends incron 
+
 # Configure: supervisor
 ADD bin/dfg.sh /usr/local/bin/
 ADD conf/supervisor-all.conf /etc/supervisor/conf.d/

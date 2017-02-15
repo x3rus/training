@@ -12,6 +12,11 @@ echo $SMTP_HOSTNAME > /etc/mailname
 # Templates
 j2 /root/postfix-main.j2 > /etc/postfix/main.cf
 
+# Incron 
+echo "/etc/postfix/mails-$ACCEPT_DOMAIN.lst IN_MODIFY postmap /etc/postfix/mails-$ACCEPT_DOMAIN.lst" > /root/incron-postfix
+echo "root" >> /etc/incron.allow
+/usr/bin/incrontab /root/incron-postfix
+
 # Launch
 rm -f /var/spool/postfix/pid/*.pid
 exec /usr/bin/supervisord -n

@@ -2000,10 +2000,271 @@ Bon comme j'ai toujours des petites merveille dans mon sac de produit open sourc
 
 Bon ça fait quoi ça ?? En gros **incron** va intercepter les messages du __kernel__ (ça tombe bien les systèmes partage le même __kernel__ ) et portera une action SI et uniquement s'il y a modification du fichier :D.
 
-Bien entendu, je me suis pas lancé dans la modification du fichier __Dockerfile__ directement :P,  ICI ICI ICI 
+Bien entendu, je me suis pas lancé dans la modification du fichier __Dockerfile__ directement :P. J'ai fait un teste manuellement préalablement .
 
-        root@mail:~# cat incron-postfix
-        /etc/postfix/mails-coco.com.lst IN_MODIFY postmap /etc/postfix/mails-coco.com.lst
+        $ docker exec -it coco-smtp-t bash
+        root@mail:~# apt-get install incron
+        root@mail:~# /etc/init.d/incron start
+        root@mail:~# echo "/etc/postfix/mails-coco.com.lst IN_MODIFY postmap /etc/postfix/mails-coco.com.lst" > /root/incron-postfix
+        root@mail:~# echo "root" > /etc/incron.allow
+        root@mail:~# incrontab /root/incron-postfix
+        root@mail:~# ls -ltr /etc/postfix/
+        root@mail:/# ls -ltr /etc/postfix/
+        total 96
+        drwxr-xr-x 2 root root     6 Apr 13  2016 sasl
+        -rwxr-xr-x 1 root root  9344 Apr 13  2016 postfix-script
+        -rw-r--r-- 1 root root 21233 Apr 13  2016 postfix-files
+        -rwxr-xr-x 1 root root 29446 Apr 13  2016 post-install
+        -rw-r--r-- 1 root root  6068 Jan 30 21:57 master.cf
+        -rw-r--r-- 1 root root   108 Jan 30 21:57 dynamicmaps.cf
+        -rw-r--r-- 1 root root   658 Feb 14 20:41 main.cf
+        -rw-r--r-- 1 root root   376 Feb 14 22:33 mails-coco.com.lst
+        root@mail:/# logout
+
+
+Validation du bon fonctionnement
+
+        $ sudo vim /tmp/docker/coco-t/etc/mails.lst
+        ajout de :
+        toto@coco.com
+
+        $ docker exec -it coco-smtp-t ls -ltr /etc/postfix/
+        [ ... OUTPUT COUPÉ ... ]
+        -rw-r--r-- 1 root root   376 Feb 14 22:40 mails-coco.com.lst
+        -rw-r--r-- 1 root root   376 Feb 14 22:40 mails-coco.com.lst.db
+
+On modifie le __Dockerfile__ avec :
+
+* Ajout de l'application **incron** 
+* Modification de __supervisor__ pour démarrer aussi le service **incron**
+* Activation du fichier de configuration pour __incron__
+
+### <a name="integration_incron" /> Modification de l'image postfix pour inclure incron
+
+On arrête pas le plaisir :D !!!
+
+Bon petit truc de tour de passe passe :P , je suis dans le train avec ma connexion internet "limité", je vais donc profiter des couches dockers pour ne PAS réinstallé toutes les applications. En phase de teste je vais créer une couche uniquement pour __incron__ , bien entendu dans la configuration finale je l'inclurais dans la couche d'installation de package.  Voici le résultat :
+
+        # Using debian
+        # Start Exemple:
+        # ou can add -p 25:25 for LAN access
+        FROM ubuntu:16.04
+        MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
+
+        # Ignore APT warnings about not having a TTY
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Packages: update
+        RUN apt-get update -qq && \
+            apt-get install -qq -y --no-install-recommends postfix \
+                    python-pip supervisor rsyslog python-wheel python-setuptools  && \
+                    pip install j2cli
+
+        # TODO mettre l'installation dans le layer précédent 
+        RUN apt-get install --no-install-recommends incron
+
+        # Configure: supervisor
+        ADD bin/dfg.sh /usr/local/bin/
+        ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
+
+        [ ... OUTPUT COUPÉ ... ]
+
+
+Nous allons modifier la configuration du __supervisor__ . Si nous nous inspirons de l'exécution de __rsyslogd__ définie dans le fichier **conf/supervisor-all.conf** :
+
+        [... OUTPUT COUPÉ ...]
+        [program:rsyslogd]
+        command = /usr/sbin/rsyslogd -n
+
+        [... OUTPUT COUPÉ ...]
+
+C'est quoi l'option **-n** , je le sais pas plus que vous , bon maintenant oui, car j'ai déjà validé , mais je le savais pas avant d'écrire ces lignes :P. Voici comment j'ai démystifié l'option :
+
+        $ docker exec -it coco-smtp-t bash
+        root@mail:/# /usr/sbin/rsyslogd -h    
+        usage: rsyslogd [options]
+        use "man rsyslogd" for details. To run rsyslog interactively, use "rsyslogd -n"to run it in debug mode use "rsyslogd -dn"
+        For further information see http://www.rsyslog.com/doc
+        root@mail:/# man rsyslogd
+        bash: man: command not found
+
+Bon finalement, comme la commande **man** est pas installé j'ai du allé sur le net :P : [https://linux.die.net/man/8/rsyslogd](https://linux.die.net/man/8/rsyslogd) :
+
+        -n
+        Avoid auto-backgrounding. This is needed especially if the rsyslogd is started and controlled by init(8). 
+
+Donc ça permet au processus de rester en avant plan (__forground__). Cool donc on va essayer de faire la même chose pour __incron__ :D , je vais analyser le fichier d'initialisation de __incron__ :
+
+        root@mail:/# cat /etc/init.d/incron | grep -v "#" | more
+        PATH=/sbin:/bin:/usr/sbin:/usr/bin
+        INCROND=/usr/sbin/incrond
+        NAME=incron
+        DESC="File system events scheduler"
+        INCROND_PID=/var/run/incrond.pid
+        INCROND_CONF=/etc/incron.conf
+
+        if [ ! -x "$INCROND" ]; then
+            exit 0
+        fi
+
+        . /lib/lsb/init-functions
+
+        case "$1" in
+            start)
+                log_daemon_msg "Starting $DESC"
+                log_progress_msg "$NAME"
+                start_daemon -p "$INCROND_PID" "$INCROND" -f "$INCROND_CONF"
+                log_end_msg $?
+            ;;
+       [... OUTPUT COUPÉ ...]
+
+Donc le système démarre **start_daemon** en utilisant la commande **"$INCROND"** définie par la variable : **INCROND=/usr/sbin/incrond**.
+Regardons les options disponible , en espérant que l'aide soit disponible .
+
+        root@mail:/# /usr/sbin/incrond --help
+        incrond - inotify cron daemon
+        (c) Lukas Jelinek, 2006, 2007, 2008
+
+        usage: incrond [<options>]
+
+        <operation> may be one of the following:
+        These options may be used:
+          -?, --about                  gives short information about program
+          -h, --help                   prints this help text
+          -n, --foreground             runs on foreground (no daemonizing)
+          -k, --kill                   terminates running instance of incrond
+          -f <FILE>, --config=<FILE>   overrides default configuration file  (requires root privileges)
+          -V, --version                prints program version
+
+          For reporting bugs please use http://bts.aiken.cz
+
+**Yeahh** , merci **Lukas Jelinek** :D, bon finalement c'est la même option :P. __héhéhé__ :D on pouvait pas vraiment le deviner , donc on modifier le fichier __conf/supervisor-all.conf__ :
+
+        [... OUTPUT COUPÉ ...]
+        [program:rsyslogd]
+        command = /usr/sbin/rsyslogd -n
+
+        [program:incrond]
+        command = /usr/sbin/incrond -n
+        [... OUTPUT COUPÉ ...]
+
+
+Dernière étape modifier le fichier **run.sh** pour que notre configuration soit prise en charge  :
+
+        #! /usr/bin/env bash
+        set -e # exit on error
+
+        # Variables
+        export EXT_RELAY_HOST=${EXT_RELAY_HOST:-"DIRECT"}
+        export SMTP_HOSTNAME=${SMTP_HOSTNAME:-"relay.example.com"}
+        export PERMIT_NETWORK=${PERMIT_NETWORK:-"192.168.0.0/16"}
+        export ACCEPT_DOMAIN=${ACCEPT_DOMAIN:-"localhost $SMTP_HOSTNAME"}
+
+        echo $SMTP_HOSTNAME > /etc/mailname
+
+        # Templates
+        j2 /root/postfix-main.j2 > /etc/postfix/main.cf
+
+        # Incron 
+        echo "/etc/postfix/mails-$ACCEPT_DOMAIN.lst IN_MODIFY postmap /etc/postfix/mails-$ACCEPT_DOMAIN.lst" > /root/incron-postfix
+        /usr/bin/incrontab /root/incron-postfix
+
+        # Launch
+        rm -f /var/spool/postfix/pid/*.pid
+        exec /usr/bin/supervisord -n
+
+On reconstruit l'image :
+
+        $ docker build -t srvsmtp .
+        [... OUTPUT COUPÉ ...]
+        Step 4 : RUN apt-get update -qq &&     apt-get install -qq -y --no-install-recommends postfix         python-pip supervisor rsyslog python-wheel python-setup$
+        ools  &&     pip install j2cli
+         ---> Using cache
+         ---> db7a6b374677
+        Step 5 : RUN apt-get install --no-install-recommends incron
+         ---> Running in 82d43b1fd0a4
+         Reading package lists...
+         Building dependency tree...
+         Reading state information...
+         The following NEW packages will be installed:
+             incron
+        [... OUTPUT COUPÉ ...]
+
+Mon objectif de réutilisation de couche à très bien fonctionné :P , nous voyons que l'étape 4 , le cache fut utilisé :D.
+
+C'est le temps de tester tous  ça ! 
+
+1. Nettoyage : 
+        
+        $ docker-compose stop && docker-compose rm
+        Stopping coco-smtp-t ... done
+        Stopping coco-imap-t ... done
+        Going to remove coco-smtp-t, coco-imap-t
+        Are you sure? [yN] y
+        Removing coco-smtp-t ... done
+        Removing coco-imap-t ... done
+        $ sudo rm -rf  /tmp/docker/coco-smtp-t/ /tmp/docker/coco-imap-t/
+
+2. On redémarrage .
+
+        $ docker-compose up
+        [... OUTPUT COUPÉ ...]
+        coco-smtp-t  | user 'root' is not allowed to use incron
+        coco-imap-t  | 2017-02-15 13:12:42,000 INFO spawned: 'dovecot' with pid 65
+        coco-imap-t  | 2017-02-15 13:12:42,001 INFO spawned: 'rsyslogd' with pid 66
+        coco-smtp-t exited with code 1
+        coco-smtp-t  | user 'root' is not allowed to use incron
+        coco-smtp-t  | user 'root' is not allowed to use incron
+        [... OUTPUT COUPÉ ...]
+
+:D , je vous ai dis que l'on aurait du plaisir :D , bon j'ai oublié faut aussi définir dans __/etc/incron.allow__ les utilisateurs permit :P. C'est la matin , j'ai juste 4 café dans le corps soyez indulgent :D. On corrige le __run.sh__ :
+
+        [... OUTPUT COUPÉ ...]
+        # Incron 
+        echo "/etc/postfix/mails-$ACCEPT_DOMAIN.lst IN_MODIFY postmap /etc/postfix/mails-$ACCEPT_DOMAIN.lst" > /root/incron-postfix
+        echo "root" >> /etc/incron.allow
+        /usr/bin/incrontab /root/incron-postfix
+        [... OUTPUT COUPÉ ...]
+
+Reconstruire l'image , et nettoyage
+
+        $ docker-compose stop && docker-compose rm
+        Stopping coco-smtp-t ... done
+        Stopping coco-imap-t ... done
+        Going to remove coco-smtp-t, coco-imap-t
+        Are you sure? [yN] y
+        Removing coco-smtp-t ... done
+        Removing coco-imap-t ... done
+        $ sudo rm -rf  /tmp/docker/coco-smtp-t/ /tmp/docker/coco-imap-t/
+
+C'est repartie :
+
+        $ docker-compose up
+        Creating coco-imap-t
+        Creating coco-smtp-t
+        Attaching to coco-imap-t, coco-smtp-t
+        coco-imap-t  | /usr/lib/python2.7/dist-packages/supervisor/options.py:297: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+        coco-imap-t  |   'Supervisord is running as root and it is searching '
+        coco-imap-t  | 2017-02-15 13:17:38,706 CRIT Supervisor running as root (no user in config file)
+        coco-imap-t  | 2017-02-15 13:17:38,706 WARN Included extra file "/etc/supervisor/conf.d/supervisor-all.conf" during parsing
+        coco-imap-t  | 2017-02-15 13:17:38,715 INFO RPC interface 'supervisor' initialized
+        coco-imap-t  | 2017-02-15 13:17:38,715 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+        coco-imap-t  | 2017-02-15 13:17:38,716 INFO supervisord started with pid 1
+        coco-smtp-t  | copying table from file '/root/incron-postfix'
+        coco-smtp-t  | /usr/lib/python2.7/dist-packages/supervisor/options.py:297: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+        coco-smtp-t  |   'Supervisord is running as root and it is searching '
+        coco-smtp-t  | 2017-02-15 13:17:38,838 CRIT Supervisor running as root (no user in config file)
+        coco-smtp-t  | 2017-02-15 13:17:38,838 WARN Included extra file "/etc/supervisor/conf.d/supervisor-all.conf" during parsing
+        coco-smtp-t  | 2017-02-15 13:17:38,847 INFO RPC interface 'supervisor' initialized
+        coco-smtp-t  | 2017-02-15 13:17:38,847 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+        coco-smtp-t  | 2017-02-15 13:17:38,847 INFO supervisord started with pid 1
+        coco-imap-t  | 2017-02-15 13:17:39,719 INFO spawned: 'dovecot' with pid 65
+        coco-imap-t  | 2017-02-15 13:17:39,722 INFO spawned: 'rsyslogd' with pid 66
+        coco-smtp-t  | 2017-02-15 13:17:39,849 INFO spawned: 'incrond' with pid 12
+        coco-smtp-t  | 2017-02-15 13:17:39,851 INFO spawned: 'postfix' with pid 13
+        coco-smtp-t  | 2017-02-15 13:17:39,854 INFO spawned: 'rsyslogd' with pid 14
+
+**YEahh**, bon est-ce que ça marche vraiment ?? Maintenant :P
 
 # note pour apres :
 
