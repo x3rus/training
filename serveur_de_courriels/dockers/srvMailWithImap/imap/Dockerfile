@@ -15,6 +15,7 @@ RUN apt-get update -qq && \
 
 # Configure: supervisor
 ADD bin/dfg.sh /usr/local/bin/
+ADD bin/cuser.sh /usr/local/bin/
 ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
 
 # Add dovecot configuration

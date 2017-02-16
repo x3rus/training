@@ -2499,6 +2499,78 @@ Et l'accès IMAP :
 
 C'est magnifique :D !!
 
+Si on a le temps nous pourrions aussi faire le teste avec __thunderbird__ pour ne pas pollué mon environnement avec un conteneur :
+
+[https://hub.docker.com/r/yantis/thunderbird/](https://hub.docker.com/r/yantis/thunderbird/)
+
+## <a name="integration_create-user" /> Gestion de l'ajout d'un utilisateur à l'exécution
+
+Reprenons notre discutions sur l'ajout d'un utilisateur, actuellement nous avons pris l'option ( nous étant moi :P, de manière totalitaire ;-) ) d'utiliser une variable d'environnement définie lors de l'initialisation du conteneur. 
+Nous sommes au 21 ième siècle, la clé de l'informatique de nos jours est la flexibilité certainement pas la mise en place de contrainte ou de limitation nous empêchant de réagir vite !
+
+Nous utilisons docker pour avoir un déploiement plus fluide , un système que l'on déploie fiable et pré empaqueté , fiable ! Pas un système dont le changement de configuration est pas possible une fois déployé. 
+
+Donc comment pouvons nous ajouter un utilisateur ? 
+
+1. Réaliser l'opération de **useradd** dans le conteneur en production , effectivement ça fonctionne nous l'avons fait !
+2. Détruire, modifier la variable d'environnement et  recréer le conteneur , ça aussi c'est bon , avec les contraintes qui s'en suivent.
+
+Je reprendrais pas toutes la discutions sur le sujet , vous pouvez reprendre le chapitre : [ Définition de l'utilisation du conteneur postfix](#workflow_conteneur_smtp) qui inclut l'ensemble de la discutions !
+
+Nous allons voir donc maintenant voir comment nous pourrions mettre en place une solution flexible et fiable. Bon encore une fois je le répète ceci à pour but de vous présenter une solution éducative. Pour être en production il faut ajouter plusieurs validation dans la solution ... Cependant ceci à l'avantage de vous fournir un début de solution, toujours le problème de la page blanche !
+
+Je vais créer un script qui va réaliser la création de l'utilisateur, Le script va créer l'utilisateur dans le conteneur, ce script sera exécuté sur le docker __host__.
+
+        $ cat imap/bin/cuser.sh
+        #!/bin/bash
+        #
+        #########################################################################################
+        set -e # exit on error
+
+        user=$1
+        pass=$2
+
+        export LST_MAILS=${LST_MAILS:-"/etc/dovecot/mails.lst"}
+
+        if ! getent passwd $user ; then
+            useradd $user
+            mkdir /home/$user
+            chown $user /home/$user
+            # set password motpasse
+            echo "${user}:$pass" | chpasswd
+
+            # Création de la liste des adresses courriels valides
+            echo "$user@$ACCEPT_DOMAIN OK" >> $LST_MAILS
+        fi
+
+Changement de permission :
+
+        $ chmod a+x imap/bin/cuser.sh
+
+Ajout du fichier dans le __Dockerfile__ :
+
+        [... OUTPUT COUPÉ ...]
+        # Configure: supervisor
+        ADD bin/dfg.sh /usr/local/bin/
+        ADD bin/cuser.sh /usr/local/bin/
+        ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
+        [... OUTPUT COUPÉ ...]
+
+Et oui, on reconstruit :D, on détruits le conteneur en place et on recommence.
+
+Pour valider 
+
+        $ docker exec coco-imap-t ls -ltr /usr/local/bin
+        total 12
+        -rwxr-xr-x 1 root root 818 Feb  7 13:21 dfg.sh
+        -rwxr-xr-x 1 root root 206 Feb  7 13:34 j2
+        -rwxr-xr-x 1 root root 444 Feb 16 13:33 cuser.sh
+
+Écriture du script sur le docker host . 
+
+CA MARCHE PAS :PP 
+
+ICI ICI 
 # note pour apres :
 
 REF: http://linuxfr.org/news/exploiter-inotify-c-est-simple
