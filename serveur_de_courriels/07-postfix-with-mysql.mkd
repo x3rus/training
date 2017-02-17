@@ -27,4 +27,128 @@ Voici ce que nous allons couvrir :
 
 On va réaliser l'opération dans des conteneurs directement, maintenant que l'on y arrive chaque fois du premier coup :P  !
 
+Voici un schéma des communications entre les conteneurs / application :
 
+![flux_communication_smtp-bd-imap-http.png](./imgs/flux_communication_smtp-bd-imap-http.png)
+
+Comme vous pouvez le constater la base de donnée est centrale dans le système , de les données sont uniquement fournit par le conteneur **imap** !
+
+# <a name="setup_img" /> Configuration des images 
+
+Telle que mentionné pour gagné du temps on va tous de suite le faire avec des conteneurs, si vous désirez le mettre en place uniquement sur une machines il suffira de reprendre l'ensemble des commandes des conteneurs et faire l'opération sur **LA** machine.
+
+## <a name="setup_db" /> Configuration de la base de donnée
+
+Comme l'ensemble du système repose sur la base de donnée, nous allons débuter par ce conteneur et construire autour . L'avantage aussi de débuter par ce conteneur et que l'image est déjà disponible . [https://hub.docker.com](https//hub.docker.com) offre un conteneur officiel de [Mysql](https://hub.docker.com/_/mysql/).
+
+Si nous regardons le descriptif nous avons ceci :
+
+        MYSQL_USER, MYSQL_PASSWORD
+        These variables are optional, used in conjunction to create a new user and to set that user's password. This user will be granted superuser permissions (see above) for the database specified by the MYSQL_DATABASE variable. Both variables are required for a user to be created.
+
+En d'autre mot en passant les variables d'environnement le système va automatiquement faire la création de l'utilisateur / mot de passe et de la BD .
+
+On essaye :D , on sait jamais peut-être que le site ment :P.
+
+        $ docker run -e MYSQL_USER=umail -e MYSQL_PASSWORD=ZePassword -e MYSQL_DATABASE=vmail -e MYSQL_RANDOM_ROOT_PASSWORD=yes  mysql:5.5
+        Initializing database
+        170217 22:18:49 [Note] /usr/local/mysql/bin/mysqld (mysqld 5.5.52) starting as process 60 ...
+        170217 22:18:50 [Note] /usr/local/mysql/bin/mysqld (mysqld 5.5.52) starting as process 66 ...
+
+        $ docker ps
+        CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+        f95afd51c1e2        mysql:5.5           "docker-entrypoint.sh"   28 seconds ago      Up 27 seconds       3306/tcp            pensive_bohr
+
+        $ docker exec -it pensive_bohr mysql -u umail -p
+        Enter password:
+        mysql> show databases;
+        +--------------------+
+        | Database           |
+        +--------------------+
+        | information_schema |
+        | vmail              |
+        +--------------------+
+        2 rows in set (0.00 sec)
+
+        mysql> use vmail;
+        Database changed
+        mysql> show tables;
+        Empty set (0.00 sec)
+
+        mysql> Bye
+
+Là on peut dire du premier coup :P !!!
+
+Bon on fait le __docker-compose__ tous de suite !!
+
+        version: '2'
+        services:
+            db-coco:
+                image: mysql:5.5
+                restart: unless-stopped
+                container_name : 'coco-db-t'
+                hostname: db.coco.com
+                environment:
+                    - MYSQL_USER=umail
+                    - MYSQL_PASSWORD=ZePassword
+                    - MYSQL_DATABASE=vmail
+                    - MYSQL_RANDOM_ROOT_PASSWORD=yes
+                    - TZ=America/Montreal
+                    - TERM=xterm
+                volumes:
+                    - /srv/docker/coco-db-t/var_lib_mysql:/var/lib/mysql
+
+Comme vous pouvez le constater j'ai exporter le répertoire __/var/lib/mysql__ sur le docker host pour conserver les données hors du conteneur.
+On le valide :
+
+        $ docker-compose up
+        Creating network "srvmailwithimapwithbd_default" with the default driver
+        Creating coco-db-t
+        Attaching to coco-db-t
+        coco-db-t  | Initializing database
+
+Encore du premier coup , on y prend goût :D, pas de panique ça ne durera pas :D.
+
+## <a name="setup_http" /> Configuration du service Web pour la gestion de la base de donnée
+
+Maintenant que l'on a une base de donnée vierge nous allons la remplir avec le système [postfixadmin](http://postfixadmin.sourceforge.net/), ce système permet de contrôler et définir des domaines , adresses courriels, utilisateur , ... Là pas de bol pas de conteneur officiel, on va devoir s'amuser :D. 
+Par contre nous avons un conteneur officiel pour [php](https://hub.docker.com/_/php/) , au lieu de démarrer avec un Ubuntu et installer apache et **php** nous allons démarrer avec le conteneur officiel ! Faut bien faire changement un peu de temps en temps :D, histoire d'avoir de nouveau problème :D.
+
+Si vous regardez la page il y a plusieurs type de conteneur disponible :
+
+        5.6.30-cli, 5.6-cli, 5-cli, 5.6.30, 5.6, 5 (5.6/Dockerfile)
+        5.6.30-alpine, 5.6-alpine, 5-alpine (5.6/alpine/Dockerfile)
+        5.6.30-apache, 5.6-apache, 5-apache (5.6/apache/Dockerfile)
+        5.6.30-fpm, 5.6-fpm, 5-fpm (5.6/fpm/Dockerfile)
+
+* **cli** :  pour utiliser __php__ en commande line
+* **alpine** : Utilise une version minimal de Linux
+* **apache** : Avec le serveur web apache
+
+ICI ICI ICI 
+
+La version alpine est un conteneur plus minimal , alpine est une distribution moins gourmand en espace disque , alors que la version "non" alpine est un conteneur dérivé de debian (si je ne me trompe pas). On va commencer par la version "normale" et on analysera si on peut passer au mode alpine par la suite.
+
+Avant de se lancer dans __Dockerfile__ définissons les grandes lignes que ceci devra conteneur , nous allons vouloir installer [postfixadmin](http://postfixadmin.sourceforge.net/) , donc prenons la documentation . [https://github.com/albanpeignier/postfixadmin/blob/master/INSTALL.TXT](https://github.com/albanpeignier/postfixadmin/blob/master/INSTALL.TXT) 
+
+Nous avons donc besoin :
+
+* apache (bien entendu)
+* __PHP__ 4.1 ou plus (5.X recommandé )
+* Module __php__ pour établir une connexion __Mysql__
+
+Je vais d'abord valider l'image __httpd:2.4__ que j'ai déjà sur mon portable :
+
+        $ docker images | grep http                                                                                                                           
+        httpd                         2.4                 50f10ef90911        3 months ago        193.3 MB
+        $ docker run -it  httpd:2.4 bash                                                                                                                     
+        root@29f190a1d4fc:/usr/local/apache2#
+
+Je vais valider le système de package , est-ce un Centos ou un Ubuntu/Debian? 
+
+        $ docker run -it  httpd:2.4 bash                                                                                                                     
+        root@29f190a1d4fc:/usr/local/apache2# apt-get update
+        Get:1 http://security.debian.org jessie/updates InRelease [63.1 kB]
+        Ign http://deb.debian.org jessie InRelease 
+
+Parfait c'est à la sauce __debian__ , donc je vais valider les noms des packages que j'ai besoin 
