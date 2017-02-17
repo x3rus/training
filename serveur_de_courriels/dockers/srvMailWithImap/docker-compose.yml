@@ -23,7 +23,7 @@ services:
         hostname: mail.coco.com
         environment:
             - ACCEPT_DOMAIN=coco.com
-            - LST_USER=robert bob peter benny lee
+            - LST_USER=robert bob peter benny lee xerus
             - TIMEZONE=America/Montreal
             - TERM=xterm
 #        depends_on:

@@ -8,6 +8,7 @@
 #########################################################################
 
 IMAPCONTENEUR=coco-imap-t
+DCKcompose=~/git/formations/serveur_de_courriels/dockers/srvMailWithImap/docker-compose.yml
 
 f_usage () {
     # Show help message
@@ -19,7 +20,7 @@ f_usage () {
 ####################
 # script arguments #
 
-while getopts u:h FLAG; do
+while getopts u:p:h FLAG; do
     case $FLAG in
         u)  # Recuperation du nom de l'utilisateur
             NOM_UTILISATEUR=$OPTARG
@@ -42,6 +43,13 @@ done # End while getopts
 # Création de l'utilisateur dans le docker 
 
 docker exec -it $IMAPCONTENEUR /usr/local/bin/cuser.sh $NOM_UTILISATEUR $PASSWORD_UTILISATEUR
+
+if [ $? == 0 ] ; then 
+    # Si la création de l'utilisateur fut un succes met à jour le docker-compose 
+    sed -i -e "s/\(\s*- LST_USER=.*\)/\1 $NOM_UTILISATEUR/g" $DCKcompose
+
+    # Idealement ajouter un git commit / push ou un svn commit pour conserver l'information hors du docker host
+fi
 
 
 

@@ -6,6 +6,40 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Index 
 
+* [ Introduction](#Intro)
+* [ Définition des images ](#setup_images)
+* [ Création de l'image SMTP (postfix)](#setup_postfix)
+       * [ Installation des packages dans l'image](#setup_postfix_install_pkg)
+       * [ Mise en place des fichiers de configuration](#setup_postfix_setup_conf)
+       * [ Validation de l'image](#setup_postfix_setup_validation)
+* [ Définition de l'utilisation du conteneur postfix](#workflow_conteneur_smtp)
+* [ Configuration postfix avec LTMP ](#Postfix_with_lmtp)
+* [ Création de l'image IMAP / LMTP (dovecot)](#setup_dovecot)
+       * [ Installation des packages dans l'image](#setup_dovecot_install_pkg)
+       * [ Mise en place des fichiers de configuration avec la méthode (docker diff :D)](#setup_dovecot_setup_conf)
+           * [ Validation de la configuration imap ](#setup_dovecot_setup_imap_conf)
+           * [ Validation de la configuration lmtp](#setup_dovecot_setup_lmtp_conf)
+           * [ Mise en place de la configuration maildir](#setup_dovecot_setup_maildir_conf)
+           * [ Extraction de la configuration mise en place](#setup_dovecot_setup_extraction_conf)
+           * [ Définition des fichiers de configuration dans le Dockerfile](#setup_dovecot_setup_dovecot_conf)
+* [ Mise en symbiose des images :D](#integration)
+       * [ Visualisation du résultat du volumes](#visualisation_volumes)
+       * [ Redirection de port](#visualisation_port_redirect)
+       * [ Teste de la configuration](#teste_contener)
+       * [ Analyse du problème lmtp](#analyse_prob_lmtp)
+* [ Recule et analyse de la situation](#analyse_prob_interconnexion)
+* [ Correction de la configuration postfix et dovecot](#correction_setup)
+       * [ Correction de la configuration postfix ](#correction_setup_postfix)
+       * [ Correction de la configuration dovecot](#correction_setup_dovecot)
+       * [ Changement du docker-compose](#correction_dockercompose)
+       * [ Validation de la configuration](#correction_status)
+       * [ Partage de la liste des adresses courriels ](#correction_share_file)
+* [ Intégration et cohabitation des conteneurs](#integration_conteneur)
+       * [ Génération automatique du fichier de courriels (postmap)](#integration_conteneur_postmap)
+           * [ Modification de l'image postfix pour inclure incron](#integration_incron)
+       * [ Gestion de l'ajout d'un utilisateur à l'exécution](#integration_create-user)
+
+
 # <a name="Intro" /> Introduction
 
 Nous avons donc vue la mise en place du système de réception de courriel localement ainsi que la possibilité pour les utilisateurs de récupérer leur courriel grâce au système __pop3__ et __imap__. Nous avions fait l'exercice avec un [pet container](http://rhelblog.redhat.com/2016/06/08/in-defense-of-the-pet-container-part-1-prelude-the-only-constant-is-complexity/) en d'autre mot avec un conteneur docker comme si c'était une __VM__. C'est mal , c'est bien je vous laisse lire le blog de RedHat sur le sujet, je suis un puriste sur l'utilisation du logiciel libre après je ne suis pas rigide sur les méthodes. Donc pour moi un pet conteneur c'est pas la fin du monde. 
@@ -2566,17 +2600,142 @@ Pour valider
         -rwxr-xr-x 1 root root 206 Feb  7 13:34 j2
         -rwxr-xr-x 1 root root 444 Feb 16 13:33 cuser.sh
 
-Écriture du script sur le docker host . 
+On essaye le tous depuis le docker __host__ :
 
-CA MARCHE PAS :PP 
+        $ docker exec -it coco-imap-t /usr/local/bin/cuser.sh xerus2 titi
+        $ cat /tmp/docker/coco-t/etc/mails.lst                                                                                                               
+        robert@coco.com OK
+        bob@coco.com OK
+        peter@coco.com OK
+        benny@coco.com OK
+        lee@coco.com OK
+        xerus2@coco.com OK
 
-ICI ICI 
-# note pour apres :
+**Yeahh** vraiment du premier coup :P.
 
-REF: http://linuxfr.org/news/exploiter-inotify-c-est-simple
+Bon on écrit un petit script sur le docker __host__ pour recouvrir l'ensemble des opérations :
 
-        apt-get install incron
+        $ mkdir srvMailWithImap/scripts/
+        $ vim srvMailWithImap/scripts/creation_user.sh
 
 
-# les logs 
-http://hokstadconsulting.com/docker/postfix , utilisation de -v /dev/log:/dev/log
+      #!/bin/bash
+      #
+      # Description : Création d'utilisateur pour le service de courriel
+      #
+      # Autheur : Thomas Boutry <Thomas.boutry@x3rus.com>
+      # Licence : GPL v3
+      #
+      #########################################################################
+
+      IMAPCONTENEUR=coco-imap-t
+
+      f_usage () {
+          # Show help message
+          echo "  usage : $0 -u nom_utilisateur "
+          echo " "
+          echo " Description : Création d'un utilisateur pour imap .... "
+      }
+
+      ####################
+      # script arguments #
+      while getopts u:p:h FLAG; do
+          case $FLAG in
+              u)  # Recuperation du nom de l'utilisateur
+                  NOM_UTILISATEUR=$OPTARG
+                  ;;
+              p)  # Recuperation le mot de passe de l'utilisateur
+                  PASSWORD_UTILISATEUR=$OPTARG
+                  ;;
+              h)  #how help message
+                  f_usage
+                  exit 1
+                  ;;
+              \?) #unrecognized option - show help
+                  echo "ERROR: option used not reconized , please read usage "
+                  f_usage
+                  exit 1
+                  ;;
+          esac # end case opts
+      done # End while getopts
+
+      # Création de l'utilisateur dans le docker
+
+      docker exec -it $IMAPCONTENEUR /usr/local/bin/cuser.sh $NOM_UTILISATEUR $PASSWORD_UTILISATEUR
+
+Quelle est le problème avec cette solution ? 
+Notre définition d'utilisateur n'est pas conforme avec notre __docker-compose__ en d'autre mot si nous perdons notre conteneur (__pet conteneur__), nous perdons la définitions des utilisateurs !! :( Nous n'avons pas une source externe contenant la configuration de référence !
+
+Solution ? 
+Mettre à jour le __docker-compose__ :D , réalisons la modification dans le script, mais avant ça une petite information.
+Lors de l'utilisation de __docker exec__ vous avez le code de retour du programme qui fut exécuté exemple.
+
+        $ docker exec -it coco-imap-t ls -l /etc/dovecot/mails.lst
+        -rw-r--r-- 1 root root 125 Feb 17 00:03 /etc/dovecot/mails.lst
+        $ echo $?
+        0
+
+        $ docker exec -it coco-imap-t ls -l /etc/dovecot/mails.lst-bad
+        ls: cannot access '/etc/dovecot/mails.lst-bad': No such file or directory
+        $ echo $?
+        2
+
+En d'autre mot si votre script retourne le bon code de retour vous êtes en mesure de traiter adéquatement le résultat dans le conteneur.
+
+Voici donc la nouvelle version du script :
+
+        #!/bin/bash
+        #
+        # Description : Création d'utilisateur pour le service de courriel
+        #
+        # Autheur : Thomas Boutry <Thomas.boutry@x3rus.com>
+        # Licence : GPL v3
+        #
+        #########################################################################
+
+        IMAPCONTENEUR=coco-imap-t
+        DCKcompose=~/git/formations/serveur_de_courriels/dockers/srvMailWithImap/docker-compose.yml
+
+        f_usage () {
+            # Show help message
+            echo "  usage : $0 -u nom_utilisateur "
+            echo " "
+            echo " Description : Création d'un utilisateur pour imap .... "
+        }
+        
+        ####################
+        # script arguments #
+
+        while getopts u:p:h FLAG; do
+            case $FLAG in
+                u)  # Recuperation du nom de l'utilisateur
+                    NOM_UTILISATEUR=$OPTARG
+                    ;;
+                p)  # Recuperation le mot de passe de l'utilisateur
+                    PASSWORD_UTILISATEUR=$OPTARG
+                    ;;
+                h)  #how help message
+                    f_usage
+                    exit 1
+                    ;;
+                \?) #unrecognized option - show help
+                    echo "ERROR: option used not reconized , please read usage "
+                    f_usage
+                    exit 1
+                    ;;
+            esac # end case opts
+        done # End while getopts
+
+        # Création de l'utilisateur dans le docker
+
+        docker exec -it $IMAPCONTENEUR /usr/local/bin/cuser.sh $NOM_UTILISATEUR $PASSWORD_UTILISATEUR
+
+        if [ $? == 0 ] ; then
+            # Si la création de l'utilisateur fut un succes met à jour le docker-compose
+            sed -i -e "s/\(\s*- LST_USER=.*\)/\1 $NOM_UTILISATEUR/g" $DCKcompose
+
+            # Idealement ajouter un git commit / push ou un svn commit pour conserver l'information hors du docker host
+        fi
+
+Et voilà nous avons maintenant une configuration cohérente même si nous réalisons des ajouts dans le conteneur :D.
+
