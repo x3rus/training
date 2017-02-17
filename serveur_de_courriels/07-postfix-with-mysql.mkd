@@ -1,0 +1,30 @@
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' /> 
+<style>
+pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
+</style>
+
+
+# Index 
+
+# <a name="Intro" /> Introduction
+
+Telle que mentionné plusieurs fois lors des sessions précédente l'utilisation d'utilisateur local ne permet pas une gestion massive d'utilisateur, ceci nous limite beaucoup en particulier pour :
+
+* La délégation de la création des comptes
+* La modification des mot de passe
+* La gestion des adresses similaire pour plusieurs domaine (ex: __info@coco.com et info@blabla.com__)
+* La sécurisation de l'environnement, car chaque personne à un compte localement sur la machine
+* ....
+
+Un solution préconiser est l'utilisation d'une base de donnée pour le stockage des informations client. 
+Voici ce que nous allons couvrir :
+
+* Mise en place de postfix avec des comptes virtuels
+* Intégration de postfix avec une base de données
+* Mise en place d'une interface de gestion des comptes
+* Intégration avec le serveur dovecot __imap__
+* Un _webmail__ ? On verra selon le temps :-/
+
+On va réaliser l'opération dans des conteneurs directement, maintenant que l'on y arrive chaque fois du premier coup :P  !
+
+
