@@ -125,8 +125,6 @@ Si vous regardez la page il y a plusieurs type de conteneur disponible :
 * **alpine** : Utilise une version minimal de Linux
 * **apache** : Avec le serveur web apache
 
-ICI ICI ICI 
-
 La version alpine est un conteneur plus minimal , alpine est une distribution moins gourmand en espace disque , alors que la version "non" alpine est un conteneur dérivé de debian (si je ne me trompe pas). On va commencer par la version "normale" et on analysera si on peut passer au mode alpine par la suite.
 
 Avant de se lancer dans __Dockerfile__ définissons les grandes lignes que ceci devra conteneur , nous allons vouloir installer [postfixadmin](http://postfixadmin.sourceforge.net/) , donc prenons la documentation . [https://github.com/albanpeignier/postfixadmin/blob/master/INSTALL.TXT](https://github.com/albanpeignier/postfixadmin/blob/master/INSTALL.TXT) 
@@ -137,18 +135,102 @@ Nous avons donc besoin :
 * __PHP__ 4.1 ou plus (5.X recommandé )
 * Module __php__ pour établir une connexion __Mysql__
 
-Je vais d'abord valider l'image __httpd:2.4__ que j'ai déjà sur mon portable :
+Je vais d'abord valider l'image __php:5-apache__ Je la récupère donc depuis [hub.docker.com](http://hub.docker.com).
 
-        $ docker images | grep http                                                                                                                           
-        httpd                         2.4                 50f10ef90911        3 months ago        193.3 MB
-        $ docker run -it  httpd:2.4 bash                                                                                                                     
-        root@29f190a1d4fc:/usr/local/apache2#
+        $ docker pull php:5-apache
+        5-apache: Pulling from library/php
 
-Je vais valider le système de package , est-ce un Centos ou un Ubuntu/Debian? 
+Si nous regardons la page du conteneur __php__ nous pourrons constater qu'il y a le lien vers le __dockerFile__ du package : [php:5-apache](https://github.com/docker-library/php/blob/e573f8f7fda5d7378bae9c6a936a298b850c4076/5.6/apache/Dockerfile), nous voyons clairement que la référence est un __debian:jessie__.
 
-        $ docker run -it  httpd:2.4 bash                                                                                                                     
-        root@29f190a1d4fc:/usr/local/apache2# apt-get update
-        Get:1 http://security.debian.org jessie/updates InRelease [63.1 kB]
-        Ign http://deb.debian.org jessie InRelease 
+Vous pouvez le démarrer pour vous faire la main dessus, car être confortable est très important , bon moi j'ai envie de le faire "live", je vais débuter avec un __dockerfile__ :P après le succès de __MySQL__ j'ai crois :P.
 
-Parfait c'est à la sauce __debian__ , donc je vais valider les noms des packages que j'ai besoin 
+Voici le __dockerfile__ : 
+
+        # Thomas Boutry
+        FROM php:5-apache
+        MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
+
+        # Ignore APT warnings about not having a TTY
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Php Modules a activer
+        RUN docker-php-ext-install mbstring \
+            && docker-php-ext-install mcrypt \
+            && docker-php-ext-install mysql \
+            && docker-php-ext-install mysqli \
+            && docker-php-ext-install pdo_mysql
+
+
+La particularité ici , entre une machine "classique" et le conteneur __php__ , l'instruction d'installation des modules aurais été comme suit pour une installe classique  :
+
+        RUN apt-get update \
+            && apt-get install php-mcrypt php-mysql php-mysqli 
+
+Mais le système de docker officiel offre une autre possibilité , que j'ai envie d'essayer :D , donc j'ai pris la philosophie du conteneur ! 
+
+On construit l'image :
+
+        $ docker build -t postfixadmin .
+        [ ... OUTPUT COUPÉ ...]
+        checking if nawk is broken... no
+        checking for mcrypt support... yes, shared
+        configure: error: mcrypt.h not found. Please reinstall libmcrypt.
+        The command '/bin/sh -c docker-php-ext-install mbstring     && docker-php-ext-install mcrypt     && docker-php-ext-install mysql     && docker-php-ext-install mysqli     && docker-php-ext-install pdo_mysql' returned a non-zero code: 1
+
+
+Nous pouvons voir que lors de la création du conteneur , le système compile les modules à ajouter il a donc besoin des packages sources pour réaliser l'opération je vais faire l'ajout. 
+
+
+        # Thomas Boutry
+        FROM php:5-apache
+        MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
+
+        # Ignore APT warnings about not having a TTY
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Php Modules a activer 
+        RUN apt-get update && apt-get install -y  --no-install-recommends libmcrypt-dev \
+            && docker-php-ext-install mbstring \
+            && docker-php-ext-install mcrypt \
+            && docker-php-ext-install mysql \
+            && docker-php-ext-install mysqli \
+            && docker-php-ext-install pdo_mysql
+
+
+        $ docker build -t postfixadmin .
+        [ ... OUTPUT COUPÉ ... ]
+        rm -f libphp.la       modules/* libs/*
+         ---> 5e8e831c6a96
+         Removing intermediate container 6d35d7aee6b8
+         Successfully built 5e8e831c6a96
+
+
+Super nous avons donc notre conteneur avec l'ensemble d'installer ... Du moins on le pense (honnêtement je le sais pas moi même à ce stade :D , on découvre ensemble !! ).
+
+Je vais démarrer le conteneur et mettre en place un fichier __phpinfo__ afin de confirmer ce qui est bien présent :D .
+
+        $ docker run  postfixadmin
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
+        AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
+        [Mon Feb 20 13:37:20.574334 2017] [mpm_prefork:notice] [pid 1] AH00163: Apache/2.4.10 (Debian) PHP/5.6.30 configured -- resuming normal operations
+        [Mon Feb 20 13:37:20.574363 2017] [core:notice] [pid 1] AH00094: Command line: 'apache2 -D FOREGROUND'
+
+        $ docker ps
+        CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+        095673118d88        postfixadmin        "docker-php-entrypoin"   15 seconds ago      Up 13 seconds       80/tcp              focused_hawking
+
+        $ docker exec -it focused_hawking bash
+        root@095673118d88:/var/www/html# pwd
+        /var/www/html
+
+Comme je n'ai pas **vi** sur la machine je vais simplement faire la création avec __echo__ 
+
+        root@095673118d88:/var/www/html# echo "<?php  phpinfo(); ?>" >> index.php
+
+Visualisation du résultat :
+
+![php_docker-view-phpinfo.png](./imgs/php_docker-view-phpinfo.png)
+
+Bien entendu vous pouvez visualiser le conteneur de la configuration apache dans **/etc/apache2**, je vous laisse le plaisir !
+
+

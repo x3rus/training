@@ -4,5 +4,7 @@
 *.swp
 # Ignore tempo single
 *~
+# Ignore untar file 
+./serveur_de_courriels/dockers/srvMailWithImapWithBD/data/postfixadmin-2.3.8/*
 # toc (generation de Table Of Content
 toc
