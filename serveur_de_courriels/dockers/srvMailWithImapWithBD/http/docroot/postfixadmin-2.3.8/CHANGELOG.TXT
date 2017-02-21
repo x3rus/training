@@ -1,0 +1,581 @@
+# Postfix Admin 
+# 
+# LICENSE 
+# This source file is subject to the GPL license that is bundled with  
+# this package in the file LICENSE.TXT. 
+# 
+# Further details on the project are available at : 
+#     http://www.postfixadmin.com or http://postfixadmin.sf.net 
+#
+# Last update:
+# $Id: CHANGELOG.TXT 1814 2015-10-07 11:08:22Z christian_boltz $
+
+Version 2.3.8 - 2015/10/07 - SVN r1814 (postfixadmin-2.3 branch)
+----------------------------------------------------------------
+  - fix query to enable/disable alias in edit-mailbox for PostgreSQL (#311)
+  - don't prefill username in users/ login on failed logins - fixes (probably
+    harmless) XSS
+  - fix show_gen_status() to properly escape mail addresses in query (#356)
+  - fix escaping in create-admin, create-mailbox and fetchmail templates -
+    fixes (harmless) XSS on form validation errors
+  - don't echo the password back to the browser in the fetchmail form
+  - allow MariaDB in Debian package dependencies
+
+Version 2.3.7 - 2014/02/20 - SVN r1651 (postfixadmin-2.3 branch)
+----------------------------------------------------------------
+  - SECURITY: fix SQL injection in show_gen_status() (CVE-2014-2655)
+  - lt.lang, da.lang translation update
+  - when enabling/disabling a mailbox, also update the corresponding alias
+  - fix creating superadmin in setup.php with MariaDB (more strict SQL)
+  - don't trim() mail address to avoid that aliases starting with a space are
+    allowed. This fixes http://sourceforge.net/p/postfixadmin/bugs/210/ and
+    https://sourceforge.net/p/postfixadmin/feature-requests/113/
+  - update regex in check_domain() to support new, longer TLDs like .international
+  - mark vacation_notification.notified field as latin1 to avoid overlong index
+  - vacation.pl: encode subject
+  - vacation.pl: disable use of TLS by default due to a bug in Mail::Sender 0.8.22
+    (you can re-enable it with $smtp_tls_allowed)
+
+Version 2.3.6 - 2013/01/02 - SVN r1417 (postfixadmin-2.3 branch)
+----------------------------------------------------------------
+
+  - display domain and mailbox description with correct encoding
+  - fix footer link
+  - focus username input field in login form
+  - fix double inclusion of config.inc.php in setup.php
+  - fix bool and date handling in fetchmail
+
+Version 2.3.5 - 2012/01/16 - SVN r1335 (postfixadmin-2.3 branch)
+----------------------------------------------------------------
+
+  - fix SQL injection in pacrypt() (if $CONF[encrypt] == 'mysql_encrypt')
+  - fix SQL injection in backup.php - the dump was not mysql_escape()d, 
+    therefore users could inject SQL (for example in the vacation message)
+    which will be executed when restoring the database dump.
+    WARNING: database dumps created with backup.php from 2.3.4 or older might
+             contain malicious SQL. Double-check before using them!
+  - fix XSS with $_GET[domain] in templates/menu.php and edit-vacation
+  - fix XSS in some create-domain input fields
+  - fix XSS in create-alias and edit-alias error message
+  - fix XSS (by values stored in the database) in fetchmail list view,
+    list-domain and list-virtual
+  - create-domain: fix SQL injection (only exploitable by superadmins)
+  - add missing $LANG['pAdminDelete_admin_error']
+  - don't mark mailbox targets with recipient delimiter as "forward only"
+  - wrap hex2bin with function_exists() - PHP 5.3.8 has it as native function
+
+Version 2.3.4 - 2011/09/16 - SVN r1180 (postfixadmin-2.3 branch)
+----------------------------------------------------------------
+
+  - generate more secure random passwords
+  - squirrelmail plugin: fix typo in variable name
+  - list-domain: fix SELECT query to work with PgSQL even when using custom fields
+  - create-domain: force domain name to lowercase to avoid problems with PgSQL
+    foreign keys
+  - fix vacation.pl to log to "mail" syslog facility
+  - error_log() dovecotpw error messages
+
+Version 2.3.3 - 2011/03/14 - SVN r1010 (postfixadmin-2.3 branch)
+----------------------------------------------------------------
+
+  - create-alias: allow multiple alias targets
+  - create-alias, edit-alias: prevent input data loss on validation errors
+  - list-virtual: fix displaying of 'modified' column for aliases when using
+    postgres
+  - replaced deprecated split() with preg_split() or explode()
+  - functions.inc.php: better error messages when database functions are missing
+  - create domain: fixed typo in variable name that broke the default value for
+    default aliases
+  - postgres: changed mailbox.quota, domain.quota and domain.maxquota fields
+    to bigint to allow mailboxes >4 GB (run setup.php to upgrade your database)
+  - vacation.pl logged literal $variable instead of the variable content at two
+    places
+  - edit-vacation: log enabling/disabling vacation if done by admins
+  - POSTFIX_CONF.txt: fixed filename for quota map
+  - config.inc.php: removed double $CONF['database_prefix']
+  - config.inc.php: fixed comments about domain_post* script parameters
+  - updated INSTALL.TXT and UPGRADE.TXT
+  - sk translation update
+  - some more minor fixes
+
+Version 2.3.2 - 2010/08/24 - SVN r860 (postfixadmin-2.3 branch)
+---------------------------------------------------------------
+
+  - SUMMARY: PostfixAdmin 2.3.2 is a bugfix-only release for Postfix Admin 2.3.1
+  - SECURITY: attackers could find out if a admin exists (login pre-filled the
+    username after "only" a wrong password was entered)
+  - SECURITY: fix sql injection in list-domain (only exploitable by superadmins)
+  - alias targets in users/edit-alias are now validated
+  - invalid alias targets in users/edit-alias are shown to the user again
+    instead of dropping them
+  - fix dovecot:* password encryption (was broken in 2.3.1)
+  - fix displaying used quota for dovecot <= 1.1 (was broken in 2.3.1)
+  - when deleting a domain that is an alias domain (on the "from" side), the
+    alias domain is deleted
+
+Version 2.3.1 - 2010/07/09 - SVN r847 (postfixadmin-2.3 branch)
+---------------------------------------------------------------
+
+  - SUMMARY: PostfixAdmin 2.3.1 is a bugfix-only release for Postfix Admin 2.3.
+    The only visible change is displaying the alias target for mailboxes which
+    was a longstanding issue/"missing feature".
+    The ADDITIONS directory contains some new scripts.
+  - SECURITY: users could bypass checking the old password when changing the
+    password by entering a too short new password. Fortunately only
+    "exploitable" by authentificated users.
+  - merge in changes to /debain (thanks normes) from trunk
+  - display alias targets for mailboxes (if $CONF['special_alias_control'] = YES)
+  - add hook for custom maildir path generation
+  - add import_users_from_csv.py script (by Simone Piccardi)
+  - add mailbox_post* scripts for cyrus
+  - handle dovecot passwords without any tempfile (prevents safe_mode issues)
+  - fix MySQL 6.0 compatibility
+  - fix quota display (for dovecot >= 1.2)
+  - fix short open tags ("<?")
+  - translation updates and fixes
+  - documentation updates and fixes
+  - document commandline parameters for $CONF[*_script] options in config.inc.php
+  - list-virtual: added error message if the check_owner query returns more
+    than one result (can happen with pre-2.3 databases and prevents access for
+    superadmins)
+  - add in_array() check to avoid that superadmins can enter invalid domains
+  - fix delete link for alias domains (when on target domain)
+  - delete values from quota and quota2 table when deleting a mailbox
+  - fix hardcoded table names in list-domain.php
+  - fixed edit-alias.php not to drop alias to the mailbox if
+    special_alias_control = NO
+  - fix alias handling for mailboxes (special_alias_control vs.
+    alias_control_admin confusion)
+  - fix typo in upgrade.php that broke index creation and deletion when using
+    non-default table names
+  - fix creating 'ALL' domain (dummy for superadmins) when using non-default
+    table names
+  - fix: db_query did not return number of SELECTed rows if query starts with
+    with whitespace
+  - check for $CONF['encrypt'] = 'dovecot:md5-crypt' (postfixadmin login not
+    working because dovecotpw uses a new salt each time), recommend
+    internal md5crypt instead
+  - replaced terribly outdated, broken squirrelmail plugin with a fresh version.
+    Note: The new plugin version requires the Zend framework.
+
+Version 2.3 - 2009/10/24 - SVN r739
+-----------------------------------
+
+  - automatically create quota tables for dovecot (both 1.0/1.1 and >= 1.2)
+  - list-virtual can now handle both table formats
+  - fixed upgrade.php for MySQL 6.0 compability
+  - changed vacation.pl syslog facility from "user" to "mail"
+  - added config option for postregsql database port
+  - added config option to enable/disable XMLRPC interface (default: off)
+  - Fix check/query for alias with enabled vacation in vacation.pl 
+  - Fix db_get_boolean() to return t/f for postgresql, not true/false
+  - Fix missing quoting for boolean values in SQL queries at various places
+  - Allow SHA courier-authlib passwords
+  - various small bug fixes
+  - fixed SVN revision for 2.3rc7 in changelog (was r691, should be r694)
+
+Version 2.3rc7 - 2009/07/27 - SVN r694
+--------------------------------------
+
+  - Fix bug with confd-link.sh debian thing (breakage on Lenny with wwwconfig-common 0.1.2)
+  - Fix crypt() issue (see https://sourceforge.net/tracker/?func=detail&aid=2814820&group_id=191583&atid=937964 )
+
+Version 2.3rc6 - 2009/07/20 - SVN r689
+--------------------------------------
+
+  - Updates to vacation.pl
+  - PHP 5.3 compatibility
+  - Easier dependencies for .debs - should work on Lenny/Ubuntu etc without issue now.
+
+Version 2.3rc5 - 2009/05/20 - SVN r658
+--------------------------------------
+
+  - Improvements to the setup process
+  - Far better Debian packaging (we hope!) which should make installation much, much easier.
+  - Various bug fixes 
+  - Performance enhancements (or we fixed the regressions ...) in domain listing etc.
+
+Version 2.3rc4 - 2009/04/18 - SVN r632
+--------------------------------------
+
+  - *Security fix* - on upgrade setup.php is restored; allowing a malicious
+    user to create their own superadmin account. We've removed the requirement to delete
+    setup.php, and instead a new config parameter (setup_password) is used to protect access
+    to this page. Password is encrypted, and setup.php can be used to generate the initial value.
+  - Fix undefined variables problem(s)
+  - Fix PostgreSQL date timestamp issues...
+ 
+Version 2.3rc3 - 2009/04/06 - SVN r611
+--------------------------------------
+
+  - Minor improvements to the Debian packaging, expect more soon
+  - Assorted bug fixes
+  - Partial support for per-user fetchmail.pl support
+
+Version 2.3rc2 - 2009/02/03 - SVN r593
+--------------------------------------
+
+  - Refactor /users (see /model) and provide XmlRpc interface for remote mail clients
+     (e.g. squirrelmail-postfixadmin)
+  - Add dovecotpw support - see: 
+     https://sourceforge.net/tracker/index.php?func=detail&aid=2607332&group_id=191583&atid=937966
+  - Add unit tests for model/ directory (see /tests)
+  - Add additional scripts to ADDITIONS
+  - Documentation updates
+  - Various language updates
+  - added ADDITIONS/delete-mailq-by-domain.pl (by Jose Nilton)
+  - added ADDITIONS/quota_usage.pl (by Jose Nilton) - produces report of quota usage
+  - added support for courier authlib authentication flavors ($CONF['authlib_default_flavor'])
+
+
+Version 2.3 Beta - 2009/01/15 - SVN r527
+-----------------------------------------
+
+  - added support for domain aliases (from lenix) (can be disabled with $CONF['alias_domain'])
+    Important: If you update from a previous version, you'll have to adapt your postfix 
+    configuration (see DOCUMENTS/POSTFIX_CONF.txt) - or just disable alias domain support,
+    your postfix configuration will continue to work
+  - updated postfix example configuration for domain aliases and to use the new mysql map format
+  - vacation.pl:
+    - add option for re-notification after definable timeout (patch from Luxten)
+      (default stays on "notify once")
+    - force usage of envelope from/to, better checks for mailinglists, spam etc.
+      If in doubt, do not send a vacation reply (patch from Lutxen)
+    - added a small test suite
+    - use Log4Perl
+    - allow to enter the configuration in /etc/mail/postfixadmin/vacation.conf
+      instead of editing vacation.pl directly
+    - bump version number of vacation.pl
+  - added domain-postcreation script support
+  - added dovecot quota support (documentation + viewing in postfixadmin)
+  - enhanced mailbox table to make it easier for people to customise where mailboxes live
+    (new column "local_part")
+  - enhanced fetchmail.pl script (file locking, syslog logging, configuration file etc)
+  - added clear error message for non-resolvable domains when creating mailboxes or aliases
+  - check for non-resolvable domains on domain creation
+  - new option $CONF['create_mailbox_subdirs_prefix'] for compatibility with more IMAP servers
+  - added support for mysql encrypt() password encrpytion 
+  - fix "illegal mix of collations" problem in MySQL by explicitely setting the charset everywhere
+  - fix: cleanup vacation_notification table when disabling vacation
+  - fix: config and fetchmail tables now honor $CONF['database_tables']
+  - fix: several table names were hardcoded in database creation/update
+  - fix: "unlimited" and "disabled" for quota and limits were crossed at several places
+  - fix: honor $CONF['default_transport'] even if $CONF['transport'] = "no" (patch by fabiobon)
+  - fix: transport field is no longer emptied on domain edit if editing transport is disabled
+  - show links to create mailboxes or alias even on disabled domains
+  - added support for fetchmail's "ssl" option
+  - superadmin can now setup fetchmail for all users, not only for himself
+  - force username to be lowercase - this helps some IMAP clients apparently
+  - the "probably undeliverable" marker now honors catchall targets
+  - on mailbox creation, show password if $CONF['generate_password'] == 'YES', but
+    do not show it if it was _not_ autogenerated and $CONF['show_password'] == 'NO'
+  - dropped $CONF['show_custom_count']. PHP can count ;-)
+  - dropped obsolete VIRTUAL_VACATION/mail-filter script
+  - translation updates
+  - several small bugfixes
+
+
+Version 2.2.1.1 - 2008/07/23 - SVN r412
+---------------------------------------
+
+  - fixed version number in functions.inc.php ;-)
+
+
+Version 2.2.1 - 2008/07/21 - SVN r408
+-------------------------------------
+
+  - added quota parameter to mailbox_postcreation hook
+  - new hook to update the quota after editing a mailbox ($CONF['mailbox_postedit_script'])
+  - fixed subfolder creation order and timing
+  - allow smtp server to be specified in vacation.pl
+  - fixed MySQL charset issues
+  - several small bugfixes
+  - Norwegian (bokmal) translation added
+  - several translation updates
+
+
+Version 2.2.0 - 2008/04/29
+--------------------------
+
+  <Far more changes than those listed here; thanks to all the community who have provided
+   patches and time to help us get here!>
+  - Unicode support for vacation messages
+  - More language translations
+  - Merged the two vacation scripts (PostgreSQL version won :) )
+  - Added setup.php/upgrade.php scripts to handle upgrades
+    - See also new 'config' database table
+  - Added support for 'fetchmail' so mail from a remote server can be retrieved.
+  - Many, many bug fixes
+
+  - Added: Feature to show status of aliases/mailboxes (GregC)
+  - Fixed: Many admin/*.php files merged with /*.php
+  - Fixed: 'alias' instead of '$table_alias' being used by some .php files (GregC)
+  - Fixed: Overview no longer lists alias entries for mailboxes (GregC)
+  - Changed: Added exit buttons to several edit options. (GregC)
+  - Fixed: user options are a little more idiot-proof, templates are consistent (GregC)
+  - Changed: Users can view and edit their vacation config (GregC)
+  - Added: Slovakian language posted on SourceForge by eszabo
+  - Changed: searches include mailbox.name matches (GregC)
+  - Fixed: function check_email will ignore vacation_domain if vacation==YES (GregC)
+  - Changed: applied patches from Christian Boltz posted at 
+    http://www.cboltz.de/tmp/postfixadmin-3.patch, referenced at
+    https://sourceforge.net/tracker/index.php?func=detail&aid=1696647&group_id=191583&atid=937966 (GregC)
+  - Added: main.php to admin dirctory (GregC)
+  - Added: Item "Main" on admin menu (GregC)
+  - Changed: Edit-vacation now edits for admins/superadmins (GregC)
+  - Added: Do not store local copy when forward mail. (Mihau) [24] 
+  - Added: Virtual Vacation for PostgreSQL. (Tarvin)
+  - Added: Virtual Vacation 3.2 (Thanx David)
+  - Added: SUBJECT tag for Virtual Vacation.         
+  - Added: Dovecot setup document for Postfix Admin. (Thanx Massimo)
+  - Added: SquirrelMail plugin to change_password.
+  - Changed: Starting to merge /admin in root. (Mihau)
+  - Changed: Moved some TXT files to DOCUMENTS.   
+  - Changed: Updated tw.lang. (Thanx Bruce)
+  - Fixed: Usage of mysql_real_escape_string(). (Mihau)
+  - Fixed: Calculating of quotas. (Mihau)
+  - Fixed: Password generation when creating a new account. (Mihau)
+  - Fixed: PostgreSQL patches. (Tarvin)
+  - Fixed: Adding of multiple aliases. (Mihau)
+  - Fixed: CSS Menu width. (Mihau)
+  - Fixed: Overview when upgrading from 2.0.4. (Mihau)
+  - Fixed: smtp_mail() to wait for response from server.
+  - Fixed: pacrypt() so system works properly. (Thanx Npaufler)
+  - Fixed: quoting an email address when sending mail in vacation.pl. (Thanx Marc)
+  - Fixed: vacation.pl has a clean exit when it encounters an error. (Thanx Brian)
+  - Fixed: descriptions for quota={-1|0} in admin section (Mihau)
+
+
+Version 2.1.0 -- 2005/01/07
+---------------------------
+  - Added: Traditional Chinese language. (Thanx Bruce)
+  - Added: Traditional Bulgarian language. (Thanx Plamen)
+  - Added: Macedonian language. (Thanx Damjan)
+  - Added: Estonian language. (Thanx Peeter)
+  - Added: Slovenian language. (Thanx Nejc)
+  - Added: Check for update link in footer.
+  - Added: Additional language strings. Check LANGUAGE.TXT
+  - Added: Transport support. (read postfix transport for more information)
+  - Added: Additional language string for transport support.
+  - Added: MySQL 4.1 support.
+  - Added: PostgreSQL support. (Big Thanx WhiteFox!)
+  - Added: Setup Checker script. (Thanx Fenrir)
+  - Added: Database prefix. (Thanx Decramy)
+  - Added: Template tags. (Thanx Nelson)
+  - Added: admin/domain/alias/mailbox in delete dialog box.
+  - Added: $CONF['postfix_admin_url'] variable.
+  - Added: $CONF['postfix_admin_path'] variable.
+  - Added: $CONF['vacation_domain'] variable.
+  - Added: $CONF['welcome_text'] variable.
+  - Added: $CONF['special_alias_control'] variable. (Thanx Mihau)
+  - Added: Virtual Vacation 3.1 (Thanx David)
+  - Added: ADDITIONS directory with third party scripts and plugins.
+  - Added: Search function for aliases and mailboxes.
+  - Changed: Postfix Admin has now it's own license.
+  - Changed: New menu and color scheme. (Thanx Nelson)
+  - Changed: Disable number and unlimited number for aliases/mailboxes/quota.
+  - Changed: Virtual Vacation to have it's own transport. (Big Thanx Npaufler!)
+  - Changed: Removed the welcome text for a new mailbox from the language files.
+  - Changed: backup.php to be a more secure. (Thanx John)
+  - Fixed: Cleaned up stylesheet.
+  - Fixed: Default quota multiplier.
+  - Fixed: All POST/GET strings are escaped.
+  - Fixed: Corrected smtp_mail() to wait for result. (Thanx Patrice)
+  - Fixed: Pagination with alias_control switched on.
+  - Fixed: Swedish language. (Thanx Bjorne)
+  - Fixed: Polish language. (Thanx Piotr)
+  - Fixed: Minor Virtual Vacation bugs. (Thanx David)
+  - Fixed: check_quota().
+  - Fixed: Minor encode_header() issue. (Thanx Matthew)
+  - Fixed: edit-alias.php when running with magic_quotes_gpc = off
+
+
+Version 2.0.5 -- 2004/08/21
+---------------------------
+  - Added: Chinese language. (Thanx Matthew)
+  - Added: Catalan language. (Thanx Jaume)
+  - Added: Czech language. (Thanx Jakub)
+  - Added: Dynamic language detection.
+  - Added: Header in header.tpl to set charset header from language file.
+  - Added: More subroutines and alias checking for Vacation. (Thanx David)
+  - Added: Domain pass-through with certain pages.
+  - Added: Backup MX option for domain.
+  - Added: Log contains IP address of admin.
+  - Added: Pagination for alias/mailbox listing.
+  - Added: 2 additional language strings to support Backup MX.
+  - Added: Support for motd.txt (Domain Admins only).
+  - Added: Support for motd-admin.txt (Site Admins only).
+  - Added: Support for motd-users.txt (Users only).
+  - Added: Optional hostname for vacation.
+  - Added: generate_password() to generating random passwords for mailboxes.
+  - Changed: dk -> da, se -> sv, no-nn -> nn
+  - Changed: All email addresses are now converted to lowercase, strtolower().
+  - Changed: Moved onMouseOver to the CSS stylesheet.
+  - Changed: Moved font color to the CSS styleheet.
+  - Changed: PHP mail() is replaced by an internal function, smtp_mail().
+  - Changed: mysql_fetch_array() replaced with internal function db_array().
+  - Changed: mysql_fetch_assoc() replaced with internal function db_assoc().
+  - Changed: mysql_fetch_row() replaced with internal function db_row().
+  - Changed: Quota multiplier is now a configuration option.
+  - Fixed: Login didn't check for active flag.
+  - Fixed: Minor html table errors.
+  - Fixed: Row count by using COUNT(*).
+  - Fixed: Locked down subdirectories.
+  - Fixed: Create admin properly populates the domain_admins table.
+  - Fixed: Cleaned up stylesheet.css.
+  - Fixed: Delete mailbox properly removes vacation entries.
+
+
+Version 2.0.4  -- 2004/02/26
+----------------------------
+  - Added: Euskara language. (Thanx Julen)
+  - Added: Hungarian language. (Thanx Christian)
+  - Added: Icelandic language. (Thanx Gestur)
+  - Added: Italian language. (Thanx Stucchi)
+  - Added: Norwegian - Nynorsk language. (Thanx Paul)
+  - Added: Polish language. (Thanx Jarek)
+  - Added: Portuguese - Brazil language. (Thanx Roberto)
+  - Added: Rusian language. (Thanx Paul)
+  - Added: Turkish language (Thanx Onuryalazi)
+  - Added: Encode a string according to RFC 1522 for use in headers if it
+    contains 8-bit characters. (Thanx Evgeniy)
+  - Added: One click active change of mailbox/domain/admin. (Thanx Marcin)
+  - Changed: Header in header.tpl to read charset header from language file.
+  - Fixed: Some form values are now parsed through htmlspecialchars().
+    (Thanx Marcin)
+  - Fixed: admin/delete.php ignored $CONF['vacation'].
+  - Fixed: More minor fixes to Virtual Vacation.
+
+
+Version 2.0.3  -- 2004/01/14
+----------------------------
+  - Added: Site Admin email address.
+  - Added: Danish language. (Thanx Lars)
+  - Added: Dutch language. (Thanx Mourik)
+  - Added: Faroese language. (Thanx Danial)
+  - Added: Finnish language. (Thanx Palo)
+  - Added: French language. (Thanx Kuthz)
+  - Added: Swedish language. (Thanx Slite)
+  - Added: Ignoring of MAILER-DAEMON type emails for Vacation.
+  - Fixed: Minor issues regarding mail().
+  - Fixed: Minor issues regarding crypt().
+  - Fixed: Strip issue of email address for Vacation.
+
+
+Version 2.0.2  -- 2004/01/06
+----------------------------
+  - Added: German language. (Thanx Tobias)
+  - Added: Spanish language. (Thanx Alvaro)
+  - Fixed: The body was not included using sendmail.php.
+  - Fixed: Undefined variables.
+  - Fixed: Minor HTML cleanup.
+
+
+Version 2.0.1  -- 2004/01/04
+----------------------------
+  - Fixed: The language variable caused a problem on some systems.
+
+
+Version 2.0.0  -- 2004/01/03
+----------------------------
+  - Added: The ability for one domain admin to maintain multiple domains.
+  - Added: Domain to domain forwarding.
+  - Added: Mailboxes can now be activated or deactivated.
+  - Added: Configurable welcome message for new mailboxes.
+  - Added: Optional sending of welcome message.
+  - Added: Create alias "To" defaults to current domain.
+  - Added: Logging of admin / user actions.
+  - Added: Limit for aliases and/or mailboxes per domain.
+  - Added: Disable aliases and/or mailboxes per domain.
+  - Added: Max quota per mailbox per domain.
+  - Added: Multi-Language support.
+  - Added: Statistics overview for all domains.
+  - Added: User .forwarding for mailbox users.
+  - Added: Logo for Postfix Admin (Thanx Andrew).
+  - Added: Extra MySQL debugging capabilities.
+  - Added: Clear text password support.
+  - Added: PHP crypt() support.
+  - Changed: Separated logic and SQL from content.
+  - Changed: config.inc.php doesn't point to example.com anymore.
+  - Changed: Virtual Vacation no longer requires procmail.
+  - Changed: Complete re-write.
+
+
+Version 1.5.4  -- 2003/06/16
+----------------------------
+  - Added: Option for "Back to".
+  - Added: Option for Vacation module.
+  - Added: Table declaration for the use of Quota in the INSTALL.TXT.
+    This requires an additional local delivery agent.
+    Quotas are not supported by Postfix!
+  - Changed: The word "View" to "List".
+
+
+Version 1.5.3  -- 2003/06/06
+----------------------------
+  - Fixed: Even more minor bugs in regards to declaration of variables.
+    (Thanx Aquilante and Kyle_m)
+
+
+Version 1.5.2  -- 2003/06/05
+----------------------------
+  - Fixed: Minor bugs in regards to declaration of variables.
+
+
+Version 1.5.1  -- 2003/06/04
+----------------------------
+  - Added: Optional mailbox per domain directory structure. (Thanx Jim)
+  - Added: Option to completely control the stored aliases. (Thanx Alex)
+  - Changed: config.inc.php is renamed to config.inc.php.sample. (Thanx Alex)
+  - Fixed: $PHP_SELF in config.inc.php and my_lib.php. (Thanx Jim)
+  
+
+Version 1.5.0  -- 2003/05/28
+----------------------------
+  - Added: Support for "Back to Main Site"
+  - Added: config.inc.php as the main configuration file.
+  - Added: Drop down box for domain selection when adding a new admin.
+  - Added: Resend of test email to newly created mailbox.
+  - Added: Mailbox and Aliases count for domainview.
+  - Added: Change description of domain without deleting the complete
+    domain.
+  - Added: Change name of mailbox user without deleting the mailbox.
+  - Added: Expire headers for unnecessary reloads. (Thanx Alex)
+  - Fixed: Code clean up.
+  - Fixed: Minor bugs and cosmetic fixes.
+  - Fixed: Modified check_string() to check numbers and returns false if not
+    matched. (Thanx btaber)
+  - Fixed: Correct session handling in login.php (Thanx Yen-Wei Liu)
+  - Fixed: Correct deletion of RFC822 email addresses. (Thanx Yen-Wei Liu)
+  - Removed: Completely removed the site_lib.php.
+  - Removed: my_lib.php from the admin directory.
+  - Removed: Symlink to index.php.
+
+
+Version 1.4.0  -- 2003/04/07
+----------------------------
+  - Added: When deleting a domain, all aliases and mailboxes for that domain
+    are also deleted from the database.
+  - Added: Add standard aliases for every domain that is created.
+    These aliases can point to the main "local" administrator.
+    The aliases are configured in the config.php in the admin directory.
+  - Changed: The layout of my_lib.php and site_lib.php have been changed.
+  - Changed: Modifying an alias is now done with TEXTAREA for more
+    flexibility.
+  - Fixed: Minor bugs and cosmetic fixes.
+
+
+Version 1.3.8a -- 2003/03/31
+----------------------------
+  - Fixed: After deletion of a domain it would not return to the correct page.
+
+
+Version 1.3.8  -- 2003/03/25
+----------------------------
+  - Added: Admin password change. No longer needed to delete and re-enter
+    the admin user for a specific domain.
+
+
+Version 1.3.7  -- 2002/12/24
+----------------------------
+  - Initial public release of Postfix Admin.

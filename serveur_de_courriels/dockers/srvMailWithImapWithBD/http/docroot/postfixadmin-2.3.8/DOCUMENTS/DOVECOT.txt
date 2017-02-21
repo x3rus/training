@@ -1,0 +1,145 @@
+#
+# Dovecot configuration for Postfix Admin
+# Originally written by: Massimo <AndyCapp> Danieli
+# Revised by: Sampsa Hario <shario> for Dovecot v1.0
+#
+
+More complete Dovecot documentation:
+
+http://wiki.dovecot.org/Quota
+http://wiki.dovecot.org/Quota/Dict
+http://www.opensourcehowto.org/how-to/mysql/mysql-users-postfixadmin-postfix-dovecot--squirrelmail-with-userprefs-stored-in-mysql.html
+
+Here are the relevant parts of Dovecot v1.0.x configuration for Postfixadmin setup.
+Please refer to Dovecot documentation for complete information.
+
+The setup gets userdb and passdb info from MySQL as well as quotas, and 
+uses dict backend to store used quotas as key=value pairs so that they can
+be viewed real-time in Postfixadmin.
+
+
+1. Dovecot setup
+-----------------
+
+default_mail_env = maildir:/var/mail/vmail/%u/
+
+(dovecot 1.0.7 calls this mail_location ... ie.. mail_location = maildir:/...../%u )
+
+auth default {
+  mechanisms plain
+  userdb sql {
+    # Path for SQL configuration file, see doc/dovecot-sql-example.conf
+    args = /etc/dovecot-mysql.conf
+  }
+  passdb sql {
+    # Path for SQL configuration file, see doc/dovecot-sql-example.conf
+    args = /etc/dovecot-mysql.conf
+  }
+}
+
+# Valid UID range for users, defaults to 500 and above.
+first_valid_uid = 1001  # Change this to your postfix UID
+
+
+2. Dovecot mysql setup
+----------------------
+
+Below you'll find the relevant part of dovecot-mysql.conf file regarding our
+setup. Things you may need to change are db_password, uid and gid:
+
+
+connect = host=localhost dbname=postfix user=postfix password=postfix
+driver = mysql
+
+# Default password scheme.
+# depends on your $CONF['encrypt'] setting:
+# md5crypt  -> MD5-CRYPT
+# md5       -> PLAIN-MD5
+# cleartext -> PLAIN
+default_pass_scheme = MD5-CRYPT
+
+# Query to retrieve password. user can be used to retrieve username in other
+# formats also.
+
+password_query = SELECT username AS user,password FROM mailbox WHERE username = '%u' AND active='1'
+
+# Query to retrieve user information.
+
+user_query = SELECT maildir, 1001 AS uid, 1001 AS gid FROM mailbox WHERE username = '%u' AND active='1'
+
+for dovecot 1.2: (for PostgreSQL, replace 'CONCAT(a, b)' with 'a || b')
+user_query = SELECT CONCAT('/home/vmail/', maildir) AS home, 1001 AS uid, 1001 AS gid, 
+	CONCAT('*:bytes=', quota) AS quota_rule FROM mailbox WHERE username = '%u' AND active='1'
+
+
+NB! The GID and UID are for postfix user and group ID, NOT MySQL user and group ID.
+
+
+3. Dovecot v1.0 quota support (optional)
+----------------------------------------
+
+Please note that you need to use Dovecot's own local delivery agent to
+enforce and update quotas. Then you can view real-time used quotas in
+Postfixadmin.
+
+Add to dovecot.conf:
+
+## IMAP quota
+protocol imap {
+  quota = dict:storage=200000 proxy::quota
+}
+
+## POP quota
+protocol pop3 {
+  mail_plugins = quota
+}
+
+## Local Delivery Agent
+protocol lda {
+  mail_plugins = quota
+}
+
+## Dictionary DB proxy
+dict {
+  quota = mysql:/etc/dovecot-dict-quota.conf
+}
+
+## Default quota values
+plugin {
+quota = dict:storage=200000 proxy::quota
+}
+
+
+Change dovecot-mysql.conf to return quota values:
+
+for MySQL:
+user_query = SELECT maildir, 1001 AS uid, 1001 AS gid, CONCAT('dict:storage=',floor(quota/1000),' proxy::quota') as quota FROM mailbox WHERE username = '%u' AND active='1'
+
+for PostgreSQL:
+user_query = SELECT maildir, 1001 AS uid, 1001 AS gid, 'dict:storage=' || floor(quota/1000) || '::proxy::quota' as quota FROM mailbox WHERE username = '%u' AND active='1'
+
+
+Create file dovecot-dict-quota.conf:
+
+driver = mysql
+connect = host=localhost dbname=postfix user=postfix password=postfix
+default_pass_scheme = MD5-CRYPT
+table = quota
+select_field = current
+where_field = path
+username_field = username
+
+
+Create database in Mysql:
+(This is automatically done by postfixadmin's setup.php)
+
+Enable quota support in Postfixadmin config.inc.php:
+
+$CONF['used_quotas'] = 'YES';
+$CONF['quota'] = 'YES';
+
+Note: The above text describes the configuration for dovecot 1.0 & 1.1 quota table format.
+
+If you use dovecot 1.2 or newer, 
+- use the 'quota2' table (also created by setup.php)
+- set $CONF['new_quota_table'] = 'YES'

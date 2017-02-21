@@ -1,0 +1,38 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+	if [ -f /usr/share/debconf/confmodule ]; then
+		. /usr/share/debconf/confmodule
+		db_version 2.0
+		
+		# restart the webserver only if we know which one was configured.
+		if db_get postfixadmin/reconfigure-webserver; then
+			servers="$RET"
+			restart=$servers
+			linkname="postfixadmin"
+			if [ -e /usr/share/wwwconfig-common/restart.sh ]; then
+				. /usr/share/wwwconfig-common/restart.sh
+			fi
+		fi
+		
+		if [ -f /usr/share/dbconfig-common/dpkg/postrm ]; then
+			. /usr/share/dbconfig-common/dpkg/postrm
+			dbc_go postfixadmin $@
+		fi
+	fi
+        
+	if [ "$1" = "purge" ]; then
+                rm -f /etc/postfixadmin/dbconfig.inc.php
+                if which ucf >/dev/null 2>&1; then
+                        ucf --purge /etc/postfixadmin/dbconfig.inc.php
+                fi
+
+                db_purge || true
+
+        fi
+fi
+
+#DEBHELPER#
+
+exit 0

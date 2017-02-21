@@ -1,0 +1,427 @@
+<?php
+# $Id: mk.lang 1184 2011-09-22 22:01:52Z christian_boltz $
+//
+// Language file Macedonian
+// by Damjan Georgiev <dame at mol dot com dot mk>
+//
+
+$PALANG['YES'] = 'Да';
+$PALANG['NO'] = 'Не';
+$PALANG['edit'] = 'Измени';
+$PALANG['del'] = 'Бриши';
+$PALANG['exit'] = 'Exit'; # XXX
+$PALANG['cancel'] = 'Cancel'; # XXX
+$PALANG['save'] = 'Save'; # XXX
+$PALANG['confirm'] = 'Дали сте сигурни дека сакате да го избришете ова?\n';
+$PALANG['confirm_domain'] = 'Дали сакате да ги избришете сите записи од овој домен? Ова не може да се поправи покасно!\n';
+$PALANG['check_update'] = 'Check for update'; # XXX
+$PALANG['invalid_parameter'] = 'Invalid parameter!'; # XXX
+$PALANG['pFooter_logged_as'] = 'Logged as %s'; # XXX
+
+$PALANG['pLogin_welcome'] = 'Логин за администрирање на домени (Само за администратори!)';
+$PALANG['pLogin_username'] = 'Корисничко име (email)';
+$PALANG['pLogin_password'] = 'Лозинка';
+$PALANG['pLogin_button'] = 'Пријава';
+$PALANG['pLogin_failed'] = 'Your email address or password are not correct.'; # XXX
+$PALANG['pLogin_login_users'] = 'Логин за обични корисници.';
+
+$PALANG['pMenu_main'] = 'Main'; # XXX
+$PALANG['pMenu_overview'] = 'Преглед';
+$PALANG['pMenu_create_alias'] = 'Додавање на алијас';
+$PALANG['pMenu_create_alias_domain'] = 'Add Alias Domain'; # XXX
+$PALANG['pMenu_create_mailbox'] = 'Додавање на поштенско сандаче';
+$PALANG['pMenu_fetchmail'] = 'Fetch Email'; # XXX
+$PALANG['pMenu_sendmail'] = 'Праќање порака';
+$PALANG['pMenu_password'] = 'Промена на лозинка';
+$PALANG['pMenu_viewlog'] = 'Преглед на записи';
+$PALANG['pMenu_logout'] = 'Одјава';
+
+$PALANG['pMain_welcome'] = 'Добредојдовте на администраторот за Postfix!';
+$PALANG['pMain_overview'] = 'Преглед на алијаси и поштенски сандачиња. Од овде може да се променат или избришат податоците.';
+$PALANG['pMain_create_alias'] = 'Креирање на нов алијас за вашиот домен.';
+$PALANG['pMain_create_mailbox'] = 'Креирање на ново поштенско сандаче.';
+$PALANG['pMain_sendmail'] = 'Праќање на порака на новокреирано сандаче.';
+$PALANG['pMain_password'] = 'Промена на вашата администраторска лозинка за доменот.';
+$PALANG['pMain_viewlog'] = 'Преглед на записи.';
+$PALANG['pMain_logout'] = 'Одјава од системот';
+
+$PALANG['pOverview_disabled'] = 'Disabled'; # XXX
+$PALANG['pOverview_unlimited'] = 'Unlimited'; # XXX
+$PALANG['pOverview_title'] = ':: Defined Domains'; # XXX
+$PALANG['pOverview_up_arrow'] = 'Go Top'; # XXX
+$PALANG['pOverview_right_arrow'] = 'Next Page'; # XXX
+$PALANG['pOverview_left_arrow'] = 'Previous Page'; # XXX
+$PALANG['pOverview_alias_domain_title'] = ':: Domain Aliases'; # XXX
+$PALANG['pOverview_alias_title'] = ':: Alias'; # XXX
+$PALANG['pOverview_mailbox_title'] = ':: Mailboxes'; # XXX
+$PALANG['pOverview_button'] = 'Оди';
+$PALANG['pOverview_welcome'] = 'Преглед за ';
+$PALANG['pOverview_alias_domain_aliases'] = 'Alias Domains'; # XXX
+$PALANG['pOverview_alias_domain_target'] = '%s is an Alias Domain for:'; # XXX
+$PALANG['pOverview_alias_alias_count'] = 'Алијаси';
+$PALANG['pOverview_alias_mailbox_count'] = 'Поштенски сандачиња';
+$PALANG['pOverview_alias_address'] = 'Од';
+$PALANG['pOverview_alias_goto'] = 'До';
+$PALANG['pOverview_alias_modified'] = 'Последна промена';
+$PALANG['pOverview_alias_domain_modified'] = 'Last Modified'; # XXX
+$PALANG['pOverview_alias_active'] = 'Active'; # XXX
+$PALANG['pOverview_alias_domain_active'] = 'Active'; # XXX
+$PALANG['pOverview_alias_edit'] = 'Alias'; # XXX
+$PALANG['and_x_more'] = '[and %s more...]'; # XXX
+$PALANG['pOverview_mailbox_username'] = 'Адреса';
+$PALANG['pOverview_mailbox_name'] = 'Име';
+$PALANG['pOverview_mailbox_quota'] = 'Квота (MB)';
+$PALANG['pOverview_mailbox_modified'] = 'Последна промена';
+$PALANG['pOverview_mailbox_active'] = 'Активен';
+$PALANG['pOverview_vacation_edit'] = 'VACATION IS ON'; # XXX
+$PALANG['pOverview_vacation_option'] = 'Set Vacation'; # XXX
+
+$PALANG['pOverview_get_domain'] = 'Домен';
+$PALANG['pOverview_get_aliases'] = 'Алијаси';
+$PALANG['pOverview_get_alias_domains'] = 'Domain Aliases'; # XXX
+$PALANG['pOverview_get_mailboxes'] = 'Поштенски сандачиња';
+$PALANG['pOverview_get_quota'] = 'Квота на сандаче (MB)';
+$PALANG['pOverview_get_modified'] = 'Последна промена';
+
+$PALANG['pDelete_delete_error'] = '<span class="error_msg">Не можам да го избришам записот ';
+$PALANG['pDelete_delete_success'] = '%s deleted.'; # XXX
+$PALANG['pDelete_postdelete_error'] = '<span class="error_msg">Unable to remove mailbox '; # XXX
+$PALANG['pDelete_domain_error'] = '<span class="error_msg">Овој домен не е ваш ';
+$PALANG['pDelete_domain_alias_error'] = '<span class="error_msg">This domain is not yours '; # XXX
+$PALANG['pDelete_alias_error'] = '<span class="error_msg">Unable to delete alias '; # XXX
+$PALANG['pCreate_alias_domain_welcome'] = 'Mirror addresses of one of your domains to another.'; # XXX
+$PALANG['pCreate_alias_domain_alias'] = 'Alias Domain'; # XXX
+$PALANG['pCreate_alias_domain_alias_text'] = 'The domain that mails come in for.'; # XXX
+$PALANG['pCreate_alias_domain_target'] = 'Target Domain'; # XXX
+$PALANG['pCreate_alias_domain_target_text'] = 'The domain where mails should go to.'; # XXX
+$PALANG['pCreate_alias_domain_active'] = 'Active'; # XXX
+$PALANG['pCreate_alias_domain_button'] = 'Add Alias Domain'; # XXX
+$PALANG['pCreate_alias_domain_error1'] = 'You are not allowed to create the chosen configuration.'; # XXX
+$PALANG['pCreate_alias_domain_error2'] = 'The chosen configuration is invalid, please choose a different one!'; # XXX
+$PALANG['pCreate_alias_domain_error3'] = 'Database insert failed.'; # XXX
+$PALANG['pCreate_alias_domain_error4'] = 'All domains are already aliased.'; # XXX
+$PALANG['pCreate_alias_domain_success'] = 'The domain alias has been added to the alias domain table!'; # XXX
+
+$PALANG['pCreate_alias_welcome'] = 'Креирање на нов алијас за вашиот домен.';
+$PALANG['pCreate_alias_address'] = 'Алијас';
+$PALANG['pCreate_alias_address_text_error1'] = '<br /><span class="error_msg">Алијасот не е валиден!</span>';
+$PALANG['pCreate_alias_address_text_error2'] = '<br /><span class="error_msg">Оваа адреса веќе постои. Ве молам одберете друга!</span>';
+$PALANG['pCreate_alias_address_text_error3'] = '<br /><span class="error_msg">Го достигнавте вашиот лимит за креирање алијаси!</span>';
+$PALANG['pCreate_alias_goto'] = 'До';
+$PALANG['pCreate_alias_active'] = 'Active'; # XXX
+$PALANG['pCreate_alias_button'] = 'Додавање алијас';
+$PALANG['pCreate_alias_goto_text'] = 'Каде треба да се испрати поштата.';
+$PALANG['pCreate_alias_goto_text_error'] = 'Каде треба да се испрати пораката.<br /><span class="error_msg">Полето ДО не е валидно!</span>';
+$PALANG['pCreate_alias_result_error'] = '<span class="error_msg">Не можам да го додадам алијасот на табелата со алијаси!</span>';
+$PALANG['pCreate_alias_result_success'] = 'Алијасот е додаден на табелата со алијаси!';
+$PALANG['pCreate_alias_catchall_text'] = 'За да креираш catch-all користи "*" како алијас.<br /> За препраќање од домен на домен користи "*@domain.tld" како ДО.';
+
+$PALANG['pEdit_alias_welcome'] = 'Едитирање на алијас за вашиот домен.<br />Еден запис по линија.';
+$PALANG['pEdit_alias_address'] = 'Алијас';
+$PALANG['pEdit_alias_address_error'] = '<span class="error_msg">Не можам да го најдам алијасот!</span>';
+$PALANG['pEdit_alias_goto'] = 'До';
+$PALANG['pEdit_alias_active'] = 'Active'; # XXX
+$PALANG['pEdit_alias_goto_text_error1'] = '<span class="error_msg">Немате ништо внесено во полето ДО</span>';
+$PALANG['pEdit_alias_goto_text_error2'] = '<span class="error_msg">Адресата која ја имате внесено не е валидна: ';
+$PALANG['pEdit_alias_domain_error'] = '<span class="error_msg">Овој домен не е ваш: ';
+$PALANG['pEdit_alias_domain_result_error'] = '<span class="error_msg">Unable to modify the alias domain!</span>'; # XXX
+$PALANG['pEdit_alias_forward_and_store'] = 'Deliver to the local mailbox.'; # XXX
+$PALANG['pEdit_alias_forward_only'] = 'Forward to given email addresses only.'; # XXX
+$PALANG['pEdit_alias_button'] = 'Едитирање на алијас';
+$PALANG['pEdit_alias_result_error'] = '<span class="error_msg">Не можам да го променам алијасот!</span>';
+
+$PALANG['pCreate_mailbox_welcome'] = 'Креирање на ново поштенско сандаче.';
+$PALANG['pCreate_mailbox_username'] = 'Корисничко име';
+$PALANG['pCreate_mailbox_username_text_error1'] = '<br /><span class="error_msg">EMAIL не е валиден!</span>';
+$PALANG['pCreate_mailbox_username_text_error2'] = '<br /><span class="error_msg">Оваа адреса веќе постои, одберете друга!</span>';
+$PALANG['pCreate_mailbox_username_text_error3'] = '<br /><span class="error_msg">Достигнат е лимитот на поштенски сандачиња!</span>';
+$PALANG['pCreate_mailbox_password'] = 'Лозинка';
+$PALANG['pCreate_mailbox_password2'] = 'Лозинка (лозинка)';
+$PALANG['pCreate_mailbox_password_text'] = 'Лозинка за POP3/IMAP';
+$PALANG['pCreate_mailbox_password_text_error'] = 'Лозинка за POP3/IMAP<br /><span class="error_msg">Внесените лозинки не се поклопуваат!<br />Или се празни!</span>';
+$PALANG['pCreate_mailbox_name'] = 'Име';
+$PALANG['pCreate_mailbox_name_text'] = 'Цело име';
+$PALANG['pCreate_mailbox_quota'] = 'квота';
+$PALANG['pCreate_mailbox_quota_text'] = 'MB';
+$PALANG['pCreate_mailbox_quota_text_error'] = 'MB<br /><span class="error_msg">Внесената квота е превисока!</span>';
+$PALANG['pCreate_mailbox_active'] = 'Активен';
+$PALANG['pCreate_mailbox_mail'] = 'Креирање на поштенско сандаче';
+$PALANG['pCreate_mailbox_button'] = 'Додавање на сандаче';
+$PALANG['pCreate_mailbox_result_error'] = '<span class="error_msg">Не можам да додадам ново сандаче на табелата!</span>';
+$PALANG['pCreate_mailbox_result_success'] = 'Поштенското сандаче е додадено на табелата!';
+$PALANG['pCreate_mailbox_result_succes_nosubfolders'] = 'The mailbox has been added to the mailbox table, but none (or only some) of the predefined sub-folders could be created'; # XXX
+
+$PALANG['pEdit_mailbox_welcome'] = 'Измена на поштенско сандаче на доменот.';
+$PALANG['pEdit_mailbox_username'] = 'Корисничко име';
+$PALANG['pEdit_mailbox_username_error'] = '<span class="error_msg">Не можам да го најдам сандачето!</span>';
+$PALANG['pEdit_mailbox_password'] = 'Нова лозинка';
+$PALANG['pEdit_mailbox_password2'] = 'Нова лозинка (повторно)';
+$PALANG['pEdit_mailbox_password_text_error'] = '<span class="error_msg">Внесените лозинки не одговараат!</span>';
+$PALANG['pEdit_mailbox_name'] = 'Име';
+$PALANG['pEdit_mailbox_name_text'] = 'Full name'; # XXX
+$PALANG['pEdit_mailbox_quota'] = 'Квота';
+$PALANG['pEdit_mailbox_quota_text'] = 'MB';
+$PALANG['pEdit_mailbox_quota_text_error'] = 'MB<br /><span class="error_msg">Внесената квота е превисока!</span>';
+$PALANG['pEdit_mailbox_domain_error'] = '<span class="error_msg">Овој домен не е ваш: ';
+$PALANG['pEdit_mailbox_button'] = 'Измена на сандаче';
+$PALANG['pEdit_mailbox_result_error'] = '<span class="error_msg">Не можам да го променан сандачето!</span>';
+
+$PALANG['pPassword_welcome'] = 'Промена на лозинка за најавување.';
+$PALANG['pPassword_admin'] = 'Пријава';
+$PALANG['pPassword_admin_text_error'] = '<span class="error_msg">Внесениот LOGIN не одговара на сандачето!</span>';
+$PALANG['pPassword_password_current'] = 'Стара лозинка';
+$PALANG['pPassword_password_current_text_error'] = '<span class="error_msg">Ја немате венесено вашата стара лозинка!</span>';
+$PALANG['pPassword_password'] = 'Нова лозинка';
+$PALANG['pPassword_password2'] = 'Нова лозинка (повторно)';
+$PALANG['pPassword_password_text_error'] = '<span class="error_msg">Внесените лозинки не одговараат!<br />Или се празни!</span>';
+$PALANG['pPassword_button'] = 'Промена на лозинка';
+$PALANG['pPassword_result_error'] = '<span class="error_msg">Не можам да ја променам вашата лозинка!</span>';
+$PALANG['pPassword_result_success'] = 'Вашата лозинка е сменета!';
+$PALANG['pEdit_vacation_set'] = 'Change / Set away message'; # XXX
+$PALANG['pEdit_vacation_remove'] = 'Remove away message'; # XXX
+$PALANG['pVacation_result_error'] = '<span class="error_msg">Unable to update auto response settings!</span>'; # XXX
+$PALANG['pVacation_result_removed'] = 'Auto response has been removed!'; # XXX
+$PALANG['pVacation_result_added'] = 'Auto response has been enabled!'; # XXX
+
+$PALANG['pViewlog_welcome'] = 'Преглед на последните 10 операции за: ';
+$PALANG['pViewlog_timestamp'] = 'Маркер (Timestamp)';
+$PALANG['pViewlog_username'] = 'Админ';
+$PALANG['pViewlog_domain'] = 'Домен';
+$PALANG['pViewlog_action'] = 'Операција';
+$PALANG['pViewlog_data'] = 'Датум';
+$PALANG['pViewlog_action_create_mailbox'] = 'create mailbox'; # XXX
+$PALANG['pViewlog_action_delete_mailbox'] = 'delete mailbox'; # XXX
+$PALANG['pViewlog_action_edit_mailbox'] = 'edit mailbox'; # XXX
+$PALANG['pViewlog_action_edit_mailbox_state'] = 'edit mailbox active'; # XXX
+$PALANG['pViewlog_action_create_alias'] = 'create alias'; # XXX
+$PALANG['pViewlog_action_create_alias_domain'] = 'create alias domain'; # XXX
+$PALANG['pViewlog_action_delete_alias'] = 'delete alias'; # XXX
+$PALANG['pViewlog_action_delete_alias_domain'] = 'delete alias domain'; # XXX
+$PALANG['pViewlog_action_edit_alias'] = 'edit alias'; # XXX
+$PALANG['pViewlog_action_edit_alias_state'] = 'edit alias active'; # XXX
+$PALANG['pViewlog_action_edit_alias_domain_state'] = 'edit alias domain active'; # XXX
+$PALANG['pViewlog_action_edit_password'] = 'change password'; # XXX
+
+$PALANG['pViewlog_button'] = 'Оди';
+$PALANG['pViewlog_result_error'] = '<span class="error_msg">Не можам да ги пронајдам записите!</span>';
+
+$PALANG['pSendmail_welcome'] = 'Прати порака.';
+$PALANG['pSendmail_admin'] = 'Од';
+$PALANG['pSendmail_to'] = 'До';
+$PALANG['pSendmail_to_text_error'] = '<span class="error_msg">ДО полето е празно или адресата не е валидна!</span>';
+$PALANG['pSendmail_subject'] = 'Тема';
+$PALANG['pSendmail_subject_text'] = 'Добро дојдовте';
+$PALANG['pSendmail_body'] = 'Содржина';
+$PALANG['pSendmail_button'] = 'Прати порака';
+$PALANG['pSendmail_result_error'] = '<span class="error_msg">Не можам да го креирам сандачето!</span>'; # XXX text change - new: <span class="error_msg">Unable to send email!</span>
+$PALANG['pSendmail_result_success'] = 'Сандачето е креирано!'; # XXX text change - new: Email sent!
+
+$PALANG['pAdminMenu_list_admin'] = 'Листа на администратори';
+$PALANG['pAdminMenu_list_domain'] = 'Листа на домени';
+$PALANG['pAdminMenu_list_virtual'] = 'Листа на виртуелни домени';
+$PALANG['pAdminMenu_viewlog'] = 'Преглед на записи';
+$PALANG['pAdminMenu_backup'] = 'Backup';
+$PALANG['pAdminMenu_create_domain_admins'] = 'Администратори на домен';
+$PALANG['pAdminMenu_create_admin'] = 'Нов администратор';
+$PALANG['pAdminMenu_create_domain'] = 'Нов домен';
+$PALANG['pAdminMenu_create_alias'] = 'Нов алијас';
+$PALANG['pAdminMenu_create_mailbox'] = 'Ново сандаче';
+
+$PALANG['pAdminList_admin_domain'] = 'Домен';
+$PALANG['pAdminList_admin_username'] = 'Корисничко име';
+$PALANG['pAdminList_admin_count'] = 'Домени';
+$PALANG['pAdminList_admin_modified'] = 'Последна промена';
+$PALANG['pAdminList_admin_active'] = 'Активен';
+
+$PALANG['pAdminList_domain_domain'] = 'Домен';
+$PALANG['pAdminList_domain_description'] = 'Опис';
+$PALANG['pAdminList_domain_aliases'] = 'Алијаси';
+$PALANG['pAdminList_domain_mailboxes'] = 'Поштенски сандачиња';
+$PALANG['pAdminList_domain_maxquota'] = 'Максимална квота (MB)';
+$PALANG['pAdminList_domain_transport'] = 'Transport';
+$PALANG['pAdminList_domain_backupmx'] = 'Backup MX';
+$PALANG['pAdminList_domain_modified'] = 'Последна промена';
+$PALANG['pAdminList_domain_active'] = 'Активен';
+
+$PALANG['pAdminList_virtual_button'] = 'Оди';
+$PALANG['pAdminList_virtual_welcome'] = 'Преглед за ';
+$PALANG['pAdminList_virtual_alias_alias_count'] = 'Алијаси';
+$PALANG['pAdminList_virtual_alias_mailbox_count'] = 'Поштенски сандачиња';
+$PALANG['pAdminList_virtual_alias_address'] = 'Од';
+$PALANG['pAdminList_virtual_alias_goto'] = 'До';
+$PALANG['pAdminList_virtual_alias_modified'] = 'Последна промена';
+$PALANG['pAdminList_virtual_mailbox_username'] = 'Емејл';
+$PALANG['pAdminList_virtual_mailbox_name'] = 'Име';
+$PALANG['pAdminList_virtual_mailbox_quota'] = 'Квота (MB)';
+$PALANG['pAdminList_virtual_mailbox_modified'] = 'Последна промена';
+$PALANG['pAdminList_virtual_mailbox_active'] = 'Активно';
+
+$PALANG['pAdminCreate_domain_welcome'] = 'Додади нов домен';
+$PALANG['pAdminCreate_domain_domain'] = 'Домен';
+$PALANG['pAdminCreate_domain_domain_text_error'] = '<span class="error_msg">Доменот веќе постои!</span>';
+$PALANG['pAdminCreate_domain_domain_text_error2'] = '<span class="error_msg">The domain is invalid!</span>'; # XXX
+$PALANG['pAdminCreate_domain_description'] = 'Опис';
+$PALANG['pAdminCreate_domain_aliases'] = 'Алијаси';
+$PALANG['pAdminCreate_domain_aliases_text'] = '0 = забрането | -1 = неограничено';
+$PALANG['pAdminCreate_domain_mailboxes'] = 'Поштенски сандачиња';
+$PALANG['pAdminCreate_domain_mailboxes_text'] = '0 = забрането | -1 = неограничено';
+$PALANG['pAdminCreate_domain_maxquota'] = 'Максимална квота';
+$PALANG['pAdminCreate_domain_maxquota_text'] = 'MB<br /> 0 = исклучено | -1 = неограничено';
+$PALANG['pAdminCreate_domain_transport'] = 'Transport';
+$PALANG['pAdminCreate_domain_transport_text'] = 'Define transport';
+$PALANG['pAdminCreate_domain_defaultaliases'] = 'Додади на имплицитни алијаси';
+$PALANG['pAdminCreate_domain_defaultaliases_text'] = '';
+
+$PALANG['pAdminCreate_domain_backupmx'] = 'Mail серверот е backup MX';
+$PALANG['pAdminCreate_domain_button'] = 'Додади домен';
+$PALANG['pAdminCreate_domain_result_error'] = '<span class="error_msg">Не можам да го додадам доменот!</span>';
+$PALANG['pAdminCreate_domain_result_success'] = 'Доменот е додаден!';
+$PALANG['pAdminDelete_admin_error'] = 'Unable to delete admin!'; # XXX
+$PALANG['pAdminDelete_domain_error'] = '<span class="error_msg">Unable to remove domain!</span>'; # XXX
+$PALANG['pAdminDelete_alias_domain_error'] = '<span class="error_msg">Unable to remove domain alias!</span>'; # XXX
+
+$PALANG['pAdminEdit_domain_welcome'] = 'Измена на домен';
+$PALANG['pAdminEdit_domain_domain'] = 'Домен';
+$PALANG['pAdminEdit_domain_description'] = 'Опис';
+$PALANG['pAdminEdit_domain_aliases'] = 'Алијаси';
+$PALANG['pAdminEdit_domain_aliases_text'] = '0 = забрането | -1 = неограничено';
+$PALANG['pAdminEdit_domain_mailboxes'] = 'Поштенски сандачиња';
+$PALANG['pAdminEdit_domain_mailboxes_text'] = '0 = забрането | -1 = неограничено';
+$PALANG['pAdminEdit_domain_maxquota'] = 'Максимална квота';
+$PALANG['pAdminEdit_domain_maxquota_text'] = 'MB<br /> 0 = исклучена | -1 = неограничена';
+$PALANG['pAdminEdit_domain_transport'] = 'Transport'; # XXX
+$PALANG['pAdminEdit_domain_transport_text'] = 'Define transport'; # XXX
+$PALANG['pAdminEdit_domain_backupmx'] = 'Mail серверот е backup MX';
+$PALANG['pAdminEdit_domain_active'] = 'Активен';
+$PALANG['pAdminEdit_domain_button'] = 'Едитирај домен';
+$PALANG['pAdminEdit_domain_result_error'] = '<span class="error_msg">Не можам да го модифицирам доменот!</span>';
+
+$PALANG['pAdminCreate_admin_welcome'] = 'Додади нов администратор на домен';
+$PALANG['pAdminCreate_admin_username'] = 'Администратор';
+$PALANG['pAdminCreate_admin_username_text'] = 'Email адреса';
+$PALANG['pAdminCreate_admin_username_text_error1'] = 'Email адресата<br /><span class="error_msg">Администратор не е валидна адреса!</span>';
+$PALANG['pAdminCreate_admin_username_text_error2'] = 'Email адресата<br /><span class="error_msg">Администраторот веќе постои или не е валидна</span>';
+$PALANG['pAdminCreate_admin_password'] = 'Лозинка';
+$PALANG['pAdminCreate_admin_password2'] = 'Лозинка (повторно)';
+$PALANG['pAdminCreate_admin_password_text_error'] = '<span class="error_msg">Внесените лозинки не одговараат!<br />Или се празни!</span>';
+$PALANG['pAdminCreate_admin_button'] = 'Додади Администратор';
+$PALANG['pAdminCreate_admin_result_error'] = '<span class="error_msg">Не можам да додадам администратор!</span>';
+$PALANG['pAdminCreate_admin_result_success'] = 'Администраторот е додаден!';
+$PALANG['pAdminCreate_admin_address'] = 'Домен';
+
+$PALANG['pAdminEdit_admin_welcome'] = 'Измена на администратор на домен';
+$PALANG['pAdminEdit_admin_username'] = 'Администратор';
+$PALANG['pAdminEdit_admin_password'] = 'Лозинка';
+$PALANG['pAdminEdit_admin_password2'] = 'Лозинка (повторно)';
+$PALANG['pAdminEdit_admin_password_text_error'] = '<span class="error_msg">Внесените лозинки не одговараат!<br />Или се празни!</span>';
+$PALANG['pAdminEdit_admin_active'] = 'Активен';
+$PALANG['pAdminEdit_admin_super_admin'] = 'Super admin'; # XXX
+$PALANG['pAdminEdit_admin_button'] = 'Едитирај Администратор';
+$PALANG['pAdminEdit_admin_result_error'] = '<span class="error_msg">Не можам да го модифицирам администраторот!</span>';
+$PALANG['pAdminEdit_admin_result_success'] = 'Администраторот е модифициран!';
+
+$PALANG['pUsersLogin_welcome'] = 'Логин за корисници на поштенски сандачиња.Промена на логин и лозинка';
+$PALANG['pUsersLogin_username'] = 'Корисничко име (email)';
+$PALANG['pUsersLogin_password'] = 'Лозинка';
+$PALANG['pUsersLogin_button'] = 'Пријава';
+$PALANG['pUsersLogin_username_incorrect'] = 'Погрешно корисничко име. Логирајте се со вашата email адреса!';
+$PALANG['pUsersLogin_password_incorrect'] = 'Погрешна лозинка!';
+
+$PALANG['pUsersMenu_vacation'] = 'Автоматски одговор';
+$PALANG['pUsersMenu_edit_alias'] = 'Промена на препраќање (forward)';
+$PALANG['pUsersMenu_password'] = 'Промена на лозинка';
+
+$PALANG['pUsersMain_vacation'] = 'Подесување на автоматски одговор за почтенското сандаче.';
+$PALANG['pUsersMain_vacationSet'] = 'Auto Response is ON, click \'Auto Response\' to edit/remove'; # XXX
+$PALANG['pUsersMain_edit_alias'] = 'Промена на препраќање на пораки (email forwarding).';
+$PALANG['pUsersMain_password'] = 'Промена на лозинка.';
+
+$PALANG['pUsersVacation_welcome'] = 'Автоматски одговор.';
+$PALANG['pUsersVacation_welcome_text'] = 'Веќе имате конфигуриран автоматски одговор!';
+$PALANG['pUsersVacation_subject'] = 'Тема';
+$PALANG['pUsersVacation_subject_text'] = 'Отсутен';
+$PALANG['pUsersVacation_body'] = 'Содржина'; # XXX text changed to 'Message'
+$PALANG['pUsersVacation_body_text'] = <<<EOM
+Ќе бидам отсутен од <date> до <date>.
+За итни случаи контактирајте со <contact person>.
+EOM;
+$PALANG['pUsersVacation_button_away'] = 'Заминување';
+$PALANG['pUsersVacation_button_back'] = 'Враќање :)';
+$PALANG['pUsersVacation_result_error'] = '<span class="error_msg">Не можам да ги променам сетирањата за автоматскиот одговор!</span>';
+$PALANG['pUsersVacation_result_success'] = 'Вашиот автоматски одговор е отстранет!';
+$PALANG['pUsersVacation_activefrom'] = 'Active from'; # XXX
+$PALANG['pUsersVacation_activeuntil'] = 'Active until'; # XXX
+
+$PALANG['pCreate_dbLog_createmailbox'] = 'create mailbox';      # XXX
+$PALANG['pCreate_dbLog_createalias'] = 'create alias'; # XXX
+$PALANG['pDelete_dbLog_deletealias'] = 'delete alias'; # XXX
+$PALANG['pDelete_dbLog_deletemailbox'] = 'delete mailbox'; # XXX
+
+$PALANG['pEdit_dbLog_editactive'] = 'change active state'; # XXX
+$PALANG['pEdit_dbLog_editalias'] = 'edit alias'; # XXX
+$PALANG['pEdit_dbLog_editmailbox'] = 'edit mailbox'; # XXX
+
+$PALANG['pSearch'] = 'search'; # XXX
+$PALANG['pSearch_welcome'] = 'Searching for: '; # XXX
+$PALANG['pReturn_to'] = 'Return to'; # XXX
+$PALANG['pBroadcast_title'] = 'Send broadcast message'; # XXX
+$PALANG['pBroadcast_from'] = 'From'; # XXX
+$PALANG['pBroadcast_name'] = 'Your name'; # XXX
+$PALANG['pBroadcast_subject'] = 'Subject'; # XXX
+$PALANG['pBroadcast_message'] = 'Message'; # XXX
+$PALANG['pBroadcast_send'] = 'Send message'; # XXX
+$PALANG['pBroadcast_success'] = 'Your broadcast message was sent.'; # XXX
+$PALANG['pAdminMenu_broadcast_message'] = 'Broadcast message'; # XXX
+$PALANG['pBroadcast_error_empty'] = 'The fields Name, Subject and Message should\'t be empty !'; # XXX
+$PALANG['pStatus_undeliverable'] = 'maybe UNDELIVERABLE '; # XXX
+$PALANG['pStatus_custom'] = 'Delivers to '; # XXX
+$PALANG['pStatus_popimap'] = 'POP/IMAP '; # XXX
+$PALANG['pPasswordTooShort'] = "Password is too short - requires %s characters"; # XXX
+$PALANG['pInvalidDomainRegex'] = "Invalid domain name %s, fails regexp check"; # XXX
+$PALANG['pInvalidDomainDNS'] = "Invalid domain %s, and/or not discoverable in DNS"; # XXX
+$PALANG['pInvalidMailRegex'] = "Invalid email address, fails regexp check"; # XXX
+$PALANG['pFetchmail_welcome'] = 'Fetch mail for:'; # XXX
+$PALANG['pFetchmail_new_entry'] = 'New entry'; # XXX
+$PALANG['pFetchmail_database_save_error'] = 'Could not save this entry in the database!'; # XXX
+$PALANG['pFetchmail_database_save_success'] = 'Entry saved in database.'; # XXX
+$PALANG['pFetchmail_error_invalid_id'] = 'No entry with ID %s found!'; # XXX
+$PALANG['pFetchmail_invalid_mailbox'] = 'Invalid mailbox!'; # XXX
+$PALANG['pFetchmail_server_missing'] = 'Please enter the remote server name!'; # XXX
+$PALANG['pFetchmail_user_missing'] = 'Please enter the remote username!'; # XXX
+$PALANG['pFetchmail_password_missing'] = 'Please enter the remote password!'; # XXX
+$PALANG['pFetchmail_field_id']              = 'ID'; # XXX
+$PALANG['pFetchmail_field_mailbox']         = 'Mailbox'; # XXX
+$PALANG['pFetchmail_field_src_server']      = 'Server'; # XXX
+$PALANG['pFetchmail_field_src_auth']        = 'Auth Type'; # XXX
+$PALANG['pFetchmail_field_src_user']        = 'User'; # XXX
+$PALANG['pFetchmail_field_src_password']    = 'Password'; # XXX
+$PALANG['pFetchmail_field_src_folder']      = 'Folder'; # XXX
+$PALANG['pFetchmail_field_poll_time']       = 'Poll'; # XXX
+$PALANG['pFetchmail_field_fetchall']        = 'Fetch All'; # XXX
+$PALANG['pFetchmail_field_keep']            = 'Keep'; # XXX
+$PALANG['pFetchmail_field_protocol']        = 'Protocol'; # XXX
+$PALANG['pFetchmail_field_usessl']          = 'SSL active'; # XXX
+$PALANG['pFetchmail_field_extra_options']   = 'Extra Options'; # XXX
+$PALANG['pFetchmail_field_mda']             = 'MDA'; # XXX
+$PALANG['pFetchmail_field_date']            = 'Date'; # XXX
+$PALANG['pFetchmail_field_returned_text']   = 'Returned Text'; # XXX
+$PALANG['pFetchmail_desc_id']               = 'Record ID'; # XXX
+$PALANG['pFetchmail_desc_mailbox']          = 'Local mailbox'; # XXX
+$PALANG['pFetchmail_desc_src_server']       = 'Remote Server'; # XXX
+$PALANG['pFetchmail_desc_src_auth']         = 'Mostly \'password\''; # Translators: Please do NOT translate 'password' here # XXX
+$PALANG['pFetchmail_desc_src_user']         = 'Remote User'; # XXX
+$PALANG['pFetchmail_desc_src_password']     = 'Remote Password'; # XXX
+$PALANG['pFetchmail_desc_src_folder']       = 'Remote Folder'; # XXX
+$PALANG['pFetchmail_desc_poll_time']        = 'Poll every ... minutes'; # XXX
+$PALANG['pFetchmail_desc_fetchall']         = 'Retrieve  both old (seen) and new messages'; # XXX
+$PALANG['pFetchmail_desc_keep']             = 'Keep retrieved messages on the remote mailserver'; # XXX
+$PALANG['pFetchmail_desc_protocol']         = 'Protocol to use'; # XXX
+$PALANG['pFetchmail_desc_usessl']           = 'SSL encryption'; # XXX
+$PALANG['pFetchmail_desc_extra_options']    = 'Extra fetchmail Options'; # XXX
+$PALANG['pFetchmail_desc_mda']              = 'Mail Delivery Agent'; # XXX
+$PALANG['pFetchmail_desc_date']             = 'Date of last polling/configuration change'; # XXX
+$PALANG['pFetchmail_desc_returned_text']    = 'Text message from last polling'; # XXX
+
+$PALANG['please_keep_this_as_last_entry'] = ''; # needed for language-check.sh
+/* vim: set expandtab ft=php softtabstop=3 tabstop=3 shiftwidth=3: */
+?>

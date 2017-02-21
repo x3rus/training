@@ -1,0 +1,29 @@
+#!/bin/bash
+set -e
+
+if [ "$1" = "configure" ]; then
+	# configure DB stuff via dbconfig-common
+	dbc_generate_include=php:/etc/postfixadmin/dbconfig.inc.php
+	dbc_generate_include_args="-O root:www-data -m 640 -U"
+	. /usr/share/debconf/confmodule
+	. /usr/share/dbconfig-common/dpkg/postinst
+	dbc_go postfixadmin $@
+	
+	# configure webserver stuff
+	db_get postfixadmin/reconfigure-webserver
+	servers="$RET"
+	restart="$servers"
+	linkdestination_apache="../../postfixadmin/apache.conf"
+	linkdestination_lighttpd="../../postfixadmin/lighttpd.conf"
+	linkname="postfixadmin"
+	if [ -e /usr/share/wwwconfig-common/confd-link.sh ]; then
+		. /usr/share/wwwconfig-common/confd-link.sh
+	else
+		. /usr/share/postfixadmin/confd-link.sh
+	fi
+	. /usr/share/wwwconfig-common/restart.sh
+fi
+
+#DEBHELPER#
+
+exit 0

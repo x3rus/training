@@ -1,0 +1,26 @@
+---------------------------------------
+  The different parts of PostfixAdmin
+
+
+Postfix Admin has a concept of a "global" administrator (think 'root') and 
+domain administrators.  When you install PostfixAdmin, the setup.php file 
+will ask you to create the global administrators account. Using this global
+account, you can (if you so wish) create domain administrators who are 
+limited to making changes within the domains you specify for them.
+
+Historically when you logged in as the 'global' (or superadmin) user, you'd
+access /admin; with version 2.2.0, this 'functionality' was removed (as there
+was excessive code duplication) and everyone uses the same login.php script.
+
+
+Needless to say, as a global administrator, you can do all kinds of bad things -
+like deleting domains and stopping delivery of mail to a particular mailbox. So
+- take care, and if you're unsure take semi-regular backups.
+
+
+If you login, and you are not an administrator (i.e. you are a 'regular' user
+who just has a mailbox on the server), then you will only see functionality to 
+modify your own account - e.g. change password, edit forward records and specify 
+whether you are on vacation (out of office) or not.
+
+

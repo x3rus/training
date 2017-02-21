@@ -1,0 +1,439 @@
+<?php
+# $Id: lt.lang 1435 2013-02-22 23:00:55Z christian_boltz $
+//
+// Language file Lithuanian 
+// by Giedrius <giedrius_balbieris at metalot dot com>
+//
+$PALANG['YES'] = 'TAIP';
+$PALANG['NO'] = 'NE';
+$PALANG['edit'] = 'keisti';
+$PALANG['del'] = 'šalinti';
+$PALANG['exit'] = 'Išeiti';
+$PALANG['cancel'] = 'Atšaukti';
+$PALANG['save'] = 'Išsaugoti';
+$PALANG['confirm'] = 'Tikrai norite šalinti?\n';
+$PALANG['confirm_domain'] = 'Tikrai norite šalinti visus šios srities įrašus? Operacija negrįžtama!\n';
+$PALANG['check_update'] = 'Patikrinti versiją';
+$PALANG['invalid_parameter'] = 'Neteisingas parametras!';
+
+$PALANG['pFooter_logged_as'] = 'Prisijungęs kaip %s';
+
+$PALANG['pLogin_welcome'] = 'Pašto srities administratorius.';
+$PALANG['pLogin_username'] = 'Vartotojas (el.paštas)';
+$PALANG['pLogin_password'] = 'Slaptažodis';
+$PALANG['pLogin_button'] = 'Prisijungti';
+$PALANG['pLogin_failed'] = 'Neteisingas el. pašto adresas arba slaptažodis.';
+$PALANG['pLogin_login_users'] = 'Pašto vartotojams jungtis prie vartotojų sekcijos.';
+
+$PALANG['pMenu_main'] = 'Pagrindinis';
+$PALANG['pMenu_overview'] = 'Peržiūra';
+$PALANG['pMenu_create_alias'] = 'Naujas sinonimas';
+$PALANG['pMenu_create_alias_domain'] = 'Naujas srities sinonimas';
+$PALANG['pMenu_create_mailbox'] = 'Nauja pašto dėžutė';
+$PALANG['pMenu_fetchmail'] = 'Atsisiųsti paštą';
+$PALANG['pMenu_sendmail'] = 'Siųsti laišką';
+$PALANG['pMenu_password'] = 'Slaptažodis';
+$PALANG['pMenu_viewlog'] = 'Žurnalas';
+$PALANG['pMenu_logout'] = 'Atsijungti';
+
+$PALANG['pMain_welcome'] = 'Sveiki prisijungę prie pašto administratoriaus!';
+$PALANG['pMain_overview'] = 'Pežiūrėti visas pašto dėžutes ir sinonimus. Čionai atliekami pakeitimai, šalinimas.';
+$PALANG['pMain_create_alias'] = 'Naujas pašto sinonimas.';
+$PALANG['pMain_create_mailbox'] = 'Nauja pašto dėžutė.';
+$PALANG['pMain_sendmail'] = 'Siųsti laišką į vieną naujai sukurtą pašto dėžutę.';
+$PALANG['pMain_password'] = 'Keisti administratoriaus slaptažodį.';
+$PALANG['pMain_viewlog'] = 'Peržiūrėti įvykių žurnalus.';
+$PALANG['pMain_logout'] = 'Atsijungti nuo sistemos';
+
+$PALANG['pOverview_disabled'] = 'Išjungta(s)';
+$PALANG['pOverview_unlimited'] = 'Neribota(s)';
+$PALANG['pOverview_title'] = ':: Nustatytos sritys';
+$PALANG['pOverview_up_arrow'] = 'Eiti į viršų';
+$PALANG['pOverview_right_arrow'] = 'Kitas puslapis';
+$PALANG['pOverview_left_arrow'] = 'Ankstesnis puslapis';
+$PALANG['pOverview_alias_domain_title'] = ':: Srities sinonimai';
+$PALANG['pOverview_alias_title'] = ':: Sinonimai';
+$PALANG['pOverview_mailbox_title'] = ':: Pašto dėžutės';
+$PALANG['pOverview_button'] = 'Eiti';
+$PALANG['pOverview_welcome'] = 'Peržiūra ';
+$PALANG['pOverview_alias_domain_aliases'] = 'Srities sinonimai';
+$PALANG['pOverview_alias_domain_target'] = '%s yra srities sinonimas:';
+$PALANG['pOverview_alias_alias_count'] = 'sinonimų';
+$PALANG['pOverview_alias_mailbox_count'] = 'pašto dėžučių';
+$PALANG['pOverview_alias_address'] = 'Iš';
+$PALANG['pOverview_alias_goto'] = 'Į';
+$PALANG['pOverview_alias_modified'] = 'Paskutinis keitimas';
+$PALANG['pOverview_alias_domain_modified'] = 'Paskutinis keitimas';
+$PALANG['pOverview_alias_active'] = 'Įjungtas';
+$PALANG['pOverview_alias_domain_active'] = 'Įjungtas';
+$PALANG['pOverview_alias_edit'] = 'Sinonimas';
+$PALANG['and_x_more'] = '[ir %s daugiau...]';
+$PALANG['pOverview_mailbox_username'] = 'El.paštas';
+$PALANG['pOverview_mailbox_name'] = 'Vardas';
+$PALANG['pOverview_mailbox_quota'] = 'Kvota (MB)';
+$PALANG['pOverview_mailbox_modified'] = 'Paskutinis keitimas';
+$PALANG['pOverview_mailbox_active'] = 'Įjungta(s)';
+$PALANG['pOverview_vacation_edit'] = 'ATOSTOGOS ĮJUNGTOS';
+$PALANG['pOverview_vacation_option'] = 'Atostogų nustatymai';
+
+$PALANG['pOverview_get_domain'] = 'Sritis';
+$PALANG['pOverview_get_aliases'] = 'Sinonimai';
+$PALANG['pOverview_get_alias_domains'] = 'Srities sinonimai';
+$PALANG['pOverview_get_mailboxes'] = 'Pašto dėžutės';
+$PALANG['pOverview_get_quota'] = 'Pašto dėžutės kvota (MB)';
+$PALANG['pOverview_get_modified'] = 'Paskutinis keitimas';
+
+$PALANG['pDelete_delete_error'] = '<span class="error_msg">Nepavyko pašalinti įrašo ';
+$PALANG['pDelete_delete_success'] = '%s pašalinta(s).';
+$PALANG['pDelete_postdelete_error'] = '<span class="error_msg">Nepavyko pašalinti pašto dėžutės ';
+$PALANG['pDelete_domain_error'] = '<span class="error_msg">Ne jūsų sritis ';
+$PALANG['pDelete_domain_alias_error'] = '<span class="error_msg">Ne jūsų sritis ';
+$PALANG['pDelete_alias_error'] = '<span class="error_msg">Nepavyko pašalinti sinonimo ';
+
+$PALANG['pCreate_alias_domain_welcome'] = 'Sričių sinonimai.';
+$PALANG['pCreate_alias_domain_alias'] = 'Srities sinonimas';
+$PALANG['pCreate_alias_domain_alias_text'] = 'Sritis, kuriai ateina laiškai.';
+$PALANG['pCreate_alias_domain_target'] = 'Nukreipta sritis';
+$PALANG['pCreate_alias_domain_target_text'] = 'Sritis, į kurią turi būti nukreipti laiškai.';
+$PALANG['pCreate_alias_domain_active'] = 'Įjungta';
+$PALANG['pCreate_alias_domain_button'] = 'Pridėti srities sinonimą';
+$PALANG['pCreate_alias_domain_error1'] = 'Jūs negalite sukurti pasirinktos konfigūracijos.';
+$PALANG['pCreate_alias_domain_error2'] = 'Pasirinkta neteisinga konfigūracija, pasirinkite kitą!';
+$PALANG['pCreate_alias_domain_error3'] = 'Duomenų bazės papildyti nepavyko.';
+$PALANG['pCreate_alias_domain_error4'] = 'Visos sritys jau turi sinonimus.';
+$PALANG['pCreate_alias_domain_success'] = 'Srities sinonimas užregistruotas!';
+
+$PALANG['pCreate_alias_welcome'] = 'Naujas sinonimas.';
+$PALANG['pCreate_alias_address'] = 'Sinonimas';
+$PALANG['pCreate_alias_address_text_error1'] = '<br /><span class="error_msg">Netinkamas sinonimas!</span>';
+$PALANG['pCreate_alias_address_text_error2'] = '<br /><span class="error_msg">Šis el.pašto adresas jau yra, pasirinkite kitą pavadinimą!</span>';
+$PALANG['pCreate_alias_address_text_error3'] = '<br /><span class="error_msg">Išnaudota visa pašto sinonimų kvota!</span>';
+$PALANG['pCreate_alias_goto'] = 'Persiųsti';
+$PALANG['pCreate_alias_active'] = 'Įjungtas';
+$PALANG['pCreate_alias_button'] = 'Naujas sinonimas';
+$PALANG['pCreate_alias_goto_text'] = 'Adresas, kuriuo persiųsti paštą.';
+$PALANG['pCreate_alias_goto_text_error'] = 'Adresas, kuriuo persiųsti paštą.<br /><span class="error_msg">Įvestas neteisingai!</span>';
+$PALANG['pCreate_alias_result_error'] = '<span class="error_msg">Sinonimo registruoti nepavyko!</span>';
+$PALANG['pCreate_alias_result_success'] = 'Sinonimas užregistruotas!';
+$PALANG['pCreate_alias_catchall_text'] = 'Jei norite sukurti sinonimą, kuris gautų visas žinutes neegzistuojantiems adresatams, naudokite "*".';
+
+$PALANG['pEdit_alias_welcome'] = 'Keisti sinonimą.<br />Eilutėje leidžiamas tik vienas įrašas.';
+$PALANG['pEdit_alias_address'] = 'Sinonimas';
+$PALANG['pEdit_alias_address_error'] = '<span class="error_msg">Sinonimas nerastas!</span>';
+$PALANG['pEdit_alias_goto'] = 'Kam';
+$PALANG['pEdit_alias_active'] = 'Įjungtas';
+$PALANG['pEdit_alias_goto_text_error1'] = '<span class="error_msg">Neužpildėte lauko "Kam"</span>';
+$PALANG['pEdit_alias_goto_text_error2'] = '<span class="error_msg">Įvestas neteisingas pašto adresas: ';
+$PALANG['pEdit_alias_domain_error'] = '<span class="error_msg">Ši sritis ne jūsų: ';
+$PALANG['pEdit_alias_domain_result_error'] = '<span class="error_msg">Nepavyko pakeisti srities sinonimo!</span>';
+$PALANG['pEdit_alias_forward_and_store'] = 'Pristatyti į vietinę pašto dėžutę.';
+$PALANG['pEdit_alias_forward_only'] = 'Persiųsti nurodytiems el. pašto adresams.';
+$PALANG['pEdit_alias_button'] = 'Keisti sinonimą';
+$PALANG['pEdit_alias_result_error'] = '<span class="error_msg">Sinonimo pakeisti nepavyko!</span>';
+
+$PALANG['pCreate_mailbox_welcome'] = 'Nauja pašto dėžutė.';
+$PALANG['pCreate_mailbox_username'] = 'Vartotojas';
+$PALANG['pCreate_mailbox_username_text_error1'] = '<br /><span class="error_msg">Šis el.pašto adresas neteisingas!</span>';
+$PALANG['pCreate_mailbox_username_text_error2'] = '<br /><span class="error_msg">Šis el.pašto adresas jau yra, pasirinkite kitą pavadinimą!</span>';
+$PALANG['pCreate_mailbox_username_text_error3'] = '<br /><span class="error_msg">Išnaudota srities pašto dėžučių kvota!</span>';
+$PALANG['pCreate_mailbox_password'] = 'Slaptažodis';
+$PALANG['pCreate_mailbox_password2'] = 'Slaptažodis (dar kartą)';
+$PALANG['pCreate_mailbox_password_text'] = 'Slaptažodis jungtis prie POP3/IMAP';
+$PALANG['pCreate_mailbox_password_text_error'] = 'Slaptažodis jungtis prie POP3/IMAP<br /><span class="error_msg">Įvesti slaptažodžiai nesutampa<br />Arba neįvesti!</span>';
+$PALANG['pCreate_mailbox_name'] = 'Vardas';
+$PALANG['pCreate_mailbox_name_text'] = 'Vardas Pavardė';
+$PALANG['pCreate_mailbox_quota'] = 'Kvota';
+$PALANG['pCreate_mailbox_quota_text'] = 'MB';
+$PALANG['pCreate_mailbox_quota_text_error'] = 'MB<br /><span class="error_msg">Įvesta per didelė kvota!</span>';
+$PALANG['pCreate_mailbox_active'] = 'Įjungta(s)';
+$PALANG['pCreate_mailbox_mail'] = 'Siųsti pasveikinimo žinutę';
+$PALANG['pCreate_mailbox_button'] = 'Nauja pašto dėžutė';
+$PALANG['pCreate_mailbox_result_error'] = '<span class="error_msg">Pašto dėžutės užregistruoti nepavyko!</span>';
+$PALANG['pCreate_mailbox_result_success'] = 'Pašto dėžutė užregistruota!';
+$PALANG['pCreate_mailbox_result_succes_nosubfolders'] = 'Pašto dėžutė užregistruota, bet nepavyko sukurti (galbūt kai kurių) nustatytų subdirektorijų';
+
+$PALANG['pEdit_mailbox_welcome'] = 'Keisti pašto dėžutę.';
+$PALANG['pEdit_mailbox_username'] = 'Vartotojas';
+$PALANG['pEdit_mailbox_username_error'] = '<span class="error_msg">Pašto dėžutė nerasta!</span>';
+$PALANG['pEdit_mailbox_password'] = 'Naujas slaptažodis';
+$PALANG['pEdit_mailbox_password2'] = 'Naujas slaptažodis (dar kartą)';
+$PALANG['pEdit_mailbox_password_text_error'] = '<span class="error_msg">Įvesti slaptažodžiai nesutampa!</span>';
+$PALANG['pEdit_mailbox_name'] = 'Vardas';
+$PALANG['pEdit_mailbox_name_text'] = 'Vardas Pavardė';
+$PALANG['pEdit_mailbox_quota'] = 'Kvota';
+$PALANG['pEdit_mailbox_quota_text'] = 'MB';
+$PALANG['pEdit_mailbox_quota_text_error'] = 'MB<br /><span class="error_msg">Įvesta per didelė kvota!</span>';
+$PALANG['pEdit_mailbox_domain_error'] = '<span class="error_msg">Ne jūsų sritis: ';
+$PALANG['pEdit_mailbox_button'] = 'Keisti pašto dėžutę';
+$PALANG['pEdit_mailbox_result_error'] = '<span class="error_msg">Pašto dėžutės pakeisti nepavyko!</span>';
+
+$PALANG['pPassword_welcome'] = 'Pakeiskite prisijungimo slaptažodį.';
+$PALANG['pPassword_admin'] = 'Prisijungti';
+$PALANG['pPassword_admin_text_error'] = '<span class="error_msg">Tokios pašto dėžutės nėra!</span>';
+$PALANG['pPassword_password_current'] = 'Dabartinis slaptažodis';
+$PALANG['pPassword_password_current_text_error'] = '<span class="error_msg">Neįvedėte dabartinio slaptažodžio!</span>';
+$PALANG['pPassword_password'] = 'Naujas slaptažodis';
+$PALANG['pPassword_password2'] = 'Naujas slaptažodis (dar kartą)';
+$PALANG['pPassword_password_text_error'] = '<span class="error_msg">Įvesti slaptažodžiai nesutampa!<br />Arba neįvesti!</span>';
+$PALANG['pPassword_button'] = 'Keisti slaptažodį';
+$PALANG['pPassword_result_error'] = '<span class="error_msg">Slaptažodžio pakeisti nepavyko!</span>';
+$PALANG['pPassword_result_success'] = 'Slaptažodis pakeistas!';
+
+$PALANG['pEdit_vacation_set'] = 'Pakeisti / nustatyti atostogų pranešimą';
+$PALANG['pEdit_vacation_remove'] = 'Išjungti atostogų pranešimą';
+
+$PALANG['pVacation_result_error'] = '<span class="error_msg">Nepavyko pakeisti atostogų nustatymų!</span>';
+$PALANG['pVacation_result_removed'] = 'Atostogų pranešimas išjungtas!';
+$PALANG['pVacation_result_added'] = 'Atostogų pranešimas įjungtas!';
+
+$PALANG['pViewlog_welcome'] = 'Peržiūrėti paskutinius 10 vartotojo veiksmų ';
+$PALANG['pViewlog_timestamp'] = 'Laikas';
+$PALANG['pViewlog_username'] = 'Vartotojas';
+$PALANG['pViewlog_domain'] = 'Sritis';
+$PALANG['pViewlog_action'] = 'Veiksmas';
+$PALANG['pViewlog_data'] = 'Duomenys';
+
+$PALANG['pViewlog_action_create_mailbox'] = 'sukurta pašto dėžutė';
+$PALANG['pViewlog_action_delete_mailbox'] = 'panaikinta pašto dėžutė';
+$PALANG['pViewlog_action_edit_mailbox'] = 'pakeista pašto dėžutė';
+$PALANG['pViewlog_action_edit_mailbox_state'] = '(į)išjungta pašto dėžutė';
+$PALANG['pViewlog_action_create_alias'] = 'sukurtas sinonimas';
+$PALANG['pViewlog_action_create_alias_domain'] = 'sukurtas srities sinonimas';
+$PALANG['pViewlog_action_delete_alias'] = 'panaikintas sinonimas';
+$PALANG['pViewlog_action_delete_alias_domain'] = 'panaikintas srities sinonimas';
+$PALANG['pViewlog_action_edit_alias'] = 'pakeistas sinonimas';
+$PALANG['pViewlog_action_edit_alias_state'] = '(į)išjungtas sinonimas';
+$PALANG['pViewlog_action_edit_alias_domain_state'] = '(į)išjungtas srities sinonimas';
+$PALANG['pViewlog_action_edit_password'] = 'pakeistas slaptažodis';
+
+$PALANG['pViewlog_button'] = 'Eiti';
+$PALANG['pViewlog_result_error'] = '<span class="error_msg">Įvykių žurnalas nerastas!</span>';
+
+$PALANG['pSendmail_welcome'] = 'Siųsti laišką';
+$PALANG['pSendmail_admin'] = 'Nuo';
+$PALANG['pSendmail_to'] = 'Kam';
+$PALANG['pSendmail_to_text_error'] = '<span class="error_msg">Adresatas neįvestas arba neteisingas pašto adresas!</span>';
+$PALANG['pSendmail_subject'] = 'Tema';
+$PALANG['pSendmail_subject_text'] = 'Sveiki';
+$PALANG['pSendmail_body'] = 'Žinutė';
+$PALANG['pSendmail_button'] = 'Siųsti';
+$PALANG['pSendmail_result_error'] = '<span class="error_msg">Žinutės išsiųsti nepavyko!</span>';
+$PALANG['pSendmail_result_success'] = 'Žinutė išsiųsta!';
+
+$PALANG['pAdminMenu_list_admin'] = 'Administratoriai';
+$PALANG['pAdminMenu_list_domain'] = 'Sritys';
+$PALANG['pAdminMenu_list_virtual'] = 'Sinonimai';
+$PALANG['pAdminMenu_viewlog'] = 'Žurnalas';
+$PALANG['pAdminMenu_backup'] = 'Kopijos';
+$PALANG['pAdminMenu_create_domain_admins'] = 'Sričių administratoriai';
+$PALANG['pAdminMenu_create_admin'] = 'Naujas administratorius';
+$PALANG['pAdminMenu_create_domain'] = 'Nauja sritis';
+$PALANG['pAdminMenu_create_alias'] = 'Naujas sinonimas';
+$PALANG['pAdminMenu_create_mailbox'] = 'Nauja pašto dėžutė';
+
+$PALANG['pAdminList_admin_domain'] = 'Sritis';
+$PALANG['pAdminList_admin_username'] = 'Administratorius';
+$PALANG['pAdminList_admin_count'] = 'Sritys';
+$PALANG['pAdminList_admin_modified'] = 'Paskutinį kartą keista(s)';
+$PALANG['pAdminList_admin_active'] = 'Įjungta(s)';
+
+$PALANG['pAdminList_domain_domain'] = 'Sritis';
+$PALANG['pAdminList_domain_description'] = 'Aprašymas';
+$PALANG['pAdminList_domain_aliases'] = 'Sinonimai';
+$PALANG['pAdminList_domain_mailboxes'] = 'Pašto dėžutės';
+$PALANG['pAdminList_domain_maxquota'] = 'Kvota (MB)';
+$PALANG['pAdminList_domain_transport'] = 'Srities transportas';
+$PALANG['pAdminList_domain_backupmx'] = 'Atsarginis MX';
+$PALANG['pAdminList_domain_modified'] = 'Paskutinį kartą keista(s)';
+$PALANG['pAdminList_domain_active'] = 'Įjungta';
+
+$PALANG['pAdminList_virtual_button'] = 'Eiti';
+$PALANG['pAdminList_virtual_welcome'] = 'Peržiūrėti ';
+$PALANG['pAdminList_virtual_alias_alias_count'] = 'sinonimus';
+$PALANG['pAdminList_virtual_alias_mailbox_count'] = 'pašto dėžutes';
+$PALANG['pAdminList_virtual_alias_address'] = 'Iš';
+$PALANG['pAdminList_virtual_alias_goto'] = 'Į';
+$PALANG['pAdminList_virtual_alias_modified'] = 'Paskutinį kartą keistas';
+$PALANG['pAdminList_virtual_mailbox_username'] = 'El.paštas';
+$PALANG['pAdminList_virtual_mailbox_name'] = 'Vardas';
+$PALANG['pAdminList_virtual_mailbox_quota'] = 'Kvota (MB)';
+$PALANG['pAdminList_virtual_mailbox_modified'] = 'Paskutinį kartą keista';
+$PALANG['pAdminList_virtual_mailbox_active'] = 'Įjungta';
+
+$PALANG['pAdminCreate_domain_welcome'] = 'Nauja sritis';
+$PALANG['pAdminCreate_domain_domain'] = 'Sritis';
+$PALANG['pAdminCreate_domain_domain_text_error'] = '<span class="error_msg">Tokia sritis jau yra!</span>';
+$PALANG['pAdminCreate_domain_domain_text_error2'] = '<span class="error_msg">Neteisinga sritis!</span>';
+$PALANG['pAdminCreate_domain_description'] = 'Aprašymas';
+$PALANG['pAdminCreate_domain_aliases'] = 'Sinonimai';
+$PALANG['pAdminCreate_domain_aliases_text'] = '-1 = išjungta(s) | 0 = neribota(s)';
+$PALANG['pAdminCreate_domain_mailboxes'] = 'Pašto dėžutės';
+$PALANG['pAdminCreate_domain_mailboxes_text'] = '-1 = išjungta(s) | 0 = neribota(s)';
+$PALANG['pAdminCreate_domain_maxquota'] = 'Maksimali kvota';
+$PALANG['pAdminCreate_domain_maxquota_text'] = 'MB<br /> -1 = išjungta(s) | 0 = neribota(s)';
+$PALANG['pAdminCreate_domain_transport'] = 'Srities transportas';
+$PALANG['pAdminCreate_domain_transport_text'] = 'Nustatyti transportą';
+$PALANG['pAdminCreate_domain_defaultaliases'] = 'Registruoti tipinius pašto sinonimus';
+$PALANG['pAdminCreate_domain_defaultaliases_text'] = '';
+$PALANG['pAdminCreate_domain_backupmx'] = 'Tai atsarginis pašto serveris (MX)';
+$PALANG['pAdminCreate_domain_button'] = 'Registruoti sritį';
+$PALANG['pAdminCreate_domain_result_error'] = '<span class="error_msg">Srities užregistruoti nepavyko!</span>';
+$PALANG['pAdminCreate_domain_result_success'] = 'Sritis užregistruota!';
+
+$PALANG['pAdminDelete_admin_error'] = 'Nepavyko panaikinti administratoriaus!';
+$PALANG['pAdminDelete_domain_error'] = '<span class="error_msg">Nepavyko panaikinti srities!</span>';
+$PALANG['pAdminDelete_alias_domain_error'] = '<span class="error_msg">Nepavyko panaikinti srities sinonimo!</span>';
+
+$PALANG['pAdminEdit_domain_welcome'] = 'Keisti sritį';
+$PALANG['pAdminEdit_domain_domain'] = 'Sritis';
+$PALANG['pAdminEdit_domain_description'] = 'Aprašymas';
+$PALANG['pAdminEdit_domain_aliases'] = 'Sinonimai';
+$PALANG['pAdminEdit_domain_aliases_text'] = '-1 išjungta(s) | 0 = neribota(s)';
+$PALANG['pAdminEdit_domain_mailboxes'] = 'Pašto dėžutės';
+$PALANG['pAdminEdit_domain_mailboxes_text'] = '-1 išjungta(s) | 0 = neribota(s)';
+$PALANG['pAdminEdit_domain_maxquota'] = 'Maksimali kvota';
+$PALANG['pAdminEdit_domain_maxquota_text'] = 'MB<br /> -1 = išjungta(s) | 0 = neribota(s)';
+$PALANG['pAdminEdit_domain_transport'] = 'Srities transportas';
+$PALANG['pAdminEdit_domain_transport_text'] = 'Nustatyti transportą';
+$PALANG['pAdminEdit_domain_backupmx'] = 'Tai atsarginis pašto serveris (MX)';
+$PALANG['pAdminEdit_domain_active'] = 'Įjungtas';
+$PALANG['pAdminEdit_domain_button'] = 'Keisti sritį';
+$PALANG['pAdminEdit_domain_result_error'] = '<span class="error_msg">Srities pakeisti nepavyko!</span>';
+
+$PALANG['pAdminCreate_admin_welcome'] = 'Registruoti naują srities administratorių';
+$PALANG['pAdminCreate_admin_username'] = 'Administratorius';
+$PALANG['pAdminCreate_admin_username_text'] = 'El.pašto adresas';
+$PALANG['pAdminCreate_admin_username_text_error1'] = 'El.pašto adresas<br /><span class="error_msg">Neteisingas Administratoriaus el.pašto adresas!</span>';
+$PALANG['pAdminCreate_admin_username_text_error2'] = 'El.pašto adresas<br /><span class="error_msg">Administratorius šiai sričiai jau yra</span>';
+$PALANG['pAdminCreate_admin_password'] = 'Slaptažodis';
+$PALANG['pAdminCreate_admin_password2'] = 'Slaptažodis (dar kartą)';
+$PALANG['pAdminCreate_admin_password_text_error'] = '<span class="error_msg">Įvesti slaptažodžiai nesutampa!<br />Arba neįvesti!</span>';
+$PALANG['pAdminCreate_admin_button'] = 'Registruoti administratorių';
+$PALANG['pAdminCreate_admin_result_error'] = '<span class="error_msg">Administratoriaus užregistruoti nepavyko!</span>';
+$PALANG['pAdminCreate_admin_result_success'] = 'Administratorius užregistruotas!';
+$PALANG['pAdminCreate_admin_address'] = 'Sritis';
+
+$PALANG['pAdminEdit_admin_welcome'] = 'Registruoti srities administratorių';
+$PALANG['pAdminEdit_admin_username'] = 'Administratorius';
+$PALANG['pAdminEdit_admin_password'] = 'Slaptažodis';
+$PALANG['pAdminEdit_admin_password2'] = 'Slaptažodis (dar kartą)';
+$PALANG['pAdminEdit_admin_password_text_error'] = '<span class="error_msg">Įvesti slaptažodžiai nesutampa!<br />Arba neįvesti!</span>';
+$PALANG['pAdminEdit_admin_active'] = 'Įjungta(s)';
+$PALANG['pAdminEdit_admin_super_admin'] = 'Super administratorius';
+$PALANG['pAdminEdit_admin_button'] = 'Keisti administratorių';
+$PALANG['pAdminEdit_admin_result_error'] = '<span class="error_msg">Administratoriaus pakeisti nepavyko!</span>';
+$PALANG['pAdminEdit_admin_result_success'] = 'Administratorius pakeistas!';
+
+$PALANG['pUsersLogin_welcome'] = 'Pašto vartotojai prisijungia ir keičia slaptažodžius ir sinonimus.';
+$PALANG['pUsersLogin_username'] = 'Vartotojas (el.paštas)';
+$PALANG['pUsersLogin_password'] = 'Slaptažodis';
+$PALANG['pUsersLogin_button'] = 'Prisijungti';
+$PALANG['pUsersLogin_username_incorrect'] = 'Prisijungti nepavyko. Įsitikinkite, kad gerai įvedėte savo el.pašto adresą!';
+$PALANG['pUsersLogin_password_incorrect'] = 'Slaptažodis neteisingas!';
+
+$PALANG['pUsersMenu_vacation'] = 'Automatinis (atostogų) atsakymas';
+$PALANG['pUsersMenu_edit_alias'] = 'Keisti laiškų peradresaciją';
+$PALANG['pUsersMenu_password'] = 'Keisti slaptažodį';
+
+$PALANG['pUsersMain_vacation'] = 'Nustatyti "Esu išvykęs" automatinį atsakymą visiems ateinantiems laiškams.';
+$PALANG['pUsersMain_vacationSet'] = 'Automatinis atsakymas ĮJUNGTAS, paspauskite \'Automatinis (atostogų) atsakymas\' pakeisti ar ištrinti';
+$PALANG['pUsersMain_edit_alias'] = 'Pakeisti laiškų peradresavimą.';
+$PALANG['pUsersMain_password'] = 'Pakeisti slaptažodį.';
+
+$PALANG['pUsersVacation_welcome'] = 'Automatinis (atostogų) atsakymas.';
+$PALANG['pUsersVacation_welcome_text'] = 'Auto atsakiklis jau nustatytas!';
+$PALANG['pUsersVacation_subject'] = 'Tema';
+$PALANG['pUsersVacation_subject_text'] = 'Esu išvykęs';
+$PALANG['pUsersVacation_body'] = 'Žinutė';
+$PALANG['pUsersVacation_body_text'] = <<<EOM
+Esu išvykęs nuo <data> iki <data>.
+Esant neatidėliotiniems reikalams, kreipkitės į <kontaktinis asmuo>.
+
+I will be away from <date> until <date>.
+For urgent matters you can contact <contact person>.
+EOM;
+$PALANG['pUsersVacation_button_away'] = 'Išvykstu';
+$PALANG['pUsersVacation_button_back'] = 'Grįžtu';
+$PALANG['pUsersVacation_result_error'] = '<span class="error_msg">Nepavyko nustatyti el.pašto auto atsakiklio!</span>';
+$PALANG['pUsersVacation_result_success'] = 'Auto atsakiklis išjungtas!';
+$PALANG['pUsersVacation_activefrom'] = 'Įjungtas nuo';
+$PALANG['pUsersVacation_activeuntil'] = 'Įjungtas iki';
+
+$PALANG['pCreate_dbLog_createmailbox'] = 'pašto dėžutė sukurta';
+$PALANG['pCreate_dbLog_createalias'] = 'sinonimas sukurtas';
+$PALANG['pDelete_dbLog_deletealias'] = 'sinonimas pašalintas';
+$PALANG['pDelete_dbLog_deletemailbox'] = 'pašto dėžutė pašalinta';
+
+$PALANG['pEdit_dbLog_editactive'] = 'pakeista būsena';
+$PALANG['pEdit_dbLog_editalias'] = 'sinonimas pakeistas';
+$PALANG['pEdit_dbLog_editmailbox'] = 'pašto dėžutė pakeista';
+
+$PALANG['pSearch'] = 'ieškoti';
+$PALANG['pSearch_welcome'] = 'Ieškoti: ';
+
+$PALANG['pReturn_to'] = 'Grįžti į';
+
+$PALANG['pBroadcast_title'] = 'Send broadcast message'; # XXX
+$PALANG['pBroadcast_from'] = 'From'; # XXX
+$PALANG['pBroadcast_name'] = 'Your name'; # XXX
+$PALANG['pBroadcast_subject'] = 'Subject'; # XXX
+$PALANG['pBroadcast_message'] = 'Message'; # XXX
+$PALANG['pBroadcast_send'] = 'Send message'; # XXX
+$PALANG['pBroadcast_success'] = 'Your broadcast message was sent.'; # XXX
+$PALANG['pAdminMenu_broadcast_message'] = 'Broadcast message'; # XXX
+$PALANG['pBroadcast_error_empty'] = 'The fields Name, Subject and Message should\'t be empty !'; # XXX
+
+$PALANG['pStatus_undeliverable'] = 'maybe UNDELIVERABLE '; # XXX
+$PALANG['pStatus_custom'] = 'Delivers to '; # XXX
+$PALANG['pStatus_popimap'] = 'POP/IMAP '; # XXX
+
+$PALANG['pPasswordTooShort'] = "Password is too short - requires %s characters"; # XXX
+$PALANG['pInvalidDomainRegex'] = "Invalid domain name %s, fails regexp check"; # XXX
+$PALANG['pInvalidDomainDNS'] = "Invalid domain %s, and/or not discoverable in DNS"; # XXX
+$PALANG['pInvalidMailRegex'] = "Invalid email address, fails regexp check"; # XXX
+
+$PALANG['pFetchmail_welcome'] = 'Fetch mail for:'; # XXX
+$PALANG['pFetchmail_new_entry'] = 'New entry'; # XXX
+$PALANG['pFetchmail_database_save_error'] = 'Could not save this entry in the database!'; # XXX
+$PALANG['pFetchmail_database_save_success'] = 'Entry saved in database.'; # XXX
+$PALANG['pFetchmail_error_invalid_id'] = 'No entry with ID %s found!'; # XXX
+$PALANG['pFetchmail_invalid_mailbox'] = 'Invalid mailbox!'; # XXX
+$PALANG['pFetchmail_server_missing'] = 'Please enter the remote server name!'; # XXX
+$PALANG['pFetchmail_user_missing'] = 'Please enter the remote username!'; # XXX
+$PALANG['pFetchmail_password_missing'] = 'Please enter the remote password!'; # XXX
+$PALANG['pFetchmail_field_id']              = 'ID'; # XXX
+$PALANG['pFetchmail_field_mailbox']         = 'Mailbox'; # XXX
+$PALANG['pFetchmail_field_src_server']      = 'Server'; # XXX
+$PALANG['pFetchmail_field_src_auth']        = 'Auth Type'; # XXX
+$PALANG['pFetchmail_field_src_user']        = 'User'; # XXX
+$PALANG['pFetchmail_field_src_password']    = 'Password'; # XXX
+$PALANG['pFetchmail_field_src_folder']      = 'Folder'; # XXX
+$PALANG['pFetchmail_field_poll_time']       = 'Poll'; # XXX
+$PALANG['pFetchmail_field_fetchall']        = 'Fetch All'; # XXX
+$PALANG['pFetchmail_field_keep']            = 'Keep'; # XXX
+$PALANG['pFetchmail_field_protocol']        = 'Protocol'; # XXX
+$PALANG['pFetchmail_field_usessl']          = 'SSL active'; # XXX
+$PALANG['pFetchmail_field_extra_options']   = 'Extra Options'; # XXX
+$PALANG['pFetchmail_field_mda']             = 'MDA'; # XXX
+$PALANG['pFetchmail_field_date']            = 'Date'; # XXX
+$PALANG['pFetchmail_field_returned_text']   = 'Returned Text'; # XXX
+$PALANG['pFetchmail_desc_id']               = 'Record ID'; # XXX
+$PALANG['pFetchmail_desc_mailbox']          = 'Local mailbox'; # XXX
+$PALANG['pFetchmail_desc_src_server']       = 'Remote Server'; # XXX
+$PALANG['pFetchmail_desc_src_auth']         = 'Mostly \'password\''; # Translators: Please do NOT translate 'password' here # XXX
+$PALANG['pFetchmail_desc_src_user']         = 'Remote User'; # XXX
+$PALANG['pFetchmail_desc_src_password']     = 'Remote Password'; # XXX
+$PALANG['pFetchmail_desc_src_folder']       = 'Remote Folder'; # XXX
+$PALANG['pFetchmail_desc_poll_time']        = 'Poll every ... minutes'; # XXX
+$PALANG['pFetchmail_desc_fetchall']         = 'Retrieve  both old (seen) and new messages'; # XXX
+$PALANG['pFetchmail_desc_keep']             = 'Keep retrieved messages on the remote mailserver'; # XXX
+$PALANG['pFetchmail_desc_protocol']         = 'Protocol to use'; # XXX
+$PALANG['pFetchmail_desc_usessl']           = 'SSL encryption'; # XXX
+$PALANG['pFetchmail_desc_extra_options']    = 'Extra fetchmail Options'; # XXX
+$PALANG['pFetchmail_desc_mda']              = 'Mail Delivery Agent'; # XXX
+$PALANG['pFetchmail_desc_date']             = 'Date of last polling/configuration change'; # XXX
+$PALANG['pFetchmail_desc_returned_text']    = 'Text message from last polling'; # XXX
+
+$PALANG['please_keep_this_as_last_entry'] = ''; # needed for language-check.sh
+/* vim: set expandtab ft=php softtabstop=3 tabstop=3 shiftwidth=3: */
+?>

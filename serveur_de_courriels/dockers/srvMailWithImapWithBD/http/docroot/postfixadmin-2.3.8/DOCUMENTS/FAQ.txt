@@ -1,0 +1,36 @@
+Frequently Asked Questions:
+
+
+1) Why isn't PostfixAdmin creating my mailbox?
+
+ - PostfixAdmin is only a web interface for storing configuration settings. 
+   It does not (by default!) have the ability to create mail folders on disk. 
+   In a normal setup, sending the 'Welcome' email accomplishes this task - 
+   as Courier/Cyrus/etc do it (and have permission to do so)
+
+
+2) I've deleted the mailbox from PostfixAdmin, yet it still exists on disk? Why?
+
+ - This is related to #1 above - namely, PostfixAdmin (which is a php web 
+   application) does not have permission to modify the mailbox files on disk.
+   You need to either manually remove the directories 
+   (e.g. rm -Rf /var/spool/mail/vmail/something@example.org) 
+   or install the postfixadmin-mailbox-postdeletion.sh script (See ADDITIONS/)
+   and modify config.inc.php appropriately.
+
+
+3) How do I have to setup sudo to run the $CONF['*_script'] scripts?
+
+ - run   visudo   to edit the sudo configuration file
+ - add a line like this for every script you want to run:
+      wwwrun  ALL = (courier) NOPASSWD: /usr/local/bin/postfixadmin-mailbox-postcreation.sh
+   (replace usernames and path according to your setup)
+
+
+4) I try and create a mailbox, but it keeps saying "Invalid email address"... ?
+
+ - Postfixadmin, by default, attempts to verify an email address is valid, partly by
+   checking that the domain exists. For most people this works as expected, but
+   if it doesn't for you, try editing $CONF['emailcheck_resolve_domain'] to 'NO' in 
+   config.inc.php and try again.
+

@@ -233,4 +233,169 @@ Visualisation du résultat :
 
 Bien entendu vous pouvez visualiser le conteneur de la configuration apache dans **/etc/apache2**, je vous laisse le plaisir !
 
+Parfait après validation nous pouvons dire que ceci semble convenable, nous allons maintenant ajouter la configuration de __postfixadmin__. Je télécharge l'application depuis internet [https://sourceforge.net/projects/postfixadmin/files/postfixadmin/postfixadmin-2.3.8/](https://sourceforge.net/projects/postfixadmin/files/postfixadmin/postfixadmin-2.3.8/).
+
+J'ai placé l'application dans le répertoire __docroot__
+
+        $ ls http/
+        Dockerfile  docroot
+
+        $ ls http/docroot/
+        postfixadmin-2.3.8
+
+        $ ls -1 http/docroot/postfixadmin-2.3.8/ | head -5
+        ADDITIONS
+        admin
+        backup.php
+        broadcast-message.php
+        CHANGELOG.TXT
+
+Modification du __Dockerfile__ en conséquence. 
+
+        COPY docroot/postfixadmin-2.3.8/ /var/www/html/
+
+Nous allons aussi profiter du moment pour modifier le fichier __docker-compose.yml__ :
+
+
+        version: '2'
+        services:
+            db-coco:
+                image: mysql:5.5
+                restart: unless-stopped
+                container_name : 'coco-db-t'
+                hostname: db.coco.com
+                environment:
+                    - MYSQL_USER=umail
+                    - MYSQL_PASSWORD=ZePassword
+                    - MYSQL_DATABASE=vmail
+                    - MYSQL_RANDOM_ROOT_PASSWORD=yes
+                    - TZ=America/Montreal
+                    - TERM=xterm
+                volumes:
+                    - /srv/docker/coco-db-t/var_lib_mysql:/var/lib/mysql
+            http-coco:
+                image: postfixadmin
+                build: ./http/
+                restart: unless-stopped
+                container_name : 'coco-http-t'
+                hostname: mail.coco.com
+                links:
+                    - db-coco:mysql-db
+                environment:
+                    - MYSQL_USER=umail
+                    - MYSQL_PASSWORD=ZePassword
+                    - MYSQL_DATABASE=vmail
+                    - TZ=America/Montreal
+                    - TERM=xterm
+
+L'ensemble est pas mal déjà maîtrisé , petit détail qui fut ajouté la ligne suivante :
+
+        build: ./http/
+
+Ceci me permet de réaliser des constructions d'image directement avec la commande __docker-compose__ au lieu de changer de répertoire et de faire __docker build -t ....__ :D. Ça commençais  à m'ennuyer de changer de répertoire tous le temps. Résultat  :
+
+        $ docker-compose build http-coco
+        Building http-coco
+        Step 1 : FROM php:5-apache
+         ---> 9013e58a01eb
+         Step 2 : MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
+          ---> Using cache
+           ---> 1ab4c14a8cbd
+        [ ... OUTPUT COUPÉ ... ]
+
+
+Nous réalisons un teste avec les 2 conteneurs :
+
+        $ docker-compose up
+        Starting coco-db-t
+        Creating coco-http-t
+        Attaching to coco-db-t, coco-http-t
+        coco-db-t    | 170221  8:18:38 [Note] mysqld (mysqld 5.5.52) starting as process 1 ...
+        coco-db-t    | 170221  8:18:38 [Note] Plugin 'FEDERATED' is disabled.
+        coco-db-t    | 170221  8:18:38 InnoDB: The InnoDB memory heap is disabled
+        coco-db-t    | 170221  8:18:38 InnoDB: Mutexes and rw_locks use GCC atomic builtins
+        coco-db-t    | 170221  8:18:38 InnoDB: Compressed tables use zlib 1.2.3
+        coco-db-t    | 170221  8:18:38 InnoDB: Using Linux native AIO
+
+![default_page_postfixadm.png](./imgs/default_page_postfixadm.png)
+
+
+Pas trop mal :D. Nous pouvons réaliser le **setup** : [http://172.22.0.3/setup.php](http://172.22.0.3/setup.php) Bien entendu votre IP peut être tous autre.
+
+[erreur_setup_postfixadm-01.png](./imgs/erreur_setup_postfixadm-01.png)
+
+**yeahh** des problèmes on finira pas trop tôt la formation ;-).
+
+Bon clairement il manque la configuration du fichier ! Nous allons donc regarder ce dit fichier. Le fichier est dans le répertoire **http/docroot/postfixadmin-2.3.8/config.inc.php**.
+
+Premièrement je vais réaliser une copie du fichier , le nouveau fichier sera de type **jinja2**
+
+        $ mkdir http/conf/
+        $ cp http/docroot/postfixadmin-2.3.8/config.inc.php http/conf/config.inc.php.j2
+
+
+Voici les changements réalisés :
+
+
+        $ diff http/conf/config.inc.php.j2 http/docroot/postfixadmin-2.3.8/config.inc.php  
+        26c26
+        < $CONF['configured'] = true;
+        ---
+        > $CONF['configured'] = false;
+        31c31
+        < $CONF['setup_password'] = '{{ SETUP_PASS }}';
+        ---
+        > $CONF['setup_password'] = 'changeme';
+        49,53c49,53
+        < $CONF['database_type'] = '{{ DB_TYPE }}';
+        < $CONF['database_host'] = 'db';
+        < $CONF['database_user'] = '{{ MYSQL_USER }}';
+        < $CONF['database_password'] = '{{ MYSQL_PASSWORD }}';
+        < $CONF['database_name'] = '{{ MYSQL_DATABASE }}';
+        ---
+        > $CONF['database_type'] = 'mysql';
+        > $CONF['database_host'] = 'localhost';
+        > $CONF['database_user'] = 'postfix';
+        > $CONF['database_password'] = 'postfixadmin';
+        > $CONF['database_name'] = 'postfix';
+        82c82
+        < $CONF['admin_email'] = 'postmaster@{{ MAIL_DOMAIN }}';
+        ---
+        > $CONF['admin_email'] = 'postmaster@change-this-to-your.domain.tld';
+        133,136c133,136
+        <     'abuse' => 'abuse@{{ MAIL_DOMAIN }}',
+        <     'hostmaster' => 'hostmaster@{{ MAIL_DOMAIN }}',
+        <     'postmaster' => 'postmaster@{{ MAIL_DOMAIN }}',
+        <     'webmaster' => 'webmaster@{{ MAIL_DOMAIN }}'
+        ---
+        >     'abuse' => 'abuse@change-this-to-your.domain.tld',
+        >     'hostmaster' => 'hostmaster@change-this-to-your.domain.tld',
+        >     'postmaster' => 'postmaster@change-this-to-your.domain.tld',
+        >     'webmaster' => 'webmaster@change-this-to-your.domain.tld'
+
+J'ai donc modifier les paramètres de définitions de la base de donnée ainsi que la définition du domaine __change-this-to-your.domain.tld__ pour la variable __MAIL\_DOMAIN__ . **ATTENTION** je ne prétend pas que l'ensemble de la configuration est complète je vous invite à refaire une validation !!!
+
+C'est cool tous ça mais on a pas installé le système de conversion __jinja2__ :P faut modifier le __Dockerfile__ :
+
+        # Php Modules a activer
+        RUN apt-get update && apt-get install -y  --no-install-recommends libmcrypt-dev python-pip python-wheel python-setuptools \
+        && docker-php-ext-install mbstring \
+        && docker-php-ext-install mcrypt \
+        && docker-php-ext-install mysql \
+        && docker-php-ext-install mysqli \
+        && docker-php-ext-install pdo_mysql \
+        && pip install j2cli
+
+On reconstruit :
+
+        $ docker-compose build http-coco 
+        [... OUTPUT COUPÉ ...]
+        Removing intermediate container 3a605fd30e74
+        Step 5 : COPY docroot/postfixadmin-2.3.8/ /var/www/html/
+         ---> 252f7f7de579
+         Removing intermediate container b63121cb60e1
+         Successfully built 252f7f7de579
+
+__Oupss__ ça a marché du premier coup :P , à avoir su j'aurais tous de suite modifier le fichier __Dockerfile__ pour qu'il copie le fichier de configuration :P .
+
 
