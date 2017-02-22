@@ -28,3 +28,6 @@ services:
             - MYSQL_DATABASE=vmail
             - TZ=America/Montreal
             - TERM=xterm
+            - DB_TYPE=mysql
+            - MAIL_DOMAIN=coco.com
+            - SETUP_PASS=superPasse

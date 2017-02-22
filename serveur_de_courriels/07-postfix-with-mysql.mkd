@@ -398,4 +398,82 @@ On reconstruit :
 
 __Oupss__ ça a marché du premier coup :P , à avoir su j'aurais tous de suite modifier le fichier __Dockerfile__ pour qu'il copie le fichier de configuration :P .
 
+Donc ajout du fichier de configuration en __template__ dans le __Dockerfile__: 
 
+        # Copie la configuration en format Jinja2
+        COPY conf/config.inc.php.j2 /root/
+
+Nous allons aussi modifier le __docker-compose__ afin d'avoir la définition des variables , comme il y a eu 24 heures entre l'écriture du fichier de __template__ et la définition du __docker-compose__ je vais faire l'extraction des variables , car j'ai une petite mémoire :P.
+
+        $ cat http/conf/config.inc.php.j2 | grep {{ | sed "s/.*{{ \([A-Z_]*\) }}'/\1/g"  | tr -d "," | tr -d ";" | sort | uniq
+        $CONF['database_name'] = '{{ MYSQL_DATABASE }}'
+        DB_TYPE
+        MAIL_DOMAIN
+        MYSQL_PASSWORD
+        MYSQL_USER
+        SETUP_PASS
+
+
+Bon presque, mais on va pas perdre plus de temps :D, l'important ici c'est pas le **sed** :D.
+Voici donc nos nouvelles variables pour le __docker-compose__ :
+
+                environment:
+                    - MYSQL_USER=umail
+                    - MYSQL_PASSWORD=ZePassword
+                    - MYSQL_DATABASE=vmail
+                    - TZ=America/Montreal
+                    - TERM=xterm
+                    - DB_TYPE=mysql
+                    - MAIL_DOMAIN=coco.com
+                    - SETUP_PASS=superPasse
+
+
+
+### <a name="setup_http_script" /> Script de démarrage 
+
+Comme vous pouvez le constater actuellement notre __Dockerfile__ ne contient PAS de script d'exécution :
+
+            # Thomas Boutry
+            FROM php:5-apache
+            MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
+
+            # Ignore APT warnings about not having a TTY
+            ENV DEBIAN_FRONTEND noninteractive
+
+            # Php Modules a activer
+            RUN apt-get update && apt-get install -y  --no-install-recommends libmcrypt-dev python-pip python-wheel python-setuptools \
+                && docker-php-ext-install mbstring \
+                && docker-php-ext-install mcrypt \
+                && docker-php-ext-install mysql \
+                && docker-php-ext-install mysqli \
+                && docker-php-ext-install pdo_mysql \
+                && pip install j2cli
+
+            # Copie l'application postfix adm
+            COPY docroot/postfixadmin-2.3.8/ /var/www/html/
+
+            # Copie la configuration en format Jinja2
+            COPY conf/config.inc.php.j2 /root/
+
+Pourtant le service __apache__ fonctionne quand on démarre le conteneur nous l'avons vu lors de la visualisation du fichier __phpinfo__. Ceci est inclut dans l'image de base **php:5-apache** :
+
+        $ docker history php:5-apache                                                                                                                        
+        IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
+        9013e58a01eb        3 weeks ago         /bin/sh -c #(nop)  CMD ["apache2-foreground"]   0 B
+        <missing>           3 weeks ago         /bin/sh -c #(nop)  EXPOSE 80/tcp                0 B
+        <missing>           3 weeks ago         /bin/sh -c #(nop)  WORKDIR /var/www/html        0 B
+        <missing>           3 weeks ago         /bin/sh -c #(nop) COPY file:24613ecbb1ce6a09f   1.346 kB
+        <missing>           4 weeks ago         /bin/sh -c #(nop)  ENTRYPOINT ["docker-php-en   0 B
+        <missing>           4 weeks ago         /bin/sh -c #(nop) COPY multi:2b7e23dbf0e975ef   5.33 kB
+        <missing>           4 weeks ago         /bin/sh -c set -xe  && buildDeps="   $PHP_EXT   33.21 MB
+        <missing>           4 weeks ago         /bin/sh -c #(nop) COPY file:207c686e3fed4f71f   587 B
+        <missing>           4 weeks ago         /bin/sh -c set -xe;   fetchDeps='   wget  ';    12.98 MB
+
+Vous pouvez le constater il y a la ligne :
+
+* **CMD ["apache2-foreground"]**
+* **ENTRYPOINT ["docker-php-en**
+
+Nous avons besoin nous aussi d'avoir un script qui soit exécuter lors de l'initialisation du conteneur afin de faire la substitution des variables !! 
+
+ICI ICI ICI analyse en cours pour l'interoperabilité (ouin je vais pas le laisser le mot :P ) entre CMD et ENTRYPOINT

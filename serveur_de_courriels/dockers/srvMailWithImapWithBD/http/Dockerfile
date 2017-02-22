@@ -19,3 +19,10 @@ COPY docroot/postfixadmin-2.3.8/ /var/www/html/
 
 # Copie la configuration en format Jinja2
 COPY conf/config.inc.php.j2 /root/
+
+# script pour la substitution
+ADD run.sh /
+
+ENTRYPOINT ["/run.sh"]
+
+CMD ["apache2-foreground"]
