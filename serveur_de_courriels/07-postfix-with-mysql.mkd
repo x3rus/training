@@ -476,4 +476,178 @@ Vous pouvez le constater il y a la ligne :
 
 Nous avons besoin nous aussi d'avoir un script qui soit exécuter lors de l'initialisation du conteneur afin de faire la substitution des variables !! 
 
-ICI ICI ICI analyse en cours pour l'interoperabilité (ouin je vais pas le laisser le mot :P ) entre CMD et ENTRYPOINT
+Cette situation m'a permis d'analyser la question de l'héritage des entrés **CMD** et **ENTRYPOINT** , car il y a 2 instructions possible pour exécuter une script lors de l'initialisation du conteneur. Mon objectif fut de définir une instruction pour le __run__ mais que par la suite il appel le script d'initialisation du parent !
+
+Cependant ceci ne semble pas possible, voici l'interaction entre **CMD** et **ENTRYPOINT** :
+
+[https://docs.docker.com/engine/reference/builder/#/entrypoint](https://docs.docker.com/engine/reference/builder/#/entrypoint)
+
+
+![cmd_vs_entrypoint.png](./imgs/cmd_vs_entrypoint.png)
+
+Nous allons donc surdéfinir l'instruction **CMD** et appeler le script **apache2-foreground** par la suite !
+Donc définition du script **run.sh** :
+
+        $ cat http/run.sh
+        #! /usr/bin/env bash
+        set -e # exit on error
+
+        # Variables
+        export MYSQL_USER=${MYSQL_USER:-"myuser"}
+        export MYSQL_PASSWORD=${MYSQL_PASSWORD:-"superpass"}
+        export MYSQL_DATABASE=${MYSQL_DATABASE:-"mails"}
+        export DB_TYPE=${DB_TYPE:-"mysql"}
+        export MAIL_DOMAIN=${MAIL_DOMAIN:-"example.com"}
+        export SETUP_PASS=${SETUP_PASS:-"fkrhreiu"}
+
+        # Templates
+        j2 /root/config.inc.php.j2 > /var/www/html/config.inc.php
+
+        # Rappel de la commande CMD du script original
+        apache2-foreground
+
+Modification du __Dockerfile__ :
+
+        [... OUTPUT COUPÉ ...]
+        # Copie la configuration en format Jinja2
+        COPY conf/config.inc.php.j2 /root/
+
+        # script pour la substitution
+        ADD run.sh /
+
+        CMD ["/run.sh"]
+
+On reconstruit l'image et on valide :
+
+        $ docker-compose build http-coco
+        $ docker-compose up http-coco
+        $ docker exec coco-http-t cat /var/www/html/config.inc.php | grep -i coco                                                                             
+        $CONF['admin_email'] = 'postmaster@coco.com';
+        'abuse' => 'abuse@coco.com',
+        'hostmaster' => 'hostmaster@coco.com',
+        'postmaster' => 'postmaster@coco.com',
+        'webmaster' => 'webmaster@coco.com'
+
+Ça semble bon :D
+
+### <a name="setup_http_app_postfixadm" /> Validation de l'application postfixadmin
+
+J'ai arrêté le conteneur __http__ pour démarrer l'ensemble __http__ ET __bd__ 
+
+        $ docker-compose up
+        [... OUTPUT COUPÉ ...]
+        coco-db-t    | 170223  8:06:13 [Note] Event Scheduler: Loaded 0 events
+        coco-db-t    | 170223  8:06:13 [Note] mysqld: ready for connections.
+        coco-db-t    | Version: '5.5.52'  socket: '/tmp/mysql.sock'  port: 3306  MySQL Community Server (GPL)
+        coco-http-t  | [Thu Feb 23 08:13:25.903190 2017] [mpm_prefork:notice] [pid 8] AH00163: Apache/2.4.10 (Debian) PHP/5.6.30 configured -- resuming normal operations
+        coco-http-t  | [Thu Feb 23 08:13:25.903242 2017] [core:notice] [pid 8] AH00094: Command line: 'apache2 -D FOREGROUND'
+
+
+Extraction de l'IP du serveur __http__ :
+
+        $ docker inspect coco-http-t | grep IPAddre
+                    "SecondaryIPAddresses": null,
+                        "IPAddress": "",
+                        "IPAddress": "172.22.0.2",
+
+Si vous allez à la page [http://172.22.0.2](http://172.22.0.2) , vous aurez la page d'authentification :
+
+![postfixadm-home.png](./imgs/postfixadm-home.png)
+
+Si nous reprenons les instructions d'installation de __postfixadmin__ [INSTALL.TXT](https://github.com/albanpeignier/postfixadmin/blob/master/INSTALL.TXT) vous pourrez voir à l'étape 4 que nous devons aller à l'URL [http://172.22.0.2/setup.php](http://172.22.0.2/setup.php) pour compléter l'installation.
+
+On va le faire ! Donc je vais à la page [http://172.22.0.2/setup.php](http://172.22.0.2/setup.php) 
+
+Voici le résultat 
+
+![postfixadm-setup1.png](./imgs/postfixadm-setup1.png)
+![postfixadm-setup2.png](./imgs/postfixadm-setup2.png)
+
+Regardons l'état de la Base de donnée :
+
+
+        $ docker exec -it coco-db-t mysql -u umail -p
+        Enter password:
+        Welcome to the MySQL monitor.  Commands end with ; or \g.
+        [ ... OUTPUT COUPÉ ...]
+        mysql> use vmail;
+
+        mysql> show tables;
+        +-----------------------+
+        | Tables_in_vmail       |
+        +-----------------------+
+        | admin                 |
+        | alias                 |
+        | alias_domain          |
+        | config                |
+        | domain                |
+        | domain_admins         |
+        | fetchmail             |
+        | log                   |
+        | mailbox               |
+        | quota                 |
+        | quota2                |
+        | vacation              |
+        | vacation_notification |
+        +-----------------------+
+        13 rows in set (0.00 sec)
+
+        mysql> select * from admin;
+        Empty set (0.00 sec)
+
+        mysql> select * from config;
+        +----+---------+-------+
+        | id | name    | value |
+        +----+---------+-------+
+        |  1 | version | 740   |
+        +----+---------+-------+
+        1 row in set (0.00 sec)
+
+
+
+Ajoutons l'administrateur ! 
+
+* __Setup password : password__
+* __Admin: xerus@coco.com__
+* __Password: blabla__
+* __Password (again): blabla__
+
+Une fois l'opération réaliser voici le résultat :
+
+![postfixadm-setup3.png](./imgs/postfixadm-setup3.png)
+
+
+Si nous regardons dans la BD maintenant :
+
+        mysql> select * from admin;
+        Empty set (0.00 sec)
+
+RIEN !!! **ishh** , 
+
+Il y a l'information suivante sur la page web: 
+
+        If you want to use the password you entered as setup password, edit config.inc.php and set
+        
+        $CONF['setup_password'] = 'e483919d4e684d4bff3669f0a50f6c57:805a8aa8ff92297d7e83c74a5cd1a7f9827ecfdb';
+
+Une fois que j'ai modifier le fichier __coco-http-t:/var/www/html/config.inc.php__ pour définir la variable convenable ceci à très bien fonctionné :-/.
+J'ai refait l'opération et j'ai eu l'information suivante :
+
+![postfixadm-setup4.png](./imgs/postfixadm-setup4.png)
+
+Si je valide dans la base de donnée :
+
+        mysql> select * from admin;
+        +----------------+------------------------------------+---------------------+---------------------+--------+
+        | username       | password                           | created             | modified            | active |
+        +----------------+------------------------------------+---------------------+---------------------+--------+
+        | xerus@coco.com | $1$f02bfd0b$g.W7zDWmgCve8tBsKo5Fn. | 2017-02-23 08:33:27 | 2017-02-23 08:33:27 |      1 |
+        +----------------+------------------------------------+---------------------+---------------------+--------+
+        1 row in set (0.00 sec)
+
+Et via l'interface j'arrive bien à m'authentifier :
+
+![postfixadm-main-admin.png](./imgs/postfixadm-main-admin.png)
+
+Bon maintenant LA question , mais comment faire pour que ce soit automatique ?!?! Ce n'est pas quelque chose de compliqué, cependant nous aimerions pouvoir déployer des conteneurs avec le système de __postfixadmin__ __pré-configurer__ en définissant l'administrateur par défaut en variable. N'est-ce pas ?
+Bien entendu je démontre ici pour __postfixadmin__ mais c'est une configuration très classique.

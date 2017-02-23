@@ -23,6 +23,5 @@ COPY conf/config.inc.php.j2 /root/
 # script pour la substitution
 ADD run.sh /
 
-ENTRYPOINT ["/run.sh"]
+CMD ["/run.sh"]
 
-CMD ["apache2-foreground"]
