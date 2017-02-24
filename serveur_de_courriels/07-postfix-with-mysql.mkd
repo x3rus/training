@@ -650,4 +650,97 @@ Et via l'interface j'arrive bien à m'authentifier :
 ![postfixadm-main-admin.png](./imgs/postfixadm-main-admin.png)
 
 Bon maintenant LA question , mais comment faire pour que ce soit automatique ?!?! Ce n'est pas quelque chose de compliqué, cependant nous aimerions pouvoir déployer des conteneurs avec le système de __postfixadmin__ __pré-configurer__ en définissant l'administrateur par défaut en variable. N'est-ce pas ?
-Bien entendu je démontre ici pour __postfixadmin__ mais c'est une configuration très classique.
+Bien entendu je démontre ici pour __postfixadmin__ mais c'est une configuration très classique, beaucoup d'application offre l'option de configuration avec 2 ou 3 étapes. 
+
+**Clarifions  quelque choses** : La je vous montre ça puis ça va avoir l'air très simple, mais dans la réalité je viens de l'apprendre !! :P Oui moi aussi j'apprends avec ces formations faut bien que ce soit gagnant / gagnant :D . J'ai mis un peu de temps 1 heure 30 pour juste trouver comment communiquer avec la page __setup.php__ :P.
+
+
+
+### <a name="test_feed_automatic_setup" /> Explication pour le remplissage automatique du formulaire avec CURL
+
+Voici l'explication des testes que j'ai réalisé , premièrement j'ai valider quelle application en ligne de commande :
+
+        $ docker exec -it coco-http-t bash
+        root@mail:/var/www/html# wget
+        bash: wget: command not found
+        root@mail:/var/www/html# curl --version
+        curl 7.38.0 (x86_64-pc-linux-gnu) libcurl/7.38.0 OpenSSL/1.0.1t zlib/1.2.8 libidn/1.29 libssh2/1.4.3 librtmp/2.3
+        Protocols: dict file ftp ftps gopher http https imap imaps ldap ldaps pop3 pop3s rtmp rtsp scp sftp smtp smtps telnet tftp
+        Features: AsynchDNS IDN IPv6 Largefile GSS-API SPNEGO NTLM NTLM_WB SSL libz TLS-SRP
+
+Je ne voulais pas installer une autre application dans le conteneur , donc ce sera **curl** c'est bien :D.
+
+Maintenant nous avons besoin de faire 2 opérations :
+
+1. Générer le mot de passe de __setup__ et le mettre dans le fichier __config.inc.php__ .
+2. Définir un administrateur et mot de passe avec le mot de passe utilisé pour la génération.
+
+Avec l'instance du conteneur en place nous pouvons faire autant de teste que l'on désire il faudra juste ajuster le fichier de configuration.
+
+J'ai trouvé si le site très bien fait  [BASH: Filling Web Forms with cURL and wget](https://journalxtra.com/linux/bash-linuxsanity/bash-filling-web-forms-with-curl-and-wget/) une très bonne explication . Mais surtout un script qui permet d'extraire les champs du formulaire, en effet bien que l'on puisse lire le fichier __setup.php__ il n'est pas toujours facile de s'en sortir surtout si on code pas souvent ! 
+
+TODO : fixer le lien
+Comme il n'est plus disponible sur __github__ mais uniquement sur l'archive je vous l'ai mis sur le projet __github__ [formfind](TODO).
+
+Voyons comment l'utiliser , premièrement je vais récupérer la page web __setup.php__ puis je vais le transmettre au script pour qu'il me le pré mâche :D.
+
+        $ curl  http://172.22.0.3/setup.php > setup.html
+          % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+          i                                 Dload  Upload   Total   Spent    Left  Speed
+          100  2597  100  2597    0     0   230k      0 --:--:-- --:--:-- --:--:--  253k
+
+        $ tail setup.html
+           </tr>
+           </table>
+           </form>
+           </div>
+
+           <b>Since version 2.3 there is no requirement to delete setup.php!</b><br />
+           <b>Check the config.inc.php file for any other settings that you might need to change!<br />
+           </div>
+           </body>
+           </html>
+         $ ./formfind < setup.html
+         --- FORM report. Uses POST to URL "<form name="create_admin" method="post">"
+         Input: NAME="form" VALUE="createadmin" (HIDDEN)
+         Input: NAME="setup_password" (PASSWORD)
+         Input: NAME="fUsername" (TEXT)
+         Input: NAME="fPassword" (PASSWORD)
+         Input: NAME="fPassword2" (PASSWORD)
+         Input: NAME="submit" VALUE="Add Admin" (SUBMIT)
+         --- end of FORM
+
+**WOWWWww** maintenant facilement je vois l'ensemble des nom des champs que je dois fournir pour remplir le formulaire sans lire l'ensemble de la page __html__ :D.
+
+Maintenant je peux utiliser la commande __curl__ pour remplir le formulaire :
+
+        $ curl  -X POST -d "setup_password=tototitittata" -d "form=createadmin" http://172.22.0.3/setup.php | grep "CONF"
+          % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                           Dload  Upload   Total   Spent    Left  Speed
+          100  2904  100  2859  100    45   276k   4454 --:--:-- --:--:-- --:--:--  310k
+          <li>Checking $CONF['configured'] - OK
+          <div class="standout"><p><b>Setup password not specified correctly</b></p><p>If you want to use the password you entered as setup password, edit config.inc.php and set</p><pre>$CONF['setup_password'] = '4db3d5aeebfbf0a39bc2e1b8fb2b80a3:7e0ad0394dc7c76dd0185b540cd653f15224945f';</pre></div>
+
+__Yep__ ça marche (1 heure et demi plus tard , je mettrai pas le nombre de tentative :P ) . Maintenant je dois amélioré le résultat pour n'avoir que le texte qui m'intéresse et non toute la ligne. Validons si j'ai __sed__ de présent sur la machine , mais la libre à vous de l'outil !!!
+
+        root@mail:/var/www/html# sed --version
+        sed (GNU sed) 4.2.2
+        Copyright (C) 2012 Free Software Foundation, Inc.
+
+Parfait, j'ai tous ce qu'il me faut pour travaillé ... Bon 10 minutes plus tard , je dis pas que c'est la plus belle des commandes , c'est a retravailler :) , mais le résultat est présent ! 
+
+        $ curl  -X POST -d "setup_password=tototitittata" -d "form=createadmin" http://172.22.0.3/setup.php 2>/dev/null | grep "CONF" | grep "setup_password"
+         | sed "s/.*\$CONF\['setup_password'\] = '\(.*\)';.*/\1/g"                                                                                                    
+         830c77bc82bcea9a7b03259a6f56f074:c63a85565e676f3151e211f3c2ffb50b9a9c708b
+
+Maintenant on valide que ceci fonctionne aussi dans le conteneur , car ce n'est peut-être pas la même version de __curl__ il est possible que le comportement soit différent. 
+
+        root@mail:/var/www/html# curl  -X POST -d "setup_password=tototitittata" -d "form=createadmin" http://127.0.0.1/setup.php 2>/dev/null | grep "CONF" | grep "setup_password" | sed "s/.*\$CONF\['setup_password'\] = '\(.*\)';.*/\1/g"
+        abaf7d8a20c2c7b3d89d03fc93cd8609:059e2856ff5aef253b5312fe55eaa4858f66a78f
+
+ICI ICI ICI 
+
+
+* Référence : 
+    * https://journalxtra.com/linux/bash-linuxsanity/bash-filling-web-forms-with-curl-and-wget/
+    * https://curl.haxx.se/docs/httpscripting.html
