@@ -31,3 +31,5 @@ services:
             - DB_TYPE=mysql
             - MAIL_DOMAIN=coco.com
             - SETUP_PASS=superPasse
+            - ADM_MAIL=admin@coco.com
+            - ADM_PASS=DockerRock

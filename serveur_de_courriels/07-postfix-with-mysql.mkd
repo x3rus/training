@@ -738,8 +738,198 @@ Maintenant on valide que ceci fonctionne aussi dans le conteneur , car ce n'est 
         root@mail:/var/www/html# curl  -X POST -d "setup_password=tototitittata" -d "form=createadmin" http://127.0.0.1/setup.php 2>/dev/null | grep "CONF" | grep "setup_password" | sed "s/.*\$CONF\['setup_password'\] = '\(.*\)';.*/\1/g"
         abaf7d8a20c2c7b3d89d03fc93cd8609:059e2856ff5aef253b5312fe55eaa4858f66a78f
 
-ICI ICI ICI 
+Nous sommes donc en mesure d'extraire le résultat du mot de passe "chiffré" nous allons maintenant valider que nous sommes en mesure en utilisant la même méthode de faire la création du compte administrateur ! Je vais donc modifier manuellement dans le conteneur la valeur de **$CONF['setup_password']** avec le résultat du **hash** . Comme je n'ai pas **vim** de présent et que je n'ai qu'une ligne à modifier je vais utiliser **sed** en même temps ça donne un coup de pratique, car nous utiliserons la même méthode dans le script d'initialisation.
 
+        root@mail:/var/www/html# sed "s/\$CONF\['setup_password'\] = 'superPasse';/\$CONF\['setup_passwo12fe55eaa4858f66a78f'/g" config.inc.php  | grep setup_pf253b531
+        $CONF['setup_password'] = 'abaf7d8a20c2c7b3d89d03fc93cd8609:059e2856ff5aef253b5312fe55eaa4858f66a78f'
+
+Ceci était uniquement pour valider je vais ajouter l'option **-i** pour que le **sed** modifie le fichier de configuration original:
+
+        root@mail:/var/www/html# sed -i "s/\$CONF\['setup_password'\] = 'superPasse';/\$CONF\['setup_password'\] = 'abaf7d8a20c2c7b3d89d03fc93cd8609:059e2856ff5aef253b5312fe55eaa4858f66a78f';/g" config.inc.php                
+        root@mail:/var/www/html# echo $?
+        0
+        root@mail:/var/www/html# grep "setup_pass" config.inc.php
+        $CONF['setup_password'] = 'abaf7d8a20c2c7b3d89d03fc93cd8609:059e2856ff5aef253b5312fe55eaa4858f66a78f'
+
+Je vais maintenant réutiliser **curl** pour créer un administrateur, je réutilise le script pour extraire les informations du formulaire , car je me rappelle plus des paramètres :D
+
+        $ ./formfind < setup.html
+        --- FORM report. Uses POST to URL "<form name="create_admin" method="post">"
+        Input: NAME="form" VALUE="createadmin" (HIDDEN)
+        Input: NAME="setup_password" (PASSWORD)
+        Input: NAME="fUsername" (TEXT)
+        Input: NAME="fPassword" (PASSWORD)
+        Input: NAME="fPassword2" (PASSWORD)
+        Input: NAME="submit" VALUE="Add Admin" (SUBMIT)
+        --- end of FORM
+
+
+Donc je démarre la création de l'administrateur :
+
+        $ curl  -X POST -d "setup_password=tototitittata" -d "fUsername=admin@coco.com" -d "fPassword=superPass" -d "fPassword2=superPass" -d "form=createadmin" http://172.22.0.3/setup.php
+        [ ... OUTPUT COUPÉ ... ]
+        <li><b>Warning: Depends on: IMAP functions - NOT FOUND</b><br />
+        To install IMAP support, install php5-imap<br />
+        Without IMAP support, you won't be able to create subfolders when creating mailboxes.</li>
+        </ul><p>Everything seems fine... attempting to create/update database structure</p>
+        <p>Database is up to date</p>
+        <div class="standout">Admin has been added!<br />(admin@coco.com)</br /></div>
+        <div id="edit_form">
+        <form name="create_admin" method="post">
+        <input type="hidden" name="form" value="createadmin" />
+        <table>
+              <td colspan="3"><h3>Create superadmin account</h3></td>
+                 </tr>
+        [... OUTPUT COUPÉ ...]
+
+Comme nous pouvons le voir le message indique que l'administrateur fut bien créé : **Admin has been added!** , comme on est jamais trop sûr on va valider dans la base de donnée : 
+
+        $ docker exec -it coco-db-t mysql -u umail -p
+        Enter password:
+        mysql> use vmail;
+        mysql> select * from admin;
+        +----------------+------------------------------------+---------------------+---------------------+--------+
+        | username       | password                           | created             | modified            | active |
+        +----------------+------------------------------------+---------------------+---------------------+--------+
+        | xerus@coco.com | $1$f02bfd0b$g.W7zDWmgCve8tBsKo5Fn. | 2017-02-23 08:33:27 | 2017-02-23 08:33:27 |      1 |
+        | admin@coco.com | $1$acdd0365$OitGJK6KIulo4reFSe07t. | 2017-02-27 08:13:35 | 2017-02-27 08:13:35 |      1 |
+        +----------------+------------------------------------+---------------------+---------------------+--------+
+
+Super :D , on fait la même validation dans le conteneur juste pour être sûr bien que je suis confiant, mais si faut faire un changement je préfère le faire avant de reconstruire l'image du conteneur. 
+
+        root@mail:/var/www/html# curl  -X POST -d "setup_password=tototitittata" -d "fUsername=admin2@coco.com" -d "fPassword=superPass" -d "fPassword2=superPass" -d "form=createadmin" http://127.0.0.1/setup.php | grep "Admin has been added!"
+          % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                           Dload  Upload   Total   Spent    Left  Speed
+        100  2759  100  2647  100   112  55441   2345 --:--:-- --:--:-- --:--:-- 56319
+        <div class="standout">Admin has been added!<br />(admin2@coco.com)</br /></div>
+
+        mysql> select * from admin;
+        +-----------------+------------------------------------+---------------------+---------------------+--------+
+        | username        | password                           | created             | modified            | active |
+        +-----------------+------------------------------------+---------------------+---------------------+--------+
+        | xerus@coco.com  | $1$f02bfd0b$g.W7zDWmgCve8tBsKo5Fn. | 2017-02-23 08:33:27 | 2017-02-23 08:33:27 |      1 |
+        | admin@coco.com  | $1$acdd0365$OitGJK6KIulo4reFSe07t. | 2017-02-27 08:13:35 | 2017-02-27 08:13:35 |      1 |
+        | admin2@coco.com | $1$e12796d0$NHeD1ypJVVdcHuiHvbmFE/ | 2017-02-27 08:19:05 | 2017-02-27 08:19:05 |      1 |
+        +-----------------+------------------------------------+---------------------+---------------------+--------+
+
+Je pense que nous sommes en affaire :D, c'est le temps de l'automatiser, nous allons reprendre le fichier **run.sh** du conteneur __http__.
+
+### <a name="automatic_setup_init" /> Création automatique d'un administrateur lors de l'initialisation
+
+Pour débuter nous allons définir des variables d'environnement pour le compte administrateur :
+
+* **ADM_MAIL** : l'adresse de l'administrateur par défaut
+* **ADM_PASS** : Mot de passe l'administrateur 
+* **SETUP_PASS** : Mot de passe pour la configuration qui sera __hashé__ avec le résultat du formulaire. 
+
+La mise en place dans le __template__ de la valeur de **$SETUP_PASS** était une erreur !!! Je vais donc modifier le fichier : **http/conf/config.inc.php.j2** afin d'avoir une valeur prévisible pour mon **sed** : (**http/conf/config.inc.php.j2**)
+
+        Original :
+        $CONF['setup_password'] = '{{ SETUP_PASS }}';
+
+        Nouvelle valeur :
+        $CONF['setup_password'] = 'curl_will_change_it';
+
+Maintenant je vais ajouter les 2 autres variable dans le __docker-compose__ : 
+
+            [... OUTPUT COUPÉ ... ]
+                environment:
+                    - MYSQL_USER=umail
+                    - MYSQL_PASSWORD=ZePassword     
+                    - MYSQL_DATABASE=vmail          
+                    - TZ=America/Montreal           
+                    - TERM=xterm
+                    - DB_TYPE=mysql
+                    - MAIL_DOMAIN=coco.com          
+                    - SETUP_PASS=superPasse         
+                    - ADM_MAIL=admin@coco.com
+                    - ADM_PASS=DockerRock
+
+Bon la partie facile est faite :P , faut bien s'attaquer au fichier **http/run.sh** :P , voici donc la nouvelle version :
+
+        #! /usr/bin/env bash
+        set -e # exit on error
+
+        # Variables
+        export MYSQL_USER=${MYSQL_USER:-"myuser"}
+        export MYSQL_PASSWORD=${MYSQL_PASSWORD:-"superpass"}
+        export MYSQL_DATABASE=${MYSQL_DATABASE:-"mails"}
+        export DB_TYPE=${DB_TYPE:-"mysql"}
+        export MAIL_DOMAIN=${MAIL_DOMAIN:-"example.com"}
+        export SETUP_PASS=${SETUP_PASS:-"fkrhreiuTOTO"}
+        export ADM_MAIL=${ADM_MAIL:-"NOT_DEFINE"}
+        export ADM_PASS=${ADM_PASS:-"NOT_DEFINE"}
+
+        # Validation des variables !!
+        if [ "$ADM_MAIL" == "NOT_DEFINE" ] ; then
+            echo 'You need to set variable $ADM_MAIL !! '
+            echo "I already set all the software , I can't choose your username ;) "
+            exit 1
+        fi
+        if [ "$ADM_PASS" == "NOT_DEFINE" ] ; then
+            echo 'You need to set variable $ADM_PASS !! '
+            echo "I already set all the software , I can't choose your PASSWORD ;) "
+            exit 1
+        fi
+
+        # Templates
+        j2 /root/config.inc.php.j2 > /var/www/html/config.inc.php
+
+        # Initilisation de la configuration de postfix :
+        SETUP_PASS_HASH=$(curl  -X POST -d "setup_password=$SETUP_PASS" -d "form=createadmin" http://127.0.0.1/setup.php 2>/dev/null | grep "CONF" | grep "setup_password" | sed "s/.*\$CONF\['setup_password'\] = '\(.*\)';.*/\1/g")
+
+        # Update postfix configuration file
+        sed -i "s/\$CONF\['setup_password'\] = 'curl_will_change_it';/\$CONF\['setup_password'\] = \'$SETUP_PASS_HASH\';/g" /var/www/html/config.inc.php
+
+        # Creation de l'administrateur
+        curl  -X POST -d "setup_password=$SETUP_PASS" -d "fUsername=$ADM_MAIL" -d "fPassword=$ADM_PASS" -d "fPassword2=$ADM_PASS" -d "form=createadmin" http://127.0.0.1/setup.php | grep "Admin has been added!"
+
+
+        if [ $? -ne 0 ] ; then
+            echo "ERROR with Admin creation :-/"
+            echo "Curl cmd : "
+            echo "curl X POST -d "setup_password=$SETUP_PASS" -d "fUsername=$ADM_MAIL" -d "fPassword=$ADM_PASS" -d "fPassword2=$ADM_PASS" -d "form=createadmin" http://127.0.0.1/setup.php"
+
+            exit 1
+        fi
+
+        # Rappel de la commande CMD du script original
+        apache2-foreground
+
+J'y crois on détruit tous et on relance le tous :D :
+
+        docker-compose build
+        db-coco uses an image, skipping
+        Building http-coco
+        Step 1 : FROM php:5-apache
+         ---> 9013e58a01eb
+
+        $ docker-compose stop
+        Stopping coco-http-t ... done
+        Stopping coco-db-t ...
+
+        $ docker-compose rm
+        Going to remove coco-http-t, coco-db-t
+        Are you sure? [yN] y
+        Removing coco-http-t ... done
+        Removing coco-db-t ... done
+
+Ok let's GO :D 
+
+        $ docker-compose up
+        Creating coco-db-t
+        Creating coco-http-t
+        Attaching to coco-db-t, coco-http-t
+        coco-db-t    | 170227  8:42:23 [Note] mysqld (mysqld 5.5.52) starting as process 1 ...
+
+        coco-http-t  |   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+        coco-http-t  |                                  Dload  Upload   Total   Spent    Left  Speed
+          0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0curl: (7) Failed to connect to 127.0.0.1 port 80: Connection refused
+          ^CGracefully stopping... (press Ctrl+C again to force)
+          Stopping coco-http-t ... done
+          Stopping coco-db-t ... done
+
+**HA !!** ouin effectivement mes commandes __curl__ sont avant que je ne démarre apache :P !!!
 
 * Référence : 
     * https://journalxtra.com/linux/bash-linuxsanity/bash-filling-web-forms-with-curl-and-wget/
