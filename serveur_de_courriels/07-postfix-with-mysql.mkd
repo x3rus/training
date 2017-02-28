@@ -814,6 +814,10 @@ Super :D , on fait la même validation dans le conteneur juste pour être sûr b
 
 Je pense que nous sommes en affaire :D, c'est le temps de l'automatiser, nous allons reprendre le fichier **run.sh** du conteneur __http__.
 
+* Référence : 
+    * https://journalxtra.com/linux/bash-linuxsanity/bash-filling-web-forms-with-curl-and-wget/
+    * https://curl.haxx.se/docs/httpscripting.html
+
 ### <a name="automatic_setup_init" /> Création automatique d'un administrateur lors de l'initialisation
 
 Pour débuter nous allons définir des variables d'environnement pour le compte administrateur :
@@ -961,15 +965,147 @@ Donc voici la nouvelle version **run.sh** :
             exit 1
          fi
 
-         # Show apache logs
+         # Show apache logs; TODO revoir la stratégie
          tail -f /var/log/apache2/access.log /var/log/apache2/error.log
 
 Comme vous pouvez le constater je démarre le service **apache2-forground** beaucoup plus tôt , je réalise une petite pause de 3 seconde **sleep 3** afin de laisser le temps à apache de d'initialiser  le service. Par la suite pour que le service reste en premier plan je fait un **tail** des fichiers de logs .
 
+#### <a name="automatic_setup_init_prob" /> Liste de problématique 
+
 Quelle est le problème avec la mise en place de la commande **tail** pour conserver le service ouvert ?
 
-ICI ICI (répondre à la question )
+La problématique est que si le service **apache** s'arrête , le conteneur va continuer à fonctionner , résultat si vous avez des systèmes de redémarrage automatique inclus par exemple avec **Kubernet** ou autre votre conteneur ne sera pas redémarrer ! En d'autre mot l'utilisation de **tail** doit être réalisé avec parcimonie . Bon comme j'ai envie de progresser, nous allons continuer avec ça pour le moment cependant ce devrait être réviser si nous allions en production avec cette image !
 
-* Référence : 
-    * https://journalxtra.com/linux/bash-linuxsanity/bash-filling-web-forms-with-curl-and-wget/
-    * https://curl.haxx.se/docs/httpscripting.html
+Autre problème avec cette solution , actuellement à chaque fois que je vais démarrer le conteneur le système va mettre à jour le fichier de configuration de __postfixadmin__ et tenter de créer un administrateur ! Par contre nous désirons avoir ce mécanisme, uniquement lors de l'initialisation du conteneur pas à chaque démarrage je vais donc ajouter une condition pour valider si la configuration fut déjà réalisé.
+
+
+        #! /usr/bin/env bash
+        set -e # exit on error
+
+        # Variables
+        export MYSQL_USER=${MYSQL_USER:-"myuser"}
+        export MYSQL_PASSWORD=${MYSQL_PASSWORD:-"superpass"}
+        export MYSQL_DATABASE=${MYSQL_DATABASE:-"mails"}
+        export DB_TYPE=${DB_TYPE:-"mysql"}
+        export MAIL_DOMAIN=${MAIL_DOMAIN:-"example.com"}
+        export SETUP_PASS=${SETUP_PASS:-"fkrhreiuTOTO"}
+        export ADM_MAIL=${ADM_MAIL:-"NOT_DEFINE"}
+        export ADM_PASS=${ADM_PASS:-"NOT_DEFINE"}
+
+        export ALREADY_SETUPED=/etc/configured
+
+        # Validation des variables !!
+        if [ "$ADM_MAIL" == "NOT_DEFINE" ] ; then
+            echo 'You need to set variable $ADM_MAIL !! '
+            echo "I already set all the software , I can't choose your username ;) "
+            exit 1
+        fi
+        if [ "$ADM_PASS" == "NOT_DEFINE" ] ; then
+            echo 'You need to set variable $ADM_PASS !! '
+            echo "I already set all the software , I can't choose your PASSWORD ;) "
+            exit 1
+        fi
+
+        # Templates
+        j2 /root/config.inc.php.j2 > /var/www/html/config.inc.php
+
+        # Démarrage du processus apache2 en background
+        apache2-foreground &
+
+        # en attente de l'initialisation de apache TODO : mettre une solution plus belle
+        sleep 3
+
+        if [ ! -e $ALREADY_SETUPED ] ; then
+
+            # Initilisation de la configuration de postfix :
+            SETUP_PASS_HASH=$(curl  -X POST -d "setup_password=$SETUP_PASS" -d "form=createadmin" http://127.0.0.1/setup.php 2>/dev/null | grep "CONF" | grep "setup_password" | sed "s/.*\$CONF\['setup_password'\] = '\(.*\)';.*/\1/g")
+
+
+            # Update postfix configuration file
+            sed -i "s/\$CONF\['setup_password'\] = 'curl_will_change_it';/\$CONF\['setup_password'\] = \'$SETUP_PASS_HASH\';/g" /var/www/html/config.inc.php
+
+            # Creation de l'administrateur
+            curl  -X POST -d "setup_password=$SETUP_PASS" -d "fUsername=$ADM_MAIL" -d "fPassword=$ADM_PASS" -d "fPassword2=$ADM_PASS" -d "form=createadmin" http://127.0.0.1/setup.php | grep "Admin has been added!"
+
+
+            if [ $? -ne 0 ] ; then
+                echo "ERROR with Admin creation :-/"
+                echo "Curl cmd : "
+                echo "curl X POST -d "setup_password=$SETUP_PASS" -d "fUsername=$ADM_MAIL" -d "fPassword=$ADM_PASS" -d "fPassword2=$ADM_PASS" -d "form=createadmin" http://127.0.0.1/setup.php"
+                exit 1
+            fi
+
+            # Creation du fichier pour indiquer que le conteneur est configurer
+            touch $ALREADY_SETUPED
+
+        fi # END if [ -e $ALREADY_SETUPED ]
+
+        # Show apache logs : TODO : revoir la stratégie
+        tail -f /var/log/apache2/access.log /var/log/apache2/error.log
+
+Donc je crée un fichier qui me servira de point de référence à savoir si la configuration est déjà réalisé , bon idéalement je communiquerai avec la base de donnée afin de valider son intégrité, malheureusement ceci demanderai plus d'effort que j'ai pas envie de mettre maintenant :P .
+On peut toujours faire mieux :) , mais bon à ce stade , je vais me limité à cette fonctionnalité.
+
+On détruit TOUS et on valide :
+
+        $ docker-compose rm 
+        $ docker-compose build
+        $ docker-compose up                                            
+        Creating coco-db-t
+        Creating coco-http-t
+        Attaching to coco-db-t, coco-http-t
+        coco-db-t    | Initializing database
+
+
+       $ docker exec -it coco-db-t mysql -u umail -p                                                                                                         
+       Enter password:
+       mysql> use vmail;
+
+       mysql> select * from admin;
+       +----------------+------------------------------------+---------------------+---------------------+--------+
+       | username       | password                           | created             | modified            | active |
+       +----------------+------------------------------------+---------------------+---------------------+--------+
+       | admin@coco.com | $1$0a09f6cb$4CuEpMG2X2Vqd5SV/xA4E/ | 2017-02-28 17:26:00 | 2017-02-28 17:26:00 |      1 |
+       +----------------+------------------------------------+---------------------+---------------------+--------+
+
+**MAGIE** 
+
+## <a name="setup_mails" /> Configuration d'un domaine et boite courriel
+
+Bon maintenant que nous avons 2 morceaux 
+
+* Base de donnée
+* Application de gestion de comptes
+
+Nous allons créer un domaine et un compte de courriel pour les testes !
+
+        $ docker inspect coco-http-t | grep IPAd
+                    "SecondaryIPAddresses": null,
+                    "IPAddress": "",
+                          "IPAddress": "172.22.0.3",
+
+Nous allons sur la page de login : [http://172.22.0.3/login.php](http://172.22.0.3/login.php), pour les informations de connections regardez dans le __docker-compose.yml__ :P .
+
+![postfix-admin-home.png](./imgs/postfix-admin-home.png)
+
+* __Domain List -> New Domain__
+
+![postfix-admin-createdomain.png](./imgs/postfix-admin-createdomain.png)
+
+* __Virtual List --> New mailbox__
+
+![postfix-admin-createmailbox.png](./imgs/postfix-admin-createmailbox.png)
+
+Bon maintenant on peut plus détruire notre base de donnée :P , il faudra composer avec ou alors refaire la configuration du compte de courriel :D . 
+Je voulais introduire cette limitation :-) , bien entendu ce ne serait pas grave ce n'est pas beaucoup d'opération :) .
+En plus ça fait du bien voir que ça fonctionne bien :D.
+
+
+
+## <a name="setup_smtp" /> Configuration du service SMTP
+
+SUPER, nous avons 2 conteneur sur 4 :D , On a la moitié de réalisé !! Bon on s'est pas trop foulé pour la partie base de donnée, mais si vous avez un chargé de projet sur le dos ça fait toujours bien à dire :D.
+
+En plus maintenant on gère bien postfix ;-)
+
+ICI ICI ICI 
