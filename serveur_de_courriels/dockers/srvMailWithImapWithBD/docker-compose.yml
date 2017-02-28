@@ -12,8 +12,8 @@ services:
             - MYSQL_RANDOM_ROOT_PASSWORD=yes
             - TZ=America/Montreal
             - TERM=xterm
-        volumes:
-            - /srv/docker/coco-db-t/var_lib_mysql:/var/lib/mysql
+#        volumes:
+#            - /srv/docker/coco-db-t/var_lib_mysql:/var/lib/mysql
     http-coco:
         image: postfixadmin
         build: ./http/

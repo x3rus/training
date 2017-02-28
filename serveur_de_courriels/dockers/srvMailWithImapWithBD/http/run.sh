@@ -26,8 +26,16 @@ fi
 # Templates
 j2 /root/config.inc.php.j2 > /var/www/html/config.inc.php
 
+# Démarrage du processus apache2 en background 
+apache2-foreground &
+
+# en attente de l'initialisation de apache TODO : mettre une solution plus belle
+sleep 3
+
 # Initilisation de la configuration de postfix :
 SETUP_PASS_HASH=$(curl  -X POST -d "setup_password=$SETUP_PASS" -d "form=createadmin" http://127.0.0.1/setup.php 2>/dev/null | grep "CONF" | grep "setup_password" | sed "s/.*\$CONF\['setup_password'\] = '\(.*\)';.*/\1/g")
+
+echo $SETUP_PASS_HASH
 
 # Update postfix configuration file 
 sed -i "s/\$CONF\['setup_password'\] = 'curl_will_change_it';/\$CONF\['setup_password'\] = \'$SETUP_PASS_HASH\';/g" /var/www/html/config.inc.php
@@ -42,5 +50,5 @@ if [ $? -ne 0 ] ; then
     exit 1
 fi
 
-# Rappel de la commande CMD du script original
-apache2-foreground 
+# Show apache logs
+tail -f /var/log/apache2/access.log /var/log/apache2/error.log

@@ -930,6 +930,45 @@ Ok let's GO :D
           Stopping coco-db-t ... done
 
 **HA !!** ouin effectivement mes commandes __curl__ sont avant que je ne démarre apache :P !!!
+Ici nous pouvons constater l'importance d'avoir l'option **set -e # exit on error** dans notre script __bash__, sans cette option je n'aurais pas constater le problème simplement que ça ne fonctionne pas mais le service serait démarrer !
+
+Donc voici la nouvelle version **run.sh** :
+
+        # Templates
+        j2 /root/config.inc.php.j2 > /var/www/html/config.inc.php
+
+        # Démarrage du processus apache2 en background 
+        apache2-foreground &
+
+        # en attente de l'initialisation de apache TODO : mettre une solution plus belle
+        sleep 3
+
+        # Initilisation de la configuration de postfix :
+        SETUP_PASS_HASH=$(curl  -X POST -d "setup_password=$SETUP_PASS" -d "form=createadmin" http://127.0.0.1/setup.php 2>/dev/null | grep "CONF" | grep "setup_password" | sed "s/.*\$CONF\['setup_password'\] = '\(.*\)';.*/\1/g")
+
+        echo $SETUP_PASS_HASH
+
+        # Update postfix configuration file
+        sed -i "s/\$CONF\['setup_password'\] = 'curl_will_change_it';/\$CONF\['setup_password'\] = \'$SETUP_PASS_HASH\';/g" /var/www/html/config.inc.php
+
+        # Creation de l'administrateur
+        curl  -X POST -d "setup_password=$SETUP_PASS" -d "fUsername=$ADM_MAIL" -d "fPassword=$ADM_PASS" -d "fPassword2=$ADM_PASS" -d "form=createadmin" http://127.0.0.1/setup.php | grep "Admin has been added!"
+
+        if [ $? -ne 0 ] ; then
+            echo "ERROR with Admin creation :-/" 
+            echo "Curl cmd : "
+            echo "curl X POST -d "setup_password=$SETUP_PASS" -d "fUsername=$ADM_MAIL" -d "fPassword=$ADM_PASS" -d "fPassword2=$ADM_PASS" -d "form=createadmin" http://127.0.0.1/setup.php"
+            exit 1
+         fi
+
+         # Show apache logs
+         tail -f /var/log/apache2/access.log /var/log/apache2/error.log
+
+Comme vous pouvez le constater je démarre le service **apache2-forground** beaucoup plus tôt , je réalise une petite pause de 3 seconde **sleep 3** afin de laisser le temps à apache de d'initialiser  le service. Par la suite pour que le service reste en premier plan je fait un **tail** des fichiers de logs .
+
+Quelle est le problème avec la mise en place de la commande **tail** pour conserver le service ouvert ?
+
+ICI ICI (répondre à la question )
 
 * Référence : 
     * https://journalxtra.com/linux/bash-linuxsanity/bash-filling-web-forms-with-curl-and-wget/
