@@ -23,7 +23,7 @@ Voici ce que nous allons couvrir :
 * Intégration de postfix avec une base de données
 * Mise en place d'une interface de gestion des comptes
 * Intégration avec le serveur dovecot __imap__
-* Un _webmail__ ? On verra selon le temps :-/
+* Un __webmail__ ? On verra selon le temps :-/
 
 On va réaliser l'opération dans des conteneurs directement, maintenant que l'on y arrive chaque fois du premier coup :P  !
 
@@ -1108,4 +1108,143 @@ SUPER, nous avons 2 conteneur sur 4 :D , On a la moitié de réalisé !! Bon on 
 
 En plus maintenant on gère bien postfix ;-)
 
-ICI ICI ICI 
+Bon reprenons la documentation de __postfixadmin__ le fichier d'installation : [INSTALL.txt](https://github.com/mattrude/PostfixAdmin/blob/master/INSTALL.TXT) , les points de 1 à 5 sont réglés . Nous sommes donc bien rendu à la partie Intégration avec postfix , le document dit de voir le fichier : [POSTFIX_CONF.txt](https://github.com/mattrude/PostfixAdmin/blob/master/DOCUMENTS/POSTFIX_CONF.txt). 
+C'est donc partie partie !
+
+Malheureusement il n'existe pas de conteneur **postfix** officiel nous allons donc devoir réaliser notre propre conteneur , mais on assure la dessus :D.
+
+Avant de se lancer dans le __Dockerfile__ analysons ce dont nous avons besoin :
+
+* postfix 
+* postfix avec __mysql__ 
+* nous "maitrisons" lmtp donc nous utiliserons cette méthode pour transmettre les courriels à dovecot
+
+La variables d'environnement :
+
+* Lien avec la BD : Hôte, Utilisateur , mot de passe, base de donnée
+* Lien avec Dovecot (__lmtp__)
+* Réseaux permit pour transmettre des courriels
+* Utilisation d'une __relay host__ ?
+* Le nom de la machine pour la configuration postfix
+
+Autre choses ? Pour le moment je ne vois pas , mais comme toujours on ajustera :P
+
+Rédaction du __Dockerfile__ , oui oui j'ai pris comme point de départ celui que nous avions utilisé précédemment :D, j'ai ajouté le support **Mysql** avec le package **postfix-mysql**
+
+        # Using Ubuntu
+        # Start Exemple:
+        # ou can add -p 25:25 for LAN access
+        FROM ubuntu:16.04
+        MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
+
+        # Ignore APT warnings about not having a TTY
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Packages: update
+        RUN apt-get update -qq && \
+            apt-get install -qq -y --no-install-recommends postfix postfix-mysql \
+                python-pip supervisor rsyslog python-wheel python-setuptools  && \
+            pip install j2cli
+
+        # Configure: supervisor
+        ADD bin/dfg.sh /usr/local/bin/
+        ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
+
+        # Setup postfix conf
+        ADD conf/postfix-main.j2 /root/
+
+        # Runner
+        ADD run.sh /root/run.sh
+        RUN chmod +x /root/run.sh
+
+        # Declare
+        EXPOSE 25
+
+        CMD ["/root/run.sh"]
+
+
+Bon maintenant je vais reprendre les fichier __bin/dfg.sh__ et __supervisor-all__ :
+
+        $ sudo vim conf/supervisor-all.conf
+        [supervisord]
+        logfile = /var/log/supervisord.log
+        logfile_backups = 0
+
+        [program:rsyslogd]
+        command = /usr/sbin/rsyslogd -n
+
+        [program:postfix]
+        command = /usr/local/bin/dfg.sh /var/spool/postfix/pid/master.pid /etc/init.d/postfix start
+        startsecs = 3
+
+        $ cp ../../srvMailWithImap/smtp/bin/dfg.sh .
+
+On a quelque chose qui fonctionne on va pas se casser la tête à le faire autrement on a eu assez de problème déjà :P. 
+Passons maintenant au fichier de configuration postfix **postfix-main.j2** :
+
+        smtpd_banner = $myhostname ESMTP $mail_name
+
+        alias_database = hash:/etc/aliases
+        alias_maps = hash:/etc/aliases
+
+        smtpd_relay_restrictions = permit_mynetworks  defer_unauth_destination
+        myhostname = $myorigin
+        myorigin = {{ SMTP_HOSTNAME }}
+
+        mydestination = localhost $myorigin
+        mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 {{ PERMIT_NETWORK }}
+        inet_interfaces = all
+        inet_protocols = ipv4
+
+        # Configuration du lien avec Mysql:
+        virtual_mailbox_domains = proxy:mysql:/etc/postfix/sql/mysql_virtual_domains_maps.cf
+        virtual_alias_maps =
+           proxy:mysql:/etc/postfix/sql/mysql_virtual_alias_maps.cf,
+           proxy:mysql:/etc/postfix/sql/mysql_virtual_alias_domain_maps.cf,
+           proxy:mysql:/etc/postfix/sql/mysql_virtual_alias_domain_catchall_maps.cf
+        virtual_mailbox_maps =
+           proxy:mysql:/etc/postfix/sql/mysql_virtual_mailbox_maps.cf,
+           proxy:mysql:/etc/postfix/sql/mysql_virtual_alias_domain_mailbox_maps.cf
+
+        # Configuration pour l'envoie vers lmtp (aka dovecot)
+        mailbox_transport = lmtp:{{ DOVECOT_SRV }}:24
+
+
+
+        {% if (EXT_RELAY_HOST != "DIRECT") %}relayhost = {{ EXT_RELAYHOST }} {% endif %}
+
+Explication de la configuration postfix :
+Nous utilisons le système __virtual__ de postfix , pourquoi __virtual__ ceci permet d'identifier que la gestion pour postfix n'est pas pour une livraison pour l'hôte (__hostname__) mais pour une configuration virtuelle pour un domaine autre . Vous avez une explication a l'URL : [VIRTUAL\_README](http://www.postfix.org/VIRTUAL_README.html).
+
+3 instructions sont introduites ici :
+
+* [**virtual\_mailbox\_domains**](http://www.postfix.org/postconf.5.html#virtual_mailbox_domains) ( == mydestination ) : Ceci définie les domaines qui sont accepté , techniquement il est possible de les définir comme pour la valeur __MyDestination__ en fournissant une liste des domaines (ex: __coco.com toto.ca__) bien entendu dans notre cas nous utilisons un __lookuptable__ qui est __Mysql__
+* [**virtual\_alias\_maps**](http://www.postfix.org/postconf.5.html#virtual_alias_maps) (== aliasses): ceci permet de définir les alias des adresses courriels encore une nous utilisons le __Lookuptable__ avec __Mysql__ . __Ho__ mais pourquoi 3 définitions ?? Nous le verrons un peu plus loin mais il y a 3 requêtes __SQL__ distinctes qui sont réalisées :
+    * __mysql\_virtual\_alias\_maps__ :  alias des adresses courriels dont __thomas@coco.com --> xerus@coco.com__ classique :D
+    * __mysql\_virtual\_alias\_domain\_maps__ : alias de domaine donc __titi.com --> coco.com__ l'ensemble des courriels transmit aux adresses __titi.com__ seront transmis à __coco.com__.
+    * __mysql\_virtual\_alias\_domain\_catchall\_maps__ : Permet de définir un __wildcard__ de courriels donc __*@coco.com --> info@coco.com__
+* [**virtual\_mailbox\_maps**](http://www.postfix.org/postconf.5.html#virtual_mailbox_maps) : Permet de définir non pas les alias mes les adresses courriels réelle , d'utilisateur.
+
+Maintenant le fichier __run.sh__ , prendre note j'ai changé la variable __ACCEPT\_DOMAIN__ pour __DB\_HOST__ , car faut définir la BD et de toute manière la liste des domaines accepté est définie dedans :D. De plus contrairement à la version original j'ai définie le lien avec __dovecot__ en variable comme ça se conteneur pourrait fonctionner autant avec un autre conteneur ou une __VM / host non dockerisé__ :
+
+        #! /usr/bin/env bash
+        set -e # exit on error
+
+        # Variables
+        export EXT_RELAY_HOST=${EXT_RELAY_HOST:-"DIRECT"}
+        export SMTP_HOSTNAME=${SMTP_HOSTNAME:-"relay.example.com"}
+        export PERMIT_NETWORK=${PERMIT_NETWORK:-"192.168.0.0/16"}
+
+        export DB_HOST=${DB_HOST:-"mysql"}
+        export DOVECOT_SRV=${DOVECOT_SRV:-"dovecot-lmtp" }
+
+        echo $SMTP_HOSTNAME > /etc/mailname
+
+        # Templates
+        j2 /root/postfix-main.j2 > /etc/postfix/main.cf
+
+        # Launch
+        rm -f /var/spool/postfix/pid/*.pid
+        exec /usr/bin/supervisord -n
+
+
