@@ -1153,6 +1153,7 @@ Rédaction du __Dockerfile__ , oui oui j'ai pris comme point de départ celui qu
         # Setup postfix conf
         ADD conf/postfix-main.j2 /root/
 
+
         # Runner
         ADD run.sh /root/run.sh
         RUN chmod +x /root/run.sh
@@ -1225,6 +1226,59 @@ Nous utilisons le système __virtual__ de postfix , pourquoi __virtual__ ceci pe
     * __mysql\_virtual\_alias\_domain\_catchall\_maps__ : Permet de définir un __wildcard__ de courriels donc __*@coco.com --> info@coco.com__
 * [**virtual\_mailbox\_maps**](http://www.postfix.org/postconf.5.html#virtual_mailbox_maps) : Permet de définir non pas les alias mes les adresses courriels réelle , d'utilisateur.
 
+Nous allons mettre en place les fichiers **jinja2** de configuration dans le répertoire **conf/sql** :
+
+        ============ mysql_virtual_alias_domain_catchall_maps.cf.j2 ========
+        user = {{ MYSQL_USER }}
+        password = {{ MYSQL_PASSWORD }}
+        hosts = {{ DB_HOST }}
+        dbname = {{ MYSQL_DATABASE }}
+        query  = SELECT goto FROM alias,alias_domain WHERE alias_domain.alias_domain = '%d' and alias.address = CONCAT('@', alias_domain.target_domain) AND alias.active = 1 AND alias_domain.active='1'
+
+
+        ============ mysql_virtual_alias_domain_mailbox_maps.cf.j2 ========
+        user = {{ MYSQL_USER }}
+        password = {{ MYSQL_PASSWORD }}
+        hosts = {{ DB_HOST }}
+        dbname = {{ MYSQL_DATABASE }}
+        query = SELECT maildir FROM mailbox,alias_domain WHERE alias_domain.alias_domain = '%d' and mailbox.username = CONCAT('%u', '@', alias_domain.target_domain) AND mailbox.active = 1 AND alias_domain.active='1'
+
+        ============ mysql_virtual_alias_domain_maps.cf.j2 ========
+        user = {{ MYSQL_USER }}
+        password = {{ MYSQL_PASSWORD }}
+        hosts = {{ DB_HOST }}
+        dbname = {{ MYSQL_DATABASE }}
+        query = SELECT goto FROM alias,alias_domain WHERE alias_domain.alias_domain = '%d' and alias.address = CONCAT('%u', '@', alias_domain.target_domain) AND alias.active = 1 AND alias_domain.active='1'
+
+        ============ mysql_virtual_alias_maps.cf.j2 ========
+        user = {{ MYSQL_USER }}
+        password = {{ MYSQL_PASSWORD }}
+        hosts = {{ DB_HOST }}
+        dbname = {{ MYSQL_DATABASE }}
+        query = SELECT goto FROM alias WHERE address='%s' AND active = '1'
+        #expansion_limit = 100
+
+        ============ mysql_virtual_domains_maps.cf.j2 ========
+        user = {{ MYSQL_USER }}
+        password = {{ MYSQL_PASSWORD }}
+        hosts = {{ DB_HOST }}
+        dbname = {{ MYSQL_DATABASE }}
+        ELECT domain FROM domain WHERE domain='%s' AND active = '1'
+        #query          = SELECT domain FROM domain WHERE domain='%s'
+        #optional query to use when relaying for backup MX
+        #query           = SELECT domain FROM domain WHERE domain='%s' AND backupmx = '0' AND active = '1'
+        #expansion_limit = 100
+
+        ============ mysql_virtual_mailbox_maps.cf.j2 ========
+        user = {{ MYSQL_USER }}
+        password = {{ MYSQL_PASSWORD }}
+        hosts = {{ DB_HOST }}
+        dbname = {{ MYSQL_DATABASE }}
+        query           = SELECT maildir FROM mailbox WHERE username='%s' AND active = '1'
+        #expansion_limit = 100
+
+Nous utilisons les mêmes variables qui seront substitué , lors de l'exécution du script **run.sh**.
+
 Maintenant le fichier __run.sh__ , prendre note j'ai changé la variable __ACCEPT\_DOMAIN__ pour __DB\_HOST__ , car faut définir la BD et de toute manière la liste des domaines accepté est définie dedans :D. De plus contrairement à la version original j'ai définie le lien avec __dovecot__ en variable comme ça se conteneur pourrait fonctionner autant avec un autre conteneur ou une __VM / host non dockerisé__ :
 
         #! /usr/bin/env bash
@@ -1235,7 +1289,7 @@ Maintenant le fichier __run.sh__ , prendre note j'ai changé la variable __ACCEP
         export SMTP_HOSTNAME=${SMTP_HOSTNAME:-"relay.example.com"}
         export PERMIT_NETWORK=${PERMIT_NETWORK:-"192.168.0.0/16"}
 
-        export DB_HOST=${DB_HOST:-"mysql"}
+        export DB_HOST=${DB_HOST:-"db"}
         export DOVECOT_SRV=${DOVECOT_SRV:-"dovecot-lmtp" }
 
         echo $SMTP_HOSTNAME > /etc/mailname
@@ -1243,8 +1297,82 @@ Maintenant le fichier __run.sh__ , prendre note j'ai changé la variable __ACCEP
         # Templates
         j2 /root/postfix-main.j2 > /etc/postfix/main.cf
 
+        # Création du répertoire pour la configuration de sql
+        mkdir /etc/postfix/sql/
+
+        # génération des fichiers de configuration SQL pour postfix
+        for sql_file in /root/sql/*.j2 ; do 
+            filename=$(basename $sql_file) 
+            j2 $sql_file > /etc/postfix/${filename::-3}
+        done
+
         # Launch
         rm -f /var/spool/postfix/pid/*.pid
         exec /usr/bin/supervisord -n
 
+
+**oupss** j'allais oublier d'inclure le répertoire **sql** dans le __DockerFile__ :
+
+        [... OUTPUT COUPÉ ...]
+        # Setup postfix conf
+        ADD conf/postfix-main.j2 /root/
+
+        # Ajout fichier de configuration SQL
+        ADD conf/sql    /root/
+
+        # Runner
+        ADD run.sh /root/run.sh
+        [... OUTPUT COUPÉ ...]
+
+
+Maintenant le **docker-compose** et on est prêt pour le __build__ !! :
+
+            - ADM_MAIL=admin@coco.com
+            - ADM_PASS=DockerRock
+        smtp-coco:
+            image: smtp-db
+           build: ./smtp/
+            restart: unless-stopped
+            container_name : 'coco-smtp-t'
+            hostname: mail.coco.com
+            links:
+                - db-coco:db
+        #       - imap-coco:dovecot-lmtp
+            environment:
+                - MYSQL_USER=umail
+                - MYSQL_PASSWORD=ZePassword
+                - MYSQL_DATABASE=vmail
+                - TZ=America/Montreal
+                - TERM=xterm
+
+C'est partie pour le __build__ !! 
+
+        $ docker-compose build smtp-coco
+        Building smtp-coco
+        Step 1 : FROM ubuntu:16.04
+         ---> c73a085dc378
+         Step 2 : MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
+          ---> Using cache
+          ---> 9421a73877a6
+
+**Bon!!** là on a un problème est-ce que nous sommes assez confiant dans notre image ?!? Car nous ne sommes pas en mesure de valider la configuration avant d'avoir le service **lmtp** de dovecot ?!?! Bien entendu on peut faire un test mais il n'y au pas de livraison .... 
+
+Allez on se fait plaisir au moins pour valider l'ensemble des fichiers généré. 
+
+        $ docker-compose up
+        Starting coco-db-t
+        Starting coco-http-t
+        Creating coco-smtp-t
+        Attaching to coco-db-t, coco-http-t, coco-smtp-t
+        [ ... OUTPUT COUPÉ ... ]
+        coco-smtp-t exited with code 1
+        coco-smtp-t  | /root/run.sh: line 22: filename: command not found
+        coco-smtp-t  | mkdir: cannot create directory '/etc/postfix/sql/': File exists
+        coco-smtp-t  | mkdir: cannot create directory '/etc/postfix/sql/': File exists
+        [ ... OUTPUT COUPÉ ... ]
+
+Bon moi qui pensais que ça allé fonctionner du premier coup !! :P donc le fichier est déjà la ... On va supprimer la création du répertoire !
+Édition du fichier **run.sh** 
+
+        $ docker-compose build
 

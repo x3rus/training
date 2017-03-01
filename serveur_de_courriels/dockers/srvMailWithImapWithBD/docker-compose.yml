@@ -33,3 +33,19 @@ services:
             - SETUP_PASS=superPasse
             - ADM_MAIL=admin@coco.com
             - ADM_PASS=DockerRock
+    smtp-coco:
+        image: smtp-db
+        build: ./smtp/
+        restart: unless-stopped
+        container_name : 'coco-smtp-t'
+        hostname: mail.coco.com
+        links:
+            - db-coco:db
+#            - imap-coco:dovecot-lmtp
+        environment:
+            - MYSQL_USER=umail
+            - MYSQL_PASSWORD=ZePassword
+            - MYSQL_DATABASE=vmail
+            - TZ=America/Montreal
+            - TERM=xterm
+ 

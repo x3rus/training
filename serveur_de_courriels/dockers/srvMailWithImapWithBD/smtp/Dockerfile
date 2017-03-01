@@ -20,6 +20,9 @@ ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
 # Setup postfix conf
 ADD conf/postfix-main.j2 /root/
 
+# Ajout fichier de configuration SQL
+ADD conf/sql    /root/
+
 # Runner
 ADD run.sh /root/run.sh
 RUN chmod +x /root/run.sh
