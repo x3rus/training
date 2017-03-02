@@ -1290,21 +1290,24 @@ Maintenant le fichier __run.sh__ , prendre note j'ai changé la variable __ACCEP
         export PERMIT_NETWORK=${PERMIT_NETWORK:-"192.168.0.0/16"}
 
         export DB_HOST=${DB_HOST:-"db"}
-        export DOVECOT_SRV=${DOVECOT_SRV:-"dovecot-lmtp" }
+        export DOVECOT_SRV=${DOVECOT_SRV:-"dovecot-lmtp"}
 
         echo $SMTP_HOSTNAME > /etc/mailname
 
         # Templates
         j2 /root/postfix-main.j2 > /etc/postfix/main.cf
 
-        # Création du répertoire pour la configuration de sql
-        mkdir /etc/postfix/sql/
+        if [ ! -d  /etc/postfix/sql/ ] ; then
+            mkdir /etc/postfix/sql/
+        fi
 
         # génération des fichiers de configuration SQL pour postfix
-        for sql_file in /root/sql/*.j2 ; do 
-            filename=$(basename $sql_file) 
-            j2 $sql_file > /etc/postfix/${filename::-3}
+        for sql_file in /root/sql/*.j2 ; do
+            filename=$(basename $sql_file)
+            filedst="/etc/postfix/sql/${filename::-3}"
+            j2 $sql_file > $filedst
         done
+
 
         # Launch
         rm -f /var/spool/postfix/pid/*.pid
@@ -1318,7 +1321,7 @@ Maintenant le fichier __run.sh__ , prendre note j'ai changé la variable __ACCEP
         ADD conf/postfix-main.j2 /root/
 
         # Ajout fichier de configuration SQL
-        ADD conf/sql    /root/
+        ADD conf/sql    /root/sql
 
         # Runner
         ADD run.sh /root/run.sh
@@ -1357,22 +1360,154 @@ C'est partie pour le __build__ !!
 
 **Bon!!** là on a un problème est-ce que nous sommes assez confiant dans notre image ?!? Car nous ne sommes pas en mesure de valider la configuration avant d'avoir le service **lmtp** de dovecot ?!?! Bien entendu on peut faire un test mais il n'y au pas de livraison .... 
 
-Allez on se fait plaisir au moins pour valider l'ensemble des fichiers généré. 
+C'est partie ... 
 
-        $ docker-compose up
+        $ docker-compose build && docker-compose up
+        [... OUTPUT COUPÉ ...]
+        Step 8 : CMD /run.sh
+         ---> Using cache
+          ---> 12bb085c513d
+        Successfully built 12bb085c513d
         Starting coco-db-t
+        Recreating coco-smtp-t
         Starting coco-http-t
-        Creating coco-smtp-t
         Attaching to coco-db-t, coco-http-t, coco-smtp-t
-        [ ... OUTPUT COUPÉ ... ]
-        coco-smtp-t exited with code 1
-        coco-smtp-t  | /root/run.sh: line 22: filename: command not found
-        coco-smtp-t  | mkdir: cannot create directory '/etc/postfix/sql/': File exists
-        coco-smtp-t  | mkdir: cannot create directory '/etc/postfix/sql/': File exists
-        [ ... OUTPUT COUPÉ ... ]
+        coco-db-t    | 170302  8:02:38 [Note] mysqld (mysqld 5.5.52) starting as process 1 ...
+        coco-db-t    | 170302  8:02:38 [Note] Plugin 'FEDERATED' is disabled.
+        [... OUTPUT COUPÉ ...]
 
-Bon moi qui pensais que ça allé fonctionner du premier coup !! :P donc le fichier est déjà la ... On va supprimer la création du répertoire !
-Édition du fichier **run.sh** 
+Phase de validation :
 
-        $ docker-compose build
+         $ docker ps
+         CONTAINER ID        IMAGE               COMMAND                  CREATED              STATUS              PORTS               NAMES
+         4b2e774fdd33        smtp-db             "/root/run.sh"           About a minute ago   Up About a minute   25/tcp              coco-smtp-t
+         8af788755374        postfixadmin        "docker-php-entrypoin"   38 hours ago         Up About a minute   80/tcp              coco-http-t
+         b1f332217f58        mysql:5.5           "docker-entrypoint.sh"   38 hours ago         Up About a minute   3306/tcp            coco-db-t
 
+         $ docker exec coco-smtp-t ls /etc/postfix/sql/
+         mysql_virtual_alias_domain_catchall_maps.cf
+         mysql_virtual_alias_domain_mailbox_maps.cf
+         mysql_virtual_alias_domain_maps.cf
+         mysql_virtual_alias_maps.cf
+         mysql_virtual_domains_maps.cf
+         mysql_virtual_mailbox_maps.cf
+
+         $ docker exec coco-smtp-t cat /etc/postfix/sql/mysql_virtual_alias_maps.cf
+         user = umail
+         password = ZePassword
+         hosts = db
+         dbname = vmail
+         query = SELECT goto FROM alias WHERE address='%s' AND active = '1'
+         #expansion_limit = 100
+
+
+Ça semble bien, bon nous aurons la confirmation uniquement lors de la mise en place du service **dovecot** .
+
+Bon ça s'est bien fait celui la :D , on est content :) !! Allez sur notre lancé on s'attaque au service __lmtp/imap (dovecot)__ ??
+
+## <a name="setup_lmtp" /> Configuration du service LMTP / IMAP
+
+Bon encore cette fois nous avons une base de travail réalisé lors de la dernière séance, je vais donc capitaliser sur cette première configuration !
+
+J'ai validé PAS de conteneur dovecot officiel, nous allons donc devoir créer notre image :D , pas de problème on assure :D !
+
+Bon reprenons la documentation de __postfixadmin__ le fichier d'installation : [INSTALL.txt](https://github.com/mattrude/PostfixAdmin/blob/master/INSTALL.TXT) , les points de 1 à 5 sont réglés . Nous sommes donc bien rendu à la partie Intégration avec dovecot , le document dit de voir le fichier : [POSTFIX_CONF.txt](https://github.com/mattrude/PostfixAdmin/blob/master/DOCUMENTS/DOVECOT.txt). 
+Bon petit problème avec cette documentation c'est quelle est pour dovecot 1.X alors que nous nous utilisons la version 2.x. C'est pas ça qui va nous arrêter !!! :D on a google pour les erreurs à venir :D.
+
+C'est donc partie partie ! 
+
+Comme nous avons un aspect d'exploration à réalisé afin de valider que la configuration 1.X ressemble à la version 2.X je vais faire de mon mieux pour la configuration de l'image de base , surtout pour les packages puis je vais expérimenté avec le "pet" conteneur. Par la suite avec **docker diff** , je vais extraire la configuration. Ceci m'évitera de faire 60 __builds__ et de prendre beaucoup plus de temps.
+
+
+### <a name="setup_lmtp_debug" /> Réalisation de l'image en mode DEBUG
+
+Créons le fichier __Dockerfile__ :
+
+        # Using Ubuntu
+        FROM ubuntu:16.04
+        MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
+
+        # Ignore APT warnings about not having a TTY
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Packages: update
+        RUN apt-get update -qq && \
+            apt-get install -qq -y --no-install-recommends dovecot-imapd dovecot-lmtpd dovecot-mysql \
+                    python-pip supervisor rsyslog python-wheel python-setuptools  && \
+            pip install j2cli
+                            
+        # TODO : a supprimer tempo exploration, je le définie dans l'image pour réduire
+        # la différence retourné avec docker diff :D
+        RUN apt-get install vim telnet mysql-client
+
+        # Configure: supervisor
+        ADD bin/dfg.sh /usr/local/bin/
+        ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
+
+        # Runner
+        ADD run.sh /root/run.sh
+        RUN chmod +x /root/run.sh
+
+        # Declare
+        EXPOSE 143 24
+
+        CMD ["/root/run.sh"]
+
+Comme vous pouvez le voir je crée une couche avec les applications d'exploration que je supprimerai par la suite , afin de réduire le résultat retourné par la commande **docker diff**. J'installe le client __mysql__ en cas de problème de connectivité , tout comme __telnet__ , et __vim__ pour éditer librement mes fichiers.
+
+Je vais copier le fichier __superviser-all.conf__ et le script __dfg.sh__ de notre ancien conteneur. Je définie aussi le fichier __run.sh__ :
+
+        $ cat run.sh
+        #! /usr/bin/env bash
+        set -e # exit on error
+
+        # Launch
+        rm -f /var/run/dovecot/*.pid
+        exec /usr/bin/supervisord -n
+
+
+Réalisons du __docker-compose__ afin d'être sur le bon pied tout de suite :
+
+        smtp-coco:
+            image: smtp-db
+            build: ./smtp/
+            restart: unless-stopped
+            container_name : 'coco-smtp-t'
+            hostname: mail.coco.com
+            links:
+                - db-coco:db
+    #            - imap-coco:dovecot-lmtp
+            environment:
+                - MYSQL_USER=umail
+                - MYSQL_PASSWORD=ZePassword
+                - MYSQL_DATABASE=vmail
+                - TZ=America/Montreal
+                - TERM=xterm
+        imap-coco:
+            image: imap-db
+            build: ./imap/
+            restart: unless-stopped
+            container_name : 'coco-imap-t'
+            hostname: mail.coco.com
+                links:
+                - db-coco:db
+    #            - imap-coco:dovecot-lmtp
+            environment:
+                - MYSQL_USER=umail
+                - MYSQL_PASSWORD=ZePassword
+                - MYSQL_DATABASE=vmail
+                - TZ=America/Montreal
+                - TERM=xterm
+
+
+Nous allons faire la création de l'image :
+
+        $ docker-compose build imap-coco
+        [... OUTPUT COUPÉ ...]
+         ---> 25385609a72e
+         Removing intermediate container 3da5c99297b4
+         Successfully built 25385609a72e
+
+### <a name="setup_lmtp_pet_c" /> Réalisation de la configuration en mode exploration 
+
+À voir si je continue cette methode

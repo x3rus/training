@@ -1,6 +1,4 @@
 # Using Ubuntu
-# Start Exemple:
-# ou can add -p 25:25 for LAN access
 FROM ubuntu:16.04
 MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
 
@@ -9,25 +7,23 @@ ENV DEBIAN_FRONTEND noninteractive
 
 # Packages: update
 RUN apt-get update -qq && \
-    apt-get install -qq -y --no-install-recommends postfix postfix-mysql \
+    apt-get install -qq -y --no-install-recommends dovecot-imapd dovecot-lmtpd dovecot-mysql \
         python-pip supervisor rsyslog python-wheel python-setuptools  && \
     pip install j2cli
+
+# TODO : a supprimer tempo exploration, je le définie dans l'image pour réduire
+# la différence retourné avec docker diff :D
+RUN apt-get -qq -y  install vim telnet mysql-client
 
 # Configure: supervisor
 ADD bin/dfg.sh /usr/local/bin/
 ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
-
-# Setup postfix conf
-ADD conf/postfix-main.j2 /root/
-
-# Ajout fichier de configuration SQL
-ADD conf/sql    /root/sql
 
 # Runner
 ADD run.sh /root/run.sh
 RUN chmod +x /root/run.sh
 
 # Declare
-EXPOSE 25
+EXPOSE 143 24
 
 CMD ["/root/run.sh"]
