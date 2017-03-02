@@ -1476,7 +1476,7 @@ Réalisons du __docker-compose__ afin d'être sur le bon pied tout de suite :
             hostname: mail.coco.com
             links:
                 - db-coco:db
-    #            - imap-coco:dovecot-lmtp
+            G    - imap-coco:dovecot-lmtp
             environment:
                 - MYSQL_USER=umail
                 - MYSQL_PASSWORD=ZePassword
@@ -1491,7 +1491,6 @@ Réalisons du __docker-compose__ afin d'être sur le bon pied tout de suite :
             hostname: mail.coco.com
                 links:
                 - db-coco:db
-    #            - imap-coco:dovecot-lmtp
             environment:
                 - MYSQL_USER=umail
                 - MYSQL_PASSWORD=ZePassword
@@ -1499,6 +1498,13 @@ Réalisons du __docker-compose__ afin d'être sur le bon pied tout de suite :
                 - TZ=America/Montreal
                 - TERM=xterm
 
+
+
+Prendre note que j'ai aussi activé le lien du service __smtp-coco__ avec __imap-coco__ dans la section links :
+
+            links:
+                - db-coco:db
+                - imap-coco:dovecot-lmtp
 
 Nous allons faire la création de l'image :
 
@@ -1510,4 +1516,123 @@ Nous allons faire la création de l'image :
 
 ### <a name="setup_lmtp_pet_c" /> Réalisation de la configuration en mode exploration 
 
-À voir si je continue cette methode
+Telle que mentionné je vais faire de l'exploitation afin de confirmer ma configuration avec de modifier le __Dockerfile__ .
+Suite au __build__ du conteneur __imap-coco__ je supprimer le conteneur __smtp-coco__ ceci dans le but qu'il recréer le conteneur AVEC le lien avec le conteneur __imap-coco__ .
+**ATTENTION** : je ne supprime pas la base de donnée pour le moment car je veux conserver la structure de la BD, on sait qu'elle sera recréer , mais pour le moment je ne veux pas me rajouter de problème :P.
+
+        $ docker-compose rm smtp-coco
+        Going to remove coco-smtp-t
+        Are you sure? [yN] y
+        Removing coco-smtp-t ... done
+
+Je peux maintenant redémarrer le tous :
+
+        $ docker-compose up
+
+Pas d'erreur, validons que l'ensemble des conteneurs sont bien actif !
+
+        $  docker ps
+        CONTAINER ID        IMAGE               COMMAND                  CREATED              STATUS              PORTS               NAMES
+        c38170a3eda2        smtp-db             "/root/run.sh"           About a minute ago   Up About a minute   25/tcp              coco-smtp-t
+        a053827712e2        imap-db             "/root/run.sh"           About a minute ago   Up About a minute   24/tcp, 143/tcp     coco-imap-t
+        8af788755374        postfixadmin        "docker-php-entrypoin"   47 hours ago         Up About a minute   80/tcp              coco-http-t
+        b1f332217f58        mysql:5.5           "docker-entrypoint.sh"   47 hours ago         Up About a minute   3306/tcp            coco-db-t
+
+Tous est la , un petit **docker diff** afin de voir l'état de notre conteneur :
+
+        $ docker diff coco-imap-t
+        C /var
+        C /var/lib
+        C /var/lib/dovecot
+        A /var/lib/dovecot/ssl-parameters.dat
+        A /var/lib/dovecot/instances
+        C /var/log
+        A /var/log/supervisord.log
+        A /var/log/kern.log
+        A /var/log/syslog
+        C /var/log/supervisor
+        A /var/log/supervisor/dovecot-stdout---supervisor-mEjN1p.log
+        A /var/log/supervisor/rsyslogd-stderr---supervisor-RNAqgg.log
+        A /var/log/supervisor/rsyslogd-stdout---supervisor-cxZUoK.log
+        A /var/log/supervisor/dovecot-stderr---supervisor-_KcFgQ.log
+        A /var/log/mail.log
+        C /run
+        A /run/rsyslogd.pid
+        [ ... OUTPUT COUPÉ ...]
+
+Tous de même pas mal de chose, mais tous dans /var et /run peu probable que je réalise des modifications dans ces répertoires , si je les supprimes du résultat ça donne quoi ?
+
+        $ docker diff coco-imap-t  | egrep -v '/var/lib|/run|/var/log'
+
+Parfait nous ferons ça :D . 
+
+Allons dans le conteneur pour faire nos modifications :
+
+        $ docker exec -it coco-imap-t bash
+        root@mail:/#
+
+1. Validation des protocoles actif :
+
+            root@mail:/etc/dovecot# cat dovecot.conf | grep -v "^#" | grep -v "^$"
+            !include_try /usr/share/dovecot/protocols.d/*.protocol
+            dict {
+              #quota = mysql:/etc/dovecot/dovecot-dict-sql.conf.ext
+              #expire = sqlite:/etc/dovecot/dovecot-dict-sql.conf.ext
+            }
+            !include conf.d/*.conf
+            !include_try local.conf
+
+            root@mail:/etc/dovecot# ls /usr/share/dovecot/protocols.d/*.protocol
+            /usr/share/dovecot/protocols.d/imapd.protocol  /usr/share/dovecot/protocols.d/lmtpd.protocol
+2. Activation du système de **maildir** avec la structure : **/var/mail/vhosts/Nom\_Domaine/Utilisateur**
+
+            root@mail:/etc/dovecot# vim /etc/dovecot/conf.d/10-mail.conf
+            mail_location = maildir:/var/mail/vhosts/%d/%n
+            [... PLUS LOIN ...]
+            mail_privileged_group = mail
+3. S'assurer que le groupe **mail** peut bien écrire dans le répertoire temporaire de traitement **/var/mail**
+
+            root@mail:/etc/dovecot/conf.d# ls -ld /var/mail
+            drwxrwsr-x 2 root mail 6 Sep 23 17:00 /var/mail
+4. Création de l'utilisateur virtuel pour dovecot **vmail** et groupe **vmail** , comme nous n'aurons pas d'utilisateur système pour les fichiers nous définissons un utilisateur avec moins de droit. Originalement quand nous avions des utilisateurs systèmes les fichiers étaient déposé avec les permissions de l'utilisateur (__UID/GID__). Maintenant que les utilisateurs sont dans la Base de donnée nous n'avons plus cette association disponible nous devons donc définir un utilisateur spécifique.
+
+            root@mail:/etc/dovecot/conf.d# groupadd -g 5000 vmail
+            root@mail:/etc/dovecot/conf.d# useradd -g vmail -u 5000 vmail -d /var/mail
+            root@mail:/etc/dovecot/conf.d# chown -R vmail:vmail /var/mail
+5. Authentification des utilisateurs , je commente l'authentification système pour activer l'authentification __SQL__.
+
+            root@mail:/etc/dovecot# vim /etc/dovecot/conf.d/10-auth.conf
+            disable_plaintext_auth = no
+            [... plus loins ...]
+            #!include auth-system.conf.ext
+            !include auth-sql.conf.ext
+6. Authentification avec le service __SQL__ , identification de la livraisons avec l'utilisateur statique __vmail__
+
+            root@mail:/etc/dovecot/conf.d# vim /etc/dovecot/conf.d/auth-sql.conf.ext
+            [ ... conservation des lignes avant ... ]
+            userdb {
+              driver = static
+              args = uid=vmail gid=vmail home=/var/mail/vhosts/%d/%n
+            }
+7. Configuration de la requête pour le __SQL__ :
+
+            root@mail:/etc/dovecot# vim /etc/dovecot/dovecot-sql.conf.ext
+            driver = mysql
+            connect = host=db dbname=vmail user=umail password=ZePassword
+
+            password_query = SELECT username AS user,password FROM mailbox WHERE username = '%u' AND active='1'
+            user_query = SELECT maildir, 5000 AS uid, 5000 AS gid FROM mailbox WHERE username = '%u' AND active='1'
+
+Je vais recharger la configuration , on a vue que le redémarrage été ... Risqué ;)
+
+        root@mail:/etc/dovecot# /etc/init.d/dovecot reload
+         * Reloading IMAP/POP3 mail server dovecot                             [ OK ]
+        root@mail:/etc/dovecot# tail /var/log/mail.log
+        Mar  2 17:12:45 mail dovecot: master: Dovecot v2.2.22 (fe789d2) starting up for imap, lmtp
+        Mar  2 17:12:45 mail dovecot: ssl-params: Generating SSL parameters
+        Mar  2 17:12:45 mail dovecot: ssl-params: SSL parameters regeneration completed
+        Mar  2 17:43:15 mail dovecot: master: Warning: SIGHUP received - reloading configuration
+        
+Nous sommes près pour un test :D !! 
+
+ICI ICI  P-e faire le docker diff AVANT

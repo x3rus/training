@@ -41,7 +41,7 @@ services:
         hostname: mail.coco.com
         links:
             - db-coco:db
-#            - imap-coco:dovecot-lmtp
+            - imap-coco:dovecot-lmtp
         environment:
             - MYSQL_USER=umail
             - MYSQL_PASSWORD=ZePassword
@@ -56,7 +56,6 @@ services:
         hostname: mail.coco.com
         links:
             - db-coco:db
-#            - imap-coco:dovecot-lmtp
         environment:
             - MYSQL_USER=umail
             - MYSQL_PASSWORD=ZePassword
