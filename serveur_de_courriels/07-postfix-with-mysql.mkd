@@ -1999,3 +1999,162 @@ Pour le moment pas d'erreur :D, __ZE__ teste :D.
         221 2.0.0 Bye
 
 C'est pas mal :D , c'était facile finalement ;-).
+
+
+# <a name="finalisation" /> Finalisation et analyse des points d'amélioration
+
+Bon maintenant nous avons 4 images :
+
+*  __mysql__ : serveur de base de données.
+*  __postfixadmin__ : Service __http__ pour la gestion des comptes. 
+*  __smtp-db__ : Service __SMTP__ avec gestion de base de données.
+*  __imap-db__ : Service __Imap__ et __LMTP__ pour la livraison des courriels.
+
+Nous avons l'ensemble fonctionnel , mais en fait nous ne sommes jamais repartie de zéro nous avons fait la création au fur et à mesure, la base de donnée fut initialiser, une fois , fait la création d'une compte et connecté nos conteneurs à cette dernière. 
+On va valider que nos images sont bonne !!
+
+Le meilleur moyen est de tous détruire et recommencer :P, idéalement on détruirait aussi les images, mais bon ça rendrait trop content mon fournisseur de cellulaire que je dépasse ma consommation donnée mensuel ;-).
+
+        $ docker-compose rm
+        Going to remove coco-smtp-t, coco-imap-t, coco-http-t, coco-db-t
+        Are you sure? [yN] y
+        Removing coco-smtp-t ... done
+        Removing coco-imap-t ... done
+        Removing coco-http-t ... done
+        Removing coco-db-t ... done
+
+On redémarre l'ensemble , bien entendu nous allons devoir refaire la création de notre domaine et d'un compte car les données de la base de données sont perdu, car elles étaient dans le conteneur.
+
+Je dois avouer que si ça redémarre pas bien, je vais un peu pleurer :P.
+
+        $ docker-compose up
+        [ ... OUTPUT COUPÉ ...]
+        coco-http-t  |   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+        coco-http-t  |                                  Dload  Upload   Total   Spent    Left  Speed
+        coco-smtp-t  | 2017-03-03 17:32:21,234 INFO success: postfix entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+          0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0127.0.0.1 - - [03/Mar/2017:17:32:21 -0500] "POST /setup.php HTTP/1.1" 200 3043 "-" "curl/7.38.0"
+        100  2756  100  2646  100   110  10977    456 --:--:-- --:--:-- --:--:-- 11025
+        coco-http-t  | <div class="standout">Admin has been added!<br />(admin@coco.com)</br /></div>
+
+Les conteneurs sont bien présent :
+
+        $ docker ps
+        CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+        f2168851fb32        smtp-db             "/root/run.sh"           38 seconds ago      Up 36 seconds       25/tcp              coco-smtp-t
+        8a7a29216642        postfixadmin        "docker-php-entrypoin"   39 seconds ago      Up 37 seconds       80/tcp              coco-http-t
+        3cf4562eb701        imap-db             "/root/run.sh"           39 seconds ago      Up 37 seconds       24/tcp, 143/tcp     coco-imap-t
+        f66096838419        mysql:5.5           "docker-entrypoint.sh"   40 seconds ago      Up 38 seconds       3306/tcp            coco-db-t
+
+Bon le moment je souris :D. Connexion à l'interface web pour faire la création d'un domaine :
+
+        $ docker inspect coco-http-t  | grep IPAd
+                    "SecondaryIPAddresses": null,
+                    "IPAddress": "",
+                          "IPAddress": "172.22.0.4",
+
+Je consulte le __docker-compose__ pour avoir le non utilisateur et mot de passe :
+
+        $ cat docker-compose.yml  | grep ADM
+                    - ADM_MAIL=admin@coco.com
+                    - ADM_PASS=DockerRock
+
+Je vais à l'adresse  :  [http://172.22.0.4](http://172.22.0.4) :
+
+* Création du domaine : __super.com__ (juste pour avoir quelque chose d'autre que __coco.com__, si j'ai oublié de changer une variable quelque part)
+* Création de la boite de courriel : __moi@super.com__ (faut bien se complimenter :D )
+
+Bon et le moment critique l'envoie d'une courriel et validation de la réception ! 
+
+        $ docker inspect coco-smtp-t | grep IPAd
+                    "SecondaryIPAddresses": null,
+                    "IPAddress": "",
+                          "IPAddress": "172.22.0.5",
+
+Avec beaucoup d'excitation on démarre le __telnet__ :
+
+        $ telnet 172.22.0.5 25
+        Trying 172.22.0.5...
+        Connected to 172.22.0.5.
+        Escape character is '^]'.
+        220 relay.example.com ESMTP Postfix
+        ehlo toto
+        250-relay.example.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+        mail from:suspense@insoutenable.com
+        250 2.1.0 Ok
+        rcpt to:moi@super.com
+        250 2.1.5 Ok
+        data
+        354 End data with <CR><LF>.<CR><LF>
+        Hoooo ... vraiment COOL !!! je suis content 
+        .
+        250 2.0.0 Ok: queued as 7C2ED1201310
+        quit
+        221 2.0.0 Bye
+        Connection closed by foreign host.
+
+On retient son souffle et regarde les logs :
+
+        $ docker exec -it coco-smtp-t tail /var/log/mail.log
+        Mar  3 17:32:18 mail postfix[100]: See http://www.postfix.org/COMPATIBILITY_README.html for details
+        Mar  3 17:32:18 mail postfix[100]: To disable backwards compatibility use "postconf compatibility_level=2" and "postfix reload"
+        Mar  3 17:32:18 mail postfix/master[145]: daemon started -- version 3.1.0, configuration /etc/postfix
+        Mar  3 17:39:15 mail postfix/smtpd[1801]: connect from unknown[172.22.0.1]
+        Mar  3 17:39:36 mail postfix/smtpd[1801]: 7C2ED1201310: client=unknown[172.22.0.1]
+        Mar  3 17:39:48 mail postfix/cleanup[1889]: 7C2ED1201310: message-id=<>
+        Mar  3 17:39:48 mail postfix/qmgr[148]: 7C2ED1201310: from=<suspense@insoutenable.com>, size=212, nrcpt=1 (queue active)
+        Mar  3 17:39:48 mail postfix/lmtp[1938]: 7C2ED1201310: to=<moi@super.com>, relay=dovecot-lmtp[172.22.0.3]:24, delay=17, delays=17/0.01/0.01/0.1, dsn=2.0.0, status=sent (250 2.0.0 <moi@super.com> ulRzJrTwuVgeBwAABKaThQ Saved)
+        Mar  3 17:39:48 mail postfix/qmgr[148]: 7C2ED1201310: removed
+        Mar  3 17:39:49 mail postfix/smtpd[1801]: disconnect from unknown[172.22.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 commands=5
+
+        $ docker exec -it coco-imap-t tail /var/log/mail.log
+        Mar  3 17:32:15 mail dovecot: master: Dovecot v2.2.22 (fe789d2) starting up for imap, lmtp
+        Mar  3 17:32:16 mail dovecot: ssl-params: Generating SSL parameters
+        Mar  3 17:32:16 mail dovecot: ssl-params: SSL parameters regeneration completed
+        Mar  3 17:39:48 mail dovecot: lmtp(1822): Connect from 172.22.0.5
+        Mar  3 17:39:48 mail dovecot: auth: Warning: sql: Ignoring changed user_query in /etc/dovecot/dovecot-sql.conf.ext, because userdb sql not used. (If this is intentional, set userdb_warning_disable=yes)
+        Mar  3 17:39:48 mail dovecot: lmtp(moi@super.com): ulRzJrTwuVgeBwAABKaThQ: msgid=unspecified: saved mail to INBOX
+        Mar  3 17:39:48 mail dovecot: lmtp(1822): Disconnect from 172.22.0.5: Successful quit
+
+On peut pas attendre mieux , validons le répertoire contenant les fichiers :
+
+        $ docker exec -it coco-imap-t ls -R /var/mail/vhosts/super.com/
+        /var/mail/vhosts/super.com/:
+        moi
+
+        /var/mail/vhosts/super.com/moi:
+        cur              dovecot-uidvalidity           dovecot.index.cache  new
+        dovecot-uidlist  dovecot-uidvalidity.58b9f0b4  dovecot.index.log    tmp
+
+        /var/mail/vhosts/super.com/moi/cur:
+
+        /var/mail/vhosts/super.com/moi/new:
+        1488580788.M686772P1822.mail.coco.com,S=442,W=452
+
+        /var/mail/vhosts/super.com/moi/tmp:
+
+Bon pour vous c'est probablement pas Vendredi comme en ce moment lors de la rédaction du texte mais MOI je vais passer un bon week-end :D.
+Pas que je cherche à trouver un problème, mais on a pas valider l'authentification ... Roulement de tambour , bon pour être honnête je l'ai valider avant d'écrire ces lignes j'en pouvais plus :P.
+
+         $ docker inspect coco-imap-t | grep IPAd
+                     "SecondaryIPAddresses": null,
+                     "IPAddress": "",
+                        "IPAddress": "172.22.0.3",
+
+         $ telnet 172.22.0.3 143
+         Trying 172.22.0.3...
+         Connected to 172.22.0.3.
+         Escape character is '^]'.
+         * OK [CAPABILITY IMAP4rev1 LITERAL+ SASL-IR LOGIN-REFERRALS ID ENABLE IDLE AUTH=PLAIN] Dovecot ready.
+         * a login moi@super.com toto
+         * a OK [CAPABILITY IMAP4rev1 LITERAL+ SASL-IR LOGIN-REFERRALS ID ENABLE IDLE SORT SORT=DISPLAY THREAD=REFERENCES THREAD=REFS THREAD=ORDEREDSUBJECT MULTIAPPEND URL-PARTIAL CATENATE UNSELECT CHILDREN NAMESPACE UIDPLUS LIST-EXTENDED I18NLEVEL=1 CONDSTORE QRESYNC ESEARCH ESORT SEARCHRES WITHIN CONTEXT=SEARCH LIST-STATUS BINARY MOVE SPECIAL-USE] Logged in
+
+**VRAIMENT COOL**, que demander de plus ... En fait il y a plein de chose, mais je les listerai plus tard :D.
+
+# <a name="suggestion_exercice" /> Une suggestion d'exercice 
