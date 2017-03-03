@@ -140,11 +140,8 @@
 # Query to get a list of all usernames.
 #iterate_query = SELECT username AS user FROM users
 
-# MYSQL_DATABASE=vmail
-#MYSQL_PASSWORD=ZePassword
-# MYSQL_USER=umail
-driver = mysql
-connect = host=db dbname=vmail user=umail password=ZePassword
+driver ={{ DB_TYPE }}
+connect = host={{ DB_HOST }} dbname={{ MYSQL_DATABASE }} user={{ MYSQL_USER }} password={{ MYSQL_PASSWORD }}
 
 password_query = SELECT username AS user,password FROM mailbox WHERE username = '%u' AND active='1'
 user_query = SELECT maildir, 5000 AS uid, 5000 AS gid FROM mailbox WHERE username = '%u' AND active='1'

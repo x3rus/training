@@ -1495,6 +1495,7 @@ Réalisons du __docker-compose__ afin d'être sur le bon pied tout de suite :
                 - MYSQL_USER=umail
                 - MYSQL_PASSWORD=ZePassword
                 - MYSQL_DATABASE=vmail
+                - DB_TYPE=mysql
                 - TZ=America/Montreal
                 - TERM=xterm
 
@@ -1928,5 +1929,73 @@ Je renomme le fichier __dovecot-sql.conf.ext__ avec l'extension __.j2__
 
         $ mv dovecot-sql.conf.ext dovecot-sql.conf.ext.j2
 
-Vous devriez faire une validation du conteneur afin de vous assurer qu'il n'y a pas de problème dans le contenu . 
+Vous devriez faire une validation du conteneur afin de vous assurer qu'il n'y a pas de problème dans le contenu, quand je parle de problème je veux mentionné de donnée qui devrait être en __template__ .
 
+Débutons la modification du fichier __dovecot-sql.conf.ext.j2__ afin d'inclure les valeurs en variable.
+Voici donc le nouveau contenu :
+
+        
+        driver ={{ DB_TYPE }}
+        connect = host={{ DB_HOST }} dbname={{ MYSQL_DATABASE }} user={{ MYSQL_USER }} password={{ MYSQL_PASSWORD }}
+
+        password_query = SELECT username AS user,password FROM mailbox WHERE username = '%u' AND active='1'
+        user_query = SELECT maildir, 5000 AS uid, 5000 AS gid FROM mailbox WHERE username = '%u' AND active='1'
+
+Il nous reste donc le script __run.sh__ afin de modifier la configuration de ce fichier __template__ . 
+
+On refait l'image et on valide :D
+
+        $ docker-compose build imap-coco
+        [... OUTPUT COUPÉ ...]
+        Step 13 : CMD /root/run.sh
+         ---> Running in 45c4fb76e50c
+         ---> 6285c5389b91
+        Removing intermediate container 45c4fb76e50c
+        Successfully built 6285c5389b91
+
+        $ docker-compose rm imap-coco
+        Going to remove coco-imap-t
+        Are you sure? [yN] y
+        Removing coco-imap-t ... done
+
+C'est repartie pour un tour :
+
+        $ docker-compose up
+        Starting coco-db-t
+        Starting coco-http-t
+        Creating coco-imap-t
+        Recreating coco-smtp-t
+        Attaching to coco-db-t, coco-http-t, coco-imap-t, coco-smtp-t
+        [... OUTPUT COUPÉ ...]
+
+        $ docker exec -it coco-imap-t tail /var/log/mail.log
+        Mar  3 17:19:24 mail dovecot: master: Dovecot v2.2.22 (fe789d2) starting up for imap, lmtp
+        Mar  3 17:19:24 mail dovecot: ssl-params: Generating SSL parameters
+        Mar  3 17:19:27 mail dovecot: ssl-params: SSL parameters regeneration completed
+
+Pour le moment pas d'erreur :D, __ZE__ teste :D.
+
+        $ telnet 172.22.0.5 25
+        [... c toujours les même instructions ...]
+
+        $ docker exec -it coco-imap-t tail /var/log/mail.log                                                                                  
+        Mar  3 17:19:24 mail dovecot: master: Dovecot v2.2.22 (fe789d2) starting up for imap, lmtp
+        Mar  3 17:19:24 mail dovecot: ssl-params: Generating SSL parameters
+        Mar  3 17:19:27 mail dovecot: ssl-params: SSL parameters regeneration completed
+        Mar  3 17:20:48 mail dovecot: lmtp(362): Connect from 172.22.0.5
+        Mar  3 17:20:48 mail dovecot: auth: Warning: sql: Ignoring changed user_query in /etc/dovecot/dovecot-sql.conf.ext, because userdb sql not used. (If this is intentional, set userdb_warning_disable=yes)
+        Mar  3 17:20:48 mail dovecot: lmtp(toto@coco.com): UifgIEDsuVhqAQAABKaThQ: msgid=unspecified: saved mail to INBOX
+        Mar  3 17:20:48 mail dovecot: lmtp(362): Disconnect from 172.22.0.5: Successful quit
+
+**youpii** , mais est-ce que postfix valide réellement l'adresse ?? 
+
+        $ telnet 172.22.0.5 25
+        [... c toujours les même instructions ...]
+        mail from:toto@kjekjfe.com
+        250 2.1.0 Ok
+        rcpt to:eohfe@coco.com
+        550 5.1.1 <eohfe@coco.com>: Recipient address rejected: User unknown in virtual mailbox table
+        quit
+        221 2.0.0 Bye
+
+C'est pas mal :D , c'était facile finalement ;-).

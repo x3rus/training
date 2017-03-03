@@ -60,6 +60,7 @@ services:
             - MYSQL_USER=umail
             - MYSQL_PASSWORD=ZePassword
             - MYSQL_DATABASE=vmail
+            - DB_TYPE=mysql
             - TZ=America/Montreal
             - TERM=xterm
  
