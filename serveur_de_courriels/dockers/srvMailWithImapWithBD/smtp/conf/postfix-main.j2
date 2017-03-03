@@ -13,7 +13,7 @@ inet_interfaces = all
 inet_protocols = ipv4
 
 # Configuration pour l'envoie vers lmtp (aka dovecot)
-mailbox_transport = lmtp:{{ DOVECOT_SRV }}:24
+virtual_transport = lmtp:{{ DOVECOT_SRV }}:24
 
 # Adresses Virtuelles 
 virtual_mailbox_domains = proxy:mysql:/etc/postfix/sql/mysql_virtual_domains_maps.cf

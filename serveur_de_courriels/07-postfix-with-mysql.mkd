@@ -1263,7 +1263,7 @@ Nous allons mettre en place les fichiers **jinja2** de configuration dans le ré
         password = {{ MYSQL_PASSWORD }}
         hosts = {{ DB_HOST }}
         dbname = {{ MYSQL_DATABASE }}
-        ELECT domain FROM domain WHERE domain='%s' AND active = '1'
+        query = SELECT domain FROM domain WHERE domain='%s' AND active = '1'
         #query          = SELECT domain FROM domain WHERE domain='%s'
         #optional query to use when relaying for backup MX
         #query           = SELECT domain FROM domain WHERE domain='%s' AND backupmx = '0' AND active = '1'
@@ -1633,6 +1633,300 @@ Je vais recharger la configuration , on a vue que le redémarrage été ... Risq
         Mar  2 17:12:45 mail dovecot: ssl-params: SSL parameters regeneration completed
         Mar  2 17:43:15 mail dovecot: master: Warning: SIGHUP received - reloading configuration
         
-Nous sommes près pour un test :D !! 
+### <a name="validation_setup" /> Validation de la configuration 
 
-ICI ICI  P-e faire le docker diff AVANT
+Bon nous avons un pet conteneur avec __Dovecot__ , cependant nous avons maintenant les 4 conteneurs disponible , nous sommes donc en mesure de réaliser un testes complet de communication. Nous devons garder en tête que le conteneur __Imap/LMTP__ n'est PAS final à ce stade mais j'ai vraiment envie d'essayer l'ensemble de la chaine . Il est fort probable que nous soyons amené à faire des modifications dans le système __postfix__ aussi voir la BD.
+
+Débutons avec l'envoie du courriel, pour rappel nous avions fait la création d'un utilisateur **toto@coco.com** :
+
+        $ docker inspect coco-smtp-t | grep IPA
+                    "SecondaryIPAddresses": null,
+                    "IPAddress": "",
+                    "IPAMConfig": null,
+                        "IPAddress": "172.22.0.5",
+
+        $ telnet 172.22.0.5 25
+        Trying 172.22.0.5...
+        Connected to 172.22.0.5.
+        Escape character is '^]'.
+        220 relay.example.com ESMTP Postfix
+        ehlo toto
+        250-relay.example.com
+        250-PIPELINING
+        250-SIZE 10240000
+        250-VRFY
+        250-ETRN
+        250-ENHANCEDSTATUSCODES
+        250-8BITMIME
+        250 DSN
+        mail from:bonjour@ifjefj.com
+        250 2.1.0 Ok
+        rcpt to: toto@coco.com
+        250 2.1.5 Ok
+        data
+        354 End data with <CR><LF>.<CR><LF>
+        un courriel de test
+        .
+        250 2.0.0 Ok: queued as 606BC1201310
+        quit
+        221 2.0.0 Bye
+        Connection closed by foreign host.
+
+COOL c'est un bon début , visualisons les logs :
+
+        $ docker exec coco-smtp-t tail /var/log/mail.log
+        Mar  3 08:05:23 mail postfix/master[145]: warning: /usr/lib/postfix/sbin/virtual: bad command startup -- throttling
+        Mar  3 08:06:23 mail postfix/virtual[752]: fatal: bad string length 0 < 1: virtual_mailbox_base =
+        Mar  3 08:06:24 mail postfix/master[145]: warning: process /usr/lib/postfix/sbin/virtual pid 752 exit status 1
+        Mar  3 08:06:24 mail postfix/master[145]: warning: /usr/lib/postfix/sbin/virtual: bad command startup -- throttling
+        Mar  3 08:07:24 mail postfix/virtual[995]: fatal: bad string length 0 < 1: virtual_mailbox_base =
+        Mar  3 08:07:25 mail postfix/master[145]: warning: process /usr/lib/postfix/sbin/virtual pid 995 exit status 1
+        Mar  3 08:07:25 mail postfix/master[145]: warning: /usr/lib/postfix/sbin/virtual: bad command startup -- throttling
+
+Bon évidement une réussit du premier coup aurait été étonnant :P !!! Pas besoin de feindre l'étonnement :P 
+
+Bon ceci est mon erreur , là vous pouvez feindre l'étonnement :P !! Je me suis trompé j'avais repris la configuration de notre postfix qui réalisé le transfert vers __lmtp__ quand nous n'utilisions pas le système **virtual**. Lors de l'utilisation de ce mécanisme nous ne devons pas utiliser l'instruction :
+
+        mailbox_transport = lmtp:dovecot-lmtp:24
+        Mais nous devons définir :
+        virtual_transport = lmtp:dovecot-lmtp:24
+
+Ceci va donc nous permettre de voir comment modifier un conteneur pour modifier la configuration :D (quelle belle opportunité :D ).
+
+Donc je modifie le fichier de __template__ de postfix pour avoir la bonne valeur (modification stipulé plus haut):
+
+        $ vim smtp/conf/postfix-main.j2
+
+Je vais arrêter les conteneurs , détruire le conteneur __smtp__ et redémarrer le tous !!
+
+        coco-smtp-t  | 2017-03-03 08:03:54,054 INFO success: rsyslogd entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+        coco-imap-t  | 2017-03-03 08:03:54,087 INFO success: dovecot entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+        coco-smtp-t  | 2017-03-03 08:03:56,057 INFO success: postfix entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+        ^CGracefully stopping... (press Ctrl+C again to force)
+        Stopping coco-smtp-t ... done
+        Stopping coco-imap-t ... done
+        Stopping coco-http-t ... done
+        Stopping coco-db-t ... done
+
+        $ docker-compose rm smtp-coco
+        Going to remove coco-smtp-t
+        Are you sure? [yN] y
+        Removing coco-smtp-t ... done
+
+        $ docker-compose build smtp-coco
+        Building smtp-coco
+        Step 1 : FROM ubuntu:16.04
+         ---> c73a085dc378
+        [... OUTPUT COUPÉ ... ]
+
+Et on redémarre :
+
+        $ docker-compose up
+        Starting coco-db-t
+        Starting coco-http-t
+        Starting coco-imap-t
+        Creating coco-smtp-t
+        Attaching to coco-db-t, coco-imap-t, coco-http-t, coco-smtp-t
+        coco-db-t    | 170303  8:19:15 [Note] mysqld (mysqld 5.5.52) starting as process 1 ...
+
+Et on refait le teste, bien entendu !
+
+        $ telnet 172.22.0.5 25
+        [ .. OUTPUT COUPÉ (voir plus haut :P ) ...]
+
+        $ docker exec coco-smtp-t tail /var/log/mail.log
+        Mar  3 08:19:19 mail postfix/master[145]: daemon started -- version 3.1.0, configuration /etc/postfix
+        Mar  3 08:20:10 mail postfix/smtpd[345]: connect from unknown[172.22.0.1]
+        Mar  3 08:20:23 mail postfix/smtpd[345]: D21431201310: client=unknown[172.22.0.1]
+        Mar  3 08:20:27 mail postfix/cleanup[403]: D21431201310: message-id=<>
+        Mar  3 08:20:27 mail postfix/qmgr[148]: D21431201310: from=<bonjour@djek.com>, size=180, nrcpt=1 (queue active)
+        Mar  3 08:20:27 mail postfix/lmtp[420]: connect to dovecot-lmtp[172.22.0.3]:24: Connection refused
+        Mar  3 08:20:27 mail postfix/lmtp[420]: D21431201310: to=<toto@coco.com>, relay=none, delay=11, delays=11/0.01/0/0, dsn=4.4.1, status=deferred (connect to dovecot-lmtp[172.22.0.3]:24: Connection refused)
+        Mar  3 08:20:28 mail postfix/smtpd[345]: disconnect from unknown[172.22.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 commands=5
+
+On est bon !!! Pour ce qui ne voit que l'erreur encore présent , moi je vous dis c'est PAS le même problème on avance , faut savoir ce réjouir !! En plus le conteneur __lmtp__ est pas fini c'est donc NORMALE !! Validons la configuration dans le conteneur __lmtp__ :
+
+        $ docker exec  coco-imap-t ss -lntp
+        State      Recv-Q Send-Q Local Address:Port               Peer Address:Port
+        LISTEN     0      128    127.0.0.11:36333                    *:*
+        LISTEN     0      100          *:143                      *:*                   users:(("dovecot",pid=20,fd=33))
+        LISTEN     0      100         :::143                     :::*                   users:(("dovecot",pid=20,fd=34))
+
+Effectivement le port 24 est pas présent , à ce stade vous devrions savoir pourquoi ce n'est pas présent , nous avons déjà vu cette configuration !
+
+La solution j'ai oublié de configurer le service __lmtp__ pour qu'il écoute sur le réseau .
+
+        $ docker exec -it coco-imap-t bash 
+        root@mail:/etc/dovecot/conf.d# vim 10-master.conf
+        [... OUTPUT COUPÉ ...]
+        service lmtp {
+            unix_listener lmtp {
+              #mode = 0666
+            }
+
+            # Create inet listener only if you can't use the above UNIX socket
+            inet_listener lmtp {
+                # Avoid making LMTP visible for the entire internet
+                #address =
+                port = 24
+            }
+        }
+        [... OUTPUT COUPÉ ...]
+        root@mail:/etc/dovecot/conf.d# /etc/init.d/dovecot reload
+        root@mail:/etc/dovecot/conf.d# ss -lntp | grep 24
+        LISTEN     0      100          *:24                       *:*                   users:(("dovecot",pid=20,fd=24))
+        LISTEN     0      100         :::24                      :::*                   users:(("dovecot",pid=20,fd=25))
+
+Teste encore :
+
+        $ telnet 172.22.0.5 25 
+        [... OUTPUT COUPÉ ...]
+
+        $ docker exec coco-smtp-t tail /var/log/mail.log
+        Mar  3 08:27:20 mail postfix/smtpd[2068]: connect from unknown[172.22.0.1]
+        Mar  3 08:27:33 mail postfix/smtpd[2068]: 1E9981201311: client=unknown[172.22.0.1]
+        Mar  3 08:27:36 mail postfix/cleanup[2122]: 1E9981201311: message-id=<>
+        Mar  3 08:27:36 mail postfix/qmgr[148]: 1E9981201311: from=<bonjour@dejk.com>, size=180, nrcpt=1 (queue active)
+        Mar  3 08:27:36 mail postfix/lmtp[2137]: 1E9981201311: to=<toto@coco.com>, relay=dovecot-lmtp[172.22.0.3]:24, delay=7.5, delays=7.4/0.01/0.02/0.11, dsn=2.0.0, status=sent (250 2.0.0 <toto@coco.com> 2rWFFEhvuVgACAAABKaThQ Saved)
+        Mar  3 08:27:36 mail postfix/qmgr[148]: 1E9981201311: removed
+        Mar  3 08:27:37 mail postfix/smtpd[2068]: disconnect from unknown[172.22.0.1] ehlo=1 mail=1 rcpt=1 data=1 quit=1 commands=5
+
+
+**HO YEAHH!!!** Regardons maintenant le service __lmtp__ :
+
+        $ docker exec -it coco-imap-t tail /var/log/mail.log
+        Mar  2 17:12:45 mail dovecot: master: Dovecot v2.2.22 (fe789d2) starting up for imap, lmtp
+        Mar  2 17:12:45 mail dovecot: ssl-params: Generating SSL parameters
+        Mar  2 17:12:45 mail dovecot: ssl-params: SSL parameters regeneration completed
+        Mar  2 17:43:15 mail dovecot: master: Warning: SIGHUP received - reloading configuration
+        Mar  3 08:03:51 mail dovecot: master: Dovecot v2.2.22 (fe789d2) starting up for imap, lmtp
+        Mar  3 08:24:40 mail dovecot: master: Warning: SIGHUP received - reloading configuration
+        Mar  3 08:27:36 mail dovecot: lmtp(2048): Connect from 172.22.0.5
+        Mar  3 08:27:36 mail dovecot: auth: Warning: sql: Ignoring changed user_query in /etc/dovecot/dovecot-sql.conf.ext, because userdb sql not used. (If this is intentional, set userdb_warning_disable=yes)
+        Mar  3 08:27:36 mail dovecot: lmtp(toto@coco.com): 2rWFFEhvuVgACAAABKaThQ: msgid=unspecified: saved mail to INBOX
+        Mar  3 08:27:36 mail dovecot: lmtp(2048): Disconnect from 172.22.0.5: Successful quit
+
+Je sens monté l'excitation en vous :D, en tous cas moi ça me fait super plaisir !! Même encore maintenant après temps d'année j'ai du plaisir :D.
+
+        $ docker exec -it coco-imap-t ls -R /var/mail/vhosts/coco.com/
+        /var/mail/vhosts/coco.com/:
+        toto
+
+        /var/mail/vhosts/coco.com/toto:
+        cur              dovecot-uidvalidity           dovecot.index.cache  new
+        dovecot-uidlist  dovecot-uidvalidity.58b96f48  dovecot.index.log    tmp
+
+        /var/mail/vhosts/coco.com/toto/cur:
+
+        /var/mail/vhosts/coco.com/toto/new:
+        1488547656.M391480P2048.mail.coco.com,S=401,W=411
+        1488547759.M396349P2467.mail.coco.com,S=401,W=411
+
+        /var/mail/vhosts/coco.com/toto/tmp:
+
+Mais , car il y a un mais on a pas finit !!! Il faut convertir notre service __imap / lmtp__ en conteneur et plus en __pet conteneur__.
+
+### <a name="conversion_pet_img" /> Conversion du conteneur Dovecot en image propre
+
+Prendre note qu'entre les opérations, mon train est arrivé en gare :P , il y a donc eu redémarrage du conteneurs __dovecot__ , je dis bien redémarrage PAS réinitialisation ! J'en fait mention car lors de la réalisation du __docker diff__ ceci ce voit pour l'œil du renard que vous êtes :P.
+
+        $ docker diff coco-imap-t  | egrep -v '/var/lib|/run|/var/log'                                                                                       
+        C /var
+        C /var/mail
+        A /var/mail/vhosts
+        A /var/mail/vhosts/coco.com
+        A /var/mail/vhosts/coco.com/toto
+        A /var/mail/vhosts/coco.com/toto/dovecot-uidlist
+        A /var/mail/vhosts/coco.com/toto/dovecot-uidvalidity
+        A /var/mail/vhosts/coco.com/toto/dovecot-uidvalidity.58b96f48
+        A /var/mail/vhosts/coco.com/toto/dovecot.index.cache
+        A /var/mail/vhosts/coco.com/toto/dovecot.index.log
+        A /var/mail/vhosts/coco.com/toto/new
+        A /var/mail/vhosts/coco.com/toto/new/1488547656.M391480P2048.mail.coco.com,S=401,W=411
+        A /var/mail/vhosts/coco.com/toto/new/1488547759.M396349P2467.mail.coco.com,S=401,W=411
+        A /var/mail/vhosts/coco.com/toto/tmp
+        A /var/mail/vhosts/coco.com/toto/cur
+        C /etc
+        C /etc/group
+        C /etc/dovecot
+        C /etc/dovecot/conf.d
+        C /etc/dovecot/conf.d/10-mail.conf
+        C /etc/dovecot/conf.d/10-master.conf
+        C /etc/dovecot/conf.d/10-auth.conf
+        C /etc/dovecot/conf.d/auth-sql.conf.ext
+        C /etc/dovecot/dovecot-sql.conf.ext
+        C /etc/gshadow-
+        C /etc/shadow
+        A /etc/subuid-
+        C /etc/group-
+        C /etc/gshadow
+        C /etc/subgid
+        A /etc/subgid-
+        C /etc/passwd
+        C /etc/passwd-
+        C /etc/subuid
+        C /root
+        A /root/.bash_history
+        A /root/.viminfo
+
+J'ai donc la liste des fichiers SANS aucun oublie , je vais donc rapporter cette configuration dans mon images . Je vais débuter avec le __Dockerfile__ :
+
+        # Using Ubuntu
+        FROM ubuntu:16.04
+        MAINTAINER Boutry Thomas <thomas.boutry@x3rus.com>
+
+        # Ignore APT warnings about not having a TTY
+        ENV DEBIAN_FRONTEND noninteractive
+
+        # Packages: update
+        RUN apt-get update -qq && \
+            apt-get install -qq -y --no-install-recommends dovecot-imapd dovecot-lmtpd dovecot-mysql \
+                    python-pip supervisor rsyslog python-wheel python-setuptools  && \
+            pip install j2cli
+
+        # Configure: supervisor
+        ADD bin/dfg.sh /usr/local/bin/
+        ADD conf/supervisor-all.conf /etc/supervisor/conf.d/
+
+        # Création répertoire pour les courriels & utilisateur
+        RUN groupadd -g 5000 vmail && \
+            useradd -g vmail -u 5000 vmail -d /var/mail && \
+            chown -R vmail:vmail /var/mail
+
+        # Fichier configuration Dovecot
+        ADD conf/10*.conf conf/auth-sql.conf.ext /etc/dovecot/conf.d/
+
+        # Fichier de configuration de mysql en template pour substitution
+        ADD conf/dovecot-sql.conf.ext.j2           /root/
+
+        # Runner
+        ADD run.sh /root/run.sh
+        RUN chmod +x /root/run.sh
+
+        # Declare
+        EXPOSE 143 24
+
+        CMD ["/root/run.sh"]
+
+Rapidement :
+
+* Suppression des applications de debug
+* Ajout de l'utilisateur **vmail** et création du répertoire
+* Ajout des fichiers de configuration de __dovecot__
+* Ajout du fichier de __template__ pour l'accès à la base de donnée.
+
+Je vais copier les fichiers du pet conteneur dans le répertoire de création du conteneur.
+
+        $ cd imap/conf/
+        $ docker cp coco-imap-t:/etc/dovecot/conf.d/10-auth.conf .
+        $ docker cp coco-imap-t:/etc/dovecot/conf.d/auth-sql.conf.ext .
+        $ docker cp coco-imap-t:/etc/dovecot/conf.d/10-mail.conf .
+        $ docker cp coco-imap-t:/etc/dovecot/conf.d/10-master.conf .
+        $ docker cp coco-imap-t:/etc/dovecot/dovecot-sql.conf.ext .
+
+Je renomme le fichier __dovecot-sql.conf.ext__ avec l'extension __.j2__ 
+
+        $ mv dovecot-sql.conf.ext dovecot-sql.conf.ext.j2
+
+Vous devriez faire une validation du conteneur afin de vous assurer qu'il n'y a pas de problème dans le contenu . 
+
