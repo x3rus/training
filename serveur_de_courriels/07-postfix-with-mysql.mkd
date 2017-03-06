@@ -2157,4 +2157,73 @@ Pas que je cherche à trouver un problème, mais on a pas valider l'authentifica
 
 **VRAIMENT COOL**, que demander de plus ... En fait il y a plein de chose, mais je les listerai plus tard :D.
 
+Pour parfaire la configuration nous devrions remettre en place les systèmes de volumes afin de conserver les donnés en dehors du conteneur , en effet si nous reprenons le fichier __docker-compose__, j'ai désactivé l'ensemble des volumes. Pourquoi ? Simplement parce que c'est beaucoup plus simple de supprimer et recommencer l'ensemble. De plus ceci nous offert la possibilité de visualiser comment supprimer un composante (conteneur) et de le réintégrer à l'ensemble.
+
+Donc nous devrions remettre les volumes au minimum pour :
+
+* **Mysql** : __/srv/docker/coco-db-t/var\_lib\_mysql:/var/lib/mysql__
+* **Imap/smtp** : __/srv/docker/coco-imap-t/var\_mail:/var/mail/__
+
+Et idéalement :
+
+* **smtp** : __srv/docker/coco-smtp-t/var/spool/postfix:/var/spool/postfix__
+
+Maintenant listons les améliorations que nous devrions apporter pour que le système soit **mieux** ou pour la production. 
+
+## <a name="amelioration" /> Point d'amélioration 
+
+Je vais lister des points d'amélioration, cependant je vais vous laisser le plaisir de les explorer , vous n'avez plus le problème de la page blanche, vous avez une base solide pour faire vos explorations :P .
+Vous vous rappeler , exploration , réalisation de __docker diff__ transfert de la configuration dans l'image :D.
+
+### <a name"certificat_SSL" /> Mise en place de certificat **SSL**
+
+Premièrement le plus "critique" est que nous n'avons pas mis en place de certificat **SSL**  pour dovecot et voir pour le service __httpd__ afin de faire la gestion via __postfixadmin__. Ceci est critique, car le mot de passe sera transmis en claire sur l'Internet ! 
+
+Je dois dire qu'à ce jour je n'ai malheureusement pas trouvé la meilleur méthode pour gérer de manière sexy les certificats __SSL__ pour mes conteneurs. J'utilise la méthode de volumes pour fournir la clé , le certificat et la chaine de certificats à mon conteneur . L'ensemble définie dans le __docker-compose__.
+Je ne suis pas le seul à être à la recherche d'une solution plus élégante !
+
+* [http://stackoverflow.com/questions/26028971/docker-container-ssl-certificates](http://stackoverflow.com/questions/26028971/docker-container-ssl-certificates)
+
+Bien entendu le défis est de taille, car la clé et le certificat sont **unique** pour le service !! 
+
+Petit clin d'œil, sur ce que je vais analyser sous peu : [http://www.automationlogic.com/using-lets-encrypt-and-docker-for-automatic-ssl/](http://www.automationlogic.com/using-lets-encrypt-and-docker-for-automatic-ssl/) .
+
+Cette documentation propose d'utiliser __let's encrypt__ pour faire la gestion __SSL__ bon ici c'est uniquement pour le service __http__ faut voir les autres possibilité. Honnêtement je ne suis pas encore prêt pour __let's encrypt__ pas un problème technique, mais j'ai besoin de mieux comprendre le fonctionnement / le protocole . __Let's encrypt__ demande qu'une application soit présente sur votre serveur c'est la que j'ai un petit problème , je dois comprendre s'ils sont en mesure de déchiffrer mon trafic... Je présume qu'une session de formation aura lieu un fois que j'aurais compris pour partager mon apprentissage, ou pas si j'ai rien compris ;-).
+
+Ne négligé pas l'importance du chiffrement surtout de nos jours !!!
+
+### <a name"systeme_anti-spam" /> Validation des spams
+
+Deuxième point d'amélioration pour une mise en place en production serait la présence d'un système anti-spam, afin de faire le trie dans les courriels reçu !
+Bien entendu si votre serveur de courriel est pour vous uniquement et que vous utilisez un compte __gmail.com__ par exemple vous pouvez continuer à faire transiter vos courriels par google qui réalisera le filtrage puis le transmettra à votre adresse courriel.
+Bien entendu la __NSA__ pourra en prendre une copie en passant , mais ne vous en faite pas elle sera aussi en mesure de les prendre directement sur votre serveur si elle le veut :P . Ils ont des ressources considérable :D.
+
+Si vous cherchez des solutions voici des suggestions d'application :
+
+* **amavis-ng** : permet de réaliser anti-spam et anti-virus
+* **[fuglu](http://fuglu.org)** : permet de réaliser du filtrage de courriel anti-spam et anti-virus.
+* **spamassassin** : système d'anti-spam , ce dernier est utilisé par les 2 applications mentionné précédemment
+
+Pour vous fournir une vue général du mécanisme de __fuglu__ et __amavis-ng__ voici 2 images :
+
+![postfix_amavisd.gif](./imgs/postfix_amavisd.gif)
+
+![amavis-flux.png](./imgs/amavis-flux.png)
+
+Rapidement :
+
+1. postfix fait le traitement du courriel
+2. postfix transmet le courriel à __amavis__ sur un port X , habituellement sur le port 10024 
+3. __amavis__ fait l'analyse du courriel , anti-spam, anti-virus , voir plus . __amavis__ en profite pour ajouter des en-têtes , il peut aussi modifier le sujet pour indiquer que c'est un spam potentiel.
+4. Si le courriel est assez "propre" __amavis__ le renvoie à postfix sur le port 10025 
+5. postfix reprend la livraison normalement vers les boites utilisateur.
+
+### <a name"utilisation_de_tail_http" /> Monitoring des services
+
+Si vous passez à un système de gestion de type __Kubernet__ ou __swarm__ ces systèmes inclut une gestion des conteneurs et un redémarrage automatique en cas de problème. Encore là je vous parle théoriquement, car mon niveau de maturité __Docker__ n'est pas encore rendu à ce niveau :D. 
+J'apprends encore à gérer manuellement mes conteneurs afin d'être en contrôle et comprendre le fonctionnement avec d'inclure des outils pour me facilité la vie . 
+
+Nous avons bien fait la configuration pour que ce mécanisme de redémarrage automatique fonctionne **sauf** pour le service __httpd__ qui utilise la commande __tail__ pour conserver le conteneur actif. Nous devrions trouver une méthode afin que ce soit le service apache en avant plan ou du moins que le conteneur s'arrête si le service apache trébuche. 
+
+ICI ICI ICI
 # <a name="suggestion_exercice" /> Une suggestion d'exercice 
