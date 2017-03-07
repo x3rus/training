@@ -2175,7 +2175,7 @@ Maintenant listons les améliorations que nous devrions apporter pour que le sys
 Je vais lister des points d'amélioration, cependant je vais vous laisser le plaisir de les explorer , vous n'avez plus le problème de la page blanche, vous avez une base solide pour faire vos explorations :P .
 Vous vous rappeler , exploration , réalisation de __docker diff__ transfert de la configuration dans l'image :D.
 
-### <a name"certificat_SSL" /> Mise en place de certificat **SSL**
+### <a name="certificat_SSL" /> Mise en place de certificat SSL
 
 Premièrement le plus "critique" est que nous n'avons pas mis en place de certificat **SSL**  pour dovecot et voir pour le service __httpd__ afin de faire la gestion via __postfixadmin__. Ceci est critique, car le mot de passe sera transmis en claire sur l'Internet ! 
 
@@ -2192,7 +2192,7 @@ Cette documentation propose d'utiliser __let's encrypt__ pour faire la gestion _
 
 Ne négligé pas l'importance du chiffrement surtout de nos jours !!!
 
-### <a name"systeme_anti-spam" /> Validation des spams
+### <a name="systeme_anti-spam" /> Validation des spams
 
 Deuxième point d'amélioration pour une mise en place en production serait la présence d'un système anti-spam, afin de faire le trie dans les courriels reçu !
 Bien entendu si votre serveur de courriel est pour vous uniquement et que vous utilisez un compte __gmail.com__ par exemple vous pouvez continuer à faire transiter vos courriels par google qui réalisera le filtrage puis le transmettra à votre adresse courriel.
@@ -2218,12 +2218,33 @@ Rapidement :
 4. Si le courriel est assez "propre" __amavis__ le renvoie à postfix sur le port 10025 
 5. postfix reprend la livraison normalement vers les boites utilisateur.
 
-### <a name"utilisation_de_tail_http" /> Monitoring des services
+### <a name="utilisation_de_tail_http" /> Monitoring des services
 
 Si vous passez à un système de gestion de type __Kubernet__ ou __swarm__ ces systèmes inclut une gestion des conteneurs et un redémarrage automatique en cas de problème. Encore là je vous parle théoriquement, car mon niveau de maturité __Docker__ n'est pas encore rendu à ce niveau :D. 
 J'apprends encore à gérer manuellement mes conteneurs afin d'être en contrôle et comprendre le fonctionnement avec d'inclure des outils pour me facilité la vie . 
 
 Nous avons bien fait la configuration pour que ce mécanisme de redémarrage automatique fonctionne **sauf** pour le service __httpd__ qui utilise la commande __tail__ pour conserver le conteneur actif. Nous devrions trouver une méthode afin que ce soit le service apache en avant plan ou du moins que le conteneur s'arrête si le service apache trébuche. 
 
-ICI ICI ICI
+## <a name="change_version" /> Test de changement de version
+
+Si nous avons le temps nous pourrions faire un teste de changement de version de __mysql__ et ou __php__ ceci dans le but de modifier un des 4 conteneurs et de confirmer la conservation de l'intégration.
+
+Si on a le temps.
+
 # <a name="suggestion_exercice" /> Une suggestion d'exercice 
+
+Suggestion d'exercice, si ça vous motive ! Nous avons donc les 4 conteneurs :
+
+* Base de donnée
+* Service __SMTP__
+* Service __Imap__ et __Lmtp__
+* Service __postfixadmin__ fournit avec le service __httpd__ 
+
+Ajoutez un service de plus , un nouveau conteneur qui réalisera le service de __webmail__  libre à vous de choisir une application de votre choix , 2 suggestions :
+
+* __Roundcube__ :  Que j'aime bien , il est beau :P
+* __Squirrelmail__: Ça fait très longtemps qu'il existe, mais soyons honnête il est un peu moche :P
+
+Ne réutilisez pas la configuration dans le conteneur du __postfixadmin__ , définissez un nouveau conteneur . :D
+
+
