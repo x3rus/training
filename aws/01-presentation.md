@@ -39,6 +39,11 @@ Bon ceci étant clarifier, débutons l'analyse de **AWS** !
 ## Présentation des produits 
 
 Nous allons voir le nombre de services offert par Amazon est impressionnant , bien entendu je ne couvrirai pas tous , nous aurions assez de matière pour l'année :P , de plus j'ai pas les connaissances sur l'ensemble. 
+
+Voici une copie d'écran des services disponibles :
+
+![liste-srv-amazon.png](./imgs/liste-srv-amazon.png)
+
 Nous allons regrouper les services par fonctionnalité :
 
 * [**Traitement, calcule** (**COMPUTE**)](https://aws.amazon.com/products/compute/)
