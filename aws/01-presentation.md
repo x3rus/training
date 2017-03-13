@@ -65,7 +65,20 @@ Nous allons regrouper les services par fonctionnalité :
     * [Amazon S3](https://aws.amazon.com/s3/) : Service de partage de fichier très populaire d'Amazon qui offre une quantité disponible de stockage à un prix hallucinant. Ceci est un service web qui permet de pousser et récupérer des fichiers sur les serveurs d'Amazon. [Les prix au gigs](https://aws.amazon.com/s3/pricing/) sont à tombé parterre .
 * [**Base de données**](https://aws.amazon.com/products/databases)
     * [Amazon Relational Database service -RDS](https://aws.amazon.com/rds/): Ce service vous offre la possibilité d'avoir une base de données relationnel, plusieurs type de base de données sont disponible : [Amazon Aurora](https://aws.amazon.com/rds/aurora/details/), [MySQL](https://aws.amazon.com/rds/mysql/details/), [MariaDB](https://aws.amazon.com/rds/mariadb/details/), [Oracle](https://aws.amazon.com/rds/oracle/details/), [Microsoft SQL Server](https://aws.amazon.com/rds/sqlserver/details/), et [PostgreSQL](https://aws.amazon.com/rds/postgresql/details/). Bien entendu le prix varie selon le type choisie :D. Si nous prenons par exemple [le prix pour Mysql](https://aws.amazon.com/rds/mariadb/pricing/) vous constaterez aussi que le type de machine influencera le prix.
-    *
+    * [Amazon Aurora](https://aws.amazon.com/rds/aurora/) : Ce veut une base de donnée relationnel compatible __MySQL__ ou __Postgres__ équivalent au offre commerciel pour 1 /10 du prix. Amazon prétend que ce service est 5 fois plus rapide qu'un __MySQL__ classique. Amazon vous offre des méthodes de gestion avec une haute disponibilité. J'ai malheureusement jamais essayé le produit !
+    * Solution __NoSQL__ [Redis , memcache - Elasticache](https://aws.amazon.com/elasticache/) et [dynamodb](https://aws.amazon.com/dynamodb/) : 2 service de __NoSQL__ disponible, une solution maison d'Amazon avec __Dynamodb__ ainsi que elasticache qui repose sur des produits libre __Redis__ ou __memcache__.
+    * [Amazon Redshift](https://aws.amazon.com/redshift/) : Si vous avez des péta octets de données c'est pour vous, bien entendu jamais essayé j'ai pas autant de donnée
+* [**Réseautique**](https://aws.amazon.com/products/networking/) 
+    * [Amazon VPC(Virtual Private Cloud)](https://aws.amazon.com/vpc/) : ce service vous offre la possibilité de regrouper vos instances dans des sous-réseaux. Si vous gérez actuellement un réseau d'entreprise vous avez probablement plusieurs __DMZ__ afin de segmenté les systèmes. [VPC](https://aws.amazon.com/vpc/) vous permet de réaliser exactement la même configuration, bien entendu nous l'avons en IPv4 et IPv6 :
+        * Division  des segments VPC IP publique  / privé
+        * Contrôle des accès en entré et sortie aux segments, Logs le trafic dans les 2 sens
+        * Définition des permissions d'accès par segment au système de stockage S3
+        * Possibilité de réalisé un pont entre le VPC et l'infrastructure interne de l'entreprise (VPN) 
+    * [Amazon Direct Connect (VLAN)](https://aws.amazon.com/directconnect/) : ce service permet de connecter votre infrastructure __Datacenter__ , __bureau__, ... Avec votre __VPC__ cependant ceci ne transige pas par un VPN mais une connexion dédié , ceci utilise le protocole standard 802.1q VLANs.
+    * [Elastic Load Balancing](https://aws.amazon.com/elasticloadbalancing/): Service de __load balancer__ offert par Amazon , vous permet de distribuer la charge , assurer une haute disponibilité de vos environnements.
+    * [Amazon Route 53 (DNS)](https://aws.amazon.com/route53) : Service d'Amazon pour la gestion de vos __DNS__ , bien entendu ceci n'est pas simplement la résolution DNS comme le réalise __GoDaddy__. Amazon offre la possibilité de validation de la santé de l'IP de destination et par exemple de démarrer une instance EC2 pour afficher un message d'indisponibilité de service.
+
+Je vais arrêter ici a liste des services, car au nombre je vais y passer la semaine , je vous laisse explorer le reste à la [page des produits](https://aws.amazon.com/products/) , vous avez tous de l'intelligence artificiel , à la détection d'image , système de sécurité HSM , ...
 
 # idée raw 
 
