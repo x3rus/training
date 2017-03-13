@@ -29,7 +29,10 @@ Présentation d'une revue de l'actualité libre qui a attiré mon attention pend
     * [https://cmusatyalab.github.io/openface/](https://cmusatyalab.github.io/openface/) 
 * **Open-Source Android Apps Pour apprendre en lisant le code** 
     * [https://blog.aritraroy.in/20-awesome-open-source-android-apps-to-boost-your-development-skills-b62832cf0fa4#.s43jhnud9](https://blog.aritraroy.in/20-awesome-open-source-android-apps-to-boost-your-development-skills-b62832cf0fa4#.s43jhnud9)   
-
+* **8 fun Raspberry Pi projects to try**
+    * [https://opensource.com/article/16/12/yearbook-8-fun-raspberry-pi-projects](https://opensource.com/article/16/12/yearbook-8-fun-raspberry-pi-projects) 
+* **The simple free flexible ToDo List / Time Tracker / personal Jira and Github Task Manager**
+    * [http://super-productivity.com/](http://super-productivity.com/)
 # L'Art avec un grand A :D
 
 * Terminal Forever (un peu d'humour)
@@ -41,3 +44,4 @@ Présentation d'une revue de l'actualité libre qui a attiré mon attention pend
 
 * AI’s open source model is closed, inadequate, and outdated
     * [https://techcrunch.com/2017/01/28/ais-open-source-model-is-closed-inadequate-and-outdated/](https://techcrunch.com/2017/01/28/ais-open-source-model-is-closed-inadequate-and-outdated/) 
+* TODO : Munchen
