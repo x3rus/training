@@ -9,6 +9,44 @@ Ceci étant dit, nous allons faire de notre mieux !
 
 Avant de débuter on va juste clarifier un point sur c'est quoi le cloud, en ce moment on entend tous et n'importe quoi sur le sujet ... Donc 2 minutes pour faire le point et clarifier le __Buzz word__.
 
+Le Cloud est omniprésents dans nos vie, listons quelques service courant de notre utilisation :
+
+* Netflix : pour la diffusion de films / séries 
+* Spotify : Pour la musique
+* Dropbox : Afin d'échanger ou simplement stocker des fichiers
+* FaceBook : Pour avoir des nouvelles de vos amis ou déprimer ( TODO statisique déprime)
+* GitHub : Afin de conserver vos applications en cours de développement 
+* Youtube : Pour suivre vos tutoriels  préférés ;-).
+* Office365 : Pour rester enchainé avec M$ :P.
+* ...
+
+La liste peut être très longue, mais vous avez compris le concept, le virage vers le cloud est plus que marqué. Si nous prenons comme exemple le service Office traditionnellement une application native installé sur votre poste maintenant il est aussi disponible dans le cloud. Pourquoi , car maintenant nous sommes connecté en permanence , Ordinateur (portable / station fix) , téléphone , tablette , télévision , ... Nous désirons avoir le contenu partout en tout temps et le cloud vient répondre à ce désir ( pas sûr que je désire spécifier que c'est un besoin ;-) ).
+
+Voici une représentation graphique :
+
+![Overview_cloud_joke_nsa.png](./imgs/Overview_cloud_joke_nsa.png)
+
+
+**Oupss , pas la bonne image ;-)**
+
+![overview_cloud.png](./imgs/overview_cloud.png)
+
+Comme nous pouvons le voir des clients __multi-platforme__, plusieurs type d'équipement , l'ensemble interroge le cloud et reçoit le contenue !
+Comme vous pouvez le voir sur la deuxième image j'ai mis plusieurs building, car si nous prenons les majors de l'industrie du cloud , les serveurs sont répartie dans plusieurs région assurant une haute disponibilité et une proximité avec les utilisateurs. 
+
+Sous l'icons du nuage et des serveurs ça ressemble à quoi :
+
+![Google-Data-Center.jpg](./imgs/Google-Data-Center.jpg)   ![amazon-datacenter.jpg](./imgs/amazon-datacenter.jpg)
+
+C'est beau !!! Bon pour les sysadmins qui voit ça puis qui complexe un peu , tous les services cloud ne sont pas aussi beau , il y a aussi les petits services cloud qui doivent être plus comme ça : 
+
+![datacenter-mess1.jpg](./imgs/datacenter-mess1.jpg)    ![datacenter-mess2.jpg](./imgs/datacenter-mess2.jpg)
+
+Comme vous pouvez le voir , les images inclut un HUMAIN sur l'image , car faut pas ce faire d'illusion ceci est possible grâce à tous ces sysadmins , développeurs, ingénieurs, network Dudes ... 
+Donc le 28 Juillet 2017 , pour la [journée du sysadmin](http://sysadminday.com/) allé donc remercier le/la/les personnes qui sans eux rien de tous cela ne serait possible :D.
+
+En conclusion, le cloud c'est juste un / des serveurs hébergé :P , il y a tous de même quelque principe que sont présent :
+
 ICI ICI ICI
 
 ## Offre disponible 
