@@ -33,6 +33,17 @@ Présentation d'une revue de l'actualité libre qui a attiré mon attention pend
     * [https://opensource.com/article/16/12/yearbook-8-fun-raspberry-pi-projects](https://opensource.com/article/16/12/yearbook-8-fun-raspberry-pi-projects) 
 * **The simple free flexible ToDo List / Time Tracker / personal Jira and Github Task Manager**
     * [http://super-productivity.com/](http://super-productivity.com/)
+* **Liste des priorités pour la FSF**
+    * [https://www.fsf.org/campaigns/priority-projects/](https://www.fsf.org/campaigns/priority-projects/)
+* **L'open source veut démocratiser l'intelligence artificielle**
+    * [http://www.journaldunet.com/economie/services/1191268-open-source-democratiser-intelligence-artificielle/](http://www.journaldunet.com/economie/services/1191268-open-source-democratiser-intelligence-artificielle/)
+
+# OpenSource Politique
+
+* **Linux à la ville de Munich**
+    * [La ville de Munich abandonne officiellement Linux](http://www.lemondeinformatique.fr/actualites/lire-la-ville-de-munich-abandonne-effectivement-linux-pour-windows-67387.html)
+    * [Post de la FSFE](https://lwn.net/Articles/716174/)   
+
 # L'Art avec un grand A :D
 
 * Terminal Forever (un peu d'humour)
@@ -44,4 +55,6 @@ Présentation d'une revue de l'actualité libre qui a attiré mon attention pend
 
 * AI’s open source model is closed, inadequate, and outdated
     * [https://techcrunch.com/2017/01/28/ais-open-source-model-is-closed-inadequate-and-outdated/](https://techcrunch.com/2017/01/28/ais-open-source-model-is-closed-inadequate-and-outdated/) 
-* TODO : Munchen
+
+* **Linus Torvalds remballe les discours sur l’innovation**
+    * [http://www.silicon.fr/linus-torvalds-remballe-les-discours-sur-linnovation-168971.html](http://www.silicon.fr/linus-torvalds-remballe-les-discours-sur-linnovation-168971.html)
