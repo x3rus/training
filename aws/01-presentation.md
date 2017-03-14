@@ -5,6 +5,14 @@ Pour commencer j'aimerais clarifier un point important, je ne suis pas un expert
 
 Ceci étant dit, nous allons faire de notre mieux !
 
+## C'est quoi le cloud ?
+
+Avant de débuter on va juste clarifier un point sur c'est quoi le cloud, en ce moment on entend tous et n'importe quoi sur le sujet ... Donc 2 minutes pour faire le point et clarifier le __Buzz word__.
+
+ICI ICI ICI
+
+## Offre disponible 
+
 De nos jours (2017 :P), si vous consultez un peu les offres d'emplois vous constaterez que la connaissance des technologies **cloud** est partout, que nous parlions de :
 
 * [AWS - Amazon Web Services](https://aws.amazon.com/products/)
@@ -79,6 +87,10 @@ Nous allons regrouper les services par fonctionnalité :
     * [Amazon Route 53 (DNS)](https://aws.amazon.com/route53) : Service d'Amazon pour la gestion de vos __DNS__ , bien entendu ceci n'est pas simplement la résolution DNS comme le réalise __GoDaddy__. Amazon offre la possibilité de validation de la santé de l'IP de destination et par exemple de démarrer une instance EC2 pour afficher un message d'indisponibilité de service.
 
 Je vais arrêter ici a liste des services, car au nombre je vais y passer la semaine , je vous laisse explorer le reste à la [page des produits](https://aws.amazon.com/products/) , vous avez tous de l'intelligence artificiel , à la détection d'image , système de sécurité HSM , ...
+
+Nous allons maintenant voir quelque service en détail, nous allons prendre en main le service d'AWS :D . 
+
+# Service EC2 
 
 # idée raw 
 

@@ -55,6 +55,7 @@ Présentation d'une revue de l'actualité libre qui a attiré mon attention pend
 
 * AI’s open source model is closed, inadequate, and outdated
     * [https://techcrunch.com/2017/01/28/ais-open-source-model-is-closed-inadequate-and-outdated/](https://techcrunch.com/2017/01/28/ais-open-source-model-is-closed-inadequate-and-outdated/) 
-
 * **Linus Torvalds remballe les discours sur l’innovation**
     * [http://www.silicon.fr/linus-torvalds-remballe-les-discours-sur-linnovation-168971.html](http://www.silicon.fr/linus-torvalds-remballe-les-discours-sur-linnovation-168971.html)
+* **Et d’un coup, j’ai pu me libérer d’Apple, Google et Microsoft**
+    * [http://rue89.nouvelobs.com/blog/rural-rules/2016/10/10/et-dun-coup-je-me-suis-libere-dapple-google-et-microsoft-235392](http://rue89.nouvelobs.com/blog/rural-rules/2016/10/10/et-dun-coup-je-me-suis-libere-dapple-google-et-microsoft-235392)   
