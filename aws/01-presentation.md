@@ -47,7 +47,18 @@ Donc le 28 Juillet 2017 , pour la [journée du sysadmin](http://sysadminday.com/
 
 En conclusion, le cloud c'est juste un / des serveurs hébergé :P , il y a tous de même quelque principe que sont présent :
 
-ICI ICI ICI
+* **Utilisation sur demande / facturation (On Demande)** : Il est possible de définir la quantité utilisé , et bien entendu n'être facturé que pour ce que l'on utilise réellement. Utilisation plus important un mois , factures élevé , le mois suivant s'il y a réduction de l'utilisation facture moins salé.
+* **Infrastructure évolutive (Scalable)** : Le cloud offre une chose fabuleuse qui est de pouvoir augmenter ou réduire le nombre de machine selon le besoin , ceci est bien entendu en relation avec le point précédent qui est l'utilisation sur demande. 
+    * Afin de comprendre le concept prenons un service de diffusion de contenu vidéo.
+        1. À 6:00 du matin le nombre de client doit être réduit, les gens se lève ou se prépare pour aller au boulot pour certain ils sont en route. Le nombre de serveurs requis afin d'assurer le service ne doit pas être très élevé.
+        2. À 12:00 pendant le repas certain en profite pour écouter leur série , pendant le lunch. Le nombre de serveurs pour assurer le service doit être augmenté proportionnellement à la demande.
+        3. À 17:00 lors du retour à la maison , le nombre d'utilisateur réduit voir même change. Si nous prenons le cas du transport en commun les personnes utiliserons un téléphone portable. Est-ce le même serveur , la même quantité de ressource ... Encore une fois nous voyons une infrastructure évolutive.
+        ![scalable-infra.png](./imgs/scalable-infra.png)
+    * Autre exemple , un site de vente en ligne , 99% du temps 4 serveurs répondent PARFAITEMENT à la demande des utilisateurs. Mais 3 fois par années ce nombre doit être de 10 serveurs :
+        * Pendant le mois de Décembre
+        * Pendant le vendredi noir
+    Avec l'infrastructure évolutive , ils ne seront donc facturé que pour 4 serveurs et lors des périodes "chaudes", il augmenteront leur puissance de calcule. 
+* **Infrastructure redondante (redundancy)** :  ICI ICI ICI
 
 ## Offre disponible 
 
