@@ -142,51 +142,9 @@ Nous allons regrouper les services par fonctionnalité :
 
 Je vais arrêter ici a liste des services, car au nombre je vais y passer la semaine , je vous laisse explorer le reste à la [page des produits](https://aws.amazon.com/products/) , vous avez tous de l'intelligence artificiel , à la détection d'image , système de sécurité HSM , ...
 
+Amazon offre plusieurs lieu où vos services peuvent être déployé, le prix bien entendu fluctue ...
+
+![global-infra-aws-geo.png](./imgs/global-infra-aws-geo.png)
+
 Nous allons maintenant voir quelque service en détail, nous allons prendre en main le service d'AWS :D . 
 
-# Service EC2 
-
-Fini la présentation haut niveau du service de cloud ou le listing des produits passons avec au service [AWS EC2](https://aws.amazon.com/ec2/details/) en "détail" (Petit rappel , je vais vous présenter ce que je connais, je vous invite à poursuivre ...)
-
-Telle que mentionné [EC2](https://aws.amazon.com/ec2/details/) est le service de machine virtuelle d'Amazon, le terminologie utilisé par Amazon pour nommé cette machine est **INSTANCE**. Lors de la lecture de documentation vous aurez donc le terme **instance EC2**.
-Nous allons débuter avec ce service ceci nous permettra de voir l'ensemble de l'écosystème qui l'entoure :
-
-* réseautique
-* Stockage 
-* ...
-
-Regardons de haut niveau ce qu'est une instance [EC2](https://aws.amazon.com/ec2/details/) :
-
-* Il existe plusieurs type d'instance [EC2](https://aws.amazon.com/ec2/details/) , chaque type à des spécifications particulière ( + CPU, + mémoire, + disque dur , disque dur avec + __d'I/O__ (__ssd__) , + GPU , ...) . Nous allons voir les différents type d'instance disponible dans la prochaine section . Bien entendu le prix change selon le type . L'objectif est de sélectionner celle selon vos besoins , elles sont regroupées :
-    * __General Purpose__ : Utilisation général 
-    * __Compute Optimized__ : Optimisation pour l'utilisation CPU
-    * __Memory Optimized__ : Optimisation pour l'utilisation de la mémoire
-    * __Accelerated Computing Instances__ : Optimisation avec accélération de traitement de calcul (__GPU__)
-    * __Storage Optimizeda__ : Optimisation pour le stockage.
-* Suite à la sélection de l'instance , nous avons le choix de "l'image" système d'exploitation / distribution que nous désirons avoir sur cette instance, nous avons les gros joueurs du jours. Voici une liste mais nous y reviendrons :
-    * GNU/Linux : RedHat, Ubuntu , Debian , ... 
-    * MS Windows : 2008 __R2__, 2012 
-    * __FreeBSD__ 
-    * Amazon/GNU/Linux : version de RedHat modifier 
-    * __Solaris__ (à valider s'il est toujours présent)
-* Nous allons bien entendu attribuer un peu de stockage à cette machine , il existe plusieurs type disponible comme toujours le prix varie :D c'est le truc 
-    * SSD 
-    * Disque classique
-    * Tape (__ouin__ j'avoue que je l'ai pas encore compris celui la mais je vais faire quelque recherche quand nous y serons :P)
-
-## Type d'instance EC2
-## Image -  Amazon Machine Image (AMI) EC2, système d'exploitation
-## Stockage disponible pour l'instance EC2
-
-# idée raw 
-
-* Présentation des services haut niveau
-* Présentation de EC2
-* explication des reseaux
-    * ip static 
-* Le système de conteneur dans aws
-* route 53
-* S3
-
-
-# Alors Cloud ou pas cloud ?
