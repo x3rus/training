@@ -51,15 +51,58 @@ Mais avant de parler de changer une instance existante faudrait peut-être débu
 
 Voici les types d'instance disponible aujourd'hui (2017-03-16) 
 
-ICI ICI ICI
+TODO : Voir pour ajouter des lignes dans le tableau ...
 
 | Regroupement d'instance | Type d'instance disponible  |
-|------------------------:|:---------------------------:|
-| Utilisation général     | 
-| Optimisation pour le calcule | 
-| Optimisation pour la mémoire | 
-| Optimisation pour le stockage| 
-| Optimisation pour le calcule extrême | 
+|:------------------------|:----------------------------:|
+| Utilisation général     | t2.nano , t2.micro , t2.small , t2.medium , t2.large , t2.xlarge , t2.2xlarge , m4.large , m4.xlarge , m4.2xlarge , m4.4xlarge , m4.10xlarge , m4.16xlarge , m3.medium , m3.large , m3.xlarge , m3.2xlarge |
+| Optimisation pour le calcule | c4.large , c4.xlarge , c4.2xlarge , c4.4xlarge , c4.8xlarge , c3.large , c3.xlarge , c3.2xlarge , c3.4xlarge , c3.8xlarge |
+| Optimisation pour la mémoire | r3.large , r3.xlarge , r3.2xlarge , r3.4xlarge , r3.8xlarge , r4.large , r4.xlarge , r4.2xlarge , r4.4xlarge , r4.8xlarge , r4.16xlarge , x1.16xlarge , x1.32xlarge |
+| Optimisation pour le stockage| d2.xlarge , d2.2xlarge , d2.4xlarge , d2.8xlarge , i2.xlarge , i2.2xlarge , i2.4xlarge , i2.8xlarge , i3.large , i3.xlarge , i3.2xlarge , i3.4xlarge , i3.8xlarge , i3.16xlarge |
+| Optimisation pour le calcule extrême | p2.xlarge , p2.8xlarge , p2.16xlarge , g2.2xlarge , g2.8xlarge |
+
+Comme vous pouvez le constater ce n'est pas le choix qui manque , mais trop de choix perd le client , moi le premier. Quelle instance choisir , même si nous pouvons la modifier par la suite il nous faut un point de départ. 
+
+Bien entendu nous allons faire notre choix dans les 5 regroupements disponible , passons chaque groupe , vous avez la liste disponible sur le site d'amazon [type d'instance](https://aws.amazon.com/ec2/instance-types/). Je vous invite à consulter le site pour avoir la dernière mise à jour, les principes généraux ne change pas mais il est possible que le type d'instance __t2.medium__ présenter ici contienne 4 Gigs aujourd'hui, mais que dans 6 mois Amazon l'augmente à 6 Gigs. Ce sera encore plus significatif lors de la spécification du CPU. 
+
+### Utilisation général 
+
+Comme sont nom l'indique l'objectif de ce regroupement est d'avoir du matériel pour une utilisation "classique" sans particularité particulière . Bien que ce soit une utilisation général ceci ne veut pas dire que ce ne sont pas des machines performantes ou base de gamme. 
+
+Pour mettre en perceptive voici les extrêmes :
+
+|                 | Nom           | vCPU   |  Memoire   | Stockage      |
+|-----------------|:-------------:|-------:|-----------:|--------------:|
+| Plus petite     | t2.nano       |  1     |   0.5 Gigs | HD classique  |
+| Plus Grosse     | m4.16xlarge   |  64    |   256 Gigs | HD classique  |
+| Grosse avec SSD | m3.2xlarge    |  8     |   30 Gigs  | HD SSD        |
+
+
+Comme vous pouvez le voir même dans le regroupement "général", nous avons des instances sous stéroïdes :D. Sous le regroupement "général" nous avec 3 regroupement **T2,M4 et M3** passons de la plus petite machine à la plus grosse .
+
+#### Instance T2.\*
+
+Voici les spécifications pour les instances de type **T2**, au risque de me répété si vous n'avais pas lu le texte avant , valider sur le site d'Amazon si ceci n'a pas changer !!
+
+TODO : AJOUTER LE PRIX
+| Model    |  vCPU |   CPU Credits/heure  | Mem (GiB) |   Storage |
+|:---------|:-----:|:--------------------:|:---------:|----------:| 
+|t2.nano   |  1    |  3                   | 0.5       | EBS-Only  |
+|t2.micro  |  1    |  6                   |  1        | EBS-Only  |
+|t2.small  |  1    |  12                  |  2        | EBS-Only  |
+|t2.medium |  2    |  24                  |  4        | EBS-Only  |
+|t2.large  |  2    |  36                  |  8        | EBS-Only  |
+|t2.xlarge |  4    |  54                  |  16       | EBS-Only  |
+|t2.2xlarge|  8    |  81                  |  32       | EBS-Only  |
+    : https://aws.amazon.com/ec2/instance-types/ ( date : 2017-03-17 )
+
+Amazon indique que ces machines sont exécuté sur des processus __Intel Xeon__ à haute fréquence, bien entendu ces instance sont dans les moins chère de l'offre. 
+
+
+Bustable information : https://aws.amazon.com/ec2/instance-types/#burst
+
+http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/t2-instances.html
+
 
 ## Image -  Amazon Machine Image (AMI) EC2, système d'exploitation
 ## Stockage disponible pour l'instance EC2
