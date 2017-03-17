@@ -104,6 +104,8 @@ Bustable information : https://aws.amazon.com/ec2/instance-types/#burst
 http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/t2-instances.html
 
 
+a lire : http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts_micro_instances.html
+
 ## Image -  Amazon Machine Image (AMI) EC2, système d'exploitation
 ## Stockage disponible pour l'instance EC2
 ## Amazon CloudWatch (https://aws.amazon.com/cloudwatch/)
