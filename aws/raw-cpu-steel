@@ -1,0 +1,14 @@
+[user@ip-172-31-31-188 ~]$ uptime
+11:54:36 up  3:33,  2 users,  load average: 6917.16, 7330.14, 4297.11
+[user@ip-172-31-31-188 ~]$ top
+top - 11:59:24 up  3:37,  2 users,  load average: 8698.37, 8211.48, 5483.36
+Tasks: 2913 total, 527 running, 2379 sleeping,   0 stopped,   7 zombie
+%Cpu(s):  0.5 us, 53.7 sy,  0.0 ni,  0.0 id,  0.0 wa,  0.0 hi,  0.0 si, 45.8 st
+KiB Mem : 15238296 total,   154112 free, 14480556 used,   603628 buff/cache
+KiB Swap:        0 total,        0 free,        0 used.   185056 avail Mem
+
+
+
+http://blog.scoutapp.com/articles/2013/07/25/understanding-cpu-steal-time-when-should-you-be-worried
+
+ssh: connect to host ec2-52-72-216-103.compute-1.amazonaws.com port 22: Connection timed out
