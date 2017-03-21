@@ -6,6 +6,30 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 
 # Index 
 
+* [ Introduction](#Intro)
+* [ Configuration des images ](#setup_img)
+       * [ Configuration de la base de donnée](#setup_db)
+       * [ Configuration du service Web pour la gestion de la base de donnée](#setup_http)
+           * [ Script de démarrage ](#setup_http_script)
+           * [ Validation de l'application postfixadmin](#setup_http_app_postfixadm)
+           * [ Explication pour le remplissage automatique du formulaire avec CURL](#test_feed_automatic_setup)
+           * [ Création automatique d'un administrateur lors de l'initialisation](#automatic_setup_init)
+               * [ Liste de problématique ](#automatic_setup_init_prob)
+       * [ Configuration d'un domaine et boite courriel](#setup_mails)
+       * [ Configuration du service SMTP](#setup_smtp)
+       * [ Configuration du service LMTP / IMAP](#setup_lmtp)
+           * [ Réalisation de l'image en mode DEBUG](#setup_lmtp_debug)
+           * [ Réalisation de la configuration en mode exploration ](#setup_lmtp_pet_c)
+           * [ Validation de la configuration ](#validation_setup)
+           * [ Conversion du conteneur Dovecot en image propre](#conversion_pet_img)
+* [ Finalisation et analyse des points d'amélioration](#finalisation)
+       * [ Point d'amélioration ](#amelioration)
+           * [ Mise en place de certificat SSL](#certificat_SSL)
+           * [ Validation des spams](#systeme_anti-spam)
+           * [ Monitoring des services](#utilisation_de_tail_http)
+       * [ Test de changement de version](#change_version)
+* [ Une suggestion d'exercice ](#suggestion_exercice)
+
 # <a name="Intro" /> Introduction
 
 Telle que mentionné plusieurs fois lors des sessions précédente l'utilisation d'utilisateur local ne permet pas une gestion massive d'utilisateur, ceci nous limite beaucoup en particulier pour :
@@ -322,7 +346,7 @@ Nous réalisons un teste avec les 2 conteneurs :
 
 Pas trop mal :D. Nous pouvons réaliser le **setup** : [http://172.22.0.3/setup.php](http://172.22.0.3/setup.php) Bien entendu votre IP peut être tous autre.
 
-[erreur_setup_postfixadm-01.png](./imgs/erreur_setup_postfixadm-01.png)
+![erreur_setup_postfixadm-01.png](./imgs/erreur_setup_postfixadm-01.png)
 
 **yeahh** des problèmes on finira pas trop tôt la formation ;-).
 

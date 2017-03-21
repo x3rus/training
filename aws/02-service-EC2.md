@@ -147,18 +147,66 @@ Disons que nous utilisons uniquement 5% du CPU de l'instance ( 5% pendant 60 min
 
 **Quand il n'y a plus de crédit de CPU**
 
-Ça marche beaucoup mieux :P , non évidement les problèmes commences et le système n'est plus utilisable, comme dirait Amazon vous n'aurez pas une expérience agréable ... Heu c'est le moins que l'on puisse dire :P , bien entendu les crédits CPU seront alloué dans le temps donc l'instance redeviendra fonctionnel cependant vous aurez une indisponibilité de service !
+Ça marche beaucoup mieux :P , non évidement les problèmes commences et le système n'est plus utilisable, comme dirait Amazon vous n'aurez pas une expérience agréable ... Heu c'est le moins que l'on puisse dire :P , bien entendu les crédits CPU seront alloué dans le temps donc l'instance redeviendra fonctionnel cependant vous aurez une indisponibilité de service ! Ça c'est ce que dis Amazon, malheureusement je ne pourrais pas toujours partagé des expériences concret, mais dans ce cas je peux :D , donc profitons en ! 
+
+Voici ce qui ce passera sur un système GNU/Linux si vous utilisez plus de CPU que disponible :
+
+Mise en contexte en juillet 2016 nous avions pris la machine suivante :
+
+| Model    | vCPU |CPU Crédits/h| Mem (GiB)     | stockage   | prix US / heure| 
+|:---------|:----:|:-----------:|:-------------:|-----------:|:--------------:|
+|m4.xlarge |   4  |  13         |        16     |EBS Only    | $0.239         |
+
+Nous roulions simulions des clients pour des testes de charges , chaque machines démarrais un nombre élevé de processus beaucoup de processus __forké__. 
+Finalement prendre une machine avec du crédits CPU n'était pas une bonne idée, car l'expérience d'Amazon ne fut pas optimal dû à une erreur de compréhension du système !! L'apprentissage a son lot de conséquence , __Ha well :D__ aujourd'hui on a compris :D !! 
+
+Donc voici ce qui est arrivé lors de l'exécution des application ...
+
+Le __LOAD average__ va monter en FLÈCHE , nous avons 4 __vCPU__ !!! :
+
+```bash
+[user@ip-172-31-31-188 ~]$ uptime
+11:54:36 up  3:33,  2 users,  load average: 6917.16, 7330.14, 4297.11
+```
+
+* __Rappel__ : je présume que certain non pas suivie les cours précédent ,  voir oublié la notion sur le __load average__ la valeur qui est donné 6917.16 (première valeur ) est le nombre de processus qui furent en attente de temps de CPU, il y a 5 minutes :P. 7330.14 représente le nombre de processus qui furent en attente de CPU il y a 10 minutes et pour finir 4297.11 pour les 15 dernière minutes. 
+
+Mais pourquoi la charge du serveur est si élevé ? Comme l'instance n'a plus de crédit CPU le système n'alloue plus de temps CPU au processus , donc ces derniers sont en attentes d'avoir du temps de traitement disponible. Dans la situation présente nous avons déjà eu de la chance d'être en mesure de nous connecter :P , en fait nous avions du attendre d'avoir des crédits CPU  d'alloué!
+
+```bash
+[user@ip-172-31-31-188 ~]$ top
+top - 11:59:24 up  3:37,  2 users,  load average: 8698.37, 8211.48, 5483.36
+Tasks: 2913 total, 527 running, 2379 sleeping,   0 stopped,   7 zombie
+%Cpu(s):  0.5 us, 53.7 sy,  0.0 ni,  0.0 id,  0.0 wa,  0.0 hi,  0.0 si, 45.8 st
+KiB Mem : 15238296 total,   154112 free, 14480556 used,   603628 buff/cache
+KiB Swap:        0 total,        0 free,        0 used.   185056 avail Mem
+```
+
+Entre l'instruction __top__ et __uptime__ nous voyons que la charge à encore augmentée :P. 
+
+J'aimerai porter votre attention sur la ligne **%Cpu(s)** :
+
+* **53,7 sys** : 53,7% du  __vcpu__ est pour le système d'exploitation , ceci est élevé car le système est déjà pris à la gorge ce devrais être moins , mais il doit géré les processus qui n'ont pas d'accès CPU.
+* **45.8 st** : __st__ == **steal** de l'anglais **voler** en d'autre terme le système essaye d'avoir du temps de CPU , mais le gestionnaire de ressource dans le cas de Amazon __Xen__ limite l'accès. 
+
+Vous avez un très bonne article sur le cas : [http://blog.scoutapp.com/articles/2013/07/25/understanding-cpu-steal-time-when-should-you-be-worried](http://blog.scoutapp.com/articles/2013/07/25/understanding-cpu-steal-time-when-should-you-be-worried).
+
+Prendre note que nous parlons d'Amazon, mais vous pourriez avoir le même problème dans votre compagnie s'il y a de la limitation de ressource CPU avec le système de virtualisation en place. 
+
+Je voulais vous offre un exemple concret d'un problème de crédit CPU , car lorsque le problème est survenue nous ne savions pas comment identifier le problème!
+
+**Prévenir / visualiser le problème de crédit CPU**
+
+C'est bien beau de constater le problème une fois qu'il est présent , mais bon rendu avec un __load__ si élevé que je ne peux plus rien faire même établir une connexion __SSH__ est difficile , c'est une mince consolation . 
+
+Effectivement la question est comment visualiser l'état du CPU afin de migré l'instance avant que l'état du système ne soit catastrophique !!!
 
 ICI ICI ICI
 
-
-
 * Référence :
     * [AWS - T2 instances cpu credits](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/t2-instances.html#t2-instances-cpu-credits) 
+    * [Understanding cpu steal time when should you be worried - cpu steal](http://blog.scoutapp.com/articles/2013/07/25/understanding-cpu-steal-time-when-should-you-be-worried)
 
-Bustable information : https://aws.amazon.com/ec2/instance-types/#burst
-
-http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/t2-instances.html
 
 
 a lire : http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts_micro_instances.html
