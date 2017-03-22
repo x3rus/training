@@ -84,8 +84,6 @@ Comme vous pouvez le voir même dans le regroupement "général", nous avons des
 
 Voici les spécifications pour les instances de type **T2**, au risque de me répété si vous n'avais pas lu le texte avant , valider sur le site d'Amazon si ceci n'a pas changer !!
 
-TODO : AJOUTER LE PRIX
-
 | Model    | vCPU |CPU Crédits/h|CPU Crédit init|  Mem (GiB) |   Storage | Prix US/heure (Us Est)       | Prix US/heure (Canada) | Prix US/heure (Francfort) |
 |:---------|:----:|:-----------:|:-------------:|-----------:|:---------:|-----------------------------:|-----------------------:|--------------------------:|
 |t2.nano   |  1   |  3          | 30            | 0.5        | EBS-Only  | $0.0059(linux) / $0.0082(win)| $0.0065(linux)         | $0.0068 (linux)           |
@@ -224,9 +222,30 @@ ICI ICI ICI : TODO mettre un exemple de CloudWatch
 
 a lire : http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts_micro_instances.html
 
-#### Instance M[34].\*
+#### Instance M4.\*
 
-ICI ICI ICI
+Voici les spécifications pourles serveurs de type **M4** 
+
+| Model     | vCPU | ECU   | Mem (GiB)| Storage| dédié EBS Bandwidth (Mbps) | Prix US/heure (Us Est)    | Prix US/heure (Canada) | Prix US/heure (Francfort) |
+|:----------|:----:|:-----:|:--------:|:------:|----------------- ---------:|:-------------------------:|-----------------------:|--------------------------:|
+|m4.large   |  2   | 6.5   | 8        |EBS-Only|    450                     |$0.108(linux) / $0.203(win)| $0.119(linux)          | $0.129 (linux)            |
+|m4.xlarge  |  4   | 13    | 16       |EBS-Only|    750                     |$0.215(linux) / $0.404(win)| $0.237(linux)          | $0.257 (linux)            |
+|m4.2xlarge |  8   | 26    | 32       |EBS-Only|   1,000                    |$0.431(linux) / $0.809(win)| $0.474 (linux)         | $0.513 (linux)            |
+|m4.4xlarge |  16  | 53.5  |  64      |EBS-Only|   2,000                    |$0.862(linux) / $1.618(win)| $0.948 (linux)         | $1.026 (linux)            |
+|m4.10xlarge|  40  | 124.5 | 160      |EBS-Only|   4,000                    |$2.155(linux) / $4.045(win)| $2.37 (linux)          | $2.565 (linux)            |
+|m4.16xlarge|  64  | 188   | 256      |EBS-Only|  10,000                    |$3.447(linux) / $6.471(win)| $3.792 (linux)         | $4.104 (lnux)             |
+    : https://aws.amazon.com/ec2/instance-types/ ( date : 2017-03-17 )
+
+Spécification technique :
+
+* **CPU** :  __3.3 GHz Intel Xeon® E5-2686 v4 (Broadwell) processors ou 2.4 GHz Intel Xeon® E5-2676 v3 (Haswell) processors__
+
+Quelle est la GROSSE différence entre ces instances et les instances **T2** ?
+
+1. Le CPU est dédié plus besoin de faire le calcule avec l'utilisation standard les crédits d'utilisation lors des augmentations d'utilisation de l'instance
+2. **ECU ==  EC2 Compute Units** , cette notion fut introduite par Amazon afin de garantir une disponibilité de CPU , car Amazon non pas un type de CPU dans la composition de son parc. L'objectif est d'assurer une performance peut importe le CPU réelle où l'instance est en exécution  [FAQ](https://aws.amazon.com/ec2/faqs/#What_is_an_EC2_Compute_Unit_and_why_did_you_introduce_it).
+3. Il y a un accès au ressources du disque dur dédier afin d'assurer la performance d'accès disque 
+ 
 
 ## Image -  Amazon Machine Image (AMI) EC2, système d'exploitation
 ## Stockage disponible pour l'instance EC2
