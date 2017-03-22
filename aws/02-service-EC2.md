@@ -201,7 +201,20 @@ C'est bien beau de constater le problème une fois qu'il est présent , mais bon
 
 Effectivement la question est comment visualiser l'état du CPU afin de migré l'instance avant que l'état du système ne soit catastrophique !!!
 
-ICI ICI ICI
+Amazon offre le système [CloudWatch](https://aws.amazon.com/cloudwatch/) , est en mesure de __monitorer__ et __grapher__ :
+
+*  Amazon EC2 instances.
+*  Amazon EBS stockage.
+*  Elastic Load Balancers.
+*  Amazon RDS base de données.
+*  Prendre vos logs applicatifs.
+
+Il y a 2 mode de fonctionnement pour __CloudWatch__ 
+
+* __Basic Monitoring__ (**gratuite**) : 7 métriques pré sélectionnés sont disponible , la collecte des informations sur l'instance est réalisé au 5 minutes. De plus il y une validation pour 3 statuts telle que validation que l'instance est allumé, ... 
+* __Detailed Monitoring__ (**payant selon l'utilisation**) : Bien entendu nous conservons le monitoring de base mais cette fois avec une intervalle à la minutes , de plus d'autre métriques sont disponible. Il est aussi possible de faire de l'agrégation entre le type de l'instance et le système en cours d'utilisation. 
+
+ICI ICI ICI : Faire un exemple
 
 * Référence :
     * [AWS - T2 instances cpu credits](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/t2-instances.html#t2-instances-cpu-credits) 
