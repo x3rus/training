@@ -146,12 +146,79 @@ Disons que nous utilisons uniquement 5% du CPU de l'instance ( 5% pendant 60 min
 **Quand il n'y a plus de crédit de CPU**
 
 Ça marche beaucoup mieux :P , non évidement les problèmes commences et le système n'est plus utilisable, comme dirait Amazon vous n'aurez pas une expérience agréable ... Heu c'est le moins que l'on puisse dire :P , bien entendu les crédits CPU seront alloué dans le temps donc l'instance redeviendra fonctionnel cependant vous aurez une indisponibilité de service ! Ça c'est ce que dis Amazon, malheureusement je ne pourrais pas toujours partagé des expériences concret, mais dans ce cas je peux :D , donc profitons en ! 
+**Prévenir / visualiser le problème de crédit CPU**
+
+C'est bien beau de constater le problème une fois qu'il est présent , mais bon rendu avec un __load__ si élevé que je ne peux plus rien faire même établir une connexion __SSH__ est difficile , c'est une mince consolation . 
+
+Effectivement la question est comment visualiser l'état du CPU afin de migré l'instance avant que l'état du système ne soit catastrophique !!!
+
+Amazon offre le système [CloudWatch](https://aws.amazon.com/cloudwatch/) , est en mesure de __monitorer__ et __grapher__ :
+
+*  Amazon EC2 instances.
+*  Amazon EBS stockage.
+*  Elastic Load Balancers.
+*  Amazon RDS base de données.
+*  Prendre vos logs applicatifs.
+
+Il y a 2 mode de fonctionnement pour __CloudWatch__ 
+
+* __Basic Monitoring__ (**gratuite**) : 7 métriques pré sélectionnés sont disponible , la collecte des informations sur l'instance est réalisé au 5 minutes. De plus il y une validation pour 3 statuts telle que validation que l'instance est allumé, ... 
+* __Detailed Monitoring__ (**payant selon l'utilisation**) : Bien entendu nous conservons le monitoring de base mais cette fois avec une intervalle à la minutes , de plus d'autre métriques sont disponible. Il est aussi possible de faire de l'agrégation entre le type de l'instance et le système en cours d'utilisation. 
+
+ICI ICI ICI : TODO mettre un exemple de CloudWatch
+
+* Référence :
+    * [AWS - T2 instances cpu credits](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/t2-instances.html#t2-instances-cpu-credits) 
+    * [Understanding cpu steal time when should you be worried - cpu steal](http://blog.scoutapp.com/articles/2013/07/25/understanding-cpu-steal-time-when-should-you-be-worried)
+
+
+
+A lire : http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts_micro_instances.html
+
+#### Instance M4.\*
+
+Voici les spécifications pourles serveurs de type **M4** 
+
+| Model     | vCPU | ECU   | Mem (GiB)| Storage| dédié EBS Bandwidth (Mbps) | Prix US/heure (Us Est)    | Prix US/heure (Canada) | Prix US/heure (Francfort) |
+|:----------|:----:|:-----:|:--------:|:------:|----------------- ---------:|:-------------------------:|-----------------------:|--------------------------:|
+|m4.large   |  2   | 6.5   | 8        |EBS-Only|    450                     |$0.108(linux) / $0.203(win)| $0.119(linux)          | $0.129 (linux)            |
+|m4.xlarge  |  4   | 13    | 16       |EBS-Only|    750                     |$0.215(linux) / $0.404(win)| $0.237(linux)          | $0.257 (linux)            |
+|m4.2xlarge |  8   | 26    | 32       |EBS-Only|   1,000                    |$0.431(linux) / $0.809(win)| $0.474 (linux)         | $0.513 (linux)            |
+|m4.4xlarge |  16  | 53.5  |  64      |EBS-Only|   2,000                    |$0.862(linux) / $1.618(win)| $0.948 (linux)         | $1.026 (linux)            |
+|m4.10xlarge|  40  | 124.5 | 160      |EBS-Only|   4,000                    |$2.155(linux) / $4.045(win)| $2.37 (linux)          | $2.565 (linux)            |
+|m4.16xlarge|  64  | 188   | 256      |EBS-Only|  10,000                    |$3.447(linux) / $6.471(win)| $3.792 (linux)         | $4.104 (lnux)             |
+    : https://aws.amazon.com/ec2/instance-types/ ( date : 2017-03-17 )
+
+Spécification technique :
+
+* **CPU** :  __3.3 GHz Intel Xeon® E5-2686 v4 (Broadwell) processors ou 2.4 GHz Intel Xeon® E5-2676 v3 (Haswell) processors__
+
+Quelle est la GROSSE différence entre ces instances et les instances **T2** ?
+
+1. Le CPU est dédié plus besoin de faire le calcule avec l'utilisation standard les crédits d'utilisation lors des augmentations d'utilisation de l'instance
+2. **ECU ==  EC2 Compute Units** , cette notion fut introduite par Amazon afin de garantir une disponibilité de CPU , car Amazon non pas un type de CPU dans la composition de son parc. L'objectif est d'assurer une performance peut importe le CPU réelle où l'instance est en exécution  [FAQ](https://aws.amazon.com/ec2/faqs/#What_is_an_EC2_Compute_Unit_and_why_did_you_introduce_it).
+3. Il y a un accès au ressources du disque dur dédier afin d'assurer la performance d'accès disque 
+
+##### ECU Compute Units
+
+Analysons justement cette question de **ECU**, telle que mentionné plus haut, cette valeur permet de "garantir" une performance du __CPU__ peut importe l'architecture du serveur. Cette standardisation permet donc de réaliser une comparaison des offres d'Amazon peut importe le CPU réellement attribué pour l'instance . Super on comprend le pourquoi , maintenant 1 **ECU** ça équivaut à quoi ?  Notre / votre problème en déplaçant nos applications du mode interne vers le cloud est que nous perdons le liens avec le matériel où le système est en exécution. 
+Cette segmentation entre le physique et le matériel fut déjà introduite avec l'arrivée de la virtualisation, cependant s'il y avait un problème nous pouvions voir le serveur vmware où la Machine Virtuelle était en exécution et voir l'architecture CPU. Avec le cloud cette méthode n'est plus possible , nous pouvons voir quelle type de CPU l'instance utilise (__/proc/cpuinfo__) , mais nous ne savons pas l'ensemble des mécanismes mis en place par le fournisseur de service afin de garantir la disponibilité des ressources **partagées** !
+
+Bon d'accord, mais c'est quoi **1 ECU** :P , voici la meilleur définition que j'ai :
+
+```
+1 ECU est défini comme une puissance de calcul (computer power) de 1.0 à 1.2 Ghz d'un serveur de 2007 
+```
+
+Avouez c'est super claire !!! 
+
+**Exemple concret d'utilisation trop grande du CPU** 
 
 Voici ce qui ce passera sur un système GNU/Linux si vous utilisez plus de CPU que disponible :
 
 Mise en contexte en juillet 2016 nous avions pris la machine suivante :
 
-| Model    | vCPU |CPU Crédits/h| Mem (GiB)     | stockage   | prix US / heure| 
+| Model    | vCPU | ECU         | Mem (GiB)     | stockage   | prix US / heure| 
 |:---------|:----:|:-----------:|:-------------:|-----------:|:--------------:|
 |m4.xlarge |   4  |  13         |        16     |EBS Only    | $0.239         |
 
@@ -193,59 +260,10 @@ Prendre note que nous parlons d'Amazon, mais vous pourriez avoir le même probl�
 
 Je voulais vous offre un exemple concret d'un problème de crédit CPU , car lorsque le problème est survenue nous ne savions pas comment identifier le problème!
 
-**Prévenir / visualiser le problème de crédit CPU**
-
-C'est bien beau de constater le problème une fois qu'il est présent , mais bon rendu avec un __load__ si élevé que je ne peux plus rien faire même établir une connexion __SSH__ est difficile , c'est une mince consolation . 
-
-Effectivement la question est comment visualiser l'état du CPU afin de migré l'instance avant que l'état du système ne soit catastrophique !!!
-
-Amazon offre le système [CloudWatch](https://aws.amazon.com/cloudwatch/) , est en mesure de __monitorer__ et __grapher__ :
-
-*  Amazon EC2 instances.
-*  Amazon EBS stockage.
-*  Elastic Load Balancers.
-*  Amazon RDS base de données.
-*  Prendre vos logs applicatifs.
-
-Il y a 2 mode de fonctionnement pour __CloudWatch__ 
-
-* __Basic Monitoring__ (**gratuite**) : 7 métriques pré sélectionnés sont disponible , la collecte des informations sur l'instance est réalisé au 5 minutes. De plus il y une validation pour 3 statuts telle que validation que l'instance est allumé, ... 
-* __Detailed Monitoring__ (**payant selon l'utilisation**) : Bien entendu nous conservons le monitoring de base mais cette fois avec une intervalle à la minutes , de plus d'autre métriques sont disponible. Il est aussi possible de faire de l'agrégation entre le type de l'instance et le système en cours d'utilisation. 
-
-ICI ICI ICI : TODO mettre un exemple de CloudWatch
-
-* Référence :
-    * [AWS - T2 instances cpu credits](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/t2-instances.html#t2-instances-cpu-credits) 
-    * [Understanding cpu steal time when should you be worried - cpu steal](http://blog.scoutapp.com/articles/2013/07/25/understanding-cpu-steal-time-when-should-you-be-worried)
 
 
-
-a lire : http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts_micro_instances.html
-
-#### Instance M4.\*
-
-Voici les spécifications pourles serveurs de type **M4** 
-
-| Model     | vCPU | ECU   | Mem (GiB)| Storage| dédié EBS Bandwidth (Mbps) | Prix US/heure (Us Est)    | Prix US/heure (Canada) | Prix US/heure (Francfort) |
-|:----------|:----:|:-----:|:--------:|:------:|----------------- ---------:|:-------------------------:|-----------------------:|--------------------------:|
-|m4.large   |  2   | 6.5   | 8        |EBS-Only|    450                     |$0.108(linux) / $0.203(win)| $0.119(linux)          | $0.129 (linux)            |
-|m4.xlarge  |  4   | 13    | 16       |EBS-Only|    750                     |$0.215(linux) / $0.404(win)| $0.237(linux)          | $0.257 (linux)            |
-|m4.2xlarge |  8   | 26    | 32       |EBS-Only|   1,000                    |$0.431(linux) / $0.809(win)| $0.474 (linux)         | $0.513 (linux)            |
-|m4.4xlarge |  16  | 53.5  |  64      |EBS-Only|   2,000                    |$0.862(linux) / $1.618(win)| $0.948 (linux)         | $1.026 (linux)            |
-|m4.10xlarge|  40  | 124.5 | 160      |EBS-Only|   4,000                    |$2.155(linux) / $4.045(win)| $2.37 (linux)          | $2.565 (linux)            |
-|m4.16xlarge|  64  | 188   | 256      |EBS-Only|  10,000                    |$3.447(linux) / $6.471(win)| $3.792 (linux)         | $4.104 (lnux)             |
-    : https://aws.amazon.com/ec2/instance-types/ ( date : 2017-03-17 )
-
-Spécification technique :
-
-* **CPU** :  __3.3 GHz Intel Xeon® E5-2686 v4 (Broadwell) processors ou 2.4 GHz Intel Xeon® E5-2676 v3 (Haswell) processors__
-
-Quelle est la GROSSE différence entre ces instances et les instances **T2** ?
-
-1. Le CPU est dédié plus besoin de faire le calcule avec l'utilisation standard les crédits d'utilisation lors des augmentations d'utilisation de l'instance
-2. **ECU ==  EC2 Compute Units** , cette notion fut introduite par Amazon afin de garantir une disponibilité de CPU , car Amazon non pas un type de CPU dans la composition de son parc. L'objectif est d'assurer une performance peut importe le CPU réelle où l'instance est en exécution  [FAQ](https://aws.amazon.com/ec2/faqs/#What_is_an_EC2_Compute_Unit_and_why_did_you_introduce_it).
-3. Il y a un accès au ressources du disque dur dédier afin d'assurer la performance d'accès disque 
- 
+*ref ECU :
+    * https://www.datadoghq.com/blog/are-all-aws-ecu-created-equal/
 
 ## Image -  Amazon Machine Image (AMI) EC2, système d'exploitation
 ## Stockage disponible pour l'instance EC2
