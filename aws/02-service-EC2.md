@@ -210,7 +210,20 @@ Bon d'accord, mais c'est quoi **1 ECU** :P , voici la meilleur définition que j
 1 ECU est défini comme une puissance de calcul (computer power) de 1.0 à 1.2 Ghz d'un serveur de 2007 
 ```
 
-Avouez c'est super claire !!! 
+Avouez c'est super claire !!! Donc reprenons avec un exemple concret 
+
+| Model     | vCPU | ECU   | Mem (GiB)|
+|:----------|:----:|:-----:|:--------:|
+|m4.xlarge  |  4   | 13    | 16       |
+
+Donc la machine __m4.xlarge__ avec 4 __vCPUs__ (13 __ECU__) et 16 Gigs de __Ram__ :
+
+* **ECU par vcpu** : 13 / 4 = 3.25 
+*
+
+TODO : ref: https://medium.com/devoops-and-universe/database-performance-aws-vs-bare-metal-452f64481b07#.72oayts8o
+ref ECU : https://www.datadoghq.com/blog/are-all-aws-ecu-created-equal/
+https://www.servethehome.com/aws-ec2-c4-instances-benchmarked/
 
 **Exemple concret d'utilisation trop grande du CPU** 
 
@@ -262,8 +275,7 @@ Je voulais vous offre un exemple concret d'un problème de crédit CPU , car lor
 
 
 
-*ref ECU :
-    * https://www.datadoghq.com/blog/are-all-aws-ecu-created-equal/
+    
 
 ## Image -  Amazon Machine Image (AMI) EC2, système d'exploitation
 ## Stockage disponible pour l'instance EC2
