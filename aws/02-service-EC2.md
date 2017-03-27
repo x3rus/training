@@ -177,7 +177,7 @@ A lire : http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts_micro_insta
 
 #### Instance M4.\*
 
-Voici les spécifications pourles serveurs de type **M4** 
+Voici les spécifications pour les serveurs de type **M4** 
 
 | Model     | vCPU | ECU   | Mem (GiB)| Storage| dédié EBS Bandwidth (Mbps) | Prix US/heure (Us Est)    | Prix US/heure (Canada) | Prix US/heure (Francfort) |
 |:----------|:----:|:-----:|:--------:|:------:|----------------- ---------:|:-------------------------:|-----------------------:|--------------------------:|
@@ -195,11 +195,57 @@ Spécification technique :
 
 Quelle est la GROSSE différence entre ces instances et les instances **T2** ?
 
-1. Le CPU est dédié plus besoin de faire le calcule avec l'utilisation standard les crédits d'utilisation lors des augmentations d'utilisation de l'instance
-2. **ECU ==  EC2 Compute Units** , cette notion fut introduite par Amazon afin de garantir une disponibilité de CPU , car Amazon non pas un type de CPU dans la composition de son parc. L'objectif est d'assurer une performance peut importe le CPU réelle où l'instance est en exécution  [FAQ](https://aws.amazon.com/ec2/faqs/#What_is_an_EC2_Compute_Unit_and_why_did_you_introduce_it).
-3. Il y a un accès au ressources du disque dur dédier afin d'assurer la performance d'accès disque 
+1. Le CPU a une réservation d'utilisation plus besoin de faire le calcule avec les crédits d'utilisation lors des augmentations d'utilisation de l'instance. Vous avez toujours des crédits, mais j'ai pas dis toujours du CPU :P .
+2. **ECU ==  EC2 Compute Units** , cette notion fut introduite par Amazon afin de garantir une disponibilité de CPU , car Amazon n'a pas un type de CPU dans la composition de son parc. L'objectif est d'assurer une performance peut importe le CPU réelle où l'instance est en exécution  [FAQ](https://aws.amazon.com/ec2/faqs/#What_is_an_EC2_Compute_Unit_and_why_did_you_introduce_it). 
+3. Il y a un accès au ressources du disque dur garantie afin d'assurer la performance d'accès disque .
 
-##### ECU Compute Units
+Comme l'ensemble des instances d'Amazon (en dehors du type **T2**) utilise le système d'**ECU** nous y reviendrons un peu plus tard. Dans la section [ECU Compute Units](#ecu-compute-units) .
+
+* Pourquoi choisir **M4** plutôt que **T2** :
+    * Vous avez besoin d'une utilisation __CPU__ plus grande et ceci de manière constante 
+    * Vous avez des accès disque "important" sans être excessif (__SSD__)
+    * Vous avez besoin de mémoire et CPU 
+    * Vous avez un peu plus d'argent :P
+
+ 
+#### Instance M3.\*
+
+Voici les spécifications pour les serveurs de type **M3** 
+
+| Model     | vCPU | ECU   | Mem (GiB)| Storage  |  Prix US/heure (Us Est)    | Prix US/heure (Canada) | Prix US/heure (Francfort) |
+|:----------|:----:|:-----:|:--------:|:--------:|:--------------------------:|-----------------------:|--------------------------:|
+|m3.medium  |  1   | 3     |  3.75    |1 x 4 SSD | Non Disponible             |Non Disponible          |    $0.079 (linux)         |
+|m3.large   |  2   | 6.5   |  7.50    |1 x 32 SSD| Non Disponible             |Non Disponible          |    $0.158 (linux)         |
+|m3.xlarge  |  4   | 13    |  15      |2 x 40 SSD| Non Disponible             |Non Disponible          |    $0.315 (linux)         |
+|m3.2xlarge |  8   |  26   |  30      |2 x 80 SSD| Non Disponible             |Non Disponible          |    $0.632 (linux)         |
+    : https://aws.amazon.com/ec2/instance-types/ ( date : 2017-03-17 )
+
+Spécification technique :
+
+* **CPU** :  __High Frequency Intel Xeon E5-2670 v2 (Ivy Bridge) Processors__
+
+Quelle est la GROSSE différence entre ces instances et les instances **M4** ?
+
+1. Le CPU a une cadence plus importante que la version __M4__.
+3. L'instance vient avec des disques __SSD__ , plus grande performance __d'I/O__
+2. L'instance **M3** n'est cependant pas disponible partout comme vous pouvez le voir dans le tableau ci-dessus. Nous l'avons sur la côte Ouest américain, mais pas sur la côte Est. Indisponible au Canada , etc .
+
+Comme l'ensemble des instances d'Amazon (en dehors du type **T2**) utilise le système d'**ECU** nous y reviendrons un peu plus tard. Dans la section [ECU Compute Units](#ecu-compute-units) .
+
+* Pourquoi choisir **M3** plutôt que **M4** :
+    * Vous avez des accès disque "intensif" **SSD**
+
+Utilisation proposé par Amazon , utilisez __M3__ pour :
+
+* Une petite ou meilleur base de donnée 
+* Backend serveur pour __SAP__
+* __Microsoft SharePoint__
+
+### Optimisation pour le calcule
+
+ICI ICI ICI 
+
+### ECU Compute Units
 
 Analysons justement cette question de **ECU**, telle que mentionné plus haut, cette valeur permet de "garantir" une performance du __CPU__ peut importe l'architecture du serveur. Cette standardisation permet donc de réaliser une comparaison des offres d'Amazon peut importe le CPU réellement attribué pour l'instance . Super on comprend le pourquoi , maintenant 1 **ECU** ça équivaut à quoi ?  Notre / votre problème en déplaçant nos applications du mode interne vers le cloud est que nous perdons le liens avec le matériel où le système est en exécution. 
 Cette segmentation entre le physique et le matériel fut déjà introduite avec l'arrivée de la virtualisation, cependant s'il y avait un problème nous pouvions voir le serveur vmware où la Machine Virtuelle était en exécution et voir l'architecture CPU. Avec le cloud cette méthode n'est plus possible , nous pouvons voir quelle type de CPU l'instance utilise (__/proc/cpuinfo__) , mais nous ne savons pas l'ensemble des mécanismes mis en place par le fournisseur de service afin de garantir la disponibilité des ressources **partagées** !
@@ -225,7 +271,7 @@ TODO : ref: https://medium.com/devoops-and-universe/database-performance-aws-vs-
 ref ECU : https://www.datadoghq.com/blog/are-all-aws-ecu-created-equal/
 https://www.servethehome.com/aws-ec2-c4-instances-benchmarked/
 
-**Exemple concret d'utilisation trop grande du CPU** 
+#### Exemple concret d'utilisation trop grande du CPU
 
 Voici ce qui ce passera sur un système GNU/Linux si vous utilisez plus de CPU que disponible :
 
