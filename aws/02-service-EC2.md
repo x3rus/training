@@ -235,15 +235,64 @@ Comme l'ensemble des instances d'Amazon (en dehors du type **T2**) utilise le sy
 * Pourquoi choisir **M3** plutôt que **M4** :
     * Vous avez des accès disque "intensif" **SSD**
 
-Utilisation proposé par Amazon , utilisez __M3__ pour :
-
-* Une petite ou meilleur base de donnée 
-* Backend serveur pour __SAP__
-* __Microsoft SharePoint__
 
 ### Optimisation pour le calcule
 
-ICI ICI ICI 
+Ces instances ont une plus grande puissance de calcul, nous parlons ici de calcul réalisé avec un processeur classique, nous verrons plus tard qu'il existe aussi des instances offrant des processeurs __GPU__ afin de réaliser des calcules encore plus puissant . Nous retrouvons 2 classes d'instance avec un disque dur "classique" et avec des disques **SSD**. 
+
+Voici des exemples d'utilisation mentionné par Amazon :
+
+* Serveurs web très sollicité 
+* Traitement en lot (batch)
+* Analyse distribué
+* Jeux __MMO__
+* Encodage vidéos.
+
+
+#### Instance C4.\*
+
+Voici les spécifications pour les serveurs de type **C4** 
+
+| Model     | vCPU | ECU   | Mem (GiB)| Storage  |  Prix US/heure (Us Est)    | Prix US/heure (Canada) | Prix US/heure (Francfort) |
+|:----------|:----:|:-----:|:--------:|:--------:|:--------------------------:|-----------------------:|--------------------------:|
+|c4.large   |  2   | 8     |  3.75    |EBS Only  |$0.1 (linux)/$0.192 (win)   | $0.11 (linux)          | $0.114 (linux)            |
+|c4.xlarge  |  4   | 16    |  7.50    |EBS Only  |$0.199 (linux)/$0.383 (win) | $0.218 (linux)         | $0.227 (linux)            |
+|c4.2xlarge |  8   | 31    |  15      |EBS Only  |$0.398 (linux)/$0.766 (win) | $0.438 (linux)         | $0.454 (linux)            |
+|c4.4xlarge | 16   | 62    |  30      |EBS Only  |$0.796 (linux)/$1.532 (win) | $0.876 (linux)         | $0.909 (linux)            |
+|c4.8xlarge | 36   | 132   |  60      |EBS Only  |$1.591 (linux)/$3.091 (win) | $1.75 (linux)          | $1.817 (linux)            |
+    : https://aws.amazon.com/ec2/instance-types/ ( date : 2017-03-17 )
+
+Spécification technique :
+
+* **CPU** :  __High frequency Intel Xeon E5-2666 v3 (Haswell) processors optimized specifically for EC2__
+
+Quelle est la GROSSE différence entre ces instances et les instances **M\*** ?
+
+1. Le CPU a une cadence plus importante que les version __M\*__.
+2. Le CPU est optimisé pour l'environnement __EC2__
+3. Avec la plus grosse instance (__c4.8xlarge__) vous avez la possibilité de contrôler la configuration du  processeur __C-state__ et __P-state__ . (Prendre note que j'ai AUCUNE idée de ce que ça veut dire :P , mais c'est sur le site :D )
+4. Option du [réseau renforcé (enhanced-networking)](https://aws.amazon.com/ec2/details/#enhanced-networking), en gros ceci utilise un autre driver qui permet un plus grande performance réseaux augmentant la capacité sans affecté les performances __CPU__. Ceci n'est pas actif par défaut vous aurez quelques opération à réalisé voir [la documentation](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/sriov-networking.html)
+
+Comme l'ensemble des instances d'Amazon (en dehors du type **T2**) utilise le système d'**ECU** nous y reviendrons un peu plus tard. Dans la section [ECU Compute Units](#ecu-compute-units) .
+
+* Pourquoi choisir **C4** plutôt que **M\*** :
+    * Vous avez des besoin de traitement CPU plus élevé.
+
+
+#### Instance C3.\*
+
+Tout comme pour les instances __M4 -> M3__ vous retrouvez le même système C4 mais avec un stockage **SSD** au lieu du stockage classique __EBS__.
+Nous retrouvons la même limitation soit ces instances ne sont pas disponible sur l'ensemble des __région__ site d'Amazon.
+
+Je ne referai pas le tableau , vous avez compris le concept vous pouvez le consulter sur Amazon : [prix](https://aws.amazon.com/ec2/pricing/on-demand/)
+
+* Pourquoi choisir **C3** plutôt que **C4** :
+    * Vous avez des besoin d'accès disque plus élevé
+
+
+### Optimisation de la mémoire 
+
+ICI ICI ICI
 
 ### ECU Compute Units
 
