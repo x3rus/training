@@ -292,7 +292,67 @@ Je ne referai pas le tableau , vous avez compris le concept vous pouvez le consu
 
 ### Optimisation de la mémoire 
 
-ICI ICI ICI
+Passons maintenant au instance optimisé pour l'utilisation de la mémoire , vous allez voir nous parlons de **MÉMOIRE**, je ne sais pas de quelle type est votre organisation mais nous parlons de BEAUCOUP de mémoire !! 
+
+En fait je ne pense pas un jour utiliser le type **X1** bien que la vie est toujours pleine de surprise .
+
+#### Instance X1.\* 
+
+Voici les spécifications pour les serveurs de type **X1** 
+
+Voici les utilisations de ce type d'instance suggéré par Amazon :
+
+* **SAP HANA** (aucune idée c quoi ;-) je vous laisse __googler__ )
+* Traitement de donnée __big data__  telle que __Apache Spark__ ou __Presto__ 
+* Pour les applications de type __HPC__ (__high performance computing__) 
+
+
+| Model     | vCPU | ECU   | Mem (GiB)| Storage  | Réseau |EBS dédié | Prix US/heure (Us Est)     | Prix US/h (Canada) | Prix US/h (Francfort) |
+|:----------|:----:|:-----:|:--------:|:--------:|:------:|:--------:|:--------------------------:|-------------------:|----------------------:|
+|x1.16xlarge|  64  |174.5  |  976     |1x1920 SSD| 10 Gigs|5,000     |$6.669 (linux)/$9.613 (win) | $7.336  (linux)    | $9.337 (linux)        |
+|x1.32xlarge| 128  |349    |  1952    |2x1920 SSD| 20 Gigs|10,000    |$13.338 (linux)/19.226 (win)| $14.672 (linux)    | $18.674 (linux)       |
+    : https://aws.amazon.com/ec2/instance-types/ ( date : 2017-03-17 )
+
+Spécification technique :
+
+* **CPU** :  __High Frequency Intel Xeon E7-8880 v3 (Haswell) Processors__
+* Certifier par **SAP** :  pour fonctionner avec __Business Warehouse on HANA (BW)__ et __Data Mart Solutions on HANA__
+* Mémoire de type **DDR4**
+* Vous avez la possibilité de contrôler la configuration du  processeur __C-state__ et __P-state__ . (Prendre note que j'ai AUCUNE idée de ce que ça veut dire :P , mais c'est sur le site :D )
+* Haute performance réseaux : Réseau 10 Gigs (x1.16xlarge) 20 Gigs (x1.32xlarge), ceci vous permet d'avoir de conserver les données sur le serveur et les distribué à l'ensemble des machines.
+* En plus des disques **SSD** nous avons aussi un accès dédié pour les disques dur EBS
+
+Comme vous pouvez le voir c'est de la GROSSE machine , avec un GROS prix :P !
+
+#### Instance R4.\* et R3.\* 
+
+J'ai conservé la même séquence de présentation des instances que sur le [site d'Amazon](https://aws.amazon.com/ec2/instance-types/) , comme on peut le voir après la présentation de l'instance **X1** on en a eu plein les yeux. Revenu maintenant à quelque chose de plus "normale" :P.
+
+Voici l'utilisation que suggère Amazon pour ce type d'instance :
+
+* Pour des base de données haute performance  et base de données en mémoire
+* data analyses 
+* Site web distribué avec mise en cache en mémoire 
+* Traitement de donnée en temps réelle (__big data__) 
+* __Hadoop/Spark cluster__
+
+| Model     | vCPU | ECU   | Mem (GiB)|Storage (SSD)| Réseau |  Prix US/h (Us Est)       | Prix US/h (Canada) | Prix US/h (Francfort) |
+|:----------|:----:|:-----:|:--------:|:-----------:|:------:|:-------------------------:|-----------------------:|--------------------------:|
+|r4.large   |  2   | 7     |  15.25   |EBS Only     | max 10G| TODO 
+|r4.xlarge  |  4   | 13.5  |  30.5    |EBS Only     | max 10G| TODO 
+|r4.2xlarge |  8   | 27    |  61      |EBS Only     | max 10G| TODO 
+|r4.4xlarge | 16   | 53    |  122     |EBS Only     | max 10G| TODO 
+|r4.8xlarge | 32   | 99    |  244     |EBS Only     | 10 G   | TODO 
+|r4.16xlarge| 64   | 195   |  488     |EBS Only     | 20 G   | TODO 
+    : https://aws.amazon.com/ec2/instance-types/ ( date : 2017-03-17 )
+
+Spécification technique :
+
+* **CPU** :  __High Frequency Intel Xeon E5-2686 v4 (Broadwell) Processors__
+* Mémoire de type **DDR4**
+* Option du [réseau renforcé (enhanced-networking)](https://aws.amazon.com/ec2/details/#enhanced-networking), en gros ceci utilise un autre driver qui permet un plus grande performance réseaux augmentant la capacité sans affecté les performances __CPU__. Ceci n'est pas actif par défaut vous aurez quelques opération à réalisé voir [la documentation](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/sriov-networking.html)
+
+
 
 ### ECU Compute Units
 
@@ -300,7 +360,6 @@ Analysons justement cette question de **ECU**, telle que mentionné plus haut, c
 Cette segmentation entre le physique et le matériel fut déjà introduite avec l'arrivée de la virtualisation, cependant s'il y avait un problème nous pouvions voir le serveur vmware où la Machine Virtuelle était en exécution et voir l'architecture CPU. Avec le cloud cette méthode n'est plus possible , nous pouvons voir quelle type de CPU l'instance utilise (__/proc/cpuinfo__) , mais nous ne savons pas l'ensemble des mécanismes mis en place par le fournisseur de service afin de garantir la disponibilité des ressources **partagées** !
 
 Bon d'accord, mais c'est quoi **1 ECU** :P , voici la meilleur définition que j'ai :
-
 ```
 1 ECU est défini comme une puissance de calcul (computer power) de 1.0 à 1.2 Ghz d'un serveur de 2007 
 ```
