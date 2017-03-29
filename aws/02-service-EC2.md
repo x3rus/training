@@ -177,16 +177,17 @@ A lire : http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts_micro_insta
 
 #### Instance M4.\*
 
-Voici les spécifications pour les serveurs de type **M4** 
+Voici les spécifications pour les serveurs de type **M4** .
 
-| Model     | vCPU | ECU   | Mem (GiB)| Storage| dédié EBS Bandwidth (Mbps) | Prix US/heure (Us Est)    | Prix US/heure (Canada) | Prix US/heure (Francfort) |
-|:----------|:----:|:-----:|:--------:|:------:|----------------- ---------:|:-------------------------:|-----------------------:|--------------------------:|
-|m4.large   |  2   | 6.5   | 8        |EBS-Only|    450                     |$0.108(linux) / $0.203(win)| $0.119(linux)          | $0.129 (linux)            |
-|m4.xlarge  |  4   | 13    | 16       |EBS-Only|    750                     |$0.215(linux) / $0.404(win)| $0.237(linux)          | $0.257 (linux)            |
-|m4.2xlarge |  8   | 26    | 32       |EBS-Only|   1,000                    |$0.431(linux) / $0.809(win)| $0.474 (linux)         | $0.513 (linux)            |
-|m4.4xlarge |  16  | 53.5  |  64      |EBS-Only|   2,000                    |$0.862(linux) / $1.618(win)| $0.948 (linux)         | $1.026 (linux)            |
-|m4.10xlarge|  40  | 124.5 | 160      |EBS-Only|   4,000                    |$2.155(linux) / $4.045(win)| $2.37 (linux)          | $2.565 (linux)            |
-|m4.16xlarge|  64  | 188   | 256      |EBS-Only|  10,000                    |$3.447(linux) / $6.471(win)| $3.792 (linux)         | $4.104 (lnux)             |
+
+| Model     | vCPU | ECU   | Mem (GiB)| Storage | dedie EBS Bandwidth (Mbps) | Prix US/heure (Us Est)     | Prix US/h (Canada) | Prix US/h (Francfort) |
+|:----------|:----:|:-----:|:--------:|:-------:|----------------- ---------:|:--------------------------:|-------------------:|----------------------:|
+|m4.large   |  2   | 6.5   | 8        |EBS-Only |    450                     |$0.108(linux) / $0.203(win) | $0.119(linux)      | $0.129 (linux)        |
+|m4.xlarge  |  4   | 13    | 16       |EBS-Only |    750                     |$0.215(linux) / $0.404(win) | $0.237(linux)      | $0.257 (linux)        |
+|m4.2xlarge |  8   | 26    | 32       |EBS-Only |   1,000                    |$0.431(linux) / $0.809(win) | $0.474 (linux)     | $0.513 (linux)        |
+|m4.4xlarge |  16  | 53.5  |  64      |EBS-Only |   2,000                    |$0.862(linux) / $1.618(win) | $0.948 (linux)     | $1.026 (linux)        |
+|m4.10xlarge|  40  | 124.5 | 160      |EBS-Only |   4,000                    |$2.155(linux) / $4.045(win) | $2.37 (linux)      | $2.565 (linux)        |
+|m4.16xlarge|  64  | 188   | 256      |EBS-Only |  10,000                    |$3.447(linux) / $6.471(win) | $3.792 (linux)     | $4.104 (lnux)         |
     : https://aws.amazon.com/ec2/instance-types/ ( date : 2017-03-17 )
 
 Spécification technique :
@@ -337,13 +338,13 @@ Voici l'utilisation que suggère Amazon pour ce type d'instance :
 * __Hadoop/Spark cluster__
 
 | Model     | vCPU | ECU   | Mem (GiB)|Storage (SSD)| Réseau |  Prix US/h (Us Est)       | Prix US/h (Canada) | Prix US/h (Francfort) |
-|:----------|:----:|:-----:|:--------:|:-----------:|:------:|:-------------------------:|-----------------------:|--------------------------:|
-|r4.large   |  2   | 7     |  15.25   |EBS Only     | max 10G| TODO 
-|r4.xlarge  |  4   | 13.5  |  30.5    |EBS Only     | max 10G| TODO 
-|r4.2xlarge |  8   | 27    |  61      |EBS Only     | max 10G| TODO 
-|r4.4xlarge | 16   | 53    |  122     |EBS Only     | max 10G| TODO 
-|r4.8xlarge | 32   | 99    |  244     |EBS Only     | 10 G   | TODO 
-|r4.16xlarge| 64   | 195   |  488     |EBS Only     | 20 G   | TODO 
+|:----------|:----:|:-----:|:--------:|:-----------:|:------:|:-------------------------:|-------------------:|----------------------:|
+|r4.large   |  2   | 7     |  15.25   |EBS Only     | max 10G| $0.133 (linux)/$0.225(win)| $0.146  (linux)    |  $0.16 (linux)        | 
+|r4.xlarge  |  4   | 13.5  |  30.5    |EBS Only     | max 10G| $0.266 (linux)/$0.45 (win)| $0.292  (linux)    | $0.32 (linux)         |
+|r4.2xlarge |  8   | 27    |  61      |EBS Only     | max 10G| $0.532 (linux)/$0.9 (win) | $0.584  (linux)    | $0.64 (linux)         |
+|r4.4xlarge | 16   | 53    |  122     |EBS Only     | max 10G| $1.064 (linux)/$1.8 (win) | $1.168  (linux)    | $1.28 (linux)         |
+|r4.8xlarge | 32   | 99    |  244     |EBS Only     | 10 G   | $2.128 (linux)/$3.6 (win) | $2.336  (linux)    | $2.561 (linux)        |
+|r4.16xlarge| 64   | 195   |  488     |EBS Only     | 20 G   | $4.256 (linux)/$7.2 (win) | $4.672  (linux)    | $5.122 (linux)        |
     : https://aws.amazon.com/ec2/instance-types/ ( date : 2017-03-17 )
 
 Spécification technique :
@@ -353,8 +354,54 @@ Spécification technique :
 * Option du [réseau renforcé (enhanced-networking)](https://aws.amazon.com/ec2/details/#enhanced-networking), en gros ceci utilise un autre driver qui permet un plus grande performance réseaux augmentant la capacité sans affecté les performances __CPU__. Ceci n'est pas actif par défaut vous aurez quelques opération à réalisé voir [la documentation](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/sriov-networking.html)
 
 
+Vous avez aussi l'option **R3** avec des disques dur __SSD__ natif donc pas au travers du système __EBS__.
 
-### ECU Compute Units
+### Puissance de calcule extrême 
+
+Pour des besoins spécifique, bien loin de mes préoccupations actuelle :P , vous avez aussi des systèmes avec des puissances de calcul hallucinante qui utilise les cartes graphique pour faire le calcul.
+
+Je ne rentrerai pas dans le détail de ces systèmes, car je risque de dire trop de bêtise :P , et surtout si vous avez besoin de ce type de machine je vous invite à faire vous même les recherches, car c'est pour des domaines spécialisé.
+
+* **P2.\*** 
+* Spécification technique :
+    * CPU : __High Frequency Intel Xeon E5-2686v4 (Broadwell) Processors__
+    * __GPU__ (__Graphics Processing Unit__) :__High-performance NVIDIA K80 GPUs, each with 2,496 parallel processing cores and 12GiB of GPU memory__
+    * __Supports GPUDirect™ (peer-to-peer GPU communication)__
+* Utilisation :
+    * Machine learning
+    * Calcule des fluides dynamique 
+    * Traitement de donnée financière
+    * Analyse séismique 
+    * modélisation moléculaire 
+
+* **G2.\***
+* Spécification technique :
+    * CPU : __High Frequency Intel Xeon E5-2670 (Sandy Bridge) Processors__
+    * GPU : __High-performance NVIDIA GPUs, each with 1,536 CUDA cores and 4GB of video memory__
+    * GPU Encodage : __Each GPU features an on-board hardware video encoder designed to support up to eight real-time HD video streams (720p@30fps) or up to four real-time full HD video streams (1080p@30fps)__
+* Utilisation:
+    * Application de diffusion 3D 
+    * Encodage Vidéo 
+
+* **F1\.***
+* Je vais vous laisser lire sur le sujet, j'ai pas tous compris à la première lecture et j'ai moins d'intérêt [Instance de type F1](https://aws.amazon.com/ec2/instance-types/f1/)
+
+Je vous invite à consulter le site des prix pour vous donner envie ;-) : [https://aws.amazon.com/ec2/pricing/on-demand/](https://aws.amazon.com/ec2/pricing/on-demand/) sélectionnez la région : __US East(N.Virginia)__ ,car ces instances ne sont pas disponible partout.
+
+### Optimisation du stockage
+
+Après les possibilités d'utiliser des cartes graphique pour faire du calcule , nous pouvons le dire de MALADE. Nous allons rapidement couvrir les instances pour optimisé pour l'accès disque ou le stockage. Nous avons 2 types d'instance un pour l'optimisation d'accès aux données , bien entendu l'espace disque est restreint . L'autre type est pour avoir une grande quantité de stockage avec un très bon accès disque , mais bien entendu moins intensif que l'option précédente.
+
+#### **i3\.*** (Optimisation d'accès disque)
+
+Si vous avez des applications qui demande un accès disque intense, souvent ce type d'application ralentie l'ensemble du système si le temps d'accès au donnée sur disque sont ralentie, les instances **i3.\*** répondrons à votre problème. Bien entend
+
+NoSQL databases like Cassandra, MongoDB, Redis, in-memory databases such as Aerospike, scale out transactional databases, data warehousing, Elasticsearch, analytics workloads.
+
+
+ICI ICI ICI 
+
+## ECU Compute Units
 
 Analysons justement cette question de **ECU**, telle que mentionné plus haut, cette valeur permet de "garantir" une performance du __CPU__ peut importe l'architecture du serveur. Cette standardisation permet donc de réaliser une comparaison des offres d'Amazon peut importe le CPU réellement attribué pour l'instance . Super on comprend le pourquoi , maintenant 1 **ECU** ça équivaut à quoi ?  Notre / votre problème en déplaçant nos applications du mode interne vers le cloud est que nous perdons le liens avec le matériel où le système est en exécution. 
 Cette segmentation entre le physique et le matériel fut déjà introduite avec l'arrivée de la virtualisation, cependant s'il y avait un problème nous pouvions voir le serveur vmware où la Machine Virtuelle était en exécution et voir l'architecture CPU. Avec le cloud cette méthode n'est plus possible , nous pouvons voir quelle type de CPU l'instance utilise (__/proc/cpuinfo__) , mais nous ne savons pas l'ensemble des mécanismes mis en place par le fournisseur de service afin de garantir la disponibilité des ressources **partagées** !
@@ -379,7 +426,7 @@ TODO : ref: https://medium.com/devoops-and-universe/database-performance-aws-vs-
 ref ECU : https://www.datadoghq.com/blog/are-all-aws-ecu-created-equal/
 https://www.servethehome.com/aws-ec2-c4-instances-benchmarked/
 
-#### Exemple concret d'utilisation trop grande du CPU
+### Exemple concret d'utilisation trop grande du CPU
 
 Voici ce qui ce passera sur un système GNU/Linux si vous utilisez plus de CPU que disponible :
 
