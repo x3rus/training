@@ -179,16 +179,15 @@ A lire : http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts_micro_insta
 
 Voici les spécifications pour les serveurs de type **M4** .
 
-
 | Model     | vCPU | ECU   | Mem (GiB)| Storage | dedie EBS Bandwidth (Mbps) | Prix US/heure (Us Est)     | Prix US/h (Canada) | Prix US/h (Francfort) |
-|:----------|:----:|:-----:|:--------:|:-------:|----------------- ---------:|:--------------------------:|-------------------:|----------------------:|
+|:----------|:----:|:-----:|:--------:|:-------:|---------------------------:|:--------------------------:|-------------------:|----------------------:|
 |m4.large   |  2   | 6.5   | 8        |EBS-Only |    450                     |$0.108(linux) / $0.203(win) | $0.119(linux)      | $0.129 (linux)        |
 |m4.xlarge  |  4   | 13    | 16       |EBS-Only |    750                     |$0.215(linux) / $0.404(win) | $0.237(linux)      | $0.257 (linux)        |
 |m4.2xlarge |  8   | 26    | 32       |EBS-Only |   1,000                    |$0.431(linux) / $0.809(win) | $0.474 (linux)     | $0.513 (linux)        |
 |m4.4xlarge |  16  | 53.5  |  64      |EBS-Only |   2,000                    |$0.862(linux) / $1.618(win) | $0.948 (linux)     | $1.026 (linux)        |
 |m4.10xlarge|  40  | 124.5 | 160      |EBS-Only |   4,000                    |$2.155(linux) / $4.045(win) | $2.37 (linux)      | $2.565 (linux)        |
 |m4.16xlarge|  64  | 188   | 256      |EBS-Only |  10,000                    |$3.447(linux) / $6.471(win) | $3.792 (linux)     | $4.104 (lnux)         |
-    : https://aws.amazon.com/ec2/instance-types/ ( date : 2017-03-17 )
+    :https://aws.amazon.com/ec2/instance-types/ ( date : 2017-03-17 )
 
 Spécification technique :
 
@@ -396,10 +395,70 @@ Après les possibilités d'utiliser des cartes graphique pour faire du calcule ,
 
 Si vous avez des applications qui demande un accès disque intense, souvent ce type d'application ralentie l'ensemble du système si le temps d'accès au donnée sur disque sont ralentie, les instances **i3.\*** répondrons à votre problème. Bien entend
 
-NoSQL databases like Cassandra, MongoDB, Redis, in-memory databases such as Aerospike, scale out transactional databases, data warehousing, Elasticsearch, analytics workloads.
+Voici l'utilisation que suggère Amazon pour ce type d'instance :
+
+* Base de donnée __NoSQL__ comme __Cassandra , MongoDB, Redis__
+* Base de donnée transactionnel qui __scale__
+* __Elasticsearch__
+* système d'analyse (__anaytics workloads__)
+
+| Model     | vCPU | ECU   | Mem (GiB)|Storage (NVMe SSD)| Réseau |  Prix US/h (Us Est)       | Prix US/h (Canada) | Prix US/h (Francfort) |
+|:----------|:----:|:-----:|:--------:|:----------------:|:------:|:-------------------------:|-------------------:|----------------------:|
+|i3.large   |  2   | 7     |  15.25   |1 x 475 Gigs      | max 10G| $0.156 (linux)/$0.248(win)| $0.172 (linux)     | $0.186 (linux)        |
+|i3.xlarge  |  4   | 13    |  30.5    |1 x 950 Gigs      | max 10G| $0.312 (linux)/$0.496(win)| $0.344 (linux)     | $0.372 (linux)        |
+|i3.2xlarge |  8   | 27    |  61      |1 x 1900 Gigs     | max 10G| $0.624 (linux)/$0.992(win)| $0.688 (linux)     | $0.744 (linux)        | 
+|i3.4xlarge | 16   | 53    |  122     |2 x 1900 Gigs     | max 10G| $1.248 (linux)/$1.984(win)| $1.376 (linux)     | $1.488 (linux)        |
+|i3.8xlarge | 32   | 99    |  244     |4 x 1900 Gigs     | 10 G   | $2.496 (linux)/$3.968(win)| $2.752 (linux)     | $2.976 (linux)        |
+|i3.16xlarge| 64   | 200   |  488     |8 x 1900 Gigs     | 20 G   | $4.992 (linux)/$7.936(win)| $5.504 (linux)     | $5.952 (linux)        |
+    : https://aws.amazon.com/ec2/instance-types/ ( date : 2017-03-17 )
+
+Spécification technique :
+
+* **CPU** :  __High Frequency Intel Xeon E5-2686 v4 (Broadwell) Processors with base frequency of 2.3 GHz__
+* Option du [réseau renforcé (enhanced-networking)](https://aws.amazon.com/ec2/details/#enhanced-networking), en gros ceci utilise un autre driver qui permet un plus grande performance réseaux augmentant la capacité sans affecté les performances __CPU__. Ceci n'est pas actif par défaut vous aurez quelques opération à réalisé voir [la documentation](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/sriov-networking.html)
+* Accès au disque aléatoire TRÈS rapide et une lecture séquentiel très rapide avec un haut débit.
+* Stockage **SSD NVMe**, si vous êtes comme moi puis que vous vous dites c'est quoi ça **NVMe** (wikipedia est réponds à la question)[https://en.wikipedia.org/wiki/NVM_Express]. En gros ceci est une carte de type __PCI express__ contenant l'espace disque ceci permet d'avoir un accès ultra rapide.
+
+![nvme.jpg](./imgs/nvme.jpg)
 
 
-ICI ICI ICI 
+#### **d2\.*** (Optimisation de la quantité d'espace)
+
+Bien entendu nous n'avons pas tous besoin d'avoir un __I/O__ si performant, mais vous avez besoin d'espace disque ! Les instances de type __d2.\*__ sont justement configurer pour répondre à ce besoin .
+
+Voici l'utilisation que suggère Amazon pour ce type d'instance :
+
+* Traitement de donnée en parallèle (__MPP__)
+* Traitement __Hadoop__  en mode distribué
+* Serveur de fichier 
+* logs ou traitement de donnée
+
+| Model     | vCPU | ECU   | Mem (GiB)|Storage (HDD) | Prix US/h (Us Est)        | Prix US/h (Canada) | Prix US/h (Francfort) |
+|:----------|:----:|:-----:|:--------:|:------------:|:-------------------------:|-------------------:|----------------------:|
+|d2.xlarge  |  4   | 14    |  30.5    |3 x 2000 Gigs | $0.69 (linux)/$0.821 (win)| $0.759 (linux)     | $0.794 (linux)        |
+|d2.2xlarge |  8   | 28    |  61      |6 x 2000 Gigs | $1.38 (linux)/$1.601 (win)| $1.518 (linux)     | $1.588 (linux)        | 
+|d2.4xlarge | 16   | 56    |  122     |12 x 2000 Gigs| $2.76 (linux)/$3.062 (win)| $3.036 (linux)     | $3.176 (linux)        |
+|d2.8xlarge | 36   | 116   |  244     |24 x 2000 Gigs| $5.52 (linux)/$6.198 (win)| $6.072 (linux)     | $6.352 (linux)        |
+    : https://aws.amazon.com/ec2/instance-types/ ( date : 2017-03-17 )
+
+Spécification technique :
+
+* **CPU** :  __High-frequency Intel Xeon E5-2676v3 (Haswell) processors__
+* Stockage direct de disque dur
+* Accès disque rapide
+* Option du [réseau renforcé (enhanced-networking)](https://aws.amazon.com/ec2/details/#enhanced-networking), en gros ceci utilise un autre driver qui permet un plus grande performance réseaux augmentant la capacité sans affecté les performances __CPU__. Ceci n'est pas actif par défaut vous aurez quelques opération à réalisé voir [la documentation](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/sriov-networking.html)
+
+### Résumé des instances disponible 
+
+Il y a beaucoup de choix , beaucoup de possibilité , comme je dis parfois : "Trop de choix perd le client " avouez que vous vous demandez laquelle choisir ! Surtout si vous devez réaliser un budget de planification du coût du projet c'est tous de suite compliqué. C'est facile si nous prenons le cas du traitement à l'aide de __GPU__ . Par contre si vous vous dites , que je peux utiliser une instance général ou de calcul (__M4.\*__ ou __C4.\*__) ça se complique beaucoup.
+
+Juste la mise à plat des possibilités ce n'est pas facile , pour cette partie je vous suggère ce site :
+
+* [http://www.ec2instances.info/](http://www.ec2instances.info/)
+
+![matrix-ec2-website.png](./imgs/matrix-ec2-website.png)
+
+Bien entendu il nous reste un point important à comprendre cette notion de __ECU__ (__Elastic Compute Unit__) afin de bien comprendre l'offre de traitement CPU . Donc poursuivons avec cette notion.
 
 ## ECU Compute Units
 
