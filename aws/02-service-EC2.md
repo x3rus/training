@@ -458,9 +458,13 @@ Juste la mise à plat des possibilités ce n'est pas facile , pour cette partie 
 
 ![matrix-ec2-website.png](./imgs/matrix-ec2-website.png)
 
-Bien entendu il nous reste un point important à comprendre cette notion de __ECU__ (__Elastic Compute Unit__) afin de bien comprendre l'offre de traitement CPU . Donc poursuivons avec cette notion.
+Bien entendu il nous reste un point important à comprendre cette notion de __ECU__ (__Elastic Compute Unit__) afin de saisir l'offre de traitement CPU . Donc poursuivons avec cette notion.
 
 ## ECU Compute Units
+
+Premièrement j'aimerai, partager mon désarroi pour cette section, j'ai pas voulu la supprimé, car je pense qu'elle est importante cependant malgré 3 heures de recherche (voir plus ...)  je ne suis pas encore satisfait. Éventuellement si un jour, j'ai une meilleur explication j'espère revenir sur cette section. Rassurez vous je ne suis pas tous seul :P , nous verrons donc des mécanismes pour récupérer le coût une fois l'erreur de jugement de CPU fait :P. À défaut de bien évaluer le CPU du premier coup, nous verrons comment identifier notre erreur et l'ajuster :D.
+
+ICI ICI ICI
 
 Analysons justement cette question de **ECU**, telle que mentionné plus haut, cette valeur permet de "garantir" une performance du __CPU__ peut importe l'architecture du serveur. Cette standardisation permet donc de réaliser une comparaison des offres d'Amazon peut importe le CPU réellement attribué pour l'instance . Super on comprend le pourquoi , maintenant 1 **ECU** ça équivaut à quoi ?  Notre / votre problème en déplaçant nos applications du mode interne vers le cloud est que nous perdons le liens avec le matériel où le système est en exécution. 
 Cette segmentation entre le physique et le matériel fut déjà introduite avec l'arrivée de la virtualisation, cependant s'il y avait un problème nous pouvions voir le serveur vmware où la Machine Virtuelle était en exécution et voir l'architecture CPU. Avec le cloud cette méthode n'est plus possible , nous pouvons voir quelle type de CPU l'instance utilise (__/proc/cpuinfo__) , mais nous ne savons pas l'ensemble des mécanismes mis en place par le fournisseur de service afin de garantir la disponibilité des ressources **partagées** !
@@ -472,18 +476,20 @@ Bon d'accord, mais c'est quoi **1 ECU** :P , voici la meilleur définition que j
 
 Avouez c'est super claire !!! Donc reprenons avec un exemple concret 
 
-| Model     | vCPU | ECU   | Mem (GiB)|
-|:----------|:----:|:-----:|:--------:|
-|m4.xlarge  |  4   | 13    | 16       |
+| Model     | vCPU | ECU   | CPU Arch              | Clock Speed (GHz) | Mem (GiB)|
+|:----------|:----:|:-----:|:---------------------:|:-----------------:|:--------:|
+|m4.xlarge  |  4   | 13    | Intel Xeon E5-2676 v3 | 2.4               |  16      |
 
 Donc la machine __m4.xlarge__ avec 4 __vCPUs__ (13 __ECU__) et 16 Gigs de __Ram__ :
 
 * **ECU par vcpu** : 13 / 4 = 3.25 
-*
+
 
 TODO : ref: https://medium.com/devoops-and-universe/database-performance-aws-vs-bare-metal-452f64481b07#.72oayts8o
 ref ECU : https://www.datadoghq.com/blog/are-all-aws-ecu-created-equal/
 https://www.servethehome.com/aws-ec2-c4-instances-benchmarked/
+
+Bien simple : https://www.relaxdiego.com/2012/02/all-about-the-ecu.html
 
 ### Exemple concret d'utilisation trop grande du CPU
 
@@ -558,3 +564,4 @@ Je voulais vous offre un exemple concret d'un problème de crédit CPU , car lor
 
 
 # Alors Cloud ou pas cloud ?
+REF: https://wblinks.com/notes/aws-tips-i-wish-id-known-before-i-started/
