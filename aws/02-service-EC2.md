@@ -462,12 +462,50 @@ Bien entendu il nous reste un point important à comprendre cette notion de __EC
 
 ## ECU Compute Units
 
-Premièrement j'aimerai, partager mon désarroi pour cette section, j'ai pas voulu la supprimé, car je pense qu'elle est importante cependant malgré 3 heures de recherche (voir plus ...)  je ne suis pas encore satisfait. Éventuellement si un jour, j'ai une meilleur explication j'espère revenir sur cette section. Rassurez vous je ne suis pas tous seul :P , nous verrons donc des mécanismes pour récupérer le coût une fois l'erreur de jugement de CPU fait :P. À défaut de bien évaluer le CPU du premier coup, nous verrons comment identifier notre erreur et l'ajuster :D.
+Petite information sur mon "parcourt" , telle que mentionné plus tôt je ne suis pas un amoureux du matériel , résultat j'ai jamais cherché à avoir le CPU le plus puissant. Je ne suis par le fait même pas le plus expert dans l'analyse du matériel performant. 
 
-ICI ICI ICI
+Premièrement j'aimerai, partager mon désarroi pour cette section, j'ai pas voulu la supprimé, car je pense qu'elle est importante cependant malgré 3 ou 4 heures de recherche (voir plus ...)  je ne suis pas encore satisfait. Éventuellement si un jour, j'ai une meilleur explication j'espère revenir sur cette section. Rassurez vous je ne suis pas tous seul :P , nous verrons donc des mécanismes pour récupérer le coût une fois l'erreur de jugement de CPU fait :P. À défaut de bien évaluer le CPU du premier coup, nous verrons comment identifier notre erreur et l'ajuster :D.
 
-Analysons justement cette question de **ECU**, telle que mentionné plus haut, cette valeur permet de "garantir" une performance du __CPU__ peut importe l'architecture du serveur. Cette standardisation permet donc de réaliser une comparaison des offres d'Amazon peut importe le CPU réellement attribué pour l'instance . Super on comprend le pourquoi , maintenant 1 **ECU** ça équivaut à quoi ?  Notre / votre problème en déplaçant nos applications du mode interne vers le cloud est que nous perdons le liens avec le matériel où le système est en exécution. 
-Cette segmentation entre le physique et le matériel fut déjà introduite avec l'arrivée de la virtualisation, cependant s'il y avait un problème nous pouvions voir le serveur vmware où la Machine Virtuelle était en exécution et voir l'architecture CPU. Avec le cloud cette méthode n'est plus possible , nous pouvons voir quelle type de CPU l'instance utilise (__/proc/cpuinfo__) , mais nous ne savons pas l'ensemble des mécanismes mis en place par le fournisseur de service afin de garantir la disponibilité des ressources **partagées** !
+### Analyse des CPU à nu (performance)
+
+Avant de parler __d'ECU__, j'aimerai d'abord parler de classification des CPU, nous allons enlever tous ce qui est en relation avec le CPU partagé (Virtualisation , __dockerisation__, ... ). Comment évaluer un CPU ?
+
+Nous prenons régulièrement la vitesse du l'horloge , c'est beau en français :P en d'autre mot le __clock speed__ (**Ghz**) des processeurs comme point de référence . Nous l'avons vu la guerre de vitesse pendant plusieurs année entre __AMD__ et __Intel__ cherchant toujours plus de vitesse "pure" des processeurs, cependant cette notion a des limites. En effet avec le nombre d'instruction micro code que les CPU sont maintenant en mesure de gérer les **GHz** n'est pas une source fiable. Ceci reste un point de référence, que l'on ne doit pas exclure, mais l'architecture du CPU est aussi un point de référence. Ici je ne parle que des processeurs de type __X86__ , si nous parlions d'autre architecture __RISC__ , __ARM__ , ... Ce serait encore plus compliqué.
+
+Prenons le logiciel __PassMark__ qui réalise des __benchmarks__ de CPU : [https://www.cpubenchmark.net/singleThread.html](https://www.cpubenchmark.net/singleThread.html) :
+
+![cpu-benchmark.png](./imgs/cpu-benchmark.png)
+    :j'ai mis l'image pour être plus efficace lors de la présentation le site étant souvent mis à jour
+
+* Analyse de la copie d'écran 
+    * **3.1Ghz** : Premier sur l'image devant les 3.6 , 3.5, 3.3, même un 3.9 
+    * **2.8Ghz** : Nous avons un 2.8 qui se glisse au milieu des 3.5 
+    * **2.9Ghz** : Aussi au milieu des 3.5 , devant un 3.8 et même derrière le 2.8 
+
+Bien entendu j'aurais pu sortir un graphique de performant différent, car ceci est très variables selon l'opération réalisé , que comprend le test ? Voici une liste des opérations possible :  [https://www.cpubenchmark.net/cpu_test_info.html](https://www.cpubenchmark.net/cpu_test_info.html)
+
+* Chiffrement de données
+* Compression de données
+* Calcule mathématique
+* Recherche de nombre premier
+* ...
+
+Certain CPU sont plus performants que d'autre selon le type d'opération , mais le constat reste le même les CPU ne sont pas EXCELLENT dans tous :
+
+Autre exemple de __benchmark__ : [https://browser.primatelabs.com/processor-benchmarks](https://browser.primatelabs.com/processor-benchmarks)
+
+![cpu-benchmark-2.png](./imgs/cpu-benchmark-2.png)
+
+* Analyse de la copie d'écran 
+    * 2.7 et  2.9 __Ghz__ : au milieu des 3.5 __Ghz__
+
+En conclusion même notre point de référence initiale est déjà quelque peu biaisé :-/ , ça va pas nous aidé pour la suite :P. 
+
+### Retour à la question d'ECU
+
+Revenons à la  question de **ECU**, telle que mentionné plus haut, cette valeur permet de "garantir" une performance du __CPU__ peut importe l'architecture du serveur. Cette standardisation permet donc de réaliser une comparaison des offres d'Amazon peut importe le CPU réellement attribué pour l'instance, peu importe ce qu'il y a sous le capot. Super on comprend le pourquoi , maintenant 1 **ECU** ça équivaut à quoi ?  Notre / votre problème en déplaçant nos / vos applications du mode interne vers le cloud est que nous perdons le liens avec le matériel où le système est exécuté. 
+
+Cette segmentation entre le physique et le matériel fut déjà introduite avec l'arrivée de la virtualisation, cependant s'il y avait un problème nous pouvions voir le serveur vmware où la Machine Virtuelle était en exécution et voir l'architecture CPU. Avec le cloud cette méthode n'est plus possible , nous pouvons voir quelle type de CPU l'instance utilise (__/proc/cpuinfo__) , mais nous ne savons pas l'ensemble des mécanismes mis en place par le fournisseur de service afin de garantir la disponibilité des ressources **partagées** ! Sommes nous seul sur le système , en d'autre mot combien de voisins avons nous ?
 
 Bon d'accord, mais c'est quoi **1 ECU** :P , voici la meilleur définition que j'ai :
 ```
@@ -484,6 +522,7 @@ Donc la machine __m4.xlarge__ avec 4 __vCPUs__ (13 __ECU__) et 16 Gigs de __Ram_
 
 * **ECU par vcpu** : 13 / 4 = 3.25 
 
+ref :Use case : https://www.concurrencylabs.com/blog/5-steps-for-finding-optimal-ec2-infrastructure/
 
 TODO : ref: https://medium.com/devoops-and-universe/database-performance-aws-vs-bare-metal-452f64481b07#.72oayts8o
 ref ECU : https://www.datadoghq.com/blog/are-all-aws-ecu-created-equal/
