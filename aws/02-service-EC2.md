@@ -518,17 +518,33 @@ Avouez c'est super claire !!! Donc reprenons avec un exemple concret
 |:----------|:----:|:-----:|:---------------------:|:-----------------:|:--------:|
 |m4.xlarge  |  4   | 13    | Intel Xeon E5-2676 v3 | 2.4               |  16      |
 
-Donc la machine __m4.xlarge__ avec 4 __vCPUs__ (13 __ECU__) et 16 Gigs de __Ram__ :
+Donc la machine __m4.xlarge__ avec 4 __vCPUs__ (13 __ECU__) et 16 Gigs de __Ram__ :  **ECU par vcpu** : 13 / 4 = 3.25 
 
-* **ECU par vcpu** : 13 / 4 = 3.25 
+Sur le site [OpenBenchMarking](http://openbenchmarking.org/) vous avez un test de performance réalisé sur cette environnement en date du 19 Février 2016, [test m4.xlarge](http://openbenchmarking.org/result/1602190-GA-AMAZONEC217) .
 
-ref :Use case : https://www.concurrencylabs.com/blog/5-steps-for-finding-optimal-ec2-infrastructure/
+Ceci est une source d'information si vous désirez avoir de l'information sur l'instance , bien entendu il faut faire très attention l'environnement d'Amazon est en perpétuel évolution. Si vous prenez comme référence d'autre teste de performance , validez la date de réalisation ! Malheureusement encore une fois ceci vous donnera de l'information, mais pas une garantie de fonctionnement au meilleur prix. Car votre opération ce rapproche le plus de quelle teste ? 
 
-TODO : ref: https://medium.com/devoops-and-universe/database-performance-aws-vs-bare-metal-452f64481b07#.72oayts8o
-ref ECU : https://www.datadoghq.com/blog/are-all-aws-ecu-created-equal/
-https://www.servethehome.com/aws-ec2-c4-instances-benchmarked/
+* __Unpacking The Linux Kernel__ ??
+* __John The Ripper__ (__blowfish__) ??
+* __dcraw__ (__RAW To PPM Image Conversion__) ??
 
-Bien simple : https://www.relaxdiego.com/2012/02/all-about-the-ecu.html
+Ce n'est pas facile de l'identifier , et même si vous spéculé convenablement il est possible que vous utilisiez une machine trop ou pas assez performant lors du déploiement. 
+
+En d'autre mot peu importe le choix de l'instance , vous allez devoir tester votre application ! En utilisant le principe suivant :
+
+1. Mise en place d'une instance et  Déploiement 
+2. Réalisation de testes de performance
+3. Analyse des métriques , identification des paternes 
+4. Ajuster les paramètres (__fine-tuning__)
+5. Recommencer encore et encore :P
+
+Nous allons continuer , une fois l'ensemble des concepts compris de AWS , nous verrons un "use case"  super intéressant , pour les énervés :P , c'est le dernier lien en référence ci-dessous :P. 
+
+* Référence :
+    * [database performance aws VD bare metal](https://medium.com/devoops-and-universe/database-performance-aws-vs-bare-metal-452f64481b07#.72oayts8o)
+    * [all aws ecu are created equal](https://www.datadoghq.com/blog/are-all-aws-ecu-created-equal/)
+    * [aws EC2 - C4 benchmarked](https://www.servethehome.com/aws-ec2-c4-instances-benchmarked/)
+    * [Find optimal ec2 - use case with benchmark and result](https://www.concurrencylabs.com/blog/5-steps-for-finding-optimal-ec2-infrastructure/)
 
 ### Exemple concret d'utilisation trop grande du CPU
 
@@ -540,8 +556,8 @@ Mise en contexte en juillet 2016 nous avions pris la machine suivante :
 |:---------|:----:|:-----------:|:-------------:|-----------:|:--------------:|
 |m4.xlarge |   4  |  13         |        16     |EBS Only    | $0.239         |
 
-Nous roulions simulions des clients pour des testes de charges , chaque machines démarrais un nombre élevé de processus beaucoup de processus __forké__. 
-Finalement prendre une machine avec du crédits CPU n'était pas une bonne idée, car l'expérience d'Amazon ne fut pas optimal dû à une erreur de compréhension du système !! L'apprentissage a son lot de conséquence , __Ha well :D__ aujourd'hui on a compris :D !! 
+Nous roulions simulions des clients pour des testes de charges , chaque machines démarrait un nombre élevé de processus beaucoup de processus __forké__. 
+Finalement prendre une machine avec peu __d'ECU__ n'était pas une bonne idée, car l'expérience d'Amazon ne fut pas optimal dû à une erreur de compréhension du système !! L'apprentissage a son lot de conséquence , __Ha well :D__ aujourd'hui on a compris :D !! 
 
 Donc voici ce qui est arrivé lors de l'exécution des application ...
 
@@ -554,7 +570,8 @@ Le __LOAD average__ va monter en FLÈCHE , nous avons 4 __vCPU__ !!! :
 
 * __Rappel__ : je présume que certain non pas suivie les cours précédent ,  voir oublié la notion sur le __load average__ la valeur qui est donné 6917.16 (première valeur ) est le nombre de processus qui furent en attente de temps de CPU, il y a 5 minutes :P. 7330.14 représente le nombre de processus qui furent en attente de CPU il y a 10 minutes et pour finir 4297.11 pour les 15 dernière minutes. 
 
-Mais pourquoi la charge du serveur est si élevé ? Comme l'instance n'a plus de crédit CPU le système n'alloue plus de temps CPU au processus , donc ces derniers sont en attentes d'avoir du temps de traitement disponible. Dans la situation présente nous avons déjà eu de la chance d'être en mesure de nous connecter :P , en fait nous avions du attendre d'avoir des crédits CPU  d'alloué!
+Mais pourquoi la charge du serveur est si élevé ? Comme l'instance a une limite d'utilisation du processeur, le système de virtualisation n'alloue plus de temps CPU au processus , donc ces derniers sont en attentes d'avoir du temps de traitement disponible. Dans la situation présente nous avons déjà eu de la chance d'être en mesure de nous connecter :P , en fait nous avions du attendre d'avoir du temps CPU  disponible !
+
 
 ```bash
 [user@ip-172-31-31-188 ~]$ top
@@ -576,11 +593,9 @@ Vous avez un très bonne article sur le cas : [http://blog.scoutapp.com/articles
 
 Prendre note que nous parlons d'Amazon, mais vous pourriez avoir le même problème dans votre compagnie s'il y a de la limitation de ressource CPU avec le système de virtualisation en place. 
 
-Je voulais vous offre un exemple concret d'un problème de crédit CPU , car lorsque le problème est survenue nous ne savions pas comment identifier le problème!
+Je voulais vous offrir un exemple concret d'un problème de ressource CPU , car lorsque le problème est survenue nous ne savions pas comment identifier le problème, surtout que dans notre environnement __virtualiser__ nous n'avions pas ce problème !
 
 
-
-    
 
 ## Image -  Amazon Machine Image (AMI) EC2, système d'exploitation
 ## Stockage disponible pour l'instance EC2
@@ -600,7 +615,7 @@ Je voulais vous offre un exemple concret d'un problème de crédit CPU , car lor
 * Le système de conteneur dans aws
 * route 53
 * S3
-
+* http://locust.io/
 
 # Alors Cloud ou pas cloud ?
 REF: https://wblinks.com/notes/aws-tips-i-wish-id-known-before-i-started/
