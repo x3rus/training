@@ -167,6 +167,8 @@ Il y a 2 mode de fonctionnement pour __CloudWatch__
 
 ICI ICI ICI : TODO mettre un exemple de CloudWatch
 
+TODO : Ajout démonstration plus de CPU crédit
+
 * Référence :
     * [AWS - T2 instances cpu credits](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/t2-instances.html#t2-instances-cpu-credits) 
     * [Understanding cpu steal time when should you be worried - cpu steal](http://blog.scoutapp.com/articles/2013/07/25/understanding-cpu-steal-time-when-should-you-be-worried)
@@ -548,7 +550,7 @@ Nous allons continuer , une fois l'ensemble des concepts compris de AWS , nous v
 
 ### Exemple concret d'utilisation trop grande du CPU
 
-Voici ce qui ce passera sur un système GNU/Linux si vous utilisez plus de CPU que disponible :
+Si vous utilisez déjà __EC2__ et que vous vous demandez mais que ce passe t'il sur un système GNU/Linux si vous utilisez plus de CPU que disponible :
 
 Mise en contexte en juillet 2016 nous avions pris la machine suivante :
 
@@ -572,6 +574,7 @@ Le __LOAD average__ va monter en FLÈCHE , nous avons 4 __vCPU__ !!! :
 
 Mais pourquoi la charge du serveur est si élevé ? Comme l'instance a une limite d'utilisation du processeur, le système de virtualisation n'alloue plus de temps CPU au processus , donc ces derniers sont en attentes d'avoir du temps de traitement disponible. Dans la situation présente nous avons déjà eu de la chance d'être en mesure de nous connecter :P , en fait nous avions du attendre d'avoir du temps CPU  disponible !
 
+TODO : Ajout de l'explication du nombre de processus ... :-/ si disponible
 
 ```bash
 [user@ip-172-31-31-188 ~]$ top
@@ -596,12 +599,33 @@ Prendre note que nous parlons d'Amazon, mais vous pourriez avoir le même probl�
 Je voulais vous offrir un exemple concret d'un problème de ressource CPU , car lorsque le problème est survenue nous ne savions pas comment identifier le problème, surtout que dans notre environnement __virtualiser__ nous n'avions pas ce problème !
 
 
-
 ## Image -  Amazon Machine Image (AMI) EC2, système d'exploitation
+
+Liste des systèmes d'exploitation disponible : [https://aws.amazon.com/marketplace/b/2649367011?page=1](https://aws.amazon.com/marketplace/b/2649367011?page=1)
+
+ICI ICI ICI
+
+## Opération avec __EC2__
+
+Présentation d'opération disponible avec vos instances EC2.
+
+### Modifier le type d'instance (__Resize instance__) 
+
+Nous allons maintenant couvrir le processus de modification d'instance, dans le cas où vous auriez fait le mauvais choix au départ :P et que vous constatiez que vous avez besoin de plus de ressource (mémoire, CPU , ...).
+
+J'aimerai avant de voir cette opération, vous suggérer de ne pas l'utiliser. Je présume que vous vous demandez pourquoi je dis ça, maintenant que nous parlons d'Amazon , de __cloud__ , de déploiement automatique d'instance pour accroitre l'offre quand la demande augmente nous devons passer en mode **DevOps**. Au delà du __Buzz word__, le principe est simple avoir un déploiement automatique de notre application / de notre configuration. L'instance déployé sera donc reproductible à volonté peu importe le lieu du déploiement , du type d'instance , ... Ce déploiement pourrait être réalisé à tous moment lors du besoin et garantira que le résultat est toujours le même. Ceci étant dis malheureusement ceci n'est pas toujours possible :-(, donc pour ces moments voici une suggestion pour modifier votre instance. 
+
+TODO : faire un exemple ce sera mieux je pense.
+
+
+### Auto Scaling (https://aws.amazon.com/autoscaling/)
+
+
+* Référence
+    * [Ec2 instance resize](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html) 
+
 ## Stockage disponible pour l'instance EC2
 ## Amazon CloudWatch (https://aws.amazon.com/cloudwatch/)
-## Auto Scaling (https://aws.amazon.com/autoscaling/)
-## Resize instance (http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html)
 ## Elastic Load Balancing (https://aws.amazon.com/elasticloadbalancing/)
 ## VM Import/Export (https://aws.amazon.com/ec2/vm-import/)
 ## Systems Manager API
