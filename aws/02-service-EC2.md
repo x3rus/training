@@ -601,7 +601,40 @@ Je voulais vous offrir un exemple concret d'un problème de ressource CPU , car 
 
 ## Image -  Amazon Machine Image (AMI) EC2, système d'exploitation
 
-Liste des systèmes d'exploitation disponible : [https://aws.amazon.com/marketplace/b/2649367011?page=1](https://aws.amazon.com/marketplace/b/2649367011?page=1)
+La séquence pour la formation n'est pas évidente, j'ai présenté beaucoup de théorie depuis le début de la session sur __AWS__ , afin d'être en mesure de faire un peu de démonstration, nous allons couvrir les systèmes d'exploitation disponible. Pour la partie du stockage disponible , nous le verrons avec un exemple de mise en place d'une instance . J'espère que ceci répondra à vos attentes, mais personnellement j'ai besoin d'un peu de pratique aussi :-P, ça me fait du bien :D.
+
+Amazon offre une grande liste de système d'exploitation, ainsi que des applications pré configurées, si vous avez l'habitude de prendre le DVD de votre distribution et faire l'installation manuellement vous constaterez que ce n'est pas possible dans le cloud. Que ce soit avec Amazon , Google, Azure ou autre , afin d'offrir des environnements **rapidement** les fournisseurs de service déploie les systèmes avec des images. Vous pouvez voir l'image comme un __ghost__ , une installation minimaliste , entièrement configuré pour vous. En d'autre mot quand vous la démarrez , elle fonctionne :P , pas de problème de driver ou autre :P.
+
+Voici la liste des systèmes d'exploitation disponible : [https://aws.amazon.com/marketplace/b/2649367011?page=1](https://aws.amazon.com/marketplace/b/2649367011?page=1) 
+![lst-ami.png](./imgs/lst-ami.png){ align=center }
+
+Comme vous pouvez le voir il y a plusieurs saveur de GNU/Linux et de l'autre... Le truc privatif (__winDobe__) ;). Donc de Debian à RedHat en passant par __Gentoo__ et __Suse__, sans oublié l'autre système libre __FreeBSD__, vous pouvez aussi voir une distribution spécial Amazon __Amazon Linux AMI__, je vais développer cette saveur un peu plus loin.
+
+![lst-ami-price.png](./imgs/lst-ami-price.png){ align=right }
+
+Si vous regardez su niveau du menu de gauche , tous n'est pas gratuit :-/ , il y a des facturations à l'heure, aux mois à l'année , il est aussi possible d'apporter ça propre licence.   
+
+Nous aurons donc un système minimal , mais il est aussi possible d'avoir des applications pré installé , nous avons tendance à oublier cette possibilité , du moins dans mon cas. J'ai pris l'habitude de réaliser les installations moi même résultat j'oublie de regarder les offres disponible. Si vous regardez dans sous __Software Infrastructure__ vous aurez d'autre catégorie 
+
+* __Application Development (696)__
+* __Application Servers (567)__
+* __Application Stacks (510)__
+* __Big Data (368)__
+* __Databases & Caching (343)__
+* __Migration (23)__
+* __Network Infrastructure (339)__
+* __Operating Systems (194)__
+* __Security (502)__
+
+On les fera pas tous, prenons simplement __Network Infrastructure__ : 
+
+![](./imgs/lst-ami-network-infra.png){ align=center }
+
+Donc au lieu de vous montez un Linux et ajouter __OpenVPN__ dessus vous avez une option clé en main, même chose si vous avez besoin d'un __F5 Big IP__ , bien entendu tous n'est pas sans coût :P.
+
+Pour les besoins de la présentation, je vais opté pour une image __Ubuntu 16.04__ afin d'être consistant avec les restes des formations réalisé précédemment. Mais avant clarifions le cas de la distribution __Amazon Linux AMI__ !
+
+###  Amazon Linux AMI Vs classic Linux
 
 ICI ICI ICI
 
