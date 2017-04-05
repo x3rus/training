@@ -1,6 +1,8 @@
 
 # Service EC2 
 
+![EC2-logo-full.jpg](./imgs/EC2-logo-full.jpg){ align=right }
+
 Fini la présentation haut niveau du service de cloud ou le listing des produits passons avec au service [AWS EC2](https://aws.amazon.com/ec2/details/) en "détail" (Petit rappel , je vais vous présenter ce que je connais, je vous invite à poursuivre ...)
 
 Telle que mentionné [EC2](https://aws.amazon.com/ec2/details/) est le service de machine virtuelle d'Amazon, le terminologie utilisé par Amazon pour nommé cette machine est **INSTANCE**. Lors de la lecture de documentation vous aurez donc le terme **instance EC2**.
@@ -39,9 +41,9 @@ Juste pour avoir un jouet tous de suite avec quoi s'amuser :P , une fois la chos
 
 C'est partie !!
 
-TODO Ajout imgs
-
 ## Type d'instance EC2
+
+![AWS_Simple_Icons_Compute_Amazon_EC2_Instances.png](./imgs/AWS_Simple_Icons_Compute_Amazon_EC2_Instances.png){ align=right }
 
 Nous devons définir quelle est le type de matériel que nous désirons avoir pour notre instance __EC2__ , voici la [documentation officiel Amazon sur le sujet](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html) .
 Le choix est toujours difficile et le sera toujours , personne n'a envie de choisir une poubelle, nous désirons avoir de la PERFORMANCE. Bien entendu le prix varie en fonction de la puissance du système choisie. Ceci étant dit, rappelons nous le principe nous devons être plus flexible , optimiser la facture pour NOS besoin. Le choix de l'instance que nous réalisons au début n'est PAS obligatoirement le type d'instance que nous utiliserons dans le future. 
@@ -52,6 +54,8 @@ Mais avant de parler de changer une instance existante faudrait peut-être débu
 Voici les types d'instance disponible aujourd'hui (2017-03-16) 
 
 TODO : Voir pour ajouter des lignes dans le tableau ...
+
+
 
 | Regroupement d'instance | Type d'instance disponible  |
 |:------------------------|:----------------------------:|
@@ -636,7 +640,18 @@ Pour les besoins de la présentation, je vais opté pour une image __Ubuntu 16.0
 
 ###  Amazon Linux AMI Vs classic Linux
 
-ICI ICI ICI
+La distribution [Amazon Linux AMI](https://aws.amazon.com/amazon-linux-ami/) basé sur RedHat / Centos, nous avons donc l'ensemble des outils que nous avons l'habitude d'avoir avec ce type de distribution. Il est donc possible aussi d'ajouter les dépôts tierce telle que __EPEL__ ou autre. La question est donc mais pourquoi cette distribution alors ?
+
+[Amazon Linux AMI](https://aws.amazon.com/amazon-linux-ami/) répond à une problématique connu et surtout voulu par RedHat. La distribution du chapeau rouge, offre des versions des logiciels avec une version fixe et réalise les mise à jour de sécurité sur les logiciels. En d'autre mot , si lors de la sortie initial de la distribution , par exemple RedHat 7 , vous désirez avoir __php 7__ malheureusement lors de la sortie il n'est disponible (depuis les dépôts officiel) que la version 5.X. [Amazon Linux AMI](https://aws.amazon.com/amazon-linux-ami/) offre une solution de mise à jour différente , le mode de mise à jour est __rolling release__ en d'autre mot les packages sont mise à jour beaucoup plus régulièrement. Il est fort probable que vous vous dites, mais pourquoi RedHat ne fait pas la même chose c'est bien mieux :P, c'est un point de vue :P. 
+
+L'avantage du modèle de RedHat est bien entendu une stabilité plus grande, mais étrangement généralement les gens sont d'accord mais pas assez pour adhérer à ce mode , surtout les développeurs . L'autre aspect très pratique du modèle de RedHat est qu'il est fatigue de conservé les environnements équivalent en terme de version des applications, en effet si nous sommes en perpétuellement changement de logiciel il peut être difficile entre 2 mise à jour de s'assurer que les version des applications sont égaux. 
+
+Autre avantage de [Amazon Linux AMI](https://aws.amazon.com/amazon-linux-ami/)  est que vous avez l'ensemble des outils d'Amazon disponible , avec l'ensemble des librairies dépendante pour le bon fonctionnement. Ceci évite de démarrer un système Centos et d'avoir une procédure d'initialisation de l'environnement pour mettre en place les outils.
+
+Maintenant pourquoi aujourd'hui je ne suis émotionnellement près à utiliser ce type d'instance, car :
+
+* J'adore le système de __rolling release__ pour mon poste de travail , mais un serveur j'aime bien avec une plus grand stabilité. Bien entendu parfois ça demande plus d'effort pour répondre à des besoins exceptionnel.
+* Aujourd'hui je n'utilise pas l'ensemble des outils API d'Amazon , résultat la grosse plus value de la distribution n'est pas un plus dans mon cas. De plus la distribution d'Amazon n'est disponible QUE sur Amazon. Mon objectif reste d'avoir des environnements équivalent peut importe le lieux d'exécution (__Cloud__ ou à l'interne (__On Promise__) )
 
 ## Opération avec __EC2__
 
