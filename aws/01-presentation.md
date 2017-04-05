@@ -7,6 +7,8 @@ Ceci étant dit, nous allons faire de notre mieux !
 
 ## C'est quoi le cloud ?
 
+![cloud-computing.jpg](./imgs/cloud-computing.jpg){ align=right }
+
 Avant de débuter on va juste clarifier un point sur c'est quoi le cloud, en ce moment on entend tous et n'importe quoi sur le sujet ... Donc 2 minutes pour faire le point et clarifier le __Buzz word__.
 
 Le Cloud est omniprésents dans nos vie, listons quelques service courant de notre utilisation :
@@ -108,7 +110,7 @@ Voici une copie d'écran des services disponibles :
 
 Nous allons regrouper les services par fonctionnalité :
 
-* [**Traitement, calcule** (**COMPUTE**)](https://aws.amazon.com/products/compute/)
+* [**Traitement, calcule** (**COMPUTE**)](https://aws.amazon.com/products/compute/) ![](./imgs/AWS_Simple_Icons_Compute_Amazon_EC2_Instances.png){align=right}
     * [Amazon Lightsail](https://amazonlightsail.com/) : l'équivalent d'une machine virtuel privé hébergé chez Amazon , une quantité de mémoire , CPU , un disque dur et une quantité de transfert de données permis. La principale particularité est que les ressources sont réservé pour votre machine. Vous pouvez consulter la [liste des fonctionnalités](https://amazonlightsail.com/features/). 
 
         | Prix/mois  | Mémoire | CPU     | Disque Dur | Transfert |
@@ -121,16 +123,16 @@ Nous allons regrouper les services par fonctionnalité :
             Prix pour AWS Lightsail (2017-03-08)
     * [Amazon EC2](https://aws.amazon.com/products/compute/#ec2) : Probablement le service d'Amazon le plus connu qui permet d'avoir une machine sur demande, la machine virtuel peut être initialisé pour 1 heure ou 2 puis éteinte la facturation est réaliser uniquement pour le temps d'utilisation. De loin le service le plus flexible d'Amazon . Il y a plusieurs [type d'instance](https://aws.amazon.com/ec2/instance-types/) , nous aurons l'occasion de le voir en détail plus tard. En gros les types varie selon l'utilisation de notre besoin, certaines ont plus de mémoire , d'autre plus de CPU , plus de stockage , ... Bien entendu chaque [type à un prix par heure](https://aws.amazon.com/ec2/pricing/on-demand/) nous y reviendrons aussi :D.
     * [Amazon EC2 Container](https://aws.amazon.com/ecs/) : Comme Docker est partout , partout, partout :D, Amazon offre aussi un service de conteneur. Pour ce service il n'y a pas de coût additionnel. Vous avez besoin d'une ou plusieurs instance [Amazon EC2](https://aws.amazon.com/products/compute/#ec2) et Amazon les configures adéquatement (__cluster__) afin que vous puissiez déployer vos conteneur sur les systèmes.
-* [**Stockage des données**](https://aws.amazon.com/products/storage/)
+* [**Stockage des données**](https://aws.amazon.com/products/storage/) ![](./imgs/S3.png){align=right}
     * [Amazon Elastic Block Storage - EBS](https://aws.amazon.com/ebs/) : Système de stockage dédier d'Amazon, nous aurons l'occasion de le voir plus loin. Ce système nous permet d'attaché un disque dur à une instance. Ceci est du stockage dédier qui peut être agrandie et qui à l'avantage d'être répliqué chez Amazon, il est aussi possible de réaliser des __snapshots__ des disques dur. Plusieurs [type de stockage](https://aws.amazon.com/ebs/pricing/) est disponible bien entendu le prix change si vous utilisez un __SSD__ ou autre. 
     * [Amazon Amazon Elastic File System - EFS](https://aws.amazon.com/efs/) : Service de partage de fichiers , en gros ceci est un serveur de fichier qui vous permet de partager des données entre vos instances __EC2__. Contrairement au système __EBS__ qui est attaché à UNE instance __EC2__ le service **EFS** peut être accédé par plusieurs instances __EC2__. Rien n'est gratuit voir la [page des prix](https://aws.amazon.com/efs/pricing/)
     * [Amazon S3](https://aws.amazon.com/s3/) : Service de partage de fichier très populaire d'Amazon qui offre une quantité disponible de stockage à un prix hallucinant. Ceci est un service web qui permet de pousser et récupérer des fichiers sur les serveurs d'Amazon. [Les prix au gigs](https://aws.amazon.com/s3/pricing/) sont à tombé parterre .
-* [**Base de données**](https://aws.amazon.com/products/databases)
+* [**Base de données**](https://aws.amazon.com/products/databases) ![](./imgs/amazon_rds_logo.png){align=right}
     * [Amazon Relational Database service -RDS](https://aws.amazon.com/rds/): Ce service vous offre la possibilité d'avoir une base de données relationnel, plusieurs type de base de données sont disponible : [Amazon Aurora](https://aws.amazon.com/rds/aurora/details/), [MySQL](https://aws.amazon.com/rds/mysql/details/), [MariaDB](https://aws.amazon.com/rds/mariadb/details/), [Oracle](https://aws.amazon.com/rds/oracle/details/), [Microsoft SQL Server](https://aws.amazon.com/rds/sqlserver/details/), et [PostgreSQL](https://aws.amazon.com/rds/postgresql/details/). Bien entendu le prix varie selon le type choisie :D. Si nous prenons par exemple [le prix pour Mysql](https://aws.amazon.com/rds/mariadb/pricing/) vous constaterez aussi que le type de machine influencera le prix.
     * [Amazon Aurora](https://aws.amazon.com/rds/aurora/) : Ce veut une base de donnée relationnel compatible __MySQL__ ou __Postgres__ équivalent au offre commerciel pour 1 /10 du prix. Amazon prétend que ce service est 5 fois plus rapide qu'un __MySQL__ classique. Amazon vous offre des méthodes de gestion avec une haute disponibilité. J'ai malheureusement jamais essayé le produit !
     * Solution __NoSQL__ [Redis , memcache - Elasticache](https://aws.amazon.com/elasticache/) et [dynamodb](https://aws.amazon.com/dynamodb/) : 2 service de __NoSQL__ disponible, une solution maison d'Amazon avec __Dynamodb__ ainsi que elasticache qui repose sur des produits libre __Redis__ ou __memcache__.
     * [Amazon Redshift](https://aws.amazon.com/redshift/) : Si vous avez des péta octets de données c'est pour vous, bien entendu jamais essayé j'ai pas autant de donnée
-* [**Réseautique**](https://aws.amazon.com/products/networking/) 
+* [**Réseautique**](https://aws.amazon.com/products/networking/) ![](./imgs/vpc-vpn-logo.png){align=right}
     * [Amazon VPC(Virtual Private Cloud)](https://aws.amazon.com/vpc/) : ce service vous offre la possibilité de regrouper vos instances dans des sous-réseaux. Si vous gérez actuellement un réseau d'entreprise vous avez probablement plusieurs __DMZ__ afin de segmenté les systèmes. [VPC](https://aws.amazon.com/vpc/) vous permet de réaliser exactement la même configuration, bien entendu nous l'avons en IPv4 et IPv6 :
         * Division  des segments VPC IP publique  / privé
         * Contrôle des accès en entré et sortie aux segments, Logs le trafic dans les 2 sens

@@ -653,9 +653,22 @@ Maintenant pourquoi aujourd'hui je ne suis émotionnellement près à utiliser c
 * J'adore le système de __rolling release__ pour mon poste de travail , mais un serveur j'aime bien avec une plus grand stabilité. Bien entendu parfois ça demande plus d'effort pour répondre à des besoins exceptionnel.
 * Aujourd'hui je n'utilise pas l'ensemble des outils API d'Amazon , résultat la grosse plus value de la distribution n'est pas un plus dans mon cas. De plus la distribution d'Amazon n'est disponible QUE sur Amazon. Mon objectif reste d'avoir des environnements équivalent peut importe le lieux d'exécution (__Cloud__ ou à l'interne (__On Promise__) )
 
-## Opération avec __EC2__
+Vous avez l'information vous êtes en mesure de faire VOTRE choix, je ne peux pas me prononcer.
 
-Présentation d'opération disponible avec vos instances EC2.
+## Opération avec EC2
+
+Présentation d'opération disponible avec vos instances __EC2__, car c'est bien d'en parler, mais faut aussi mettre la main à la patte !!
+Nous allons voir plusieurs type d'opération telle que:
+
+* la création :) ( ça aidera pour la suite )
+* La modification du type d'instance (ajustement de la taille)
+* La création de __snapshot__
+* L'assignation d'une adresse IP publique statique.
+* ...
+
+Sans peur et avec beaucoup d'excitation !
+
+### Création d'une instance __EC2__ 
 
 ### Modifier le type d'instance (__Resize instance__) 
 
