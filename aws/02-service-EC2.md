@@ -169,9 +169,85 @@ Il y a 2 mode de fonctionnement pour __CloudWatch__
 * __Basic Monitoring__ (**gratuite**) : 7 métriques pré sélectionnés sont disponible , la collecte des informations sur l'instance est réalisé au 5 minutes. De plus il y une validation pour 3 statuts telle que validation que l'instance est allumé, ... 
 * __Detailed Monitoring__ (**payant selon l'utilisation**) : Bien entendu nous conservons le monitoring de base mais cette fois avec une intervalle à la minutes , de plus d'autre métriques sont disponible. Il est aussi possible de faire de l'agrégation entre le type de l'instance et le système en cours d'utilisation. 
 
-ICI ICI ICI : TODO mettre un exemple de CloudWatch
+##### Démonstration utilisation des crédits et comportement lorsqu'il n'y en a plus
 
-TODO : Ajout démonstration plus de CPU crédit
+Bon les explications sont super bien expliqué plus haut ( le gars est vraiment bon :P ) , mais ceci n'est que théorique concrètement quelle est le comportement ? Je vous inviterai bien entendu à faire la validation vous même pour bien comprendre et ressentir le comportement ! 
+La démonstration réalisé ci-dessous m'a coûté 0.22 $ américain pour environ 1 heure et demi d'utilisation , il est aussi possible de le réaliser sans aucun coût en utilisant le forfait d'essai  d'Amazon , le miens avait expiré :P.
+
+Explication du test (pas de panique nous couvrirons la partie de création d'instance plus tard):
+
+1. Mise en place d'une instance de type **t2.micro**, voici les spécifications technique :
+
+    | Model    | vCPU |CPU Crédits/h|CPU Crédit init|  Mem (GiB) | Base performance (CPU utilization) | Maximum Crédit CPU | 
+    |:---------|:----:|:-----------:|:-------------:|-----------:|:----------------------------------:|-------------------:|
+    |t2.micro  |  1   |  6          | 30            |  1         | 10%                                | 144                |
+2. Utilisation de la distribution RedHat __Enterprise__ 7 
+3. Je désire avoir une haute charge CPU afin de consommer mes crédits CPU afin de voir le comportement lorsque nous serons à 0 Crédits
+    * Installation des logiciels de développement (__Development Tools__)
+    * Téléchargement du dernier __Kernel__ GNU/Linux disponible
+    * Compilation du noyaux
+4. Visualisation du comportement de la machine et des graphiques sous __CloudWatch__.
+
+* Démarrage de l'instance 
+
+![](./imgs/cpucredit-show-instance-running.png)
+
+* Établissement d'une connexion et installation des requis ainsi que la récupération du __kernel__ 
+
+```bash
+[ec2-user@ip-172-31-23-65 ~]$ sudo yum groupinstall 'Development Tools' wget bc 
+[ec2-user@ip-172-31-23-65 ~]$ wget https://cdn.kernel.org/pub/linux/kernel/v4.x/testing/linux-4.11-rc5.tar.xz
+[ec2-user@ip-172-31-23-65 ~]$ tar -Jxvf linux-4.11-rc5.tar.xz
+```
+* Visualisation de l'état dans __CloudWatch__ 
+
+![](./imgs/demo-aws-cwatch-cpu-balance-usage-install-untar-t2-micro.png)
+![](./imgs/demo-aws-cwatch-cpu-usage-install-untar-t2-micro.png)
+![](./imgs/demo-aws-cwatch-cpu-credit-usage-install-untar-t2-micro.png)
+
+* Validation sur internet du processus de compilation avec les nouvelles version surtout pour convertir la configuration actuelle. Opération réalisé 
+
+```bash
+# generation de la configuration par default
+[ec2-user@ip-172-31-23-65 linux-4.11-rc5]$ make defconfig
+# Copie de la configuration actuellement en utilisation
+[ec2-user@ip-172-31-23-65 linux-4.11-rc5]$ cp /boot/config-3.10.0-514.el7.x86_64 .config
+[ec2-user@ip-172-31-23-65 linux-4.11-rc5]$ date
+Fri Apr  7 12:46:27 EDT 2017
+[ec2-user@ip-172-31-23-65 linux-4.11-rc5]$  make oldconfig
+```
+* Visualisation des graphiques 
+
+![](./imgs/demo-aws-cwatch-avant-build-kernel-t2-micro.png)
+
+* Démarrage de la compilation.
+
+```bash
+[ec2-user@ip-172-31-23-65 linux-4.11-rc5]$  make
+```
+
+![](demo-aws-cwatch-pendant-1-build-kernel-t2-micro.png)
+
+Nous voyons donc la monté en charge du CPU , du à la compilation du __kernel__ , c'est bon signe :D.
+
+* La compilation va bon train , le % d'utilisation CPU monte 
+
+![](./imgs/demo-aws-cwatch-pendant-2-build-kernel-t2-micro.png)
+![](./imgs/demo-aws-cwatch-pendant-2-build-kernel-sans-cpuUsage-t2-micro.png)
+
+La courbe est claire entre l'utilisation CPU et le nombre de crédit disponible et utilisé. 
+
+* Toujours en court de compilation , nous avons 100% d'utilisation du CPU , nous sommes en rythme de croisière, l'ensemble des ressources système sont utilisé pour la compilation
+
+![](demo-aws-cwatch-pendant-3-build-kernel-sans-cpuUsage-t2-micro.png)
+![](demo-aws-cwatch-pendant-3-build-kernel-t2-micro.png)
+
+* Tous va bien mais maintenant le nombre de crédit disponible et utilisé arrive au même point , et étrangement le % du CPU réduit
+
+![](demo-aws-cwatch-pendant-4-build-kernel-sans-cpuUsage-t2-micro.png)
+![](demo-aws-cwatch-pendant-4-build-kernel-t2-micro.png)
+
+* 
 
 * Référence :
     * [AWS - T2 instances cpu credits](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/t2-instances.html#t2-instances-cpu-credits) 
