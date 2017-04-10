@@ -746,6 +746,48 @@ Sans peur et avec beaucoup d'excitation !
 
 ### Création d'une instance __EC2__ 
 
+Commençons avec la création d'une instance, ceci nous offrira du traitement CPU disponible pour l'ensemble de nos opérations , pour la démonstration je vais choisir une instance de type __t2.micro__ . Il n'y a que très peu de différence entre les types d'instance , le concept sera le même , bien entendu selon le type d'instance il est possible que vous ayez plus d'option. 
+
+Ce sera vraiment étape par étape (__step by step__) , les copies d'écran furent réalisé en avril 2016 , précision si ceci change dans le futur :).
+
+Bien entendu vous devez être connecter dans l'interface **Amazon aws** : [console.aws.amazon.com](https://console.aws.amazon.com/?nc2=h_m_mc).
+
+À la page d'accueil sélectionné __EC2__ :
+
+![](./imgs/demo-aws-home.png)
+
+Vous pouvez choisir dans quelle région votre instance sera créé , prendre note que les volumes et instances sont fixe selon la région. Chaque région est "indépendante", il est peut-être possible de migrer des instances d'une région à l'autre, mais ceci ne fait pas partie de mon savoir pour le moment. Donc jusqu'à preuve du contraire :) , ceci n'est pas possible :D.
+
+![](./imgs/demo-aws-home-EC2-with-region.png)
+
+Nous allons donc faire la création de l'instance, ceci prendra quelques étapes , mais l'ensemble est très claire de plus il est possible de modifier la configuration par la suite. 
+
+1. Sélection du système d'exploitation (__Amazon Image__) , dans mon cas ce sera une instance __RedHat__, car c'est le premier :P. Vous pourrez explorer les option disponible telle que visualisé préalablement.
+
+    ![](./imgs/demo-aws-lunch-ec2-step1-AMI.png) 
+2. Sélection du type d'instance que nous désirons avoir , telle que mentionné plus tôt j'ai opté pour une instance __t2.micro__ afin de réduire mes coûts de présentation. Cette instance fut aussi utilisé lors de la démonstration de l'utilisation des crédits CPU :P.
+
+    ![](./imgs/demo-aws-lunch-ec2-step2-select-type-instance.png)
+3. Configuration de l'instance, pour le moment nous allons rester dans une configuration "simpliste". 
+    Comme disait si bien __M.Miyagi__ dans [Karate Kid](https://fr.wikipedia.org/wiki/Karaté_Kid_(film,_1984)) :
+    ```
+        Mr. Miyagi: First learn stand, then learn fly. Nature rule, Daniel-san, not mine.
+    ```
+
+    Dans cette logique commençons par prendre en charge une instance simplement pour après faire des choses magnifique :D. Prenons tous de même quelques minutes pour regarder le paysage ... Nous avons les options suivantes :
+
+    * __Number of instances__ : Il est possible de démarrer plusieurs instances avec la même configuration. Bien entendu gain de temps .
+    * __Network / Subnet__ : Nous le verrons plus loin mais il est possible de créer des réseaux pour nos instances ceci nous permettra de redéfinir des __DMZ__ clients ou simplement de la segmentation pour nos environnements 3 tiers ( Web, App, BD ).
+    * __Auto-assign Public IP__: Nous pouvons choisir l'option par défaut ou définir un pool d'IP nous appartenant, nous y reviendrons aussi. 
+    * __IAM role__: Ceci nous permet de gérer l'accès à l'instance , lors d'appel __API__, j'espère le couvrir plus tard , car ceci est super intéressant voici l'URL pour ceux qui désire en savoir un peu plus : [IAM role doc](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/UsingIAM.html#intro-to-iam).
+    * TODO : Continuer ICI ICI ICI
+
+    ![](./imgs/demo-aws-lunch-ec2-step3-config-instance.png)
+4. Association du disque dur au système , comme il y a une indication sur la taille disponible sans frais additionnel , dans mon cas je ne veux faire qu'un petit teste donc je n'ai pris que 10 Gigs. Il y a plusieurs type de stockage , selon l'instance sélectionné le menu déroulant en contient plus ou moins.
+
+    ![](./imgs/demo-aws-lunch-ec2-step4-add-storage.png)
+
+
 ### Modifier le type d'instance (__Resize instance__) 
 
 Nous allons maintenant couvrir le processus de modification d'instance, dans le cas où vous auriez fait le mauvais choix au départ :P et que vous constatiez que vous avez besoin de plus de ressource (mémoire, CPU , ...).
