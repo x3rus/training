@@ -226,7 +226,7 @@ Fri Apr  7 12:46:27 EDT 2017
 [ec2-user@ip-172-31-23-65 linux-4.11-rc5]$  make
 ```
 
-![](demo-aws-cwatch-pendant-1-build-kernel-t2-micro.png)
+![](./imgs/demo-aws-cwatch-pendant-1-build-kernel-t2-micro.png)
 
 Nous voyons donc la monté en charge du CPU , du à la compilation du __kernel__ , c'est bon signe :D.
 
@@ -239,23 +239,74 @@ La courbe est claire entre l'utilisation CPU et le nombre de crédit disponible 
 
 * Toujours en court de compilation , nous avons 100% d'utilisation du CPU , nous sommes en rythme de croisière, l'ensemble des ressources système sont utilisé pour la compilation
 
-![](demo-aws-cwatch-pendant-3-build-kernel-sans-cpuUsage-t2-micro.png)
-![](demo-aws-cwatch-pendant-3-build-kernel-t2-micro.png)
+![](./imgs/demo-aws-cwatch-pendant-3-build-kernel-sans-cpuUsage-t2-micro.png)
+![](./imgs/demo-aws-cwatch-pendant-3-build-kernel-t2-micro.png)
 
 * Tous va bien mais maintenant le nombre de crédit disponible et utilisé arrive au même point , et étrangement le % du CPU réduit
 
-![](demo-aws-cwatch-pendant-4-build-kernel-sans-cpuUsage-t2-micro.png)
-![](demo-aws-cwatch-pendant-4-build-kernel-t2-micro.png)
+![](./imgs/demo-aws-cwatch-pendant-4-build-kernel-sans-cpuUsage-t2-micro.png)
+![](./imgs/demo-aws-cwatch-pendant-4-build-kernel-t2-micro.png)
 
-* 
+* Le nombre de crédit disponible est plus bas que la consomation de crédit en cours, et le % CPU continue ça décente. ( Prendre note que le kernel poursuit ça compilation )
+
+![](./imgs/demo-aws-cwatch-pendant-5-build-kernel-sans-cpuUsage-t2-micro.png)
+![](./imgs/demo-aws-cwatch-pendant-5-build-kernel-t2-micro.png)
+ 
+* Stabilisation du CPU et des 2 valeurs pour le crédit CPU 
+
+![](./imgs/demo-aws-cwatch-pendant-7-build-kernel-t2-micro.png)
+
+* Autre représentation de la stabilisation 
+
+![](./imgs/demo-aws-cwatch-cpu-usage-final-t2-micro.png)
+![](./imgs/demo-aws-cwatch-credit-balance-final-t2-micro.png)
+![](./imgs/demo-aws-cwatch-credit-usage-final-t2-micro.png)
+
+* Au delà des graphiques la machine elle dit quoi, ELLE ?
+
+Une fois vitesse de croisière atteint (les crédits CPU == la balance CPU), la machine va "bien", une nouvelle connexion se réalise , c'est un peu plus lent, mais on peut juste le mettre sur le dos de la compilation en cours, voir un download en cours qui prend de la bande passante. Si nous réalisons un **top** sur la machine :
+
+```bash
+top - 13:35:56 up  1:06,  2 users,  load average: 3.53, 2.88, 2.34
+Tasks:  91 total,   5 running,  86 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  9.6 us,  1.6 sy,  0.6 ni,  0.0 id,  0.0 wa,  0.0 hi,  0.0 si, 88.1 st
+KiB Mem :  1014976 total,   114152 free,   130304 used,   770520 buff/cache
+KiB Swap:        0 total,        0 free,        0 used.   689944 avail Mem 
+
+  PID USER      PR  NI    VIRT    RES    SHR S %CPU %MEM     TIME+ COMMAND                                                                                             
+30837 ec2-user  20   0  168428  40428   8564 R 98.0  4.0   0:02.98 cc1                                                                                                
+    1 root      20   0  128092   5000   2244 S  0.0  0.5   0:02.39 systemd 
+```
+
+**cc1 98%** : la compilation est en cours prends l'ensemble du CPU 
+
+Mais regardons l'autre ligne :
+
+**%Cpu(s):  9.6 us,  1.6 sy,  0.6 ni,  0.0 id,  0.0 wa,  0.0 hi,  0.0 si, 88.1 st**
+
+**88.1 st** : __st__ c'est pour quoi, __steal__ (voler) , le pourcentage de CPU volé est à 88.1% ? 
+
+Vous avez un très bonne article sur le cas : [http://blog.scoutapp.com/articles/2013/07/25/understanding-cpu-steal-time-when-should-you-be-worried](http://blog.scoutapp.com/articles/2013/07/25/understanding-cpu-steal-time-when-should-you-be-worried).
+
+Pour faire court c'est le mode de contrôle d'accès au CPU , ceci permet de limiter l'instance à l'accès CPU auquel elle a droit. Plus de crédits CPU , pas de problème , le système de virtualisation "droppe" l'accès CPU et nous l'indique comme "voler". 
+
+Ceci n'est pas temporaire 10 minutes plus tard comme je n'ai pas plus de crédit CPU :
+
+```bash
+top - 13:46:16 up  1:16,  2 users,  load average: 3.12, 3.17, 2.77
+Tasks:  90 total,   4 running,  86 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  9.0 us,  2.6 sy,  0.3 ni,  0.0 id,  0.0 wa,  0.0 hi,  0.0 si, 88.1 st
+KiB Mem :  1014976 total,   116736 free,   131820 used,   766420 buff/cache
+KiB Swap:        0 total,        0 free,        0 used.   685504 avail Mem 
+
+  PID USER      PR  NI    VIRT    RES    SHR S %CPU %MEM     TIME+ COMMAND                                                                                            
+11398 ec2-user  20   0  165536  33588   4528 R 63.0  3.3   0:01.91 cc1                                                                                                
+11106 ec2-user  20   0  108956   1788    812 S  1.3  0.2   0:00.11 make      
+```
 
 * Référence :
     * [AWS - T2 instances cpu credits](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/t2-instances.html#t2-instances-cpu-credits) 
     * [Understanding cpu steal time when should you be worried - cpu steal](http://blog.scoutapp.com/articles/2013/07/25/understanding-cpu-steal-time-when-should-you-be-worried)
-
-
-
-A lire : http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts_micro_instances.html
 
 #### Instance M4.\*
 
