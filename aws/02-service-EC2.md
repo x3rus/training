@@ -831,13 +831,91 @@ Nous allons donc faire la création de l'instance, ceci prendra quelques étapes
     * __Network / Subnet__ : Nous le verrons plus loin mais il est possible de créer des réseaux pour nos instances ceci nous permettra de redéfinir des __DMZ__ clients ou simplement de la segmentation pour nos environnements 3 tiers ( Web, App, BD ).
     * __Auto-assign Public IP__: Nous pouvons choisir l'option par défaut ou définir un pool d'IP nous appartenant, nous y reviendrons aussi. 
     * __IAM role__: Ceci nous permet de gérer l'accès à l'instance , lors d'appel __API__, j'espère le couvrir plus tard , car ceci est super intéressant voici l'URL pour ceux qui désire en savoir un peu plus : [IAM role doc](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/UsingIAM.html#intro-to-iam).
-    * TODO : Continuer ICI ICI ICI
+    * __Shutdown behavior__: Ceci permet de définir l'opération lors que vous réaliserez un arrêt de l'instance , est-ce que l'instance doit s'arrêter ou se détruire automatiquement. Ceci vous semble peut-être étrange, mais c'est très pratique lors de teste ou démarrage d'instance pour des opérations volatil ou lors de gestion de charge.
+    * [__Enable Terminiation protection__](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/terminating-instances.html#Using_ChangingDisableAPITermination): Permet de bloquer la suppression accidentel de l'instance depuis la console __aws__, ligne de commande __aws__ ou __l'api__
+    * __Monitoring__ : Permet d'avoir plus d'information dans le système de __CloudWatch__ , au lieu d'avoir un monitoring au 5 minutes vous l'aurez au minutes, cependant vous aurez des coût additionnels...
+    * __Tenancy__ : Permet de définir sur quelle système l'instance sera hébergé , bien entendu  des coûts peuvent découler du choix réalisé.
 
     ![](./imgs/demo-aws-lunch-ec2-step3-config-instance.png)
-4. Association du disque dur au système , comme il y a une indication sur la taille disponible sans frais additionnel , dans mon cas je ne veux faire qu'un petit teste donc je n'ai pris que 10 Gigs. Il y a plusieurs type de stockage , selon l'instance sélectionné le menu déroulant en contient plus ou moins.
+4. Association du disque dur au système , comme il y a une indication sur la taille disponible sans frais additionnel (30 Gigs) , dans mon cas je ne veux faire qu'un petit teste donc je n'ai pris que 10 Gigs. Il y a plusieurs type de stockage , selon l'instance sélectionnée le menu déroulant en contient plus ou moins. Je vais revenir sur le stockage, mais je voulais faire une démonstration __d'EC2__ préalablement. 
 
     ![](./imgs/demo-aws-lunch-ec2-step4-add-storage.png)
+5. Assignation de **tags** à l'instance, ceci sera des indicatifs, qui pourront être utilisé lors de la gestion de la facturation pou bien comprendre qui à engendré ces coûts. Par exemple si vous êtes une compagnie multi département, en assignant des un __tag__ (__Dept : marketing__) vous serez en mesure de facturer le département à l'interne. Au moins vous serez en mesure de comprendre pourquoi votre facture passe du simple au double :P. Les __tags__ sont arbitraires.
 
+    ![](./imgs/demo-aws-lunch-ec2-step5-tags.png)
+6. Configuration des règles de par feu pour l'instance, comme nous n'avons pas encore de configuration de par feu, nous allons en créer une nouvelle. Dans l'exemple ci-dessous je n'ai ouvert que le port 22 pour l'ensemble d'Internet. La création d'une __network policy__ lors de la création de l'instance n'est pas complète car il est possible de gérer les connexions entrante ET sortante. Nous le verrons probablement plus tard.
+
+    ![](./imgs/demo-aws-lunch-ec2-step6-network-fw.png)
+7. Le petit résumé de notre instance que presque personne ne consulte une fois que tu as créer plus de 3 instances manuellement :P .
+
+    ![](./imgs/demo-aws-lunch-ec2-step7-review.png)
+8. Permettre l'accès à l'instance , comme vous pouvez le constater à aucun moment nous n'avons assigné un mot de passe pour l'utilisateur __root__ ou tout autre utilisateur. Le mode de fonctionnement d'Amazon est d'utiliser le système de clé ssh pour la connexion. La configuration du serveur ssh sur l'instance ne permet pas l'authentification avec utilisateur / mot de passe vous devez utiliser une clé. Encore une fois nouvelle configuration nous devrons créer une pair de clé . **ATTENTION** comme le mentionne Amazone la clé privé que vous allez télécharger ne sera PAS récupérable si vous la perdez ! Vous devrez en générer une nouvelle !! Il est donc important de faire attention.
+
+    ![](./imgs/demo-aws-lunch-ec2-step8-key-ssh.png)
+
+    Vous pouvez visualiser la clé ssh téléchargé :
+
+    ```bash
+    $ cat formation.pem 
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEogIBAAKCAQEAnnwa38CRjUb6fAdVgb1V2s9t3fZL5Cg+lg5g1cO1AtKZvWO0BuB1N6IlK68b
+    lp4i0W6C0YrbskyfKKdaipxFD4kLuQ3e+Tl6pC0Wtzo1/E8/qFlk4Phet/mtbhjtI3j544ERuzau
+    sU0/j5UUdqMTbN7zLFmgGRyIbOTP4AqXr9xxLL5kPvtNUi+BWgm/y8T1Bcvx9zhi82zKiRdSwluN
+    6a7zXeR15OMKJCptGnFE3PVNhrF4mtHZ3m+ikAghuVtCeaFExU3wH0Ec9ISMRIFkLmn/2PtiyBy0
+    sYqY6UWslMn7k2fnw2I/6fTSWjevxiADX4J82P594E5i8UHY73qXsQIDAQABAoIBABylhh4HqseE
+    ....
+    ...
+    ....
+    -----END RSA PRIVATE KEY-----
+    ```
+9. Si nous retournons à la page d'accueil des instances __EC2__, vous pourrez visualiser l'instance en cours. Vous pouvez voir le nom de l'instance, son ID et surtout l'adresse IP publique qui lui fut assigné.
+
+    ![](./imgs/demo-aws-lunch-ec2-step9-view-instance.png)
+10. Bon c'est bien tous ça mais on joue quand avec :P , je crois qu'il est temps de s'y connecter. Nous allons utiliser la clé préalablement téléchargé, l'utilisateur par défaut sous Amazon est **ec2-user**. 
+    Je vais débuter avec une "erreur" mais 'espère vous faire gagner du temps si vous la rencontrez :P .
+
+    ```bash
+    $ ssh -i formation.pem ec2-user@52.15.95.51
+    The authenticity of host '52.15.95.51 (52.15.95.51)' can t be established.
+    ECDSA key fingerprint is d3:17:4a:2e:d2:8e:07:d8:8a:6d:1c:50:ac:8e:da:66.
+    Are you sure you want to continue connecting (yes/no)? yes
+    Warning: Permanently added '52.15.95.51' (ECDSA) to the list of known hosts.
+    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    @         WARNING: UNPROTECTED PRIVATE KEY FILE!          @
+    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    Permissions 0664 for 'formation.pem' are too open.
+    It is required that your private key files are NOT accessible by others.
+    This private key will be ignored.
+    bad permissions: ignore key: formation.pem
+    Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+    ```
+
+    Il est important que les permissions de la clé soit comme suit : 
+
+    ```bash
+    $ ls -l formation.pem
+    -rw------- 1 VotreUser VotreGroup 1692 Apr  7 18:28 formation.pem
+    ```
+    Une fois l'opération réaliser l'établissement de connexion fonctionnera très bien :
+
+    ```bash
+    $ ssh -i formation.pem ec2-user@52.15.95.51
+    [ec2-user@ip-172-31-23-65 ~]$
+
+    [ec2-user@ip-172-31-23-65 ~]$ cat /etc/redhat-release
+    Red Hat Enterprise Linux Server release 7.3 (Maipo)
+
+    [ec2-user@ip-172-31-23-65 ~]$ ip addr show eth0
+    2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9001 qdisc pfifo_fast state UP qlen 1000
+        link/ether 06:1b:66:23:82:df brd ff:ff:ff:ff:ff:ff
+        inet 172.31.23.65/20 brd 172.31.31.255 scope global dynamic eth0
+        valid_lft 3316sec preferred_lft 3316sec
+        inet6 fe80::41b:66ff:fe23:82df/64 scope link
+        valid_lft forever preferred_lft forever
+    ```
+11. Suppression de l'instance , il faut simplement cliquez droit sur l'instance et sélectionner **terminate** ceci prendra quelque minutes pour s'effacer de l'interface.
+
+    ![](./imgs/demo-aws-terminate-ec2.png)
 
 ### Modifier le type d'instance (__Resize instance__) 
 
