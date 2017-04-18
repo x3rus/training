@@ -19,7 +19,7 @@
 # Jeu 
 
 * Sudo (Board Game) :[https://turnoff.us/geek/sudo-board-game/](https://turnoff.us/geek/sudo-board-game/)
-* Mot croisé en Regex : 
+* Mot croisé en Regex : [https://regexcrossword.com/](https://regexcrossword.com/)
 * NoMouse (Mac Os X only) : [https://github.com/brhs/nomouse?utm_source=cronweekly.com](https://github.com/brhs/nomouse?utm_source=cronweekly.com)
 
 
