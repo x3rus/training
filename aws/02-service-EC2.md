@@ -782,16 +782,16 @@ Maintenant pourquoi aujourd'hui je ne suis émotionnellement près à utiliser c
 
 Vous avez l'information vous êtes en mesure de faire VOTRE choix, je ne peux pas me prononcer.
 
-## Opération avec EC2
+## Opération simple avec EC2
 
 Présentation d'opération disponible avec vos instances __EC2__, car c'est bien d'en parler, mais faut aussi mettre la main à la patte !!
 Nous allons voir plusieurs type d'opération telle que:
 
 * la création :) ( ça aidera pour la suite )
 * La modification du type d'instance (ajustement de la taille)
-* La création de __snapshot__
-* L'assignation d'une adresse IP publique statique.
-* ...
+* Suppression de l'instance.
+
+Bien entendu nous pouvons faire énormément plus de chose, mais je vais faire une autre section afin de diviser la présentation __d'EC2__ qui est déjà bien fournit et l'utilisation du service. 
 
 Sans peur et avec beaucoup d'excitation !
 
@@ -913,9 +913,15 @@ Nous allons donc faire la création de l'instance, ceci prendra quelques étapes
         inet6 fe80::41b:66ff:fe23:82df/64 scope link
         valid_lft forever preferred_lft forever
     ```
-11. Suppression de l'instance , il faut simplement cliquez droit sur l'instance et sélectionner **terminate** ceci prendra quelque minutes pour s'effacer de l'interface.
+### Suppression d'une instance __EC2__ 
+
+La suppression de l'instance est simple via l'interface de gestion :
+
+1. Suppression de l'instance , il faut simplement cliquez droit sur l'instance et sélectionner **terminate** ceci prendra quelque minutes pour s'effacer de l'interface.
 
     ![](./imgs/demo-aws-terminate-ec2.png)
+
+Vous pourrez constater que visuellement l'instance sera présente plusieurs minutes avant de disparaître donc pas de panique , elle finira par partir avec le temps :D.
 
 ### Modifier le type d'instance (__Resize instance__) 
 
@@ -926,28 +932,3 @@ J'aimerai avant de voir cette opération, vous suggérer de ne pas l'utiliser. J
 TODO : faire un exemple ce sera mieux je pense.
 
 
-### Auto Scaling (https://aws.amazon.com/autoscaling/)
-
-
-* Référence
-    * [Ec2 instance resize](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html) 
-
-## Stockage disponible pour l'instance EC2
-## Amazon CloudWatch (https://aws.amazon.com/cloudwatch/)
-## Elastic Load Balancing (https://aws.amazon.com/elasticloadbalancing/)
-## VM Import/Export (https://aws.amazon.com/ec2/vm-import/)
-## Systems Manager API
-
-# idée raw 
-
-* Présentation des services haut niveau
-* Présentation de EC2
-* explication des reseaux
-    * ip static 
-* Le système de conteneur dans aws
-* route 53
-* S3
-* http://locust.io/
-
-# Alors Cloud ou pas cloud ?
-REF: https://wblinks.com/notes/aws-tips-i-wish-id-known-before-i-started/
