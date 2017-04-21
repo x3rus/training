@@ -156,3 +156,14 @@ Référence Amazon : http://docs.aws.amazon.com/fr_fr/AWSEC2/latest/UserGuide/ec
 
 Amazon nomme le son pare-feu **Groupe de sécurité** , ce dernier est donc un __firewall__ logiciel qui peut être modifier lors de l'utilisation de l'instance . L'avantage du système se trouve dans le mot __groupe__ :P , en fait il est possible d'ajouter plusieurs groupe à une instance ceci permet donc de faire des type de configuration ou ... __groupe__ :P  qui pourront s'appliquer à plusieurs instance utilisant la même définition .
 
+La mise en place d'un groupe de sécurité est obligatoire lors du démarrage d'une instances __EC2__ , même si vous laissé l'ensemble ouvert ! Comme toujours les groupe de sécurité sont restreint par région ! Lors qu'une instance utilise un groupe de sécurité vous ne pouvez pas le modifier ( renommer , supprimer, ...) par contre il est possible de modifier le contenu des règles ( ajout ou suppression ).
+Le changement sera pris en considération est automatiquement appliqué au instance qui sont associés au groupe de sécurité.
+
+Vous pouvez définir jusqu'à 500 groupes de sécurités par région !! Chaque groupe de sécurité peuvent contenir jusqu'à 100 règles. 
+
+
+* -rw-r--r-- 1 xerus xerus  31106 Apr 21 17:21 groupe-securite-01-view.png
+* -rw-r--r-- 1 xerus xerus  39749 Apr 21 17:21 groupe-securite-02-creation-01.png
+* -rw-r--r-- 1 xerus xerus  46772 Apr 21 17:23 groupe-securite-03-creation-02.png
+* -rw-r--r-- 1 xerus xerus  47499 Apr 21 17:24 groupe-securite-04-creation-03.png
+

@@ -21,7 +21,7 @@
 * S3
 * http://locust.io/
 
-* Démonstration de mounté un device ebs d'une autre instance
+* Démonstration de mounté un device ebs d'une autre instancec
 
 # Alors Cloud ou pas cloud ?
 REF: https://wblinks.com/notes/aws-tips-i-wish-id-known-before-i-started/
