@@ -161,9 +161,54 @@ Le changement sera pris en considération est automatiquement appliqué au insta
 
 Vous pouvez définir jusqu'à 500 groupes de sécurités par région !! Chaque groupe de sécurité peuvent contenir jusqu'à 100 règles. 
 
+#### Particularité des groupes de sécurité
 
-* -rw-r--r-- 1 xerus xerus  31106 Apr 21 17:21 groupe-securite-01-view.png
-* -rw-r--r-- 1 xerus xerus  39749 Apr 21 17:21 groupe-securite-02-creation-01.png
-* -rw-r--r-- 1 xerus xerus  46772 Apr 21 17:23 groupe-securite-03-creation-02.png
-* -rw-r--r-- 1 xerus xerus  47499 Apr 21 17:24 groupe-securite-04-creation-03.png
+* **Trafic sortant** 
+    * L'ensemble du trafic sortant est permis par défaut
+    * Pour les groupes de sécurité __EC2 classic__ vous ne pouvez pas modifier les règles pour le trafic sortant , vous devrez définir un réseau __VPC__
+* **Trafic entrant**
+    * Vous ne pouvez définir que des règles permissives, il n'y a pas d'option pour définir une règle qui bloque
+    * L'ensemble des règles sont géré avec l'état ( __states full__  ) , si vous envoyez une demande à partir de votre instance, le trafic de la réponse à cette demande est autorisé, indépendamment des règles entrantes des groupes de sécurité. Pour les groupes de sécurité VPC, cela signifie aussi que les réponses au trafic entrant autorisé ont le droit d'être acheminées vers l'extérieur, indépendamment des règles sortantes.
+* **Général** 
+    * Il est possible de modifier à tous moment les règles ces dernières s'appliqueront à l'ensemble des instances utilisant le groupe de sécurité. Il y a bien entendu une brève période avant l'application réelle le temps de propagation de la configuration !
+    * Il est possible d'assigner plusieurs groupe de sécurité à une instances , ces groupes formeront un tous. Ceci peut être particulièrement intéressant de regrouper vos règles selon les rôles de la machines. 
+
+Une règle est composé de : 
+
+* **Protocole** : Par exemple __TCP__ , __UDP__ ou __ICMP__ les protocoles les plus courant.
+* **Port** : Pour les protocoles __TCP__ ou __UDP__ vous pouvez définir un port ou un range de port en utilisant la notation 1000-1500 
+* **ICMP code et type** : Pour le protocole __ICMP__ vous pouvez définir le type et le code
+* **Source et Destination** : Bien entendu il est possible de définir la source et / ou la destination en spécifiant une adresse IP spécifique ( 66.23.18.23/32) ainsi que des segments réseaux plus large ( 82.23.23.43/29)  est composé de : 
+*
+* * **Protocole** : Par exemple __TCP__ , __UDP__ ou __ICMP__ les protocoles les plus courant.
+* **Port** : Pour les protocoles __TCP__ ou __UDP__ vous pouvez définir un port ou un range de port en utilisant la notation 1000-1500 
+* **ICMP code et type** : Pour le protocole __ICMP__ vous pouvez définir le type et le code
+* **Source et Destination** : Bien entendu il est possible de définir la source et / ou la destination en spécifiant une adresse IP spécifique ( 66.23.18.23/32) ainsi que des segments réseaux plus large ( 82.23.23.43/29)  est composé de : 
+*
+* * **Protocole** : Par exemple __TCP__ , __UDP__ ou __ICMP__ les protocoles les plus courant.
+* **Port** : Pour les protocoles __TCP__ ou __UDP__ vous pouvez définir un port ou un range de port en utilisant la notation 1000-1500 
+* **ICMP code et type** : Pour le protocole __ICMP__ vous pouvez définir le type et le code
+* **Source et Destination** : Bien entendu il est possible de définir la source et / ou la destination en spécifiant une adresse IP spécifique ( 66.23.18.23/32) ainsi que des segments réseaux plus large ( 82.23.23.43/29). Un point intéressant vous pouvez spécifier un autre groupe de sécurité :
+    * __EC2-Classic__ : un groupe de sécurité différent pour __EC2-Classic__ dans la même région.
+    * __EC2-Classic__ : un groupe de sécurité pour un autre compte __AWS__ de la même région (ajoutez __l'ID__ de compte __AWS__ comme préfixe ; par exemple, __111122223333/sg-edcd9784__).
+
+#### Création d'un groupe 
+
+Voici un exemple de création d'un groupe de sécurité :
+
+1. Ouvrez la console d'Amazon __EC2__  [https://console.aws.amazon.com/ec2/](https://console.aws.amazon.com/ec2/) et sélectionnez **Security Groups**
+
+![](./imgs/groupe-securite-01-view.png)
+2. Définir le nom du groupe , vous pouvez l'associer à un __VPC__ , le nom bien que arbitraire je vous encourage à mettre quelque chose de bien .
+
+![](./imgs/groupe-securite-02-creation-01.png)
+3. Définition des ports et réseau permit pour le trafic entrant
+
+![](./imgs/groupe-securite-03-creation-02.png)
+4. Définition des ports et réseau pour le trafic sortant
+
+![](./imgs/groupe-securite-04-creation-03.png)
+
+Et voilà on peut dire que Amazon nous facilite beaucoup la vie :D.
+
 
