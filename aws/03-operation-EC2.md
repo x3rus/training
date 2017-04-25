@@ -211,4 +211,188 @@ Voici un exemple de création d'un groupe de sécurité :
 
 Et voilà on peut dire que Amazon nous facilite beaucoup la vie :D.
 
+#### Démonstration communication entre 2 instance EC2
+
+Maintenant que nous avons visualiser ce qu'est le système de pare feu sous Amazon je pense qu'une petite démonstration s'impose pour que lorsque vous désirerez mettre en place la solution vous soyez en mesure de comprendre où ça peut loquer.
+
+Voici la situation j'ai démarrer 2 instances __EC2__ et nous allons nous s'assurer que nous sommes en mesure de communiquer entre elle, vous pouvez vous imaginez que ceci est le serveur web et une base de donnée . J'ai utilisé 2 instance de type **t2.nano** car je n'ai pas besoin de performance, mais uniquement de la __stack__ IP pour valider la communication.
+
+Note : J'ai du prendre une image Linux Amazon, car le type RedHat 7 n'est pas possible pour le système **t2.nano** , c vraie qu'il n'y a pas beaucoup de CPU ni mémoire ... Bon encore une fois m'en fou un peu car je veux juste le __kernel__ et la carte réseau.
+
+* Visualisation des 2 instances : 
+
+![](./imgs/demo-aws-2-ec2-network-comm-01.png)
+
+* Établissement de connexion sur chaque instance et visualisation de l'état 
+
+```bash
+$ ssh -i aws_training ec2-user@ec2-52-15-233-165.us-east-2.compute.amazonaws.com
+
+        __|  __|_  )
+        _|  (     /   Amazon Linux AMI
+        ___|\___|___|
+
+https://aws.amazon.com/amazon-linux-ami/2017.03-release-notes/
+2 package(s) needed for security, out of 2 available
+Run "sudo yum update" to apply all updates.
+[ec2-user@ip-172-31-46-78 ~]$
+[ec2-user@ip-172-31-46-78 ~]$ hostname
+ip-172-31-46-78
+[ec2-user@ip-172-31-46-78 ~]$ cat /proc/cpuinfo | grep name
+model name      : Intel(R) Xeon(R) CPU E5-2676 v3 @ 2.40GHz
+[ec2-user@ip-172-31-46-78 ~]$ ip addr show eth0
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9001 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 0a:67:07:39:7f:dd brd ff:ff:ff:ff:ff:ff
+    inet 172.31.46.78/20 brd 172.31.47.255 scope global eth0
+[ec2-user@ip-172-31-46-78 ~]$ route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         172.31.32.1     0.0.0.0         UG    0      0        0 eth0
+169.254.169.254 0.0.0.0         255.255.255.255 UH    0      0        0 eth0
+172.31.32.0     0.0.0.0         255.255.240.0   U     0      0        0 eth0
+```
+
+```bash
+
+       __|  __|_  )
+       _|  (     /   Amazon Linux AMI
+       ___|\___|___|
+
+https://aws.amazon.com/amazon-linux-ami/2017.03-release-notes/
+2 package(s) needed for security, out of 2 available
+Run "sudo yum update" to apply all updates.
+[ec2-user@ip-172-31-33-230 ~]$ hostname
+ip-172-31-33-230
+[ec2-user@ip-172-31-33-230 ~]$ cat /proc/cpuinfo | grep name
+model name      : Intel(R) Xeon(R) CPU E5-2676 v3 @ 2.40GHz
+[ec2-user@ip-172-31-33-230 ~]$ ip addr show eth0
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9001 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 0a:d9:3e:f0:f1:d5 brd ff:ff:ff:ff:ff:ff
+    inet 172.31.33.230/20 brd 172.31.47.255 scope global eth0
+[ec2-user@ip-172-31-33-230 ~]$ route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         172.31.32.1     0.0.0.0         UG    0      0        0 eth0
+169.254.169.254 0.0.0.0         255.255.255.255 UH    0      0        0 eth0
+172.31.32.0     0.0.0.0         255.255.240.0   U     0      0        0 eth0
+```
+
+Donc nous avons :
+
+* __ip-172-31-33-230__ , avec l'IP 172.31.33.230/20 
+* __ip-172-31-46-78__ , avec l'IP 172.31.46.78/20
+
+Juste pour être certain que tous le monde soit sur la même longueur d'onde les 2 machines SONT sur le MÊME réseau, si vous avez besoin :
+
+```bash
+$ ipcalc 172.31.33.230/20
+Address:   172.31.33.230        10101100.00011111.0010 0001.11100110
+Netmask:   255.255.240.0 = 20   11111111.11111111.1111 0000.00000000
+Wildcard:  0.0.15.255           00000000.00000000.0000 1111.11111111
+=>
+Network:   172.31.32.0/20       10101100.00011111.0010 0000.00000000
+HostMin:   172.31.32.1          10101100.00011111.0010 0000.00000001
+HostMax:   172.31.47.254        10101100.00011111.0010 1111.11111110
+Broadcast: 172.31.47.255        10101100.00011111.0010 1111.11111111
+Hosts/Net: 4094                  Class B, Private Internet
+```
+
+J'installe __telnet__ sur les 2 instances  , car je suis vieux puis j'aime bien :
+
+```bash
+[ec2-user@ip-172-31-46-78 ~]$ sudo yum install telnet
+[ec2-user@ip-172-31-33-230 ~]$ sudo yum install telnet
+
+```
+
+Si j'essaye depuis la première instance de communiquer avec la seconde sur le port 22 , PAS de problème :D 
+
+```bash
+[ec2-user@ip-172-31-46-78 ~]$ telnet 172.31.33.230 22
+Trying 172.31.33.230...
+Connected to 172.31.33.230.
+Escape character is '^]'.
+SSH-2.0-OpenSSH_6.6.1
+^]
+telnet> q
+Connection closed.
+
+```
+
+Teste de connexion interne à l'instance 172-31-33-230 , pour valider que l'ensemble fonctionne avant d'essayer entre les instances.
+
+```bash
+[ec2-user@ip-172-31-33-230 ~]$ nc -l 2222
+[ WAIT ... ] 
+
+[ec2-user@ip-172-31-33-230 ~]$ sudo netstat -lntp | grep 2222
+tcp        0      0 0.0.0.0:2222                0.0.0.0:*                   LISTEN      2707/nc
+
+[ec2-user@ip-172-31-33-230 ~]$ telnet 172.31.33.230 2222                                                                                                      
+Trying 172.31.33.230...
+Connected to 172.31.33.230.
+Escape character is '^]'.
+TOTO
+communication LOCAL
+^]
+telnet> q
+Connection closed.
+
+``` 
+
+Résultat sur l'autre terminal  :
+
+```bash
+[ec2-user@ip-172-31-33-230 ~]$ nc -l 2222
+TOTO
+communication LOCAL
+[ec2-user@ip-172-31-33-230 ~]$
+```
+
+Maintenant depuis l'autre serveur :
+
+```bash
+[ec2-user@ip-172-31-33-230 ~]$ nc -l 2222
+[ WAIT ... ]
+
+[ec2-user@ip-172-31-33-230 ~]$ sudo netstat -lntp | grep 2222                                                                                                 
+tcp        0      0 0.0.0.0:2222                0.0.0.0:*                   LISTEN      2715/nc
+```
+
+Tentative de connexion : 
+
+```bash
+[ec2-user@ip-172-31-46-78 ~]$ telnet 172.31.33.230 2222
+Trying 172.31.33.230...
+telnet: connect to address 172.31.33.230: Connection timed out
+```
+
+Visualisation des règles de pare-feu :
+
+![](./imgs/demo-aws-2-ec2-network-comm-02-firewall.png)
+
+Ajout de la règles requise uniquement pour le segment réseaux :
+
+![](/.imgs/demo-aws-2-ec2-network-comm-03-firewall-add.png)
+
+Validation du comportement après l'ajout :
+
+```bash
+[ec2-user@ip-172-31-46-78 ~]$ telnet 172.31.33.230 2222
+Trying 172.31.33.230...
+Connected to 172.31.33.230.
+Escape character is '^]'.
+MALADE
+Juste le temps de changer de fenetre
+^]
+telnet> q
+Connection closed.
+[ec2-user@ip-172-31-46-78 ~]$
+
+
+[ec2-user@ip-172-31-33-230 ~]$ nc -l 2222
+MALADE
+Juste le temps de changer de fenetre
+
+```
 
