@@ -1,5 +1,5 @@
 
-# Opération avec EC2 
+# Opération simple avec EC2 
 
 Je n'aurais pas la prétention de dire que nous allons voir l'ensemble des possibilités avec __EC2__ , le nombre de possibilité est tellement grande et mon expérience trop mince pour couvrir l'ensemble des possibilités !!
 
@@ -192,7 +192,7 @@ Une règle est composé de :
     * __EC2-Classic__ : un groupe de sécurité différent pour __EC2-Classic__ dans la même région.
     * __EC2-Classic__ : un groupe de sécurité pour un autre compte __AWS__ de la même région (ajoutez __l'ID__ de compte __AWS__ comme préfixe ; par exemple, __111122223333/sg-edcd9784__).
 
-#### Création d'un groupe 
+#### Création d'un groupe de sécurité
 
 Voici un exemple de création d'un groupe de sécurité :
 
@@ -395,4 +395,34 @@ MALADE
 Juste le temps de changer de fenetre
 
 ```
+
+### Organisation de votre réseau chez Amazon (VPC)
+
+Pour la démonstration réalisé ci-dessus nous avons vu le système de groupe de sécurité, en d'autre mot le système de pare feu inclus avec les __EC2__. Nous allons maintenant continuer avec la réseautique des instances __EC2__, nous allons voir le concept de **VPC** **Amazon Virtual Private Cloud (Amazon VPC)**. 
+
+Une description simple du __VPC__ est un réseau virtuel que vous avez définie , un peu comme lors que nous segmentons le réseau interne d'une entreprise. Lors de l'initialisation de nos instances __EC2__ ces dernières étaient déjà dans un __VPC__ . Si nous regardons la description de nos instances :
+
+![](./imgs/demo-aws-2-ec2-network-comm-01-plus-vpc.png)
+
+Ce __VPC__ fut créé automatiquement et par défaut l'ensemble des instances __EC2__ que nous allons créer seront dans ce __VPC__ . 
+
+En fait il y a 2 type de réseaux :
+
+* __EC2-classic__
+* __VPC__ 
+
+Je ne couvrirai PAS le réseau __EC2-classic__, car voici la liste des instances qui doivent être obligatoirement instanciées dans un __VPC__ : 
+
+* __C4__
+* __I3__
+* __M4__
+* __P2__
+* __R4__
+* __T2__
+* __X1__
+
+Comme vous pouvez le constater ceci est l'ensemble des instances, donc par soucis d'économie d'effort je vais me concentrer sur le __VPC__ par contre si vous désirez approfondir l'aspect __EC2-classic__ et au moins comprendre la différence avec les __VPC__ , je vous invite à consulter cette page : [http://docs.aws.amazon.com/fr\_fr/AWSEC2/latest/UserGuide/using-vpc.html#differences-ec2-classic-vpc](http://docs.aws.amazon.com/fr_fr/AWSEC2/latest/UserGuide/using-vpc.html#differences-ec2-classic-vpc) . Cependant prendre note que les comptes créés après le 04-12-2013 prennent uniquement en charge __EC2-VPC__ !
+
+
+
 

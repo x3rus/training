@@ -23,5 +23,10 @@
 
 * Démonstration de mounté un device ebs d'une autre instancec
 
+* Logs firewall (VPC) :
+    * http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/flow-logs.html
+    * https://logz.io/blog/vpc-flow-log-analysis/
+    *
+
 # Alors Cloud ou pas cloud ?
 REF: https://wblinks.com/notes/aws-tips-i-wish-id-known-before-i-started/
