@@ -400,7 +400,7 @@ Juste le temps de changer de fenetre
 
 Pour la démonstration réalisé ci-dessus nous avons vu le système de groupe de sécurité, en d'autre mot le système de pare feu inclus avec les __EC2__. Nous allons maintenant continuer avec la réseautique des instances __EC2__, nous allons voir le concept de **VPC** **Amazon Virtual Private Cloud (Amazon VPC)**. 
 
-Une description simple du __VPC__ est un réseau virtuel que vous avez définie , un peu comme lors que nous segmentons le réseau interne d'une entreprise. Lors de l'initialisation de nos instances __EC2__ ces dernières étaient déjà dans un __VPC__ . Si nous regardons la description de nos instances :
+Une description simple du __VPC__ est un réseau virtuel privé qui vous ai dédié , il est possible de le segmenté en sous réseau, un peu comme lors que nous segmentons le réseau interne d'une entreprise. Lors de l'initialisation de nos instances __EC2__ ces dernières étaient déjà dans un __VPC__ . Si nous regardons la description de nos instances :
 
 ![](./imgs/demo-aws-2-ec2-network-comm-01-plus-vpc.png)
 
@@ -423,6 +423,125 @@ Je ne couvrirai PAS le réseau __EC2-classic__, car voici la liste des instances
 
 Comme vous pouvez le constater ceci est l'ensemble des instances, donc par soucis d'économie d'effort je vais me concentrer sur le __VPC__ par contre si vous désirez approfondir l'aspect __EC2-classic__ et au moins comprendre la différence avec les __VPC__ , je vous invite à consulter cette page : [http://docs.aws.amazon.com/fr\_fr/AWSEC2/latest/UserGuide/using-vpc.html#differences-ec2-classic-vpc](http://docs.aws.amazon.com/fr_fr/AWSEC2/latest/UserGuide/using-vpc.html#differences-ec2-classic-vpc) . Cependant prendre note que les comptes créés après le 04-12-2013 prennent uniquement en charge __EC2-VPC__ !
 
+Comme l'aspect des coûts est critique clarifions une chose tous de suite : Il n'y a **AUCUN COÛT** pour ce service !! Le coût est pour ce que vous mettez dans le __VPC__ en d'autre mot les instances __EC2__, le balancer de charge , ... 
+Vous aurez un coût si votre __VPC__ est connecter avec un __VPN__ , mais ceci est en dehors du cadre (__scope__) ici. 
 
+J'avais fait mention en __PCI__ lors de la présentation du cloud , les __VPC__ sont conforme aux normes __PCI__ [lien](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Introduction.html#pci-compliance).
+
+Que pouvons nous mettre dans un __VPC__ en d'autre mot dans notre réseau dédié chez Amazon ? 
+
+| Service                | Rubrique correspondante                          |
+|------------------------|--------------------------------------------------|
+| AWS Data Pipeline      | [Launching Resources for Your Pipeline into a VPC](http://docs.aws.amazon.com/datapipeline/latest/DeveloperGuide/dp-resources-vpc.html) |
+| Amazon EC2             | [Amazon EC2 and Amazon VPC](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-vpc.html) |
+| Auto Scaling           | [Auto Scaling and Amazon VPC](http://docs.aws.amazon.com/autoscaling/latest/userguide/autoscalingsubnets.html)|
+| Elastic Beanstalk      | [Using AWS Elastic Beanstalk with Amazon VPC](http://docs.aws.amazon.com/elasticbeanstalk/latest/dg/AWSHowTo-vpc.html) |
+| Elastic Load Balancing | [Setting Up Elastic Load Balancing](http://docs.aws.amazon.com/elasticloadbalancing/latest/userguide/setting-up-elb.html) |
+| Amazon ElastiCache     | [Using ElastiCache with Amazon VPC](http://docs.aws.amazon.com/AmazonElastiCache/latest/UserGuide/ManagingVPC.html)|
+| Amazon EMR             | [Select a Subnet for the Cluster](http://docs.aws.amazon.com/emr/latest/DeveloperGuide/emr-plan-vpc-subnet.html)|
+| AWS OpsWorks           | [Running a Stack in a VPC](http://docs.aws.amazon.com/opsworks/latest/userguide/workingstacks-vpc.html) |
+| Amazon RDS             | [Amazon RDS and Amazon VPC](http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.RDSVPC.html) |
+| Amazon Redshift        | [Managing Clusters in a VPC](http://docs.aws.amazon.com/redshift/latest/mgmt/managing-clusters-vpc.html) |
+| Amazon Route 53        | [Working with Private Hosted Zones](http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-private.html) |
+| Amazon WorkSpaces      | [Create and Configure Your VPC](http://docs.aws.amazon.com/workspaces/latest/adminguide/gsg_create_vpc.html) |
+
+#### Comprendre le __VPC__ 
+
+Pour les besoins de l'explication je vais utiliser la configuration actuelle avec laquelle nous avons travailler pour détailler le tous , pour ceux que ça intéresse moins vous pouvez toujours consulter la documentation sur Amazon . [Concept du VPC](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Introduction.html#Overview).
+
+Nous allons visualiser le __VPC__ actuel , nous allons donc sélectionner le service __VPC__ dans la liste des produits disponible dans Amazon 
+
+![](./imgs/vpc-documentation-01-select-service.png)
+
+Nous aurons la visualisation du / des __VPC__ disponible :
+
+![](./imgs/vpc-documentation-02-view-activ-vpc.png)
+
+Donc notre __VPC__ à une plage d'adresse IP : 172.31.0.0/16 
+
+```bash
+$ ipcalc 172.31.0.0/16
+Address:   172.31.0.0           10101100.00011111. 00000000.00000000
+Netmask:   255.255.0.0 = 16     11111111.11111111. 00000000.00000000
+Wildcard:  0.0.255.255          00000000.00000000. 11111111.11111111
+=>
+Network:   172.31.0.0/16        10101100.00011111. 00000000.00000000
+HostMin:   172.31.0.1           10101100.00011111. 00000000.00000001
+HostMax:   172.31.255.254       10101100.00011111. 11111111.11111110
+Broadcast: 172.31.255.255       10101100.00011111. 11111111.11111111
+Hosts/Net: 65534                 Class B, Private Internet
+```
+
+Nous pouvons donc avoir jusque 65532 machines dans se segment réseaux , si on le remplie ça fera plein d'argent ($$$) pour Amazon :P. 
+
+Bon pour ceux qui pensent, __ouin__ y commence à me perdre avec ces segments réseaux , j'ai un cours sur le réseau aussi :P, mais on va essayer de faire sans ...
+
+Reprenons notre testes réalisé un peu plus tôt entre les 2 instances pour la communications réseau et l'ouverture des ports . 
+
+Nous avions 2 machines :
+
+* 172.31.46.78/20
+* 172.31.33.230/20 
+
+Ces 2 machines  avec comme route par défaut : 172.31.32.1/32
+
+Analysons les adresses IP avec le segment réseau :
+
+* Segment réseau du __VPC__ : 172.31.0.0/16
+* Segment réseau des 2 machines que nous avons instancié : 172.31.32.0/20 ( machine 172.31.46.78/20, 172.31.33.230/20)
+
+        ```bash
+        $ ipcalc 172.31.46.78/20
+        Address:   172.31.46.78         10101100.00011111.0010 1110.01001110
+        Netmask:   255.255.240.0 = 20   11111111.11111111.1111 0000.00000000
+        Wildcard:  0.0.15.255           00000000.00000000.0000 1111.11111111
+        =>
+        Network:   172.31.32.0/20       10101100.00011111.0010 0000.00000000
+        HostMin:   172.31.32.1          10101100.00011111.0010 0000.00000001
+        HostMax:   172.31.47.254        10101100.00011111.0010 1111.11111110
+        Broadcast: 172.31.47.255        10101100.00011111.0010 1111.11111111
+        Hosts/Net: 4094                  Class B, Private Internet
+        ```
+* Représentation graphique de la situation
+
+        ![](./imgs/VPC_schema-01.png)
+
+Comme vous pouvez le constater le segment réseau où évolue nos instances Amazon que nous avons démarrer est plus petit que celle qui nous est alloué . 172.31.32.0/20 est plus petit que 172.31.0.0/16 . Pourquoi ? Comment expliquer cette situation , pour le moment ceci n'est pas critique, car nous sommes loin de 4094 instances, par contre nous devons comprendre cette situation.
+
+Nos 2 instances définie évolue dans 1 sous-réseaux distinct , qui fut créé automatiquement par Amazon lors de l'initialisation des instances ! Reprenons le schéma présenté plus haut en ajoutant cette réalité de sous-réseau.
+
+![](./imgs/VPC_schema-02.png)
+
+Lors de la visualisation de l'instance nous pouvons voir clairement le sous-réseau (__subnet__) :
+
+![](./imgs/demo-aws-2-ec2-network-comm-01-plus-vpc.png)
+
+Nous pouvons voir l'ensemble des sous réseaux créer en allant dans l'interface de gestion __d'AWS__ . 
+
+![](./imgs/vpc-documentation-03-view-subnet-vpc.png)
+
+Comme vous pouvez le voir il y a 3 sous-réseaux présent , bien que je n'ai JAMAIS définie manuellement de sous-réseau pour mes instances l'ensemble fut réalisé automatiquement par Amazon, bien entendu le but est de me "sécurisé" :P.
+
+
+##### Comprendre les sous-réseaux __VPC__ 
+
+Donc les sous-réseaux permette de réaliser une segmentation réseau de votre réseau chez Amazon, pour les personnes réalisant pas mal de réseau le concept est évidant pour les autres je vais prendre quelques minutes pour développer .
+
+L'objectif ici est de segmenter les machines selon leur rôles afin de limiter les possibilités de communication , l'objectif principale est de faire en sorte que si une machines est compromise cette dernière ne pourra pas être utilisé pour compromettre les autres !
+
+Prenons 2 applications "classique" développé en mode 3 tiers :
+
+* Service frontal, répondant au requête des clients  : Apache ou __Ngnix__ 
+* Service applicatif, réalisant l'ensemble des traitements (__processing power__) : __Tomcat__ ou application python
+* Service de stockage de donnée (__backend__) : __Mysql__ ou __postgesql__ 
+
+Voici la segmentation possible de l'infrastructure :
+
+ICI ICI ICI finalisation schema 3 tiere aws
+
+#### Limite de déploiement de __vpc__ 
+
+http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html
+http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Introduction.html#CurrentCapabilities
 
 
