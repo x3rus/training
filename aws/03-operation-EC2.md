@@ -525,7 +525,7 @@ Comme vous pouvez le voir il y a 3 sous-réseaux présent , bien que je n'ai JAM
 
 ##### Comprendre les sous-réseaux __VPC__ 
 
-Donc les sous-réseaux permette de réaliser une segmentation réseau de votre réseau chez Amazon, pour les personnes réalisant pas mal de réseau le concept est évidant pour les autres je vais prendre quelques minutes pour développer .
+Donc les sous-réseaux permette de réaliser une segmentation réseau de votre __VPC__chez Amazon, pour les personnes réalisant pas mal de réseau le concept est évidant pour les autres je vais prendre quelques minutes pour développer .
 
 L'objectif ici est de segmenter les machines selon leur rôles afin de limiter les possibilités de communication , l'objectif principale est de faire en sorte que si une machines est compromise cette dernière ne pourra pas être utilisé pour compromettre les autres !
 
@@ -535,9 +535,50 @@ Prenons 2 applications "classique" développé en mode 3 tiers :
 * Service applicatif, réalisant l'ensemble des traitements (__processing power__) : __Tomcat__ ou application python
 * Service de stockage de donnée (__backend__) : __Mysql__ ou __postgesql__ 
 
-Voici la segmentation possible de l'infrastructure :
+Voici une représentation d'une segmentation possible de l'infrastructure :
 
-ICI ICI ICI finalisation schema 3 tiere aws
+![](./imgs/VPC_schema-03-3-tiers.png)
+
+Donc nous avons 3 sous réseau dans le même __VPC__ :
+
+* Frontal : 172.31.32.1/24 : comprenant 2 machines Apache et Ngnix avec comme passerelle par défaut 172.31.32.1.
+* Applicatif : 172.31.33.1/24 : comprenant 2 machines App01 et App06 comme passerelle par défaut 172.31.33.1.
+* BD : 172.31.34.1/24 : comprenant 2 machines BD01 et BD41 avec comme passerelle par défaut 172.31.34.1.
+
+Comme nous pouvons le voir chaque sous-réseau à ses règles de pare feu qui permet de limité les communications avec le restes des réseaux , nous avons donc 3 pare feu pour les __subnet__ . Ceci vous permet de limiter l'accès pour l'ensemble de la "zone" . Ceci permet de gérer à plus haut niveau pour un regroupement de machine. 
+Bien entendu l'objectif est de limiter l'accès aux machine , dans l'exemple ci-dessus si une machines dans le réseau **frontal** est compromise , l'attaquant  ne sera pas en mesure d'établir une connexion **ssh** vers le serveur applicatif !
+
+Les groupes de sécurité (pare feu au niveau instance EC2) est toujours présent si vous désirez réalisé de la gestion granulaire par instance ! 
+Pour finir vous avez aussi un pare feu (__firewall__) pour l'ensemble des communications qui sort du __VPC__.
+
+Je sais ceci fait beaucoup de __firewall__ à différent niveau , bien entendu il n'est pas obligatoire de les activer tous , par exemple par défaut les règles définie dans le __firewall__ du __VPC__ sont ouvert au complet . Réalisons une liste des __firewalls__ du plus spécifique au plus général.
+
+1. __sécurity group__ : __firewall__ de la machine / instance __EC2__
+2. __firewall__ du sous-réseau : __firewall__ appliqué à un regroupement de machines / instances 
+3. __firewal__ du __VPC__ : __firewall__ du regroupement de sous réseau.
+
+
+Selon votre niveau de maturité et bien entendu de vos besoins il est possible de créer d'autre __VPC__ qui regrouperont d'autre __sous-réseaux__ honnêtement pour le moment je ne vois pas le requis ... Cependant je voulais le signaler.
+
+Si vous voulez vous compliquer la vie , rien ne vous empêche d'ajouter un __firewall__ sur la machine avec **iptables** ou **nf** , bon après trop de pare feu ne facilite pas l'analyse lors de problématique. 
+
+##### Possibilité avec le__VPC__ 
+
+Le système __VPC__ vous offre les fonctionnalités suivante
+
+* Attribuer des adresses IPv4 privées statiques à vos instances qui persistent lors des démarrages et des arrêts.
+  Si vous avez jouez avec Amazon vous avez constatez que les IP assignées au instances change à chaque démarrage, bien entendu vous pouvez définir des adresses IP fixe. Ceci peut être pratique pour plusieurs service __DNS__ , __NTP__, ... Cependant si votre objectif est de mettre en place une solution **Cloud**, donc qui peut grandir selon les besoins , faite attention au restriction d'adresses IP . Le système de découvert __discovery__ système est plus approprié.
+  ICI ICI ICI Ajouter des description par point 
+
+
+
+* Vous pouvez aussi associer un bloc d'adresse CIDR IPv6 à votre VPC et attribuer des adresses IPv6 à vos instances
+* Attribuer des adresses IP multiples à vos instances
+* Définir des interfaces réseau et attacher une ou plusieurs interfaces réseau à vos instances
+* Changer les membres d'un groupe de sécurité pour vos instances pendant qu'elles s'exécutent
+* Contrôler le trafic sortant de vos instances (filtrage sortant) ainsi que le trafic entrant vers vos instances (filtrage entrant)
+* Ajouter une couche de contrôle d'accès supplémentaire à vos instances sous la forme de listes de contrôle d'accès (ACL) réseau
+* Exécuter vos instances sur un matériel à client unique
 
 #### Limite de déploiement de __vpc__ 
 
