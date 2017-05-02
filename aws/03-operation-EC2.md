@@ -567,18 +567,33 @@ Si vous voulez vous compliquer la vie , rien ne vous empêche d'ajouter un __fir
 Le système __VPC__ vous offre les fonctionnalités suivante
 
 * Attribuer des adresses IPv4 privées statiques à vos instances qui persistent lors des démarrages et des arrêts.
-  Si vous avez jouez avec Amazon vous avez constatez que les IP assignées au instances change à chaque démarrage, bien entendu vous pouvez définir des adresses IP fixe. Ceci peut être pratique pour plusieurs service __DNS__ , __NTP__, ... Cependant si votre objectif est de mettre en place une solution **Cloud**, donc qui peut grandir selon les besoins , faite attention au restriction d'adresses IP . Le système de découvert __discovery__ système est plus approprié.
-  ICI ICI ICI Ajouter des description par point 
 
+    Si vous avez jouez avec Amazon vous avez constatez que les IP assignées au instances change à chaque démarrage, bien entendu vous pouvez définir des adresses IP fixe. Ceci peut être pratique pour plusieurs service __DNS__ , __NTP__, ... Cependant si votre objectif est de mettre en place une solution **Cloud**, donc qui peut grandir selon les besoins , faite attention au restriction d'adresses IP . Le système de découvert __discovery__ système est plus approprié.
+* Vous pouvez aussi associer un bloc d'adresse CIDR IPv6 à votre VPC et attribuer des adresses IPv6 à vos instances.
+ 
+    __L'IPv6__ est à nos portes bien que pour le moment tous le monde le met de côté il est bien de savoir que le moment venu notre environnement AWS est prêt , il reste juste à nous d'être prêt.
+* Attribuer des adresses IP multiples à vos instances.
 
+    L'assignation d'adresse IP multiple pour une machine est tous de même pratique attention à la gestion de l'IP sortant surtout pour les règles de pare feu.
+* Définir des interfaces réseau et attacher une ou plusieurs interfaces réseau à vos instances.
+* Changer les membres d'un groupe de sécurité pour vos instances pendant qu'elles s'exécutent.
+* Contrôler le trafic sortant de vos instances (filtrage sortant) ainsi que le trafic entrant vers vos instances (filtrage entrant).
 
-* Vous pouvez aussi associer un bloc d'adresse CIDR IPv6 à votre VPC et attribuer des adresses IPv6 à vos instances
-* Attribuer des adresses IP multiples à vos instances
-* Définir des interfaces réseau et attacher une ou plusieurs interfaces réseau à vos instances
-* Changer les membres d'un groupe de sécurité pour vos instances pendant qu'elles s'exécutent
-* Contrôler le trafic sortant de vos instances (filtrage sortant) ainsi que le trafic entrant vers vos instances (filtrage entrant)
+    J'aime contrôler le trafic sortant de mes machines ceci me permet d'avoir un plus grand sentiment de sécurité, l'attaquant n'étant pas en mesure d'utiliser ma machine pour récupérer plus d'outils ou attaque d'autre machine. Bien entendu ceci demande une plus grande gestion / connaissance de l'écosystème.
 * Ajouter une couche de contrôle d'accès supplémentaire à vos instances sous la forme de listes de contrôle d'accès (ACL) réseau
 * Exécuter vos instances sur un matériel à client unique
+
+#### VPC interconnexion avec le réseau corporatif
+
+Le système de __VPC__ vous permet aussi d'établir une connexion sécurisé avec votre infrastructure corporatif ! Ceci vous permet d'avoir un lien direct avec vos instance __EC2__ en toute sécurité via un __VPN__. 
+
+**ATTENTION** : Ceci n'est PAS gratuit !! Vous aurez des coûts relier au transfert de donnée , je vous laisserai le plaisir de valider le coût selon votre configuration :P.
+
+Voici une représentation graphique de la configuration :
+
+![](./imgs/VPC_schema-04-vpn.png)
+
+Bien entendu il y aura de la configuration à réalisé dans votre réseau interne pour permettre  la communication avec AWS par ce VPN . 
 
 #### Limite de déploiement de __vpc__ 
 
