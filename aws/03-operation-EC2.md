@@ -1,5 +1,5 @@
 
-# Opération simple avec EC2 
+# Opération simple avec EC2 et compréhension des bases du réseau AWS
 
 Je n'aurais pas la prétention de dire que nous allons voir l'ensemble des possibilités avec __EC2__ , le nombre de possibilité est tellement grande et mon expérience trop mince pour couvrir l'ensemble des possibilités !!
 
@@ -562,6 +562,7 @@ Selon votre niveau de maturité et bien entendu de vos besoins il est possible d
 
 Si vous voulez vous compliquer la vie , rien ne vous empêche d'ajouter un __firewall__ sur la machine avec **iptables** ou **nf** , bon après trop de pare feu ne facilite pas l'analyse lors de problématique. 
 
+
 ##### Possibilité avec le__VPC__ 
 
 Le système __VPC__ vous offre les fonctionnalités suivante
@@ -571,7 +572,7 @@ Le système __VPC__ vous offre les fonctionnalités suivante
     Si vous avez jouez avec Amazon vous avez constatez que les IP assignées au instances change à chaque démarrage, bien entendu vous pouvez définir des adresses IP fixe. Ceci peut être pratique pour plusieurs service __DNS__ , __NTP__, ... Cependant si votre objectif est de mettre en place une solution **Cloud**, donc qui peut grandir selon les besoins , faite attention au restriction d'adresses IP . Le système de découvert __discovery__ système est plus approprié.
 * Vous pouvez aussi associer un bloc d'adresse CIDR IPv6 à votre VPC et attribuer des adresses IPv6 à vos instances.
  
-    __L'IPv6__ est à nos portes bien que pour le moment tous le monde le met de côté il est bien de savoir que le moment venu notre environnement AWS est prêt , il reste juste à nous d'être prêt.
+   __L'IPv6__ est à nos portes bien que pour le moment tous le monde le met de côté il est bien de savoir que le moment venu notre environnement AWS est prêt , il reste juste à nous d'être prêt.
 * Attribuer des adresses IP multiples à vos instances.
 
     L'assignation d'adresse IP multiple pour une machine est tous de même pratique attention à la gestion de l'IP sortant surtout pour les règles de pare feu.
@@ -582,6 +583,44 @@ Le système __VPC__ vous offre les fonctionnalités suivante
     J'aime contrôler le trafic sortant de mes machines ceci me permet d'avoir un plus grand sentiment de sécurité, l'attaquant n'étant pas en mesure d'utiliser ma machine pour récupérer plus d'outils ou attaque d'autre machine. Bien entendu ceci demande une plus grande gestion / connaissance de l'écosystème.
 * Ajouter une couche de contrôle d'accès supplémentaire à vos instances sous la forme de listes de contrôle d'accès (ACL) réseau
 * Exécuter vos instances sur un matériel à client unique
+
+
+#### Journaux de flux VPC
+
+Comme nous avons pu le voir le nombre de pare feu que nous pouvons mettre en plus est significatif, la sécurité c'est bien mais ... Ça peut vite devenir un enfer pas uniquement pour l'attaquant, mais pour l'exploitant. Lors de la mise en place d'un service s'il y a un problème de communication dans quelle __firewall__ le paquet est bloqué ?
+
+1. Le pare feu du sous-réseau ?? 
+2. Le pare feu du VPC ?? Si vous avez 2 __VPC__ avec chacun des sous-réseaux ... __ishh__
+3. Est-ce au niveau du __sécurity group__ de la machine qui envoie ou reçoit ?
+
+Sans critique aucune , mais quand on demande le flux réseau aux développeurs c'est souvent , faut que les ports X, Y , Z soient ouvert. J'en convient mais qui communique avec qui , nous avons besoin de la source et destination. Il arrive aussi que même les ports de communications n'est pas claire pour le développeurs. On aura bien beau critiquer et bloquer le déploiement , nous nous devons d'accompagner nos partenaires professionnels dans l'exercice.
+
+Puis soyons honnête nous aussi parfois on le sait pas trop quand on met en place un nouveau produit libre :P.
+
+Le système de journaux de flux vient nous aider afin d'identifier les communications au niveau des :
+
+* Sous-réseaux
+* VPC 
+* groupe de sécurité
+
+##### PRIX
+
+Bon parlons prix , c'est gratuit ... Heu enfin presque :P , juste pour faire compliquer un peu :D. La fonctionnalité de mise en place des journaux de flux est gratuite, cependant les **logs** / données sont transmises au service [CloudWatch](https://aws.amazon.com/cloudwatch/) et c'est à ce moment que l'on paye :P. Vous pouvez le dire c'est bien fait pareille :P. Comme toujours le prix change selon la région voici le [lien pour les prix](https://aws.amazon.com/cloudwatch/pricing/).
+
+* Amazon CloudWatch Logs, voici une vue rapide : 
+
+|                   |par GB ingested   | per GB archived per month  |
+|-------------------|:----------------:|:--------------------------:|
+| Us Ouest (Oregon) | $0.50            | $0.03                      |
+| Canada  (Central) | $0.55            | $0.033                     |
+| EU (Frankfurt)    | $0.63            | $0.0324                    |
+
+C'est  pas énorme, mais ça monte très vite :P, pour diagnostique ceci est bien pour conserver l'information de manière permanente faut faire une étude :P.
+
+
+* **Principe** 
+
+
 
 #### VPC interconnexion avec le réseau corporatif
 
@@ -596,6 +635,22 @@ Voici une représentation graphique de la configuration :
 Bien entendu il y aura de la configuration à réalisé dans votre réseau interne pour permettre  la communication avec AWS par ce VPN . 
 
 #### Limite de déploiement de __vpc__ 
+
+Il existe plusieurs limitation par défaut ainsi que des limitations "dur" , en d'autre mot certain configuration sont présente uniquement par défaut et peuvent être augmenté sur demande . D'autre sont des limitations "dur" qui ne peuvent pas être changé . 
+
+Je ne réécrirais pas l'ensemble ici , je vais uniquement fournir les liens vers la page d'Amazon :
+
+* [VPC et sous-réseaux](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html#vpc-limits-vpcs-subnets)
+* [Adresses IP Elastic (IPv4)](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html#vpc-limits-eips)
+* [Journaux de flux](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html#vpc-limits-flow-logs)
+* [Passerelles](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html#vpc-limits-gateways)
+* [Listes ACL réseau](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html#vpc-limits-nacls)
+* [Interfaces réseau](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html#vpc-limits-enis)
+* [Tables de routage](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html#vpc-limits-route-tables)
+* [Groupes de sécurité](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html#vpc-limits-security-groups)
+* [Connexions d'appairage de VPC](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html#vpc-limits-peering)
+* [Points de terminaison d'un VPC](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html#vpc-limits-endpoints)
+* [Connexions VPN](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html#vpc-limits-vpn)
 
 http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.html
 http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Introduction.html#CurrentCapabilities
