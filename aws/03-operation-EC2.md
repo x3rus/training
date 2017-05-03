@@ -597,11 +597,16 @@ Sans critique aucune , mais quand on demande le flux réseau aux développeurs c
 
 Puis soyons honnête nous aussi parfois on le sait pas trop quand on met en place un nouveau produit libre :P.
 
+Autre utilisation en dehors de l'analyse de problématique , le journal de flux contient aussi aussi le nombre de donnée transmise ainsi que le nombre de paquets. Il est donc intéressant de penser que le journal de flux peut aussi nous aider pour l'analyse de performance de l'application afin d'identifier les requêtes problématique et voir ou mettre de l'effort pour la réduction des données.
+
+Concrètement , vous développez une application web et lors dans votre application il y a BEAUCOUP , BEAUCOUP de donnée qui sont transmise à l'utilisateur. Par exemple quand la personne va sur la page des clients il y a 1 millions de client et la personne doit attendre le chargement de la page car il y a un tableau avec l'ensemble des données . Pourtant l'utilisateur ne va extraire que 90% 1 client voir 2 ou 3 , il pourrait être intéressant de visualiser le transfert de donnée pour cette page. Bon ici l'exemple est simple et évident, mais j'essaye d'offrir une idée générale :P. (si vous avez mieux :P, envoyé moi un message :P  ) .
+
+Autre suggestion , votre facture Amazon a explosé le dernier moi dû à une quantité de donnée transférer sur Internet , qui réalise ces envoie ??!!?? Le journal de flux pourra offrir l'information pertinent en corrélation avec le temps pour les instances !
+
 Le système de journaux de flux vient nous aider afin d'identifier les communications au niveau des :
 
 * Sous-réseaux
 * VPC 
-* groupe de sécurité
 
 ##### PRIX
 
@@ -618,7 +623,17 @@ Bon parlons prix , c'est gratuit ... Heu enfin presque :P , juste pour faire com
 C'est  pas énorme, mais ça monte très vite :P, pour diagnostique ceci est bien pour conserver l'information de manière permanente faut faire une étude :P.
 
 
-* **Principe** 
+##### Fonctionnement
+
+La définition d'un journal de flux va être réalisé sur un sous-réseau ou un __VPC__ , telle que mentionné plus tôt les données seront disponible dans l'outil __CloudWatch__ .
+
+Lors de la création du journal de flux vous devez spécifier les informations suivante :
+
+* Trafic accepté, refusé ou tout le trafic
+* Un nom de journal
+* 
+
+Information importante : **Les journaux de flux ne capturent pas de flux de journaux en temps réel pour vos interfaces réseau**, attendez vous à avoir un délai entre la mise en place de la configuration et la visualisation des données dans __CloudWatch__. Le temps varie selon la littérature que j'ai parcouru on parle entre 10 et 15 minutes :-/.
 
 
 
