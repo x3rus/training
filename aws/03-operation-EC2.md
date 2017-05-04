@@ -631,11 +631,29 @@ Lors de la création du journal de flux vous devez spécifier les informations s
 
 * Trafic accepté, refusé ou tout le trafic
 * Un nom de journal
-* 
+* Un nom de rôle [IAM (AWS Identity and Access Management)](https://aws.amazon.com/fr/iam/details/?nc1=h_ls) , nous couvrirons peut-être plus tard ce point.
+* Destination Log Group : Dans quelle groupe de logs dans __CloudWatch__ les informations seront contenu.
+
+Comme vous pouvez le constater, il n'y a pas la possibilité de définir des filtres sur le port ,l'adresse IP source ou destination voir le protocole, le filtrage est uniquement sur le trafic **accepté ou refusé** . Le journal de flux capture l'ensemble du trafic et le transmet au __CloudWatch__ , le filtrage du contenu sera réalisé lors de la consultation des données. 
+
+Rapidement le rôle __IAM__ , ces rôles sont en fait des configurations de sécurité , ceci permet de définir accès granulaire à des services , donc si vous avez une armé d'administrateur qui sont relier à votre compte il est probable que tous le monde ne peux pas tous faire. Donc ceci vous permet d'indiquer grâce au rôle qui pourra consulter les logs. Nous y reviendrons peut-être plus tard , dans notre cas étant __super-ultimate-god__ du compte AWS, le problème n'est pas présent. En entrant un rôle inexistant le système AWS va faire la création automatique du groupe et éventuellement nous pourrons l'associer à un groupe d'utilisateurs.
 
 Information importante : **Les journaux de flux ne capturent pas de flux de journaux en temps réel pour vos interfaces réseau**, attendez vous à avoir un délai entre la mise en place de la configuration et la visualisation des données dans __CloudWatch__. Le temps varie selon la littérature que j'ai parcouru on parle entre 10 et 15 minutes :-/.
 
 
+##### Limitation du journal de flux
+
+Voyons la liste de ce qui n'est pas possible avec le journal de flux :
+
+* Réalisation d'un filtrage granulaire (port, IP, protocole ,...) avant le transfert vers __CloudWatch__ 
+* Impossible d'ajouter des __TAGs__ à la configuration d'un journal ( ceci est principalement pour de la gestion )
+* Si votre interface réseau comporte plusieurs adresses IPv4 et que le trafic est envoyé vers une adresse IPv4 privée secondaire, le journal de flux affiche l'adresse IP privée principale dans le champ de l'adresse IPv4 de destination. 
+* Tous le trafic n'est pas capturé , voici la liste des éléments ignorés :
+    * Le trafic DNS en destination des serveurs DNS d'Amazon ( si vous utilisez VOTRE serveur DNS l'information sera contenu ).
+    * Le trafic d'activation de licence Windows vers le serveur d'activation de licence Amazon.
+    * Le trafic vers l'IP 169.254.169.254 , se sont des [métadonnées utilisé par AWS](http://docs.aws.amazon.com/fr_fr/AWSEC2/latest/UserGuide/ec2-instance-metadata.html) .
+    * Le trafic __DHCP__.
+    * Le trafic vers l'adresse IP réservée pour le routeur VPC par défaut.
 
 #### VPC interconnexion avec le réseau corporatif
 
