@@ -689,3 +689,34 @@ http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.
 http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Introduction.html#CurrentCapabilities
 
 
+#### Démonstration création de sous-réseaux et mise en place du journal de flux
+
+Maintenant que nous avons couvert le principe du __VPC__ , des sous-réseaux et du journal de flux , il est important de faire une petite démonstration pratique de la réalisation de ces configurations . Car peu importe le texte théorique que nous pourrions rédigé la pratique apporte toujours énormément de clarification. 
+
+Voici le scénario que nous allons mettre en place  :
+
+* Création de 2 sous-réseaux ( __Frontal__ et __BD__) .
+    * Mise en place __d'ACL__ serrées pour la sécurité des réseaux.
+* Création des instances __EC2__ avec des groupes sécurité plus large.
+    * Mise en place d'un serveur Web dans le réseau __Frontal__ .
+        * Configuration de 2 __virtualHosts__ , communiquant avec 2 bases de donnée __Mysql__.
+    * Mise en place de 2 serveur __Mysql__ dans le réseau __BD__ .
+        * Configuration de chaque serveur __Mysql__ pour chaque application web (__VirtualHost__).
+
+
+L'ensemble du déploiement applicatif sera réalisé avec **docker** afin de transférer l'application sous être obligé de réaliser la configuration sur les serveurs :P. Puis nous sommes confortable dans l'utilisation de docker :) .
+
+Nous allons aussi introduire une erreur de configuration afin de voir l'intérêt d'utiliser le journal de flux.
+
+##### Création des sous-réseaux
+##### Création du groupe de(s) sécurité(s)
+##### Création de la clé pair de clé ssh ( pour faire un rappel )
+##### Création des instances web et BD
+##### Configuration des instances et déploiement des conteneurs 
+##### Validation du déploiement avec la visualisation des pages web
+##### Création du journal de flux pour identifier le problème
+##### Consultation dans cloudwatch et extraction de l'information
+
+
+
+
