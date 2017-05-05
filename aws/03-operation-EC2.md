@@ -709,6 +709,78 @@ L'ensemble du déploiement applicatif sera réalisé avec **docker** afin de tra
 Nous allons aussi introduire une erreur de configuration afin de voir l'intérêt d'utiliser le journal de flux.
 
 ##### Création des sous-réseaux
+
+Nous allons donc faire la création de 2 sous-réseaux dans le __VPC__ qui fut créé initialement pour le moment je ne vois pas le requis de créer un __VPC__ autre , ceci pourrait être pertinent si nous désirions avec une séparation plus importante que les sous-réseaux . Si vous avez plusieurs départements utilisant __AWS__ ceci peut être intéressant , ou si vous désirez qu'un certain __VPC__ soit connecté avec votre réseau corporatif à l'interne (bureau ou centre de donnée).
+
+* Définition des sous-réseaux
+    * BD : 172.31.50.0/27
+    * Frontal : 172.31.60.0/27
+ 
+Comme encore nombre d'entre vous l'annotation __/27__ peut être obscure , la commande **ipcalc** est la pour vous :
+
+```bash
+$ ipcalc 172.31.60.0/27
+Address:   172.31.60.0          10101100.00011111.00111100.000 00000
+Netmask:   255.255.255.224 = 27 11111111.11111111.11111111.111 00000
+Wildcard:  0.0.0.31             00000000.00000000.00000000.000 11111
+=>
+Network:   172.31.60.0/27       10101100.00011111.00111100.000 00000
+HostMin:   172.31.60.1          10101100.00011111.00111100.000 00001
+HostMax:   172.31.60.30         10101100.00011111.00111100.000 11110
+Broadcast: 172.31.60.31         10101100.00011111.00111100.000 11111
+Hosts/Net: 30                    Class B, Private Internet
+```
+
+Définissons nos __ACL__ tous de suite :
+
+| Subnet  | Règle  | Source         | Destination    | Port    | Autorisation | Description                                    |
+|---------|-------:|:--------------:|:--------------:|:-------:|-------------:|-----------------------------------------------:|
+| BD      | INPUT  | 0.0.0.0/0      | 172.31.50.0/27 | 22      | ACCEPT       | Accès SSH aux instances BD                     | 
+| BD      | INPUT  | 172.31.60.0/27 | 172.31.50.0/29 | 3306    | ACCEPT       | Accès à __MySql__ depuis les instances Frontal |
+| BD      | OUTPUT | 0.0.0.0/0      | 0.0.0.0/0      | __ANY__ | DENY         | Refuse les communications vers l'externe       |
+| Frontal | INPUT  | 0.0.0.0/0      | 172.31.60.0/27 | 22      | ACCEPT       | Accès SSH aux instances Frontal                | 
+| Frontal | INPUT  | 0.0.0.0/0      | 172.31.60.0/27 | 80      | ACCEPT       | Accès Web connexion pour le service Apache     | 
+| Frontal | OUTPUT | 0.0.0.0/0      | 0.0.0.0/0      | __ANY__ | DENY         | Refuse les communications vers l'externe       |
+
+Nous allons débuter par la création des __ACL__ puis les sous-réseaux , car lors de la création du sous-réseaux nous devrons faire l'association de __l'ACL__ associé.
+
+
+1. Ouvrez la console d'Amazon __EC2__  [https://console.aws.amazon.com/ec2/](https://console.aws.amazon.com/ec2/) et sélectionnez **VPC**
+2. Sélectionnez **Network ACL**, vous devriez avoir quelque comme ceci :
+
+    ![](./imgs/demo-aws-vpc-01-view-acl.png)
+
+3. Cliquez sur **Create Network ACL**.
+4. Identifier le nom de l'ACL pour , quelque chose de significatif __SVP__ :P , n'ayant que 1 __VPC__ le choix est simple :)
+
+    ![](./imgs/demo-aws-vpc-02-creation-acl-object.png)
+
+5. Visualisons les configurations par défaut lors de la création d'une __ACL__:
+
+    * En entré :
+
+    ![](./imgs/demo-aws-vpc-03-view-default-acl-input.png)
+    * En Sortie : 
+
+    ![](./imgs/demo-aws-vpc-04-view-default-acl-output.png)
+
+6. Édition des règles d'entrée pour représenter le contenu du tableau , vous constaterez que nous ne pouvons pas définir la destination dans le cadre des __ACL__ en INPUT la règle s'applique donc sur l'ensemble du __subnet__ nous devrons utiliser les __security groups__ afin d'avoir la granularité sur la machine.
+
+    * Édition :
+
+    ![](./imgs/demo-aws-vpc-05-edit-acl-input.png)
+    * Résultat (c'est surtout pour démontrer que automatiquement __AWS__ rajouter la règles de REFUS ): 
+
+    ![](./imgs/demo-aws-vpc-06-view-acl-input.png)
+
+7. Édition des règles de sortie, dans notre cas aucune opération n'est requise.
+
+    ![](./imgs/demo-aws-vpc-07-view-acl-output.png)
+
+Référence : 
+
+* [http://docs.aws.amazon.com/fr\_fr/AmazonVPC/latest/UserGuide/VPC\_Appendix\_NACLs.html](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_NACLs.html)
+
 ##### Création du groupe de(s) sécurité(s)
 ##### Création de la clé pair de clé ssh ( pour faire un rappel )
 ##### Création des instances web et BD
