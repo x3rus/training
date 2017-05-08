@@ -1,0 +1,20 @@
+
+version: '2'
+services:
+    apache:
+        image: vhost_test_aws
+        container_name : 'test_aws'
+        build: .
+        hostname: apache.x3rus.com
+        environment:
+            - BDPI_USER=pi_usr
+            - BDPI_PASS=314
+            - BDPI_DATABASE=pi
+            - BDPI_ADDR=127.0.0.1
+            - BDCON_USER=con_usr
+            - BDCON_PASS=tact
+            - BDCON_DATABASE=people
+            - BDCON_ADDR=127.0.0.1
+    #   port:
+    #       3306:3306
+

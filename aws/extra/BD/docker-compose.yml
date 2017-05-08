@@ -1,0 +1,29 @@
+version: '2'
+services:
+    db-pi:
+        image: mysql:5.5
+        container_name : 'showpi'
+        hostname: dbpi.x3rus.com
+        environment:
+            - MYSQL_USER=pi_usr
+            - MYSQL_PASSWORD=314
+            - MYSQL_DATABASE=pi
+            - MYSQL_RANDOM_ROOT_PASSWORD=yes
+            - TZ=America/Montreal
+            - TERM=xterm
+    #   port:
+    #       3306:3306
+    db-contact:
+        image: mysql:5.5
+        container_name : 'showcontact'
+        hostname: dbpi.x3rus.com
+        environment:
+            - MYSQL_USER=con_usr
+            - MYSQL_PASSWORD=tact
+            - MYSQL_DATABASE=people
+            - MYSQL_RANDOM_ROOT_PASSWORD=yes
+            - TZ=America/Montreal
+            - TERM=xterm
+    #   port:
+    #       3306:3306
+
