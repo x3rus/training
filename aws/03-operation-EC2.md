@@ -750,7 +750,7 @@ Nous allons débuter par la création des __ACL__ puis les sous-réseaux , car l
 
     ![](./imgs/demo-aws-vpc-01-view-acl.png)
 
-3. Cliquez sur **Create Network ACL**.
+3. Cliquez sur **Create Network ACL**, débutons par __l'ACL__ de la base de donnée.
 4. Identifier le nom de l'ACL pour , quelque chose de significatif __SVP__ :P , n'ayant que 1 __VPC__ le choix est simple :)
 
     ![](./imgs/demo-aws-vpc-02-creation-acl-object.png)
@@ -760,7 +760,7 @@ Nous allons débuter par la création des __ACL__ puis les sous-réseaux , car l
     * En entré :
 
     ![](./imgs/demo-aws-vpc-03-view-default-acl-input.png)
-    * En Sortie : 
+    * En sortie : 
 
     ![](./imgs/demo-aws-vpc-04-view-default-acl-output.png)
 
@@ -776,6 +776,58 @@ Nous allons débuter par la création des __ACL__ puis les sous-réseaux , car l
 7. Édition des règles de sortie, dans notre cas aucune opération n'est requise.
 
     ![](./imgs/demo-aws-vpc-07-view-acl-output.png)
+
+8. Cliquez sur **Create Network ACL**, débutons par __l'ACL__ des services frontal .
+
+    ![](./imgs/demo-aws-vpc-08-creation-acl-object-front.png)
+
+9. Édition des règles d'entrée pour représenter le contenu du tableau , vous constaterez que nous ne pouvons pas définir la destination dans le cadre des __ACL__ en INPUT la règle s'applique donc sur l'ensemble du __subnet__ nous devrons utiliser les __security groups__ afin d'avoir la granularité sur la machine.
+
+    * En entré :
+
+    ![](./imgs/demo-aws-vpc-09-view-acl-input-front.png)
+
+    * En sortie :
+
+    ![](./imgs/demo-aws-vpc-10-view-acl-output-front.png)
+
+
+Maintenant que nous avons nos __ACL__ passons à la création des sous-réseaux . 
+    * BD : 172.31.50.0/27
+    * Frontal : 172.31.60.0/27
+
+1. Toujours dans le service __VPC__ nous allons procéder à création du sous-réseaux BD pour débuter , sélectionnez **Subnets** puis **Create Subnet** .
+
+    ![](./imgs/demo-aws-vpc-01-create-subnet.png)
+
+2. Création de notre sous-réseau avec un nom significatif ( j'insiste :P )
+
+    ![](./imgs/demo-aws-vpc-02-create-subnet-bd.png)
+
+3. Association de __l'ACL__ BD avec le réseau BD (onglet __ACL__)
+
+    ![](./imgs/demo-aws-vpc-03-association--acl-subnet-bd.png)
+
+4. Résumé de la configuration configuration du segment réseau BD. J'aimerai porter votre attention sur le fait que ce segment n'a PAS d'assignation d'adresse IP publique automatique : **Auto-assign Public IP: no**. Ceci n'est pas requis , car les machines n'ont pas de service publique sur internet pourquoi ouvrir les machines sur Internet ? :D
+
+    ![](./imgs/demo-aws-vpc-04-summary-subnet-bd.png)
+
+5. Création du sous-réseau Frontal pour le service Apache . 
+
+    ![](./imgs/demo-aws-vpc-05-create-subnet-frontal.png)
+
+6. Association de __l'ACL__ pour le réseau frontal.
+
+    ![](./imgs/demo-aws-vpc-06-association-acl-subnet-frontal.png)
+
+7. Nous allons assigner une adresse IP publique IPv4 automatiquement pour le réseau Frontal .
+
+    ![](./imgs/demo-aws-vpc-07-auto-public-ip-subnet-frontal.png)
+    ![](./imgs/demo-aws-vpc-08-auto-public-ip-subnet-frontal.png)
+
+8. Voici le résumé de la configuration du segment Frontal, très semblable au segment BD mais avec l'assignation d'IP publique automatique.
+
+    ![](./imgs/demo-aws-vpc-09-summary-subnet-frontal.png)
 
 Référence : 
 
