@@ -834,6 +834,35 @@ Référence :
 * [http://docs.aws.amazon.com/fr\_fr/AmazonVPC/latest/UserGuide/VPC\_Appendix\_NACLs.html](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Appendix_NACLs.html)
 
 ##### Création du groupe de(s) sécurité(s)
+
+Nous allons définir 2 groupe de sécurité qui sera appliqué au 2 type d'instances Apache et BD . Nous ne réaliserons pas de configuration particulière pour distingué la Base de donnée Pi de contacts.
+L'objectif est de simplifier la configuration , sinon ça devient vite compliqué. Bien entendu nous aurions pu aussi définir une configuration de groupe de sécurité ouvert et se fier uniquement sur la configuration du sous réseau __VPC__ . Je suis cependant moins confortable avec cette solution car si nous déplaçons notre instance dans un autre sous réseau nous n'aurons pas / plus de sécurité réseau.
+
+De plus nous allons en profiter pour nous rafraichir la mémoire sur le groupe de sécurité :D.
+
+1. Ouvrez la console d'Amazon __EC2__  [https://console.aws.amazon.com/ec2/](https://console.aws.amazon.com/ec2/) et sélectionnez **EC2**
+2. Sélectionnez **Security Groups**, vous devriez avoir quelque comme ceci :
+
+    ![](./imgs/demo-aws-secgroup-01-view-secgroup.png)
+
+3. Création du groupe de sécurité pour le serveur Apache 
+
+    * Entré
+
+    ![](./imgs/demo-aws-secgroup-02-create-apache-input.png)
+
+    * Sortie, comme vous pouvez le voir je ne met pas de restriction pour la sortie je ne le ferais pas pour le groupe de sécurité , je vais faire cette gestion au niveau du sous réseau __VPC__ bien entendu ceci est un choix, libre à vous !
+
+    ![](./imgs/demo-aws-secgroup-03-create-apache-output.png)
+
+4. Création du groupe de sécurité pour les serveur de BD 
+
+    * Entré
+
+    ![](./imgs/demo-aws-secgroup-04-create-bd-input.png)
+
+    * Sortie , tous est ouvert comme pour le groupe de sécurité apache.
+
 ##### Préparation des conteneurs 
 
 Comme la formation n'est pas orienter __docker__, mais que nous en avons fait beaucoup dans le passé, j'ai réalisé une documentation "extra" pour les personnes que ça intéresse. L'objectif était de ne pas surcharger la documentation Amazon , suite le [lien vers préparation environnement Apache , BD](./extra/01-preparation-env-Apache-BD-with-docker.md).
