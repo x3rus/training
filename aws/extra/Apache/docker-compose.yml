@@ -10,11 +10,11 @@ services:
             - BDPI_USER=pi_usr
             - BDPI_PASS=314
             - BDPI_DATABASE=pi
-            - BDPI_ADDR=127.0.0.1
+            - BDPI_ADDR=172.24.0.3
             - BDCON_USER=con_usr
             - BDCON_PASS=tact
             - BDCON_DATABASE=people
-            - BDCON_ADDR=127.0.0.1
+            - BDCON_ADDR=172.24.0.2
     #   port:
     #       3306:3306
 

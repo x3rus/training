@@ -11,7 +11,7 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 //
-$sql = "SELECT pi, FROM pinum";
+$sql = "SELECT pi FROM pinum";
 $result = $conn->query($sql);
 
 if ($result->num_rows > 0) {

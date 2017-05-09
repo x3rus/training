@@ -163,3 +163,81 @@ mysql> insert into contacts (nom, prenom) values ('Anthony','B');
 Query OK, 1 row affected (0.00 sec)
 
 ```
+
+5. Extraction des adresses IP 
+
+```bash
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+ba8200c095d9        mysql:5.5           "docker-entrypoint..."   14 hours ago        Up 7 seconds        3306/tcp            showcontact
+eaadc6b41886        mysql:5.5           "docker-entrypoint..."   14 hours ago        Up 7 seconds        3306/tcp            showpi
+
+$ docker inspect showpi | grep IPAd
+    "SecondaryIPAddresses": null,
+        "IPAddress": "",
+        "IPAddress": "172.24.0.3",
+$ docker inspect showcontact | grep IPAd
+    "SecondaryIPAddresses": null,
+        "IPAddress": "",
+        "IPAddress": "172.24.0.2",
+```
+
+6. Redémarrage du service apache avec les bonnes variables, utilisation du docker-compose pour faciliter l'écriture.
+
+```yml
+version: '2'
+services:
+    apache:
+        image: vhost_test_aws
+        container_name : 'test_aws'
+        build: .
+        hostname: apache.x3rus.com
+        environment:
+            - BDPI_USER=pi_usr
+            - BDPI_PASS=314
+            - BDPI_DATABASE=pi
+            - BDPI_ADDR=172.24.0.3
+            - BDCON_USER=con_usr
+            - BDCON_PASS=tact
+            - BDCON_DATABASE=people
+            - BDCON_ADDR=172.24.0.2
+    #   port:
+    #       3306:3306
+
+```
+    Si vous vous demandez pourquoi j'utilise pas les __link__ pour joindre le serveur web avec les serveurs BD. Comme le service BD sera sur 2 instances Amazon distincts je veux simuler se comportement, en utilisant le __stack__ IP pour la communication.
+    Démarrage du service
+```bash
+$ docker-compose up 
+Creating network "apache_default" with the default driver
+Creating test_aws
+Attaching to test_aws
+test_aws  | [Tue May 09 12:11:13.721624 2017] [mpm_prefork:notice] [pid 1] AH00163: Apache/2.4.10 (Debian) PHP/5.6.30 configured -- resuming normal operations
+test_aws  | [Tue May 09 12:11:13.721657 2017] [core:notice] [pid 1] AH00094: Command line: 'apache2 -D FOREGROUND'
+
+```
+
+Ajustement du fichier hosts
+
+```bash
+$ cat /etc/hosts | grep 172
+172.25.0.2      showpi.x3rus.com
+172.25.0.2      constact.x3rus.com
+```
+
+7. Visualisation du résultat
+
+![](./imgs/resultat-showpi-site.png)
+
+![](./imgs/resultat-contacts-site.png)
+
+8. Conclusion
+
+Nous avons le conteneur **Apache** avec 2 __Virtualhosts__ 
+
+* showpi.x3rus.com
+* contacts.x3rus.com
+
+Ainsi que 2 conteneurs de base de donnée, dans un monde idéal je réalisera la création de la table ET des __inserts__ dans l'image mais bon l'objectif ici est de démontrer l'utilisation du journal de flux et non de réaliser un beau / bon conteneur. 
+
+Je vais donc économiser du temps , récupérer le temps pris pour la rédaction de cette documentation :P.
