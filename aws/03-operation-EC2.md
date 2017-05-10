@@ -872,9 +872,56 @@ Pourquoi utiliser Docker ? Mon objectif est simple réduire mon coût !!! Le fai
 Le fait que je vais pouvoir transmettre le conteneur facilement ou le reconstruire m'assure que se sera identique à mon environnement interne.
 
 ##### Création des instances web et BD
+
+Bon maintenant que l'ensemble des opérations **SANS Frais** fut réalisé c'est le moment de passé à l'étape qui nous occasionnera un coût :P.
+
+Nous allons créer 3 instances :
+
+* 1 Apache : dans le segment Frontal
+* 2 BD : dans le segment BD
+
+1. Ouvrez la console d'Amazon __EC2__  [https://console.aws.amazon.com/ec2/](https://console.aws.amazon.com/ec2/) et sélectionnez **EC2**
+
+2. Cliquez sur **Launch Instance**
+3. J'ai choisie une instance RedHat 7.3 
+4. Instance type : **t2.small**
+5. Sélection du sous-réseau
+
+![](./imgs/demo-aws-createinstance-01-create-apache-network.png)
+
+6. Sélection du groupe de sécurité 
+
+![](./imgs/demo-aws-createinstance-02-select-apache-secgroupe.png)
+
+7. Sélection de la clé ssh 
+
+![](./imgs/demo-aws-createinstance-03-select-apache-sshkey.png)
+
+
+**IMPORTANT** : lors de l'assignation d'une instance __EC2__ à un sous réseau , il ne sera PAS possible dans le future de l'assigner à un autre sous réseau !
+
 ##### Configuration des instances et déploiement des conteneurs 
+
+Configuration de l'instance afin d'avoir **Docker-CE** de présent 
+
+1. Connexion SSH
+
+```bash
+$  ssh -i aws_training ec2-user@13.58.122.219
+```
+
+2. Mise en place du __repository yum__ pour docker 
+
+```bash
+[ec2-user@ip-172-31-60-4 ~]$ sudo yum install -y yum-utils && sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo  && sudo yum makecache fast && sudo yum install docker-ce
+
+```
 ##### Validation du déploiement avec la visualisation des pages web
+
 ##### Création du journal de flux pour identifier le problème
+
+
+
 ##### Consultation dans cloudwatch et extraction de l'information
 
 
