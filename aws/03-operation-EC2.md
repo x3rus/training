@@ -548,14 +548,58 @@ Donc nous avons 3 sous réseau dans le même __VPC__ :
 Comme nous pouvons le voir chaque sous-réseau à ses règles de pare feu qui permet de limité les communications avec le restes des réseaux , nous avons donc 3 pare feu pour les __subnet__ . Ceci vous permet de limiter l'accès pour l'ensemble de la "zone" . Ceci permet de gérer à plus haut niveau pour un regroupement de machine. 
 Bien entendu l'objectif est de limiter l'accès aux machine , dans l'exemple ci-dessus si une machines dans le réseau **frontal** est compromise , l'attaquant  ne sera pas en mesure d'établir une connexion **ssh** vers le serveur applicatif !
 
-Les groupes de sécurité (pare feu au niveau instance EC2) est toujours présent si vous désirez réalisé de la gestion granulaire par instance ! 
+Bien que la présence d'un pare feu est toujours présent lors de la définition d'un sous-réseau sont utilisation est optionnel. Vous pouvez laisser l'ensemble des communications ouverte et faire la gestion des règles uniquement au niveau du groupe de sécurité des instances. Prendre note que par défaut le __VPC__ ainsi que son sous-réseau par défaut n'a PAS de limitation d'accès.
+
+Si vous désirez mettre en place une restriction il y a quelque point important à savoir ( Faites pas la même erreur que moi :P ) :
+
+* **Les listes ACL réseau sont sans état. Les réponses au trafic entrant autorisé sont soumises aux règles du trafic sortant (et vice versa).**
+* Vous pouvez créer une __ACL__ personnalisée et l'associer à un sous-réseau. Par défaut, chaque liste ACL réseau personnalisée refuse tout trafic entrant et sortant jusqu'à ce que vous ajoutiez des règles. 
+* Le sous réseau ne peut n'avoir que UNE  __ACL__ associé , contrairement à une instance qui peut avoir plusieurs groupe de sécurité associer. 
+* Chaque règles dans __l'ACL__ est numéroté de 100 au maximum  32 766 , lors du traitement d'un paquet les règles sont traité du numéro le plus petit au plus grand. Si une règle concorde au paquet il arrête l'analyse des règles et sorte (Accepté ou Refusé)
+* Les règles sont entrantes et sortantes , et chaque règle peut autoriser ou refuser le trafic. 
+
+    :référence [http://docs.aws.amazon.com/fr\_fr/AmazonVPC/latest/UserGuide/VPC\_ACLs.html](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_ACLs.html)
+
+Dans la liste précédente , le plus problématique est que les règles de pare feu sont **SANS ÉTAT** (__State less__) donc __L2__. [Ref](https://en.wikipedia.org/wiki/Stateful_firewall). 
+
+Pour les personnes moins confortables avec le concept de pare feu avec gestion d'état (__StateFull__) et (__StateLess__), une information "ultra" rapide , je vous invite à chercher plus d'information. Soit dit en passant , il y a une playlist de vidéo explicatif sur [les concepts réseau sur  ma chaine Youtube](https://www.youtube.com/playlist?list=PLrspRZ5MjONxKHTRosSqh2K3Ufomebk0g)
+
+Prenons une communication réseau "classique" 
+
+![](./imgs/tcp_connexion_state.png)
+
+Et la capture réseau dans __wireshark__ 
+
+![](./imgs/wireshark-comm-laptop-x3rus.png)
+
+Comme vous pouvez le voir :
+
+1. Le client (192.168.43.245) communique vers le serveur web (192.99.13.211) sur le **port 80** 
+2. La communication provient du port dynamique ou éphémère du **port client 34068**, prendre note que actuellement c'est ce numéro si je refait une autre connexion le port va changer.
+
+* Situation avec un **pare feu AVEC état (statefull)** : 
+    * Si la règle indique que les communications entrante sont permit sur le port sur le port 80 il laissera les communications sortir vers un autre port pour la communication en cours. En d'autre mot il ne traite pas chaque paquet indépendamment mais il regarde l'état de la communication s'il a déjà permis un paquet en relation avec cette communication.
+* Situation avec un **pare feu SANS état (stateless)** :
+    * Chaque paquet est traité indépendamment des communications précédente. En d'autre mot si nous avons indiqué que la communication vers le port 80 est permet le paquet __SYN__ sera transmis . Mais si le paquet vers le port 34068 ne sera pas permit en sortie à moins qu'il soit explicitement définie.
+
+Pas besoin de vous dire qu'une fois avoir travaillé avec des pare feu avec état revenir au mode sans état est plutôt pénible ( le vrai mot c'est casse couilles :P) .
+
+Vous me direz donc mais comment faire alors pour permettre le retour de communication sur les ports dynamique ou éphémère dans le cas d'une communication __TCP__ ? Simple ouvrir les ports voici une représentation possible :
+
+|Protocole| ports      | IP Destination | Action    | Description |
+|:--------|:----------:|----------------|----------:|-------------|
+| TCP     | 1024-65535 | 0.0.0.0/0      | AUTORISER | Autorise les réponses sortantes vers l'ordinateur distant cette règle est requise pour autoriser le trafic de réponse pour les demandes entrantes.  |
+
+Donc à la lumière en prenant en considération le problème de l'état des communications (__stateless__) pour la définition des règles de pare feu sur le __VPC__ je pense que l'utilisation la plus réaliste est de l'utiliser uniquement pour réaliser de la limitation par __IP__ et non par port. La raison est simple vous serez obligé de laisser un nombre de trou béant dans votre pare feu pour l'ensemble des retours.
+
+Les groupes de sécurité (pare feu au niveau instance EC2) est toujours présent si vous désirez réalisé de la gestion par instance ! 
 Pour finir vous avez aussi un pare feu (__firewall__) pour l'ensemble des communications qui sort du __VPC__.
 
 Je sais ceci fait beaucoup de __firewall__ à différent niveau , bien entendu il n'est pas obligatoire de les activer tous , par exemple par défaut les règles définie dans le __firewall__ du __VPC__ sont ouvert au complet . Réalisons une liste des __firewalls__ du plus spécifique au plus général.
 
-1. __sécurity group__ : __firewall__ de la machine / instance __EC2__
-2. __firewall__ du sous-réseau : __firewall__ appliqué à un regroupement de machines / instances 
-3. __firewal__ du __VPC__ : __firewall__ du regroupement de sous réseau.
+1. __sécurity group__ : __firewall__ de la machine / instance __EC2__ (**statefull**)
+2. __firewall__ du sous-réseau : __firewall__ appliqué à un regroupement de machines / instances (**stateless**)
+3. __firewal__ du __VPC__ : __firewall__ du regroupement de sous réseau (**stateless**).
 
 
 Selon votre niveau de maturité et bien entendu de vos besoins il est possible de créer d'autre __VPC__ qui regrouperont d'autre __sous-réseaux__ honnêtement pour le moment je ne vois pas le requis ... Cependant je voulais le signaler.
@@ -769,11 +813,11 @@ Nous allons débuter par la création des __ACL__ puis les sous-réseaux , car l
     * Édition :
 
     ![](./imgs/demo-aws-vpc-05-edit-acl-input.png)
-    * Résultat (c'est surtout pour démontrer que automatiquement __AWS__ rajouter la règles de REFUS ): 
+    * Résultat (c'est surtout pour démontrer que automatiquement __AWS__ rajouter la règles de REFUS ) **stateless** donc range de ports énorme: 
 
     ![](./imgs/demo-aws-vpc-06-view-acl-input.png)
 
-7. Édition des règles de sortie, dans notre cas aucune opération n'est requise.
+7. Édition des règles de sortie, dans notre cas aucune opération n'est requise. **stateless** donc range de port énorme
 
     ![](./imgs/demo-aws-vpc-07-view-acl-output.png)
 
