@@ -6,7 +6,8 @@ Je n'aurais pas la prétention de dire que nous allons voir l'ensemble des possi
 Je vais comme toujours faire de mon mieux, en respectant mes intérêts :P , nous verrons par la suite où ceci nous mène . 
 Pour débuter nous allons :
 
-* comprendre un peu mieux les aspects **Réseau et sécurité** , l'objectif est de voir comment assurer l'accès aux instances __EC2__ via le système de clé ssh, donc le contrôle d'accès. Par la suite nous verrons comment faire communiquer les instances entre elle, en comprenant la limitation des accès réseaux en place. À ce stade nous ne verrons pas la gestion des réseaux, j'espère le voir plus tard.
+* comprendre un peu mieux les aspects **Réseau et sécurité** , l'objectif est de voir comment assurer l'accès aux instances __EC2__ via le système de clé ssh, donc le contrôle d'accès. 
+* Par la suite nous verrons comment faire communiquer les instances entre elle, en comprenant la limitation des accès réseaux en place. À ce stade nous ne verrons pas la gestion des réseaux, j'espère le voir plus tard.
 
 ## Réseau et sécurité
 
@@ -15,6 +16,8 @@ Nous allons voir les bases de la configuration pour notre instance __EC2__, pour
 * Compréhension de l'utilisation des clés ssh.
 * Contrôle d'accès au instance.
 * Communication réseau entre les instances .
+    * __VPC__
+    * Sous-réseaux __subnet__
 
 Référence : [Network and Security](http://docs.aws.amazon.com/fr_fr/AWSEC2/latest/UserGuide/EC2_Network_and_Security.html)
 
@@ -69,7 +72,7 @@ On va tous de suite couvrir cette partie.
 3. Clique droit ou sélectionnez la clé et faire **delete**
 
 
-Conséquence ?? 
+**Conséquence ??**
 
 * Vous ne pourrez plus assigné cette clé aux nouvelle instances, bien entendu si vous avez réalisé une copie de la clé publique préalablement vous pourrez remettre cette clé disponible dans __AWS__.
 * L'ensemble des instances qui ont actuellement la clé de configurons ne seront PAS impacté par la suppression.
@@ -150,11 +153,11 @@ Bon si la catastrophe est déjà arrivé vous faites quoi ?
 Si votre instance comme stockage des disques __EBS__, vous pourrez éteindre votre instance et assigné le disque dur que l'instance problématique à une nouvelle instance démarrer . Par la suite vous aurez la libertés de changer les configurations ssh pour reprendre la main dessus . 
 Voici le lien explicatif d'Amazon , j'espère avoir le temps de faire une démonstration plus tard , je l'ai mis dans la liste des choses à couvrir.
 
-Référence Amazon : http://docs.aws.amazon.com/fr_fr/AWSEC2/latest/UserGuide/ec2-key-pairs.html#replacing-lost-key-pair
+Référence Amazon : [http://docs.aws.amazon.com/fr\_fr/AWSEC2/latest/UserGuide/ec2-key-pairs.html#replacing-lost-key-pair](http://docs.aws.amazon.com/fr_fr/AWSEC2/latest/UserGuide/ec2-key-pairs.html#replacing-lost-key-pair)
 
 ### Pare-feu ou Groupes de sécurité 
 
-Amazon nomme le son pare-feu **Groupe de sécurité** , ce dernier est donc un __firewall__ logiciel qui peut être modifier lors de l'utilisation de l'instance . L'avantage du système se trouve dans le mot __groupe__ :P , en fait il est possible d'ajouter plusieurs groupe à une instance ceci permet donc de faire des type de configuration ou ... __groupe__ :P  qui pourront s'appliquer à plusieurs instance utilisant la même définition .
+Amazon nomme  son pare-feu **Groupe de sécurité** , ce dernier est donc un __firewall__ logiciel qui peut être modifier lors de l'initialisation de l'instance . L'avantage du système se trouve dans le mot __groupe__ :P , en fait il est possible d'ajouter plusieurs groupe à une instance ceci permet donc de faire des type de configuration ou ... __groupe__ :P  qui pourront s'appliquer à plusieurs instance utilisant la même définition .
 
 La mise en place d'un groupe de sécurité est obligatoire lors du démarrage d'une instances __EC2__ , même si vous laissé l'ensemble ouvert ! Comme toujours les groupe de sécurité sont restreint par région ! Lors qu'une instance utilise un groupe de sécurité vous ne pouvez pas le modifier ( renommer , supprimer, ...) par contre il est possible de modifier le contenu des règles ( ajout ou suppression ).
 Le changement sera pris en considération est automatiquement appliqué au instance qui sont associés au groupe de sécurité.
@@ -165,7 +168,6 @@ Vous pouvez définir jusqu'à 500 groupes de sécurités par région !! Chaque g
 
 * **Trafic sortant** 
     * L'ensemble du trafic sortant est permis par défaut
-    * Pour les groupes de sécurité __EC2 classic__ vous ne pouvez pas modifier les règles pour le trafic sortant , vous devrez définir un réseau __VPC__
 * **Trafic entrant**
     * Vous ne pouvez définir que des règles permissives, il n'y a pas d'option pour définir une règle qui bloque
     * L'ensemble des règles sont géré avec l'état ( __states full__  ) , si vous envoyez une demande à partir de votre instance, le trafic de la réponse à cette demande est autorisé, indépendamment des règles entrantes des groupes de sécurité. Pour les groupes de sécurité VPC, cela signifie aussi que les réponses au trafic entrant autorisé ont le droit d'être acheminées vers l'extérieur, indépendamment des règles sortantes.
@@ -179,18 +181,6 @@ Une règle est composé de :
 * **Port** : Pour les protocoles __TCP__ ou __UDP__ vous pouvez définir un port ou un range de port en utilisant la notation 1000-1500 
 * **ICMP code et type** : Pour le protocole __ICMP__ vous pouvez définir le type et le code
 * **Source et Destination** : Bien entendu il est possible de définir la source et / ou la destination en spécifiant une adresse IP spécifique ( 66.23.18.23/32) ainsi que des segments réseaux plus large ( 82.23.23.43/29)  est composé de : 
-*
-* * **Protocole** : Par exemple __TCP__ , __UDP__ ou __ICMP__ les protocoles les plus courant.
-* **Port** : Pour les protocoles __TCP__ ou __UDP__ vous pouvez définir un port ou un range de port en utilisant la notation 1000-1500 
-* **ICMP code et type** : Pour le protocole __ICMP__ vous pouvez définir le type et le code
-* **Source et Destination** : Bien entendu il est possible de définir la source et / ou la destination en spécifiant une adresse IP spécifique ( 66.23.18.23/32) ainsi que des segments réseaux plus large ( 82.23.23.43/29)  est composé de : 
-*
-* * **Protocole** : Par exemple __TCP__ , __UDP__ ou __ICMP__ les protocoles les plus courant.
-* **Port** : Pour les protocoles __TCP__ ou __UDP__ vous pouvez définir un port ou un range de port en utilisant la notation 1000-1500 
-* **ICMP code et type** : Pour le protocole __ICMP__ vous pouvez définir le type et le code
-* **Source et Destination** : Bien entendu il est possible de définir la source et / ou la destination en spécifiant une adresse IP spécifique ( 66.23.18.23/32) ainsi que des segments réseaux plus large ( 82.23.23.43/29). Un point intéressant vous pouvez spécifier un autre groupe de sécurité :
-    * __EC2-Classic__ : un groupe de sécurité différent pour __EC2-Classic__ dans la même région.
-    * __EC2-Classic__ : un groupe de sécurité pour un autre compte __AWS__ de la même région (ajoutez __l'ID__ de compte __AWS__ comme préfixe ; par exemple, __111122223333/sg-edcd9784__).
 
 #### Création d'un groupe de sécurité
 
@@ -426,7 +416,7 @@ Comme vous pouvez le constater ceci est l'ensemble des instances, donc par souci
 Comme l'aspect des coûts est critique clarifions une chose tous de suite : Il n'y a **AUCUN COÛT** pour ce service !! Le coût est pour ce que vous mettez dans le __VPC__ en d'autre mot les instances __EC2__, le balancer de charge , ... 
 Vous aurez un coût si votre __VPC__ est connecter avec un __VPN__ , mais ceci est en dehors du cadre (__scope__) ici. 
 
-J'avais fait mention en __PCI__ lors de la présentation du cloud , les __VPC__ sont conforme aux normes __PCI__ [lien](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Introduction.html#pci-compliance).
+J'avais fait mention de __PCI__ lors de la présentation du cloud , les __VPC__ sont conforme aux normes __PCI__ [lien](http://docs.aws.amazon.com/fr_fr/AmazonVPC/latest/UserGuide/VPC_Introduction.html#pci-compliance).
 
 Que pouvons nous mettre dans un __VPC__ en d'autre mot dans notre réseau dédié chez Amazon ? 
 
@@ -970,4 +960,6 @@ $  ssh -i aws_training ec2-user@13.58.122.219
 
 
 
+A voir :
 
+* https://blog.flowlog-stats.com/2016/05/01/enabling-flow-logs-on-aws/
