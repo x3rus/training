@@ -934,6 +934,70 @@ Nous allons créer 3 instances :
 
 **IMPORTANT** : lors de l'assignation d'une instance __EC2__ à un sous réseau , il ne sera PAS possible dans le future de l'assigner à un autre sous réseau !
 
+##### Création du journal de flux pour identifier le problème
+
+Nous allons réaliser la création des journaux de flux tous de suite , car telle que mentionné plus tôt la mise en place des journaux peuvent prendre entre 10 et 15 minutes pour que nous commencions à recevoir des données. Dans ce contexte ceci ne m'a pas aidé pour identifier les problématiques de configuration et la patience n'est pas toujours facile ... 
+
+Nous avons 2 lieux où nous pouvons définir des journaux , sur le sous réseau et sur l'interface de l'instance __EC2__ ! 
+
+Nous allons faire les 2 afin de voir le fonctionnement . Débutons avec le sous-réseau .
+
+Référence : [https://blog.flowlog-stats.com/2016/05/01/enabling-flow-logs-on-aws/](https://blog.flowlog-stats.com/2016/05/01/enabling-flow-logs-on-aws/)
+
+###### Création du groupe de log sous CloudWatch
+
+Avant toute chose nous devons faire la création du groupe de logs dans __CloudWatch__ ce groupe permet de contenir un regroupement de logs , nous allons faire la création de 2 groupes :
+
+* __subnetLogs__ : Pour le contenu des logs par sous réseau .
+* __interfacesLogs__ : Pour le contenu des logs sur une interface. 
+
+
+1. Ouvrez la console d'Amazon __EC2__  [https://console.aws.amazon.com/ec2/](https://console.aws.amazon.com/ec2/) et sélectionnez **CloudWatch**
+
+2. Dans le menu de gauche sélectionnez **Logs**
+
+3. Cliquez sur **Action** et **Create log group**
+
+    ![](./imgs/demo-aws-goupe-logs-01-creation.png)
+
+4. Création du groupe , juste entrer le nom du groupe 
+
+    ![](./imgs/demo-aws-goupe-logs-02-creation-subnetLogs.png)
+
+Et voilà , prendre note que c'est très important de le faire avant j'ai eu plein de doute sur la fonctionnalité de ma configuration en essayant de le faire après . Ça "semble" fonctionné quand tu le fais après cependant déjà que ça prend 10 à 15 minutes pour avoir les données, j'ai l'impression que la non création du groupe de logs avant le journal du flux augmente le délais de propagation des informations dans le groupe de logs.
+
+###### Création du journal de flux sur le sous réseau
+
+1. Ouvrez la console d'Amazon __EC2__  [https://console.aws.amazon.com/ec2/](https://console.aws.amazon.com/ec2/) et sélectionnez **VPC**
+
+2. Dans le menu de gauche sélectionnez **Subnet**
+
+3. Sélectionnez votre sous réseau et sélectionné l'onglet **flow logs**
+
+    ![](./imgs/demo-aws-journal-flux-01-select-subnet.png)
+
+4. Cliquez sur le bouton  **Create flow log**
+
+    ![](./imgs/demo-aws-journal-flux-02-subnet-creation-journal.png)
+
+5. Pour le filtre vous pouvez définir, **ALL** : pour toutes les communications , **Accept** : uniquement les communication autorisées , **REJECT** : uniquement les paquets refusés.
+
+6. Si c'est votre premier journal vous devrez définir un __Role IAM__ pour permettre le transfert des logs vers __cloudWatch__ , pour ce faire cliquer sur le lien **Set up Permissions** .
+
+    ![](./imgs/demo-aws-journal-flux-03-subnet-creation-journal-role.png)
+
+    Nous verrons beaucoup plus loin le concept de **IAM (AWS Identity and Access Management)** , en gros ceci est le système de permission dans __AWS__ notre objectif lors de la création de ce rôle est de permettre un service __AWS__ ( ici le __VPC__ ) de transmettre des données à un autre service dans le cas présent __CloudWatch__. Pour les gens qui veulent avoir plus d'information tous de suite voici le lien : [IAM](http://docs.aws.amazon.com/fr_fr/IAM/latest/UserGuide/id_roles.html) . Je vais partir du principe que l'on a pas encore de rôle, nous allons donc faire la création
+
+7. Vous devrez définir un nom , lorsque vous cliquez sur le lien il remplira le formulaire avec le nom du rôle : **flowLogsRole** , vous pouvez le changer... Pour les curieux vous pouvez visualiser la syntaxe de la définition du rôle . Puis cliquez sur **Allow**
+
+    ![](./imgs/demo-aws-journal-flux-04-subnet-creation-IAM-role.png)
+
+
+ICI ICI ICI 
+
+###### Création du journal de flux sur l'interface de l'instance
+
+
 ##### Configuration des instances et déploiement des conteneurs 
 
 Configuration de l'instance afin d'avoir **Docker-CE** de présent 
