@@ -992,8 +992,11 @@ Et voilà , prendre note que c'est très important de le faire avant j'ai eu ple
 
     ![](./imgs/demo-aws-journal-flux-04-subnet-creation-IAM-role.png)
 
+8. Vous devez fournir le log groupe dans lequel les logs seront transmis , nous avons créé nos 2 groupe précédemment , nous utiliserons donc le groupe __subnetLogs__ dans le cas présent
 
-ICI ICI ICI 
+Voici le résultat : 
+
+ICI ICI ICI ( TODO ajout image final ) 
 
 ###### Création du journal de flux sur l'interface de l'instance
 
