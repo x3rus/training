@@ -1072,16 +1072,26 @@ Configuration de l'instance afin d'avoir **Docker-CE** de présent
     [.... ]
     ```
 
+6. Erreur reçu 
+
+    ```
+    Err http://security.debian.org jessie/updates InRelease
+      
+    Err http://security.debian.org jessie/updates Release.gpg
+      Cannot initiate the connection to security.debian.org:80 (2610:148:1f10:3::73). - connect (101: Network is unreachable) [IP: 2610:148:1f10:3::73 80]
+
+    ```
+
+7. Dans CloudWatch 
+
+    ![](./imgs/demo-aws-journal-flux-12-cloudwatch-prob-build-apache.png)
+
 ##### Validation du déploiement avec la visualisation des pages web
-
-##### Création du journal de flux pour identifier le problème
-
 
 
 ##### Consultation dans cloudwatch et extraction de l'information
 
 Regardons dans __CloudWatch__ ce que ceci nous donne .
-
 
 1. Ouvrez la console d'Amazon __CloudWatch__  [https://console.aws.amazon.com/ec2/](https://console.aws.amazon.com/cloudwatch/)
 
@@ -1098,7 +1108,43 @@ Comme vous pouvez le voir j'ai "ouvert" (__Expand__) une ligne
 
 > 2 250171344592 eni-e7d5a98f 54.149.118.103 172.31.60.27 32377 8080 6 4 240 1495542416 1495542488 REJECT OK
 
-C'est un peu cryptique à première vue , mais on va regarder ce que chaque colonne signifie
+C'est un peu cryptique à première vue , mais on va regarder ce que chaque colonne signifie , un tableau descriptif des colonnes :
+
+|Champ         |   Description |
+|:-------------|:---------------|
+|**Version**   | Version des journaux de flux VPC |
+|**id-compte**   | ID de compte AWS pour le journal de flux |
+|**id-interface**    | ID de l'interface réseau à laquelle le flux de journaux s'applique |
+|**adrsrce**     | Adresse IPv4 ou IPv6 source. L'adresse IPv4 de l'interface réseau correspond toujours à son adresse IPv4 privée. |
+|**adrdest**     | Adresse IPv4 ou IPv6 de destination. L'adresse IPv4 de l'interface réseau correspond toujours à son adresse IPv4 privée. |
+|**portsrce**    | Port source du trafic |
+|**portdest**    | Port de destination du trafic |
+|**protocole**   | Numéro de protocole IANA du trafic (pour plus d'informations, consultez la page [Assigned Internet Protocol Numbers](http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml)) |
+|**paquets**     | Nombre de paquets transférés au cours de la fenêtre de capture |
+|**octets**  | Nombre d'octets transférés au cours de la fenêtre de capture |
+|**début**   | Heure de début de la fenêtre de capture, en secondes Unix |
+|**fin**     | Heure de fin de la fenêtre de capture, en secondes Unix |
+|**action**  | Action associée au trafic : \
+               * ACCEPT : le trafic enregistré a été autorisé par les groupes de sécurité ou les listes ACL réseau. \
+               * REJECT : le trafic enregistré n'a pas été autorisé par les groupes de sécurité ou les listes ACL réseau. |
+
+Donc si nous reprenons notre exemple ci-dessus :
+
+| Version | id-compte | id-interface | IP Source | IP Destination | Port Source | Port Destination | Protocole | # paquets | # octets | début | fin | action |
+|:--------|:---------:|:-------------|:---------:|:--------------:|:-----------:|:----------------:|:---------:|:---------:|:--------:|:-----:|:---:|:------:|
+|2| 250171344592| eni-e7d5a98f| 54.149.118.103| 172.31.60.27| 32377| 8080| 6| 4| 240| 1495542416| 1495542488| REJECT OK|
+
+Étrangement l'IP 54.149.118.103 appartient à Amazon :
+
+```bash
+$ dig -x 54.149.118.103
+[ ... ]
+;; ANSWER SECTION:
+103.118.149.54.in-addr.arpa. 300 IN     PTR     ec2-54-149-118-103.us-west-2.compute.amazonaws.com.
+[...]
+```
+
+Mais effectivement le port 8080 n'est pas autorisé dans le pare feu c'est donc un succès bien que je ne comprend pas la source du trafic :D.
 
 A voir :
 
