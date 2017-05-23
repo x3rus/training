@@ -996,10 +996,39 @@ Et voilà , prendre note que c'est très important de le faire avant j'ai eu ple
 
 Voici le résultat : 
 
-ICI ICI ICI ( TODO ajout image final ) 
+![](./imgs/demo-aws-journal-flux-05-subnet-final.png)
 
 ###### Création du journal de flux sur l'interface de l'instance
 
+Réalisons la même opération mais sur l'interface d'une instance __EC2__ , l'objectif est d'avoir la visibilité sur l'ensemble des points , ceci nous permet d'identifier adéquatement le flux . Prendre note que l'instance n'a pas besoin d'être en exécution pour mettre en place la configuration !
+
+
+1. Ouvrez la console d'Amazon __EC2__  [https://console.aws.amazon.com/ec2/](https://console.aws.amazon.com/ec2/) et sélectionnez **EC2**
+
+2. Voici les instances en utilisation :
+
+    ![](./imgs/demo-aws-journal-flux-06-ec2-interface-view-instance.png)
+
+3. Dans le menu de gauche sélectionnez **Network Interface**
+
+    ![](./imgs/demo-aws-journal-flux-07-ec2-interface-view-interface.png)
+
+4. Sélectionnez votre interface et cliquez sur l'onglet **Flow Logs** puis **Create Flow Log** , si vous avez définie déjà des journaux de flux sur le réseau vous devriez voir des configurations avec l'identifier __Inherited From__ le nom du sous réseau.
+
+    ![](./imgs/demo-aws-journal-flux-08-ec2-interface-view-flow-logs.png)
+
+5. Cliquez sur **Create Flow Logs** 
+
+6. Définir le filtre (__ALL__, __Accept__ ou __Reject__) , pour le Rôle vous pouvez réutiliser celui utilisé lors de la création du flux de l'interface , Sinon créez le "rôle" / "permission" __Set Up Permissions__.
+
+    ![](./imgs/demo-aws-journal-flux-09-ec2-interface-creation-flow-logs.png)
+
+7. Voici le résultat de l'opération 
+
+    ![](./imgs/demo-aws-journal-flux-10-ec2-interface-final.png)
+
+Nous avons maintenant nos journaux de flux de créé , mais ça ne fonctionnera pas tous de suite :-/ malheureusement ceci prend 10 à 15 minutes pour que ce soit actif. Donc pas de panique si vous n'avez pas vos données tous de suite , ceci ne veut pas dire que votre configuration est mauvaise !! 
+Donné un peu de temps au système de ce mettre en place , ne faite pas comme moi , puis changer plein de configuration et pas comprendre pourquoi ça marche pas et finalement refaire la configuration !
 
 ##### Configuration des instances et déploiement des conteneurs 
 
@@ -1007,16 +1036,42 @@ Configuration de l'instance afin d'avoir **Docker-CE** de présent
 
 1. Connexion SSH
 
-```bash
-$  ssh -i aws_training ec2-user@13.58.122.219
-```
+    ```bash
+    $  ssh -i aws_training ec2-user@13.58.122.219
+    ```
 
 2. Mise en place du __repository yum__ pour docker 
 
-```bash
-[ec2-user@ip-172-31-60-4 ~]$ sudo yum install -y yum-utils && sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo  && sudo yum makecache fast && sudo yum install docker-ce
+    ```bash
+    [ec2-user@ip-172-31-60-4 ~]$ sudo yum install -y yum-utils && sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo  && sudo yum makecache fast && sudo yum install docker-ce
 
-```
+    [ec2-user@ip-172-31-60-27 ~]$ curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
+    [ec2-user@ip-172-31-60-27 ~]$ sudo python get-pip.py
+    [ec2-user@ip-172-31-60-27 ~]$ sudo pip install docker-compose
+    ```
+
+3. Validation de docker :
+
+    ```bash
+    [ec2-user@ip-172-31-60-27 ~]$ sudo docker ps
+    CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+    ```
+
+4. Je vais faire le transfert de la configuration du service apache, a défaut d'avoir poussé mon image sur [hub.docker.com](http://hub.docker.com), je vais transférer l'ensemble du __DockerFile et docker-compose__.
+
+    ```bash
+    $ scp -i ~/.ssh/aws_training -r Apache/ ec2-user@52.14.54.45:.
+    Enter passphrase for key '/home/xerus/.ssh/aws_training': 
+    ```
+
+5. Création de l'image sur le conteneur .
+
+    ```bash
+    [ec2-user@ip-172-31-60-27 Apache]$ docker-compose build
+    Building apache
+    [.... ]
+    ```
+
 ##### Validation du déploiement avec la visualisation des pages web
 
 ##### Création du journal de flux pour identifier le problème
@@ -1025,7 +1080,25 @@ $  ssh -i aws_training ec2-user@13.58.122.219
 
 ##### Consultation dans cloudwatch et extraction de l'information
 
+Regardons dans __CloudWatch__ ce que ceci nous donne .
 
+
+1. Ouvrez la console d'Amazon __CloudWatch__  [https://console.aws.amazon.com/ec2/](https://console.aws.amazon.com/cloudwatch/)
+
+2. Allez dans la section **logs** et sélectionnez votre groupe de logs puis le nom de l'interface 
+
+    TODO : Ajouter une image
+
+3. Voici un exemple de logs pour l'interface 
+
+    ![](./imgs/demo-aws-journal-flux-11-cloudwatch-view-logs-interface.png)
+
+
+Comme vous pouvez le voir j'ai "ouvert" (__Expand__) une ligne 
+
+> 2 250171344592 eni-e7d5a98f 54.149.118.103 172.31.60.27 32377 8080 6 4 240 1495542416 1495542488 REJECT OK
+
+C'est un peu cryptique à première vue , mais on va regarder ce que chaque colonne signifie
 
 A voir :
 
