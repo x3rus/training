@@ -1067,24 +1067,10 @@ Configuration de l'instance afin d'avoir **Docker-CE** de présent
 5. Création de l'image sur le conteneur .
 
     ```bash
-    [ec2-user@ip-172-31-60-27 Apache]$ docker-compose build
+    [ec2-user@ip-172-31-60-27 Apache]$ docker-compose up
     Building apache
     [.... ]
     ```
-
-6. Erreur reçu 
-
-    ```
-    Err http://security.debian.org jessie/updates InRelease
-      
-    Err http://security.debian.org jessie/updates Release.gpg
-      Cannot initiate the connection to security.debian.org:80 (2610:148:1f10:3::73). - connect (101: Network is unreachable) [IP: 2610:148:1f10:3::73 80]
-
-    ```
-
-7. Dans CloudWatch 
-
-    ![](./imgs/demo-aws-journal-flux-12-cloudwatch-prob-build-apache.png)
 
 ##### Validation du déploiement avec la visualisation des pages web
 

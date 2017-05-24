@@ -2,9 +2,9 @@
 version: '2'
 services:
     apache:
-        image: vhost_test_aws
+        image: x3rus/vhost_test_aws
         container_name : 'test_aws'
-        build: .
+        #        build: .
         hostname: apache.x3rus.com
         environment:
             - BDPI_USER=pi_usr
