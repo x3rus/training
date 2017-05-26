@@ -120,6 +120,7 @@ The key's randomart image is:
  -rw-r--r-- 1 VotreUtilisateur VotreUtilisateur 9710 Mar 27 15:04 known_hosts
  -rw-r--r-- 1 VotreUtilisateur VotreUtilisateur  394 Apr 20 08:36 aws_training.pub
  -rw------- 1 VotreUtilisateur VotreUtilisateur 1766 Apr 20 08:36 aws_training
+
 ```
 3. Voici le contenu de la clé publique : 
 
@@ -462,11 +463,11 @@ Broadcast: 172.31.255.255       10101100.00011111. 11111111.11111111
 Hosts/Net: 65534                 Class B, Private Internet
 ```
 
-Nous pouvons donc avoir jusque 65532 machines dans se segment réseaux , si on le remplie ça fera plein d'argent ($$$) pour Amazon :P. 
+Nous pouvons donc avoir jusque 65532 machines dans se segment réseaux , si on le remplie ça fera plein d'argent \($$\) pour Amazon :P. 
 
-Bon pour ceux qui pensent, __ouin__ y commence à me perdre avec ces segments réseaux , j'ai un cours sur le réseau aussi :P, mais on va essayer de faire sans ...
+Bon pour ceux qui pensent, __Oh__ y commence à me perdre avec ces segments réseaux , j'ai un cours sur le réseau aussi :P, mais on va essayer de faire sans ...
 
-Reprenons notre testes réalisé un peu plus tôt entre les 2 instances pour la communications réseau et l'ouverture des ports . 
+Reprenons notre teste réalisé un peu plus tôt entre les 2 instances pour la communications réseau et l'ouverture des ports . 
 
 Nous avions 2 machines :
 
@@ -494,7 +495,7 @@ Analysons les adresses IP avec le segment réseau :
         ```
 * Représentation graphique de la situation
 
-        ![](./imgs/VPC_schema-01.png)
+    ![](./imgs/VPC_schema-01.png)
 
 Comme vous pouvez le constater le segment réseau où évolue nos instances Amazon que nous avons démarrer est plus petit que celle qui nous est alloué . 172.31.32.0/20 est plus petit que 172.31.0.0/16 . Pourquoi ? Comment expliquer cette situation , pour le moment ceci n'est pas critique, car nous sommes loin de 4094 instances, par contre nous devons comprendre cette situation.
 
@@ -597,7 +598,7 @@ Selon votre niveau de maturité et bien entendu de vos besoins il est possible d
 Si vous voulez vous compliquer la vie , rien ne vous empêche d'ajouter un __firewall__ sur la machine avec **iptables** ou **nf** , bon après trop de pare feu ne facilite pas l'analyse lors de problématique. 
 
 
-##### Possibilité avec le__VPC__ 
+##### Possibilité avec le __VPC__ 
 
 Le système __VPC__ vous offre les fonctionnalités suivante
 
@@ -842,7 +843,7 @@ Maintenant que nous avons nos __ACL__ passons à la création des sous-réseaux 
 
     ![](./imgs/demo-aws-vpc-03-association--acl-subnet-bd.png)
 
-4. Résumé de la configuration configuration du segment réseau BD. J'aimerai porter votre attention sur le fait que ce segment n'a PAS d'assignation d'adresse IP publique automatique : **Auto-assign Public IP: no**. Ceci n'est pas requis , car les machines n'ont pas de service publique sur internet pourquoi ouvrir les machines sur Internet ? :D
+4. Résumé de la configuration configuration du segment réseau BD. J'aimerai porter votre attention sur le fait que ce segment n'a PAS d'assignation d'adresse IP publique automatique : **Auto-assign Public IP: no**. Ceci n'est pas requis , car les machines n'ont pas de service publique sur internet pourquoi ouvrir les machines sur Internet ? :D . Bon finalement lors des TESTES j'ai constaté que ce n'était pas possible, car quand nous stipulons pas d'adresse IP publique ceci est VRAIMENT pas d'adresse IP publique même pour la communication à l'externe !! En d'autre mot si la machine n'a pas d'IP impossible de faire les mise à jour du système d'exploitation ou l'installation d'application , ce qui est plutôt limitatif.
 
     ![](./imgs/demo-aws-vpc-04-summary-subnet-bd.png)
 
@@ -1043,7 +1044,7 @@ Configuration de l'instance afin d'avoir **Docker-CE** de présent
 2. Mise en place du __repository yum__ pour docker 
 
     ```bash
-    [ec2-user@ip-172-31-60-4 ~]$ sudo yum install -y yum-utils && sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo  && sudo yum makecache fast && sudo yum install docker-ce
+    [EC2-user@ip-172-31-60-4 ~]$ sudo yum install -y yum-utils && sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo  && sudo yum makecache fast && sudo yum install docker-ce
 
     [ec2-user@ip-172-31-60-27 ~]$ curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
     [ec2-user@ip-172-31-60-27 ~]$ sudo python get-pip.py
