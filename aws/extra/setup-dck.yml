@@ -1,0 +1,32 @@
+- hosts:  AWS
+  # Connexion as ec2-user et utilisation de sudo
+  remote_user: ec2-user
+  become: true  
+  tasks:
+  - name: setup yum utils package
+    yum:
+      name: yum-utils
+      state: latest
+  - name: add docker repository
+    command: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+  - name: configue yum cache faster 
+    command: yum makecache fast 
+  - name: Install docker package
+    yum:
+      name: docker-ce
+      state: latest
+  - name: Get Pip installation package
+    command: curl "https://bootstrap.pypa.io/get-pip.py" -o "/tmp/get-pip.py"
+  - name: Installation of pip
+    command: python /tmp/get-pip.py
+  - name: Installation of docker-compose
+    command: pip install docker-compose
+  - name: enable dockerd service
+    systemd:
+      name: docker.service
+      state: started
+      enabled: True
+  - user:
+      name: ec2-user
+      groups: docker
+      append: yes
