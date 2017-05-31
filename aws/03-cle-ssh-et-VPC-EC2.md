@@ -486,13 +486,14 @@ Analysons les adresses IP avec le segment réseau :
         Address:   172.31.46.78         10101100.00011111.0010 1110.01001110
         Netmask:   255.255.240.0 = 20   11111111.11111111.1111 0000.00000000
         Wildcard:  0.0.15.255           00000000.00000000.0000 1111.11111111
-        =>
+        
         Network:   172.31.32.0/20       10101100.00011111.0010 0000.00000000
         HostMin:   172.31.32.1          10101100.00011111.0010 0000.00000001
         HostMax:   172.31.47.254        10101100.00011111.0010 1111.11111110
         Broadcast: 172.31.47.255        10101100.00011111.0010 1111.11111111
         Hosts/Net: 4094                  Class B, Private Internet
-        ```
+```
+
 * Représentation graphique de la situation
 
     ![](./imgs/VPC_schema-01.png)
@@ -731,13 +732,16 @@ Maintenant que nous avons couvert le principe du __VPC__ , des sous-réseaux et 
 Voici le scénario que nous allons mettre en place  :
 
 * Création de 2 sous-réseaux ( __Frontal__ et __BD__) .
-    * Mise en place __d'ACL__ serrées pour la sécurité des réseaux.
-* Création des instances __EC2__ avec des groupes sécurité plus large.
+    * Mise en place __d'ACL__ pour la sécurité des sous-réseaux.
+* Création des instances __EC2__ avec des groupes sécurité 
     * Mise en place d'un serveur Web dans le réseau __Frontal__ .
         * Configuration de 2 __virtualHosts__ , communiquant avec 2 bases de donnée __Mysql__.
-    * Mise en place de 2 serveur __Mysql__ dans le réseau __BD__ .
+    * Mise en place de 2 serveurs __Mysql__ dans le réseau __BD__ .
         * Configuration de chaque serveur __Mysql__ pour chaque application web (__VirtualHost__).
 
+Voici un schéma du réseau :
+
+![](./imgs/demo-vpc-network.png)
 
 L'ensemble du déploiement applicatif sera réalisé avec **docker** afin de transférer l'application sous être obligé de réaliser la configuration sur les serveurs :P. Puis nous sommes confortable dans l'utilisation de docker :) .
 
@@ -1033,7 +1037,7 @@ Donné un peu de temps au système de ce mettre en place , ne faite pas comme mo
 
 ##### Configuration des instances et déploiement des conteneurs 
 
-Configuration de l'instance afin d'avoir **Docker-CE** de présent 
+* Configuration de l'instance afin d'avoir **Docker-CE** de présent , voici l'opération manuel 
 
 1. Connexion SSH
 
@@ -1072,6 +1076,12 @@ Configuration de l'instance afin d'avoir **Docker-CE** de présent
     Building apache
     [.... ]
     ```
+
+* Voici l'opération **ansible** :
+
+1. Récupération des adresses IP publique des instances __EC2__ , et modification du fichier __ansible/hosts.cfg__ 
+
+ICI ICI ICI
 
 ##### Validation du déploiement avec la visualisation des pages web
 
