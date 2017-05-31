@@ -1,0 +1,15 @@
+version: '2'
+services:
+    db-pi:
+        image: mysql:5.5
+        container_name : 'showpi'
+        hostname: dbpi.x3rus.com
+        environment:
+            - MYSQL_USER=pi_usr
+            - MYSQL_PASSWORD=314
+            - MYSQL_DATABASE=pi
+            - MYSQL_RANDOM_ROOT_PASSWORD=yes
+            - TZ=America/Montreal
+            - TERM=xterm
+       ports:
+           3306:3306
