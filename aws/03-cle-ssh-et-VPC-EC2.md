@@ -1055,33 +1055,37 @@ Donné un peu de temps au système de ce mettre en place , ne faite pas comme mo
     [ec2-user@ip-172-31-60-27 ~]$ sudo pip install docker-compose
     ```
 
-3. Validation de docker :
-
-    ```bash
-    [ec2-user@ip-172-31-60-27 ~]$ sudo docker ps
-    CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
-    ```
-
-4. Je vais faire le transfert de la configuration du service apache, a défaut d'avoir poussé mon image sur [hub.docker.com](http://hub.docker.com), je vais transférer l'ensemble du __DockerFile et docker-compose__.
-
-    ```bash
-    $ scp -i ~/.ssh/aws_training -r Apache/ ec2-user@52.14.54.45:.
-    Enter passphrase for key '/home/xerus/.ssh/aws_training': 
-    ```
-
-5. Création de l'image sur le conteneur .
-
-    ```bash
-    [ec2-user@ip-172-31-60-27 Apache]$ docker-compose up
-    Building apache
-    [.... ]
-    ```
 
 * Voici l'opération **ansible** :
 
-1. Récupération des adresses IP publique des instances __EC2__ , et modification du fichier __ansible/hosts.cfg__ 
+1. Copie des fichier de ansible disponible sous [extra/ansible-conf](./extra/ansible-conf) dans /tmp/ par exemple
 
-ICI ICI ICI
+```bash
+$ cp -r ./extra/ansible-conf /tmp
+```
+
+2. Récupération des adresses IP publique des instances __EC2__ , et modification du fichier __ansible/hosts.cfg__  
+
+```bash
+$ vim /tmp/ansible-conf/hosts
+```
+
+3. Copie de la bonne clef privé dans le répertoire __/tmp/ansible-conf/ssh_keys/__
+
+```bash
+$ cp ~/.ssh/aws_training /tmp/ansible-conf/ssh_keys/
+```
+
+4. Execution de ansible sur l'instance EC2 
+
+```bash
+$ cd git/training/aws/extra/ansible
+
+$ docker-compose run --volume=/tmp/ansible-conf/:/etc/ansible/  ansible   /etc/ansible/playbooks/setup-dck.yml
+```
+
+* **MAGIE**
+
 
 ##### Validation du déploiement avec la visualisation des pages web
 
