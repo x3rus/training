@@ -475,6 +475,52 @@ $ dig -x 54.149.118.103
 
 Mais effectivement le port 8080 n'est pas autorisé dans le pare feu c'est donc un succès bien que je ne comprend pas la source du trafic :D.
 
+#### Filtrer les résultats 
+
+Bien entendu la visualisation c'est bien mais être en mesure de chercher intelligemment c'est mieux :D , plus vous aurez des données plus le filtrage est essentiel.
+
+* Recherche "simple" , avec un seul critère , comme dans l'exemple ci-dessous le système recherche l'IP ( 108.61.73.243 ), la recherche ce fera sur la ligne et cherchera peut importe le lieux. 
+
+![](./imgs/demo-aws-cwatch-search-01-simple.png)
+
+* Recherche "simple" , deuxième exemple si nous cherchons uniquement le terme 80 , peut-être le port ... Malheureusement comme vous pouvez le voir ci-dessous , la recherche est réalisé sur l'ensemble de la ligne et non sur un champs.
+
+![](./imgs/demo-aws-cwatch-search-02-simple.png) 
+
+
+* Bien entendu vous pouvez aussi définir plusieurs terme vous aurez une inclusion , le terme 1 (123) ET le terme 2 (39282) doivent être présent peut importe le lieu sur la ligne
+
+![](./imgs/demo-aws-cwatch-search-03-simple.png)
+
+* Recherche avec comme critère du champ pour rappel voici l'organisation d'une ligne :
+
+| Version | id-compte | id-interface | IP Source | IP Destination | Port Source | Port Destination | Protocole | # paquets | # octets | début | fin | action |
+|:--------|:---------:|:-------------|:---------:|:--------------:|:-----------:|:----------------:|:---------:|:---------:|:--------:|:-----:|:---:|:------:|
+|2| 250171344592| eni-e7d5a98f| 54.149.118.103| 172.31.60.27| 32377| 8080| 6| 4| 240| 1495542416| 1495542488| REJECT OK|
+
+Si nous réalisons une recherche pour le " port 22 " sans spécifier le champs nous aurons ceci 
+
+![](./imgs/demo-aws-cwatch-search-04-simple.png)
+
+* Réalisons  une recherche en spécifiant les ports : 
+
+```
+[Version,idcompte,idinterface,IPSource,IPDestination,PortSource,PortDestination=22,Protocole,paquets,octets,debut,fin,action,info]
+```
+
+![](./imgs/demo-aws-cwatch-search-05-complex-colonne.png)
+
+Comme vous pouvez le voir j'ai nommée chaque colonne en utilisant la virgule (,) comme délimiteur, les noms des colonnes sont arbitraires :D , ceci nous permet de gérer tous type de logs même ceux fait maison. 
+
+Bon dans mon cas j'ai nommé CHAQUE colonne mais il est possible de définir des (...) pour indiquer que le reste à peut d'importance .voici un exemple :
+
+```
+[Version,idcompte,idinterface,IPSource,IPDestination,PortSource,PortDestination=22,...]
+```
+
+![](./imgs/demo-aws-cwatch-search-06-complex-colonne.png)
+
 A voir :
 
+* http://docs.aws.amazon.com/fr_fr/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html
 * https://blog.flowlog-stats.com/2016/05/01/enabling-flow-logs-on-aws/
