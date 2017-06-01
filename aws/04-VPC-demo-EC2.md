@@ -410,6 +410,12 @@ insert into contacts (nom, prenom) values ('Anthony','B');
 
 * Si nous contactons l'IP de l'instance web __EC2__ nous aurons le message d'erreur : **Forbidden** ( c'est normal / voulu ) 
 
+* On change le fichier __/etc/hosts__ sur la machine pour que le nom DNS concorde à celle assigné à notre instance web. Bien entendu nous aurions pu aussi définir une adresse IP Fixe, cependant ceci m'aurais généré [des coûts](https://aws.amazon.com/fr/ec2/pricing/on-demand/#Elastic_IP_Addresses) :P. 
+
+* Connexion aux page :
+   * [http://showpi.x3rus.com](http://showpi.x3rus.com) 
+   * [http://contacts.x3rus.com](http://contacts.x3rus.com) 
+
 
 
 ### Consultation dans cloudwatch et extraction de l'information
