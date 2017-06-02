@@ -13,6 +13,6 @@ services:
             - BDCON_PASS=tact
             - BDCON_DATABASE=people
             - BDCON_ADDR=172.24.0.2
-       port:
-           80:80
+        ports:
+            - 80:80
 

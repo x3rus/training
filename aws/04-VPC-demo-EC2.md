@@ -365,22 +365,22 @@ $ docker-compose run --volume=/tmp/ansible-conf/:/etc/ansible/  ansible   /etc/a
 * Copie des fichiers de [docker-compose.yml](./extra/Apache/docker-compose_aws.yml) pour apache en modifier les IP de base de donnée
 
 ```bash
-$ scp -i ~/.ssh/aws_training ./extra/Apache/docker-compose_aws.yml ec2-user@IP_APACHE:.
+$ scp -i ~/.ssh/aws_training_nop ./extra/Apache/docker-compose_aws.yml ec2-user@IP_APACHE:.
 ```
 
 * Copie des fichiers de [docker-compose.yml](./extra/BD/docker-compose_aws_pi.yml) pour la BD pi
 
 ```bash
-$ scp -i ~/.ssh/aws_training ./extra/BD/docker-compose_aws_pi.yml ec2-user@IP_DB_PI:.
-$ scp -i ~/.ssh/aws_training ./extra/BD/docker-compose_aws_contact.yml ec2-user@IP_DB_CONTACT:.
+$ scp -i ~/.ssh/aws_training_nop ./extra/BD/docker-compose_aws_pi.yml ec2-user@IP_DB_PI:.
+$ scp -i ~/.ssh/aws_training_nop ./extra/BD/docker-compose_aws_contact.yml ec2-user@IP_DB_CONTACT:.
 ```
 
 * Bon la partie moins belle démarrage des conteneurs et insertion des données dans la BD.
 
 ```bash
-$ scp -i ~/.ssh/aws_training  ec2-user@IP_APACHE docker-compose up -d 
-$ scp -i ~/.ssh/aws_training  ec2-user@IP_BD_PI docker-compose up -d 
-$ scp -i ~/.ssh/aws_training  ec2-user@IP_BD_CONTACT docker-compose up -d 
+$ ssh -i ~/.ssh/aws_training  ec2-user@IP_APACHE docker-compose up -d 
+$ ssh -i ~/.ssh/aws_training  ec2-user@IP_BD_PI docker-compose up -d 
+$ ssh -i ~/.ssh/aws_training  ec2-user@IP_BD_CONTACT docker-compose up -d 
 ```
 
 * Insertion pour PI :

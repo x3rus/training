@@ -11,6 +11,6 @@ services:
             - MYSQL_RANDOM_ROOT_PASSWORD=yes
             - TZ=America/Montreal
             - TERM=xterm
-       ports:
-           3306:3306
+        ports:
+            - 3306:3306
 
