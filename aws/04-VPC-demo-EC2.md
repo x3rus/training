@@ -520,7 +520,6 @@ Bon dans mon cas j'ai nommé CHAQUE colonne mais il est possible de définir des
 
 ![](./imgs/demo-aws-cwatch-search-06-complex-colonne.png)
 
-A voir :
-
-* http://docs.aws.amazon.com/fr_fr/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html
-* https://blog.flowlog-stats.com/2016/05/01/enabling-flow-logs-on-aws/
+* A voir :
+    * http://docs.aws.amazon.com/fr_fr/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html
+    * https://blog.flowlog-stats.com/2016/05/01/enabling-flow-logs-on-aws/
