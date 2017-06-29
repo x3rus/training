@@ -161,3 +161,122 @@ Lors de la première authentification vous aurez le choix de définir vos préf�
 
 ![](./imgs/gitlab-08-preference-utilisateur.png)
 
+## Définition de groupe
+
+L'objectif des groupes est de permettre un regroupement de projets dans un groupe , en plus de vous permettre une meilleur organisation de vos projets ceci aura aussi l'avantage de vous permettre d'attribuer des permissions sur un groupe pour d'autre utilisateurs .
+
+Nous allons faire la création de deux groupe afin de voir l'interaction possible entre les groupes :
+
+* sysadmin : contiendra les projets de sysadmin telle que les conteneurs , les scripts développés , ...
+* __config__ : ceci contiendra la configuration d'une serveur , des conteneurs , ...
+
+Débutons : 
+
+![](./imgs/gitlab-09-creation-groupe.png)
+
+![](./imgs/gitlab-10-liste-groupes.png)
+
+Passons à la création des projets 
+
+## Définition de projet 
+
+Nous allons donc créer des projets sous le groupe sysadmin et __config__ voici la structure pour les besoins de l'exemple :
+
+* sysadmin:
+    * dockers : contient nos définitions "primaire de conteneur" pour le moment ceci contiendra surtout notre définition de __gitlab__
+    * scripts : contiendra un ensemble de scripts développé , nous l'utiliserons principalement lors de l'intégration avec jenkins ... Mais voyons pour débuter le concept :D.
+* config :
+    * __goishi-dockers__ : contient la configuration des conteneurs en exécution , car comme nous réalisons des volumes avec les conteneurs qui contienne des configurations je préfère le conserver dans git.
+    * __goishi__ : en réalité je vais pas le faire mais en théorie ceci me permet de conserver la configuration de mon serveur en production donc le **/etc**.
+
+Débutons avec la création des projets , démonstration avec 1 .
+
+![](./imgs/gitlab-11-creation-projet.png)
+
+![](./imgs/gitlab-12-empty-projet.png)
+
+Voici donc le résultat :
+
+![](./imgs/gitlab-13-liste-projets.png)
+
+## Intégration dépôt local vers le serveur 
+
+Ce qui est magnifique une fois le projet créé est que sur la page du projet vous avez l'ensemble des instructions pour vous accompagner pour transmettre votre dépôt local git vers le serveur. 
+
+**CLARIFICATION** : ce cours n'est pas une formation git si vous voulez plus d'information sur ce point, j'ai quelques vidéos dans la formation Linux 202 sur le sujet ! 
+
+Bien que l'ensemble des instructions sont présent je vais les expliquer ici , car je dois transmettre mes fichiers pour la présentation . J'aime bien recréer la structure localement sur ma machine afin d'avoir la même référence que sur le serveur mais libre à vous ceci n'est pas un requis .
+
+```bash
+$ mkdir -p  ~/gitlab-demo/sysadmin/dockers
+$ mkdir -p  ~/gitlab-demo/sysadmin/scripts
+```
+
+* Je vais mettre en place les fichiers pour le conteneur __gitlab__ :
+
+```bash
+$ cp -r ~/git/formations/gitlab/docker/ gitlab-demo/sysadmin/dockers/gitlab/
+$ ls -R ~/gitlab-demo/sysadmin/dockers/
+/home/xerus/gitlab-demo/sysadmin/dockers/:
+gitlab
+
+/home/xerus/gitlab-demo/sysadmin/dockers/gitlab:
+docker-compose.yml
+```
+
+* Envoyons l'ensemble vers le serveur , comme ceci est un nouveau dépôt nous devrons le créer préalablement 
+
+```bash
+$ cd ~/gitlab-demo/sysadmin/dockers/
+$ git init .
+Initialized empty Git repository in ~/gitlab-demo/sysadmin/dockers/.git/
+```
+
+* Si vous n'utilisez pas déjà git , initialisé vos informations "client"
+
+```bash
+$ git config --global user.name "thomas aka moi"
+$ git config --global user.email "unemail@x3rus.com"
+```
+
+* Ajout du répertoire __gitlab__ et commit de la modification dans le dépôt local 
+
+```bash
+$ git add gitlab/
+
+$ git status
+On branch master
+
+Initial commit
+
+Changes to be committed:
+  (use "git rm --cached <file>..." to unstage)
+
+        new file:   gitlab/docker-compose.yml
+
+$ git commit -m "Ajout du conteneur gitlab "
+[master (root-commit) d5030d4] Ajout du conteneur gitlab
+ 1 file changed, 22 insertions(+)
+  create mode 100644 gitlab/docker-compose.yml
+
+```
+
+* Ajout du serveur gitlab pour être en mesure de pousser notre configuration 
+
+```bash
+$ git remote add origin http://thomas@172.29.0.2/sysadmin/dockers.git
+
+$ git push origin master
+Password for 'http://thomas@172.29.0.2': 
+Counting objects: 4, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (4/4), 642 bytes | 0 bytes/s, done.
+Total 4 (delta 0), reused 0 (delta 0)
+To http://172.29.0.2/sysadmin/dockers.git
+
+```
+
+* Résultat si nous retournons sur la page du projet , dans gitlab nous verrons nos fichiers 
+
+![](./imgs/gitlab-14-view-projet-with-data.png)
