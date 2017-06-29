@@ -10,10 +10,6 @@ services:
             GITLAB_OMNIBUS_CONFIG: |
                 gitlab_rails['time_zone'] = 'America/Montreal'
                 gitlab_rails['gitlab_email_from'] = 'noreply@x3rus.com'
-                gitlab_rails['manage_backup_path'] = true
-                gitlab_rails['backup_path'] = "/var/opt/gitlab/backups"
-                gitlab_rails['backup_archive_permissions'] = 0640 
-                gitlab_rails['backup_keep_time'] = 604800
                 gitlab_rails['smtp_enable'] = true
         volumes:
             - '/srv/docker/x3-gitlab-f/gitlab/etc:/etc/gitlab'

@@ -46,10 +46,6 @@ services:
             GITLAB_OMNIBUS_CONFIG: |
                 gitlab_rails['time_zone'] = 'America/Montreal'
                 gitlab_rails['gitlab_email_from'] = 'noreply@x3rus.com'
-                gitlab_rails['manage_backup_path'] = true
-                gitlab_rails['backup_path'] = "/var/opt/gitlab/backups"
-                gitlab_rails['backup_archive_permissions'] = 0640 
-                gitlab_rails['backup_keep_time'] = 604800
                 gitlab_rails['smtp_enable'] = true
         volumes:
             - '/srv/docker/x3-gitlab-f/gitlab/etc:/etc/gitlab'
@@ -280,3 +276,154 @@ To http://172.29.0.2/sysadmin/dockers.git
 * Résultat si nous retournons sur la page du projet , dans gitlab nous verrons nos fichiers 
 
 ![](./imgs/gitlab-14-view-projet-with-data.png)
+
+* Le problème est que visuellement c'est pas très beau vous pouvez donc ajouter un __README__ afin d'avoir une description directement dans la visualisation du projet , un peu comme avec __github__ 
+
+```bash
+$ cat README.md
+ # Description
+
+ Ce projet à pour but de contenir les définitions des conteneurs , ceci est des conteneurs de développement !!
+
+ # Problème connu
+
+**AUCUN**
+
+$ git add README.md
+$ git commit -m "Ajout du fichier README "
+$ git push origin
+```
+
+![](./imgs/gitlab-15-view-projet-with-README.png)
+
+* Nous avons donc le projet sysadmin/dockers de complété , bien entendu il y aura de l'ajout de fichier mais l'idée général est en place , passons à un autre dépôt.
+
+
+## Intégration dépôt local vers le serveur configuration du conteneur
+
+L'idée général est de conserver notre __docker-compose et DockerFile__ de gitlab, cependant une fois en exécution, nos conteneurs on bien souvent des volumes de configurer et il nous arrive de modifier ces fichiers de configuration. L'idée du dépôt goishi-dockers est justement de répondre à cette situation . 
+
+Si je reprend l'idée du conteneur gitlab 
+
+```bash
+$ cat gitlab/docker-compose.yml | grep etc
+            - '/srv/docker/x3-gitlab-f/gitlab/etc:/etc/gitlab'
+```
+
+Je vais donc configurer le répertoire __/srv/docker__ afin qu'il soit ré visionné , c'est partie.
+
+```bash
+$ cd /srv/docker/
+$ ls
+coco-db-t  ossec  x3Apache  x3-gitlab  x3-gitlab-f  x3-jenkins
+
+$ sudo git init .
+Initialized empty Git repository in /srv/docker/.git/``
+```
+
+* Ajout du répertoire de configuration de __gitlab__ 
+
+```bash
+$ sudo git add x3-gitlab-f/gitlab/etc/
+```
+
+* Mais il y a plein de fichier qui sont présent dont je n'ai que peu d'intérêt donc je vais ignorer ces fichiers car ils ne sont que pour des testes et je ne veux pas qu'il soit pris en considération . Comme vous pouvez le voir pour le moment AUCUN commit ne fut réalisé vers le serveur, tous est local.
+
+```bash
+$ $ sudo git status
+On branch master
+
+Initial commit
+
+Changes to be committed:
+  (use "git rm --cached <file>..." to unstage)
+
+   new file:   x3-gitlab-f/gitlab/etc/gitlab-secrets.json
+   new file:   x3-gitlab-f/gitlab/etc/gitlab.rb
+   new file:   x3-gitlab-f/gitlab/etc/ssh_host_ecdsa_key
+   new file:   x3-gitlab-f/gitlab/etc/ssh_host_ecdsa_key.pub
+   new file:   x3-gitlab-f/gitlab/etc/ssh_host_ed25519_key
+   new file:   x3-gitlab-f/gitlab/etc/ssh_host_ed25519_key.pub
+   new file:   x3-gitlab-f/gitlab/etc/ssh_host_rsa_key
+   new file:   x3-gitlab-f/gitlab/etc/ssh_host_rsa_key.pub
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+
+  coco-db-t/
+  ossec/
+  x3-gitlab-f/gitlab/data/
+  x3-gitlab-f/gitlab/logs/
+  x3-gitlab/
+  x3-jenkins/
+  x3Apache/
+
+
+$ sudo git status  | egrep -v "new file" | grep "/$" | tr -d "\t"
+coco-db-t/
+ossec/
+x3-gitlab-f/gitlab/data/
+x3-gitlab-f/gitlab/logs/
+x3-gitlab/
+x3-jenkins/
+x3Apache/
+
+$ sudo vim .gitignore
+
+$ sudo git add .gitignore
+
+$ sudo git commit -m "Ajout fichier de configuration de gitlab et gitignore"
+
+```
+
+* Tous comme la dernière fois on ajoute la configuration pour être en mesure de pousser la configuration et on pousse
+
+```bash
+$ sudo git remote add origin http://thomas@172.29.0.2/config/goishi-dockers.git
+$ sudo git push origin master
+Password for 'http://thomas@172.29.0.2': 
+Counting objects: 14, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (12/12), done.
+Writing objects: 100% (14/14), 25.89 KiB | 0 bytes/s, done.
+Total 14 (delta 0), reused 0 (delta 0)
+To http://172.29.0.2/config/goishi-dockers.git
+ * [new branch]      master -> master
+
+```
+
+Résultat :
+
+![](./imgs/gitlab-16-docker-volume-conf.png)
+
+## Intégration dépôt configuration du serveur 
+
+J'ai fait la création d'un dépot __config/goishi__ ce dépôt va me servir pour la configuration du serveur , en fait sous __config/NOM\_SERVER__ je conserve toujours le répertoire __/etc__ vielle habitude avant d'être sous docker :P , c'était critique pour conserver les applications localement définie.
+Maintenant bien que moins critique ça me permet de conserver l'ensemble de l'information de la machine que la configuration soit local (liste des utilisateurs , configuration du système de gestion de la configuration (puppet), script d'initialisation ... ) 
+
+Nous allons donc procéder avec la configuration .
+
+```bash
+$ cd /etc/
+$ sudo git init .
+Initialized empty Git repository in /etc/.git/
+$ sudo git add *
+$ sudo git commit -m "Ajout du répertoire etc pour goishi"
+
+$ sudo git push origin master
+Password for 'http://thomas@172.29.0.2': 
+Counting objects: 1078, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (836/836), done.
+Writing objects: 100% (1078/1078), 3.36 MiB | 3.45 MiB/s, done.
+Total 1078 (delta 40), reused 0 (delta 0)
+remote: Resolving deltas: 100% (40/40), done.
+To http://172.29.0.2/config/goishi.git
+ * [new branch]      master -> master
+```
+
+# Concept de l'organisation 
+
+Voici en gros le concept de l'organisation de la structure, ceci est une suggestion libre à vous de l'utiliser ou pas , donc uniquement suggestion mais j'aime bien ce mode de travail. Peu importe ce que je vous montre aujourd'hui dans 3 mois vous l'avez oublié si vous l'utilisez pas, puis honnêtement on s'en fou :p puis c'est correct ... Par contre les concepts on tendance à resté plus longtemps :P. 
+
+![](./imgs/environnemnet-git.png)
