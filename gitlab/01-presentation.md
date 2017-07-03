@@ -422,8 +422,76 @@ To http://172.29.0.2/config/goishi.git
  * [new branch]      master -> master
 ```
 
-# Concept de l'organisation 
+# Concept de l'organisation et présentation
 
-Voici en gros le concept de l'organisation de la structure, ceci est une suggestion libre à vous de l'utiliser ou pas , donc uniquement suggestion mais j'aime bien ce mode de travail. Peu importe ce que je vous montre aujourd'hui dans 3 mois vous l'avez oublié si vous l'utilisez pas, puis honnêtement on s'en fou :p puis c'est correct ... Par contre les concepts on tendance à resté plus longtemps :P. 
+Voici en gros le concept de l'organisation (la structure), ceci est une suggestion libre à vous de l'utiliser ou pas , mais j'aime bien ce mode de travail. Peu importe ce que je vous montre aujourd'hui dans 3 mois vous l'avez oublié si vous l'utilisez pas, puis honnêtement on s'en fou :p ,puis c'est correct ... Par contre les concepts on tendance à rester plus longtemps :P. 
 
 ![](./imgs/environnemnet-git.png)
+
+* Les groupes :
+    * __Sysadmin__ : est complètement indépendant des systèmes où il sont déployer , ceci est supposé être complètement réutilisable
+    * __Config__ : Contient des fichiers propre à un système , voir un regroupement de système , voilà pourquoi j'indique le nom du système dans le nom du projet.
+
+Nous allons vers dans quelques instants que bien que l'ensemble soit complètement séparer __gitlab__ nous permet de lier les différents projet afin d'avoir un tout cohérent. 
+
+Afin de faire une démonstration de cette structure je vais faire une démonstration, ceci aura 2 avantages faire une présentation pratique de l'organisation que je vous propose et aussi de permettre de visualisé les fonctionnalités de __gitlab__.
+
+## Ze Documentation !!
+
+La Documentation , certain aime d'autre déteste , bon bien entendu je suis de la première catégorie , la documentation pour moi est très importante. 
+Vous pourriez dire que : 
+
+* C'est une perte de temps ...
+* Que vous avez pas le temps ...
+* Que c'est long ...
+
+Effectivement, sur le moment le retour sur investissement (temps) n'est pas claire , mais personnellement il n'y a RIEN qui m'énerve plus que d'avoir rencontré un problème , le revivre et ne plus me souvenir de la solution trouvé originalement et reperdre 1 ou 2 heures (voir plus) pour remettre en place une solution . 
+
+Puis en plus j'ai une petite tête, telle que mentionné plus tôt on oublie après 3 mois (parfois moins ) donc la solution que j'ai trouvé est de noté pour déchargé mon cerveau et faire de la place pour d'autre information plus pertinente sur le moment.
+
+Dernier point sur l'aspect du temps , il y a plusieurs niveau de documentation , il y a la propre travaillé plusieurs fois que l'on peut donnée à tous le monde et il y a les notes brute. Les notes brutes ont l'avantage d'avoir beaucoup d'information et de remettre en avant les idées travaillés sur le moment . Il y a assurément des problèmes d'écriture , d'organisation , ... mais il y a néanmoins une trace des opérations réalisé. 
+
+Tous ça pour dire que **gitlab** offre un wiki intégré :D.  Allé une petite démonstration :
+
+Le lien pour le wiki est accessible depuis le projet dans la bar du haut :
+
+![](./imgs/gitlab-17-lien-wiki.png)
+
+La première page créer sera la page d'accueil du wiki :
+
+![](./imgs/gitlab-18-home-page-wiki.png)
+
+Voici un exemple de résultat 
+
+![](./imgs/gitlab-19-home-page-wiki-data.png) 
+
+Comme vous pouvez le voir ceci est du **wiki markdown** pour l'ensemble de la syntaxe vous avez l'aide disponible en bas de la page , nous y reviendrons un peu pour mettre en lumière certaines fonctionnalité intéressante, mais je vous laisse explorer les possibilités.
+
+### Ze Documentation off-line
+
+Nous parlons de git , et de gestion de révision , ce qui est fabuleux avec __gitlab__ est que le wiki est lui même un dépôt GIT !! Magnifique !!
+Si vous allez sur le wiki et que vous regardé en haut à droite vous aurez le lien **Clone repository** .
+
+En cliquant dessus vous aurez les instructions afin d'être en mesure de récupérer le dépôt git pour la doc.
+
+Voici une démonstration :
+
+```bash
+$ mkdir -p ~/gitlab-demo/wikis/config
+$ cd ~/gitlab-demo/wikis/config
+$ git clone http://thomas@git.training.x3rus.com/config/goishi.wiki.git && cd goishi.wiki/
+$ ls
+home.md
+$ cat home.md 
+ # Goishi 
+
+Wiki pour la gestion de la machine goishi laptop de travail (**machine a écrire**) dans le train 
+
+ # description
+
+* Préparation de formation
+* Analyse pour les prochaines taches sur le serveur ...
+``` 
+
+
+
