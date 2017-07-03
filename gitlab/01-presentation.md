@@ -493,5 +493,104 @@ Wiki pour la gestion de la machine goishi laptop de travail (**machine a écrire
 * Analyse pour les prochaines taches sur le serveur ...
 ``` 
 
+Nous pouvons donc modifier la documentation directement avec votre éditeur préféré ( aka VIM :P ) réalisons une petite modification afin de voir le comportement . Je vais modifier la première section . 
+
+```bash
+$ vim home.md
+
+$ cat home.md
+ # Goishi 
+
+Wiki pour la gestion de la machine goishi laptop de travail (**machine a écrire**) dans le train 
+
+Ce wiki contiendra l ensemble de la documentation des notes brutes ...
+
+ # description
+
+* Préparation de formation
+* Analyse pour les prochaines taches sur le serveur ...
+```
+
+Je commit le changement dans le dépôt local et pousse le tout sur le serveur
+
+```bash
+$ git commit -a -m "Ajout d information sur la page principale"
+[master 526a85e] Ajout d information sur la page principale
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+$ git push origin master
+Password for 'http://thomas@git.training.x3rus.com': 
+Counting objects: 3, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (3/3), 368 bytes | 0 bytes/s, done.
+Total 3 (delta 1), reused 0 (delta 0)
+To http://git.training.x3rus.com/config/goishi.wiki.git
+   ea90534..526a85e  master -> master
+
+```
+
+Résultat :
+
+![](./imgs/gitlab-20-home-page-wiki-modifier.png)
+
+Je vois déjà les levés de bouclier contre cette solution mentionnant que les gens préfère avoir l'interface pour faire la gestion que c'est plus simple qu'un éditeur texte performant ... Je comprend , du moins j'essaye :P ... Pour vous il y a la solution d'installer **gollum**  
+
+```bash
+$ gem install gollum github-markdown
+$ gollum
+== Sinatra/1.3.5 has taken the stage on 4567 for development with backup from Thin
+>> Thin web server (v1.5.0 codename Knife)
+>> Maximum connections set to 1024
+>> Listening on 0.0.0.0:4567, CTRL+C to stop
+```
+
+En allant à l'URL [http://127.0.0.1:4567](http://127.0.0.1:4567), vous aurez toute la non convivialité de l'interface web :P.
+
+TODO : ajouter des copie d'écrans de **gollum**.
+
+
+## La billetterie 
+
+Nous avons donc :
+
+* La conservation des fichiers ( configuration, définition de conteneur, scripts , ...) l'ensemble de manière révisionné avec GIT 
+* La documentation en ligne et off line , l'ensemble AUSSI révisionné avec git 
+
+En plus de tous ça __gitlab__ nous offres un système de billetterie , oui vous pouvez le dire la vie est BELLE !! :D. 
+Chaque projet a son système de billets :
+
+![](./imgs/gitlab-21-issues-home.png)
+
+Organisation du système :
+
+* 1 billet ou issue en anglais représente l'équivalent d'une tache
+* Vous avez la possibilité surtout si vous réalisez du travail collaboratif avec d'autre personne d'utiliser le **board** intégré directement au système 
+* La mise en place de **label** ou étiquette en français pour dans le future ressortir l'ensemble des billets ayant l'étiquette 
+* Les Milestones qui sont un regroupement de tâches ou issue .
+
+Afin de réaliser la présentation nous allons voir un cas concret ceci nous permettra de voir ma méthode de travail aussi :D .
+
+### Description du cas pour la présentation 
+
+Nous avons mis en place le conteneur **gitlab** et nous prévoyons mettre beaucoup de choses dedans , ceci est notre base de savoir ... Mais , mais on a pas couvert la question des sauvegardes du serveur gitlab :P. Nous allons donc modifier notre configuration afin d'ajouter le système de sauvegarde périodique du gitlab .
+
+Encore un fois j'en profite pour montrer mon mode de fonctionnement, donc à ne pas prendre cash. 
+
+Rapidement si je veux ajouter le système de sauvegarde je risque fort probablement de modifier  
+
+* le conteneur **gitlab** , donc le projet **sysadmin/dockers** qui contient la définition de mon conteneur
+* La configuration du conteneur **gitlab** contenu dans le projet : **goishi-dockers** 
+
+Comme chaque projet a son système de billetterie où définir mon billet ?? Pour le moment nous n'avons pas beaucoup de projet, mais ceci peut devenir complexe. Prenons un moment de recule comment mon cerveau fonctionne , lors que je me dit je veux faire ceci ou j'ai déjà fait cela ? Généralement ce qui survient dans mon esprit à oui je l'avais mis en place à la maison, ou sur mon serveur ... comment je l'avais fait. 
+Donc j'ai opté pour utiliser le projet **config/Nom-Machine** pour contenir l'ensemble des tâches , car ceci m'assure d'avoir le contexte. 
+
+Bon , qu'est-ce que j'entends des personnes qui disent, oui mais moi j'ai des tâches qui touches plusieurs machines. Moi aussi dans un autre contexte j'ai aussi des tâches qui touches plusieurs machinent quand j'assiste un ami pour son environnement. Vous pourriez donc créer un projet **config/datacenter** pour ce type de tâches ou n'importe quelle regroupement qui vous parle. 
+
+Pour ceux, car je vous entends, qui pensent c'est pas super car le billet est dans un projet, mais tu fais des modifications dans un autre ... oui pour ça la réponse arrive :D. 
+
+Donc réalisons la création du billet dans le projet **config/goishi** car le système de gitlab est sur cette machine
+
+### Création du billet 
 
 
