@@ -539,16 +539,17 @@ Je vois déjà les levés de bouclier contre cette solution mentionnant que les 
 ```bash
 $ gem install gollum github-markdown
 $ gollum
-== Sinatra/1.3.5 has taken the stage on 4567 for development with backup from Thin
->> Thin web server (v1.5.0 codename Knife)
->> Maximum connections set to 1024
->> Listening on 0.0.0.0:4567, CTRL+C to stop
+ == Sinatra/1.3.5 has taken the stage on 4567 for development with backup from Thin
+ >> Thin web server (v1.5.0 codename Knife)
+ >> Maximum connections set to 1024
+ >> Listening on 0.0.0.0:4567, CTRL+C to stop
 ```
 
 En allant à l'URL [http://127.0.0.1:4567](http://127.0.0.1:4567), vous aurez toute la non convivialité de l'interface web :P.
 
 TODO : ajouter des copie d'écrans de **gollum**.
 
+![](./imgs/gitlab-22-gollum.png)
 
 ## La billetterie 
 
@@ -592,5 +593,77 @@ Pour ceux, car je vous entends, qui pensent c'est pas super car le billet est da
 Donc réalisons la création du billet dans le projet **config/goishi** car le système de gitlab est sur cette machine
 
 ### Création du billet 
+
+Je vais donc faire la création du billet , je vais donc dans le projet sous l'onglet **issue** et fait __new__ :D (woww vous aviez besoin d'une documentation  pour ça :P ).
+
+![](./imgs/gitlab-23-creations-issue.png)
+
+Je vous invite fortement à utiliser les étiquettes (__label__) pour l'avenir afin d'avoir un regroupement des billets , ceci pourra facilité vos recherches surtout quand vous savez pas trop ce que vous cherchez. Ceci vous permettra aussi de voir l'ensemble des billets pour un service .
+
+Personnellement je définie des étiquettes pour :
+
+* Le nom du service, par exemple : __gitlab__, __proxy__, __jenkins__, ...
+* Le type de du billet : Tâche, incident ( ceci me permet de lister facilement les incidents non planifier survenu :) )
+* Occasionnellement pour des cas spécifique le rôle : sauvegarde , monitoring , ceci me permet par exemple d'identifier les opérations de **sauvegarde** pour plusieurs service telle que __gitlab__, service de courriel,... 
+
+Bien entendu ça sert à rien de faire 90 étiquettes si vous ne les utilisez pas :P , bien entendu il est possible d'assigner des étiquettes en masse pour ajouter une nouvelle étiquette que nous avions pas dans le passé. 
+
+Voici donc le résultat des étiquettes pour notre cas :
+
+![](./imgs/gitlab-25-label-resultat.png) 
+
+### Visualisation du billet et commandes
+
+Voici le résultat du billet créé comme vous pouvez le voir sur le menu de droite il y a beaucoup d'information sur l'état du billet :
+
+![](./imgs/gitlab-26-show-issue.png)
+
+Il existe énormément de commande sous gitlab pour réaliser des opérations je vous invite à consulter la page de documentation  : [slash commands](https://gitlab.com/help/user/project/slash_commands)
+
+Voici quelques commandes disponible et intéressante :
+
+* **Définition du temps estimé** 
+    Si vous pensez prendre 1 jours pour réalisé l'opération ou quelques heures vous pouvez le définie comme ceci :
+    ```
+    /estimate 8h
+    /estimate 4j
+    ```
+
+* **Ajout du temps passé sur un billet**
+    Une fois un temps x de passé sur le billet 
+    ```
+    /spend 30m
+    /spend 3h
+    ```
+
+* **Identifier que la tache est en cours**
+    ```
+    /wip
+    ```
+
+Voici une copie d'écran de l'ajout :
+
+![](./imgs/gitlab-27-add-comment-with-slashs-cmd.png)
+
+
+### Utilisation du tableau
+
+Personnellement je l'utilise très peu , car je suis majoritairement seule sur les tâches et que je n'ouvre pas 60 billets que je conserve ouvert en backlog pour un jour travailler dessus . Je suis plutôt du genre je veux faire telle opération et je n'ouvre pas d'autre billet tant que la "tâche" en cours n'est pas terminé. Ce fut pas toujours le cas :P , mais j'ai constaté que sinon je ne terminais  pas les tâches ... 
+
+Mais prenons quelques minutes pour visualiser la fonctionnalité puis vous en ferez ce que vous voulez :D.
+
+Pour information le __board__ utilise les labels pour être en mesure de catégoriser les billets et les mettre dans la bonne colonne , donc l'ensemble des étiquettes peuvent être utilisées .
+Voici le tableau nu :D.
+
+![](./imgs/gitlab-28-fresh-board.png)
+
+Nous allons ajouter les étiquettes suggérées : **To Do** et **Doing**, en cliquant sur **Add defaults lists** .
+
+En cliquant sur **Add list** vous pourrez ajouter VOS label , il est possible de glisser un billet d'une colonne à l'autre automatiquement Gitlab réalisation l'ajout et la suppression des étiquettes associé.
+
+
+### Création d'un milestone pour regrouper des tâches
+
+La création de __milestone__ j'en fait régulièrement, mais toujours après coup :P . Généralement le processus est le suivant je crée un billet puis je pense que en 2  heures ce sera corrigé. Puis mon cerveau ce met en marche tranquillement , style diesel, puis je me dit réalisons ceci en plus , puis à oui j'avais pas pensé à cela , etc . Je suis sur que vous connaissez aussi cette situation , résultat quand j'ai 3 idées / billet qui se sont créés je réalise la création du milestone pour regrouper l'ensemble :D. 
 
 
