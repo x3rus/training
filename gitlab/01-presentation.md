@@ -666,4 +666,217 @@ En cliquant sur **Add list** vous pourrez ajouter VOS label , il est possible de
 
 La création de __milestone__ j'en fait régulièrement, mais toujours après coup :P . Généralement le processus est le suivant je crée un billet puis je pense que en 2  heures ce sera corrigé. Puis mon cerveau ce met en marche tranquillement , style diesel, puis je me dit réalisons ceci en plus , puis à oui j'avais pas pensé à cela , etc . Je suis sur que vous connaissez aussi cette situation , résultat quand j'ai 3 idées / billet qui se sont créés je réalise la création du milestone pour regrouper l'ensemble :D. 
 
+Voici un exemple de création de milestone 
 
+![](./imgs/gitlab-29-creation-milestone.png)
+
+Et maintenant le résultat avec un billet dedans :D 
+
+![](./imgs/gitlab-30-milestone-avec-billet.png)
+
+
+## Réalisation d'un billet 
+
+Bon maintenant on passe à la méthode de travail pour attendre la résolution de ce billet , quelle sont les critères de succès  ? :
+
+1. Un travail qui fonctionne 
+2. Une documentation complète , pas obligatoirement formaté mais qui relate le travail réalisé 
+3. La conservation des fichiers de configuration 
+4. Un billet contenant de l'information 
+
+En gros c'est pas mal les objectifs que nous devons attendre , on est tous d'accord pour dire que le point 1 sera réalisé , pour le reste ... **ishh** généralement c'est compliqué :D . Mais pas pour moi, car mon mode de travail fait en sorte que je l'information sera présent. 
+
+### Démarrage de la documentation :D 
+
+Laissé moi deviné quand vous travaillez souvent vous ouvrez un éditeur puis parfois vous collez des informations dedans , ceci de manière temporaire que ce soit un __hostname__ , un port , un lien de documentation , un bout de logs , ... 
+
+Pour commencez ARRÊTER ça tous de suite , ou alors sauvegardez ce putain de fichier qui vaut de l'or parfois , mais trop souvent effacé car complètement incomplet donc difficilement compréhensible plus tard. 
+
+Nous allons utiliser le système du wiki pour conserver l'ensemble de l'information , pour cela nous allons extraire le dépôt git .
+
+```bash
+$ cd ~/gitlab-demo/wikis/config/goishi.wiki
+$ ls 
+home.md
+
+$ mkdir -p ~/gitlab-demo/wikis/config/goishi.wiki/Issues/Taches/1-Mise-en-place-backup-gitlab
+$ cd ~/gitlab-demo/wikis/config/goishi.wiki/Issues/Taches/1-Mise-en-place-backup-gitlab
+$ vim note-raw.md
+```
+
+Le fichier **note-raw.md** contiendra l'ensemble des opérations pour la réalisation de la tâches , ceci peut être un gros , un petit fichier ... 
+
+Voici un exemple du contenu initiale 
+
+```bash
+$ cat note-raw.md
+ # Description 
+  
+ Mise en place d une strategie de backup pour gitlab
+    
+ L installation original de gitlab n inclut pas la sauvegarde ... important de le mettre en place . 
+      
+ Billet : config/goishi#1 
+        
+ # Opérations 
+```
+
+Comme vous pouvez le devinez l'ensemble des donnes seront dans la section Opération  !!
+
+Je vais aussi définir cette page dans la page d'accueil , en fait moi j'ai une sous section dans mon cas ... Mais le concept reste le même, je vais donc modifier le fichier home.md à la racine du wiki.
+
+```bash
+$ cd ~/gitlab-demo/wikis/config/goishi.wiki/
+$ vim home.md
+$ cat home.md
+ # Goishi 
+
+Wiki pour la gestion de la machine goishi laptop de travail (**machine a écrire**) dans le train 
+
+Ce wiki contiendra l ensemble de la documentation des notes brutes ...
+
+ # description
+
+* Préparation de formation
+* Analyse pour les prochaines taches sur le serveur ...
+
+ # Tâches
+
+* 04-Jul-17 : [Mise en place du backup de gitlab](./Issues/Taches/1-Mise-en-place-backup-gitlab/note-raw) , billet config/goishi#1 
+```
+
+Je commit la nouvelle page du wiki et pousse l'ensemble vers le serveur .
+
+```bash
+$ git status
+On branch master
+Your branch is up-to-date with 'origin/master'.
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+    modified:   home.md
+
+  Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+
+    Issues/
+
+  no changes added to commit (use "git add" and/or "git commit -a")
+
+$ git add Issues 
+$ git commit -a -m "Ajout documentation billet config/goishi#1" 
+
+$ git push origin master
+Password for 'http://thomas@git.training.x3rus.com': 
+Counting objects: 7, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (5/5), done.
+Writing objects: 100% (7/7), 785 bytes | 0 bytes/s, done.
+Total 7 (delta 1), reused 0 (delta 0)
+To http://git.training.x3rus.com/config/goishi.wiki.git
+   526a85e..2949c4f  master -> master
+```
+
+Si nous allons sur le wiki l'ensemble de l'information est maintenant présent avec le lien , autre opération que je réalise est de lié le billet avec le wiki .
+Je vais donc sur le billet et édite la description initiale pour ajouter le lien wiki .
+
+![](./imgs/gitlab-31-link-issue-wiki.png)
+
+Ici c'est le problème le système **git** pour le wiki n'est pas lié avec le billet par défaut :-/. 
+
+Voilà MAINTENANT nous sommes prêt à travailler sur le problème , oui c'est plus long, mais je considère que ceci est un gros gain dans le future...
+
+Voilà le mode de fonctionnement :
+
+* 1 terminal : avec le fichier wiki de la documentation wiki ouvert
+* n terminal : pour les opérations 
+
+Je note au fur et à mesure les opérations , voici un exemple de la réalisation de la documentation pour le billet sur la mise en place du backup :
+
+[note-raw billet de backup](./note-raw-billet.md)
+
+Ce qui est manifique est l'intégration , une fois la documentation réalisé je commit le changement dans le wiki :
+
+```bash
+$ cd ~/gitlab-demo/wikis/config/goishi.wiki/Issues/Taches/1-Mise-en-place-backup-gitlab
+$ git status 
+$ # si requis ajout de fichier git add
+$ git commit -a -m "Documentation backup de gitlab config/goishi#1 "
+$ git push origin master
+```
+
+* Lors de la réalisation de la configuration du backup nous avons aussi modifier un fichier dans le projet **sysadmin/dockers** , le fichier de définition __docker-compose.yml__ 
+
+* Nous allons aussi commiter ce fichier , ce changement est réellement en corrélation avec le billet de mise en place du backup nous allons donc lié le commit avec le billet
+
+```bash
+$ cd ~/gitlab-demo/sysadmin/dockers
+$ git status 
+On branch master
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+    modified:   gitlab/docker-compose.yml
+
+$ git add gitlab/docker-compose.yml
+$ git commit -m "config/goishi#1 définition des variables dans le conteneur pour activer le backup "
+
+```
+
+C'est la que la magie est super car si nous retournons dans le billet nous pourrons voir le commit présent le billet , dernière entré : 
+
+![](./imgs/gitlab-32-commit-dans-billet.png)
+
+Si nous cliquons sur le lien du commit nous aurons le contenu :
+
+![](./imgs/gitlab-33-visualisation-du-commit.png)
+
+Prendre note que le lien sysadmin/dockers@c8de2e10 peut aussi être écrit dans le wiki et il fera le lien , je l'utilise parfois surtout quand je suis en mode exploratoire pour identifier un point précis dans la recherche de la solution , exemple , à ce moment ça fonctionne .
+
+Voilà l'idée général 
+
+## La recherche
+
+Car c'est bien beau mettre toute cette information mais si on ne le retrouve pas il n'y a pas d'intérêt , donc en haut à droite vous avez la boite de recherche. Ce qui est super est qu'il va chercher dans l'ensemble : __issue__, __wiki__, __commit__ ...
+
+Voici un exemple si nous cherchons **gitlab** 
+
+![](./imgs/gitlab-34-search-gitlab.png)
+
+Et en PLUS !! Car bon , j'ai rien contre mon navigateur web mais je peux faire un gros **GREP** sur mes dépôts locaux :D
+
+## Utilisation des branches
+
+L'utilisation des branches dans GIT et des __merges request__ dans le cas présent je n'ai pas couvert la question des branches et __merge request__ de la branche vers la branche __master__ . Je ne l'utilise que très très rarement de le contexte de l'administration de systèmes , nous verrons probablement cette utilisation quand nous parlerons de l'intégration de __gitlab__ avec __jenkins__ . 
+
+Pourquoi je n'utilise pas les branches ? 
+
+* Car je suis vieux et que j'ai utilisé trop souvent __subversion__, __CVS__ et autre qui n'ont pas le concept de branche :P 
+* Car je suis tous seul sur les machines ou un nombre très restreint donc nous nous marchons pas sur les pieds 
+* Car le serveur a une configuration active , mettre un branche pour représenté quelque chose qui est déjà actif n'est pas pertinent .
+
+Quand j'utilise les branches alors ?
+
+* Quand je développe un groupe de script et que je veux avoir un état en cours de développement sans cassé ce qui fonctionne 
+* Quand je veux rajouter une fonctionnalité sur une application et un script 
+
+
+# Présentation de cas concret 
+
+Bon j'en convient que c'est un mode de travail , qui est contraignant , si certain croit que c'est purement inutile , pas de problème :D , vous pourrez faire 20 fois les mêmes opérations à moins que votre mémoire vous permette de mémorisé tous , Bonne chance.
+
+Pour ceux qui se demande , est-ce qu'il fait vraiment ça , j'aimerai bien , mais honnêtement sur un petit exemple je le visualise bien mais ... mais ... mais ... 
+
+Faut être honnête :
+
+* J'ouvre PAS un billet pour changer un mot de PASSE !!
+* Parfois j'oublie moi aussi surtout quand ça déboule à toute vitesse, mais comme j'utilise toujours la méthode de conservation dans un fichier vim mes opérations , ceci me permet de créer le billet plus tard .
+* Gardez aussi en tête ceci est pour conservé des notes BRUTE ... Est-ce que je peux le fournir à mon collègue ?!?! Peut-être selon la personne , est-ce une bonne base pour rédiger un procédure claire certainement mais il y a du travail.
+
+Voici quelque exemple de billet pour la présentation vidéo , vous n'aurez PAS accès à mon gitlab :P.
+
+* https://git.x3rus.com/goke/config/issues/10 : le même billet
+* https://git.x3rus.com/goke/config/issues/40 : Création du conteneur pour ansible utilisé dans le cadre d'AWS , avec lien billet de test d'ansible.
+* https://git.x3rus.com/goke/config/milestones/2 : Mise en place du docker registry privé
