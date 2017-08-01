@@ -208,9 +208,9 @@ Explication du test (pas de panique nous couvrirons la partie de création d'ins
 * Validation sur internet du processus de compilation avec les nouvelles version surtout pour convertir la configuration actuelle. Opération réalisé 
 
 ```bash
-# generation de la configuration par default
+ # generation de la configuration par default
 [ec2-user@ip-172-31-23-65 linux-4.11-rc5]$ make defconfig
-# Copie de la configuration actuellement en utilisation
+ # Copie de la configuration actuellement en utilisation
 [ec2-user@ip-172-31-23-65 linux-4.11-rc5]$ cp /boot/config-3.10.0-514.el7.x86_64 .config
 [ec2-user@ip-172-31-23-65 linux-4.11-rc5]$ date
 Fri Apr  7 12:46:27 EDT 2017
