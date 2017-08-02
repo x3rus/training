@@ -1,4 +1,4 @@
-# Description  DevOps
+# Présentation de DevOps
 
 Depuis environ 3 ans le terme **devops** est arrivé dans le langage des gestionnaires, si nous regardons les offres d'emplois, on voit que même les banques ont emboité le pas. Bon c'est bien beau, mais comme bien souvent le terme est mal compris ou mal employé, nous allons essayé de clarifier le concept. 
 
@@ -62,4 +62,78 @@ Si en plus votre organisation est de taille moyenne et que les 2 équipes ne son
 
 Résultat , l'opérateur est un gros méchant qui bloque l'innovation des développeurs, à tord ou à raison peu importe , le problème est que souvent le développement fut réalisé et il ne passe pas l'étape du déploiement et l'opérateur oblige des correctifs mineur ou majeur selon la situation. Comme le développement est en mode Agile l'impact est moindre, mais génère des retards sur la livraison .
 
+Nous constatons donc un changement au niveau du développement mais pas dans l'ensemble de la chaine de production résultat le gain n'est pas optimal !
+
+Ce changement organisationnel arrive avec le mode **DevOps**
+
+# La solution le mode DevOps 
+
+Maintenant que nous avons vu le cheminement qui à précédé l'arrivée du **DevOps** ceci sera plus simple à comprendre. L'objectif principale et de détruire le **mur de la confusion** ou **mur de l'incompréhension**. En d'autre mot unir les Développeurs et les Opérateurs, aille ça ressemble au terme **DevOps** d'un seul coup :P.
+
+
+Reprenons les critères principaux des Devs et des Ops, ils sont tous très légitime  :
+
+* Développeurs :
+    * Développer :P 
+    * Innover et voir ces innovations en production.
+    * NE PAS S'occuper du déploiement , de l'OS et tous le tralala ... 
+    * Ne PAS être bloquer dans les choix des technologies. 
+* Opérateurs :
+    * Avoir une stabilité de l'application en production.
+    * Ne pas avoir des technologies ingérable ou difficilement contrôlable.
+    * Une simplification des déploiements , surtout s'il y a régulièrement des déploiements.
+
+
+Le mouvement **DevOps**, va donc permettre une inclusion des opérateurs très tôt dans le développement , augmentant le dialogue entre les 2 parties. Après tous nous sommes tous dans la même compagnie, si le développement prospère et que les opérations prospère aussi la compagnie "devrait" être aussi prospère.
+
+Voici une image de la chaine des relations du **DevOps**, nous allons voir un peu les différents élément composant cette chaine.
+
+![](./imgs/Devops-toolchain.png)
+
+J'aimerai clarifier un point **IMPORTANT**, nous avons 2 partie sur l'image , mais **L'ÉQUIPE** est composé de membre avec des compétences plus grande en développement ou en opération. Donc si nous prenons la partie création , les opérations seront ou plutôt doivent être impliqué et y participé. Au même titre que les développeurs doivent être impliqué lors de la configuration des environnements afin de procéder au validation des déploiements.
+
+## Étape de la chaine DevOps
+
+Prenons les différents point de l'images ci-dessous et regardons ce que ceci indique plus que le simple mot [Étape de la chaine DevOps](https://en.wikipedia.org/wiki/DevOps_toolchain).
+
+### Plan ou définition 
+
+Bien entendu que nous soyons en mode **Agile** ou **Cascade** l'étape d'analyse reste essentiel , nous la retrouvons ici. Par contre l'analyse doit inclure les opérateurs. En plus de l'analyse des technologies et des requis de fonctionnalité applicatif il est important de définir :
+
+* Les métriques de production qui seront jugé acceptable ( ex: quelles est la temps d'affichage acceptable ? , le temps de rafraichissement des données ? ...) .
+* Les critères de sécurité, les conformités , ...
+* Le processus de mise à jour applicatif ET base de donnée.
+* Les métriques qui seront généré par l'application.
+* Les testes de monitoring applicatif.
+
+### Création  (Create) 
+
+Le processus de création est donc principalement au niveau du développement , cependant telle que mentionné lors de la présentation de l'image ceci doit être réaliser avec l'ensemble de l'équipe (**devops**).
+
+La création comprend :
+
+* Le désigne de l'application.
+* La partie développement (**CODE**) , ceci comprend des testes unitaire et idéalement de performance.
+* Compilation applicatif et réalisation des testes de performances.
+* Réalisation de [Release candidat](https://en.wikipedia.org/wiki/Software_release_life_cycle#Release_candidate)
+
+### Vérification (Verify) 
+
+Ceci est surtout pour l'équipe de l'assurance qualité , mais pas uniquement il est les testes fonctionnel et les validations du code.
+
+La vérification comprend :
+
+* Testes applicatif
+* Testes de régression 
+
 ICI ICI ICI 
+
+## Intégration continue incluant des tests continus
+
+## Déploiement régulier des applications
+
+
+## Surveillance étroite de l'exploitation 
+
+## Gestion de la configuration
+
