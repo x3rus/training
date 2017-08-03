@@ -94,7 +94,7 @@ J'aimerai clarifier un point **IMPORTANT**, nous avons 2 partie sur l'image , ma
 
 ## Étape de la chaine DevOps
 
-Prenons les différents point de l'images ci-dessous et regardons ce que ceci indique plus que le simple mot [Étape de la chaine DevOps](https://en.wikipedia.org/wiki/DevOps_toolchain).
+Prenons les différents point de l'images ci-dessous et regardons ce que ceci indique plus que le simple mot [Étape de la chaine DevOps](https://en.wikipedia.org/wiki/DevOps_toolchain). Faut y mettre un grain de sel dans tous ça , ici nous parlons de grand principe dans la pratique il y a toujours de ajustement et des éléments que l'on fait moins.
 
 ### Plan ou définition 
 
@@ -123,17 +123,72 @@ Ceci est surtout pour l'équipe de l'assurance qualité , mais pas uniquement il
 
 La vérification comprend :
 
-* Testes applicatif
-* Testes de régression 
+* Testes applicatif.
+* Testes de régression .
+* Analyse de sécurité , et idéalement teste d'intrusion.
+* Validation de la configuration. 
 
-ICI ICI ICI 
+### Préparation d'un tout cohérent (Package / stating ) 
 
-## Intégration continue incluant des tests continus
+Désolé pour le titre j'ai eu quelque difficulté à trouver un terme Français pour __packaging__ , l'idée générale de cette étape et de faire l'ensemble des tâche requis en vue de la version finale de l'application , la **release** .
 
-## Déploiement régulier des applications
+* Recherche des approbations ou pré approbation.
+* Packaging des configurations.
+* Déploiement sur les environnements Dev -> QA -> Preprod (staging release).
+* Mise en place des artefacts applicatif dans une voûte.
+
+### Livraison version "finale" (Release)
+
+Nous sommes donc à l'étape de la livraison d'une version de l'application, nous avons plusieurs étapes :
+
+* Coordination de la livraison ( Play By Play ).
+* Déploiement et activation des fonctionnalités en production .
+* Plan d'action en cas de retour arrière .
+* Planification de l'indisponibilité de l'application si requis.
+
+### Configuration (Configure)
+
+Cette étape comprend l'ensemble du processus de configuration :
+
+* Configuration de l'infrastructure de stockage , les bases de données , l'infrastructure réseaux
+* Configuration du système d'exploitation pour répondre au requis applicatif ( ex: limite de fichier ouvert , ...)
+* Configuration de l'application en lien avec son environnement
+
+### Monitoring (Monitor)
+
+Malheureusement cette partie fut sous réalisé dans les années passé, dans le monitoring nous ne parlons pas uniquement de s'assurer que l'application est disponible en validant la disponibilité du port réseau. Il est important aussi d'avoir des métriques afin de savoir si l'application est "performante" et utilisable.
+
+* Collecte de métrique sur les performances de l'infrastructure TI.
+* Collecte d'information sur l'expérience de l'utilisateur.
+* Statistique de l'application dans le temps.
+
+### Conclusion de cette chaine 
+
+Au risque de me répéter, j'aimerai rappeler que les opérateurs et les développeurs sont dans la même équipe, donc les tâches sont commune à l'ensemble de l'équipe et doivent être planifié comme telle.
+
+Une autre forme de chaine est apparue en 2014 avec cette suite :  __Plan, Code, Build, Test, Release, Deploy, Operate et Monitor__. Mon objectif ici est était surtout de montrer 2 points :
+
+* La boucle infinie dans le développement , le déploiement et le monitoring
+* La relation d'unité dans l'équipe avec 2 champs de compétence complémentaire
+* Les étapes haut niveau du cycle.
+
+Bien entendu dans votre réalité vous pouvez voir l'association de votre développement pour chaque partie, nous allons maintenant voir les grands principes du **DevOps** ce que nous allons mettre en place afin d'être en mesure de suivre la cadence de ce développement perpétuel.
 
 
-## Surveillance étroite de l'exploitation 
+## Les principes ESSENTIEL 
 
-## Gestion de la configuration
+Nous avons vue le cycle de la chaine du développement en mode **DevOps** maintenant nous nous attarderons au principe pour y arrivé. Nous allons parler d'automatisation de processus dans le but de suite le rythme imposé par cette boucle infinie du développement.
+
+ICI ICI
+
+
+### Intégration continue incluant des tests continus
+
+### Déploiement régulier des applications
+
+### Surveillance étroite de l'exploitation 
+
+### Gestion de la configuration
+
+### Libre Service
 
