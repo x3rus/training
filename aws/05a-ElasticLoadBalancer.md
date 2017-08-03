@@ -103,7 +103,7 @@ Page Web de TEST :D
 
 * Comme nous allons mettre en place du http nous sélectionnerons l'équilibreur d'application 
 
- ![](./imgs/elb-instance-ec2-statique-creation-lb-1.png)
+![](./imgs/elb-instance-ec2-statique-creation-lb-1.png)
 
 * Identification du nom : 
 
