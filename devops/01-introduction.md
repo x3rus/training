@@ -179,10 +179,71 @@ Bien entendu dans votre réalité vous pouvez voir l'association de votre dével
 
 Nous avons vue le cycle de la chaine du développement en mode **DevOps** maintenant nous nous attarderons au principe pour y arrivé. Nous allons parler d'automatisation de processus dans le but de suite le rythme imposé par cette boucle infinie du développement.
 
-ICI ICI
+Commençons avec but , le **Graal** :P .
 
+* Augmentation de la fréquence des déploiements.
+* Fonctionnalité plus rapidement mis en production donc sur le marché.
+* Réduire le nombre d'erreur ou problème lors de la mise en place de la nouvelle version.
+* Réduire le temps entre les correctifs
+* En cas de problème réduire le temps de recouvrement 
 
-### Intégration continue incluant des tests continus
+Résultat de la mise en place du **DevOps** :
+
+* Meilleur prédiction de la suite.
+* Augmentation de l'efficacité.
+* Amélioration de la maintenance opérationnel, car plus confortable avec le changement.
+* Mise en place de tâches en libre service pour l'équipe.
+
+C'est partie pour le détail pour y arriver 
+
+### Collaboration
+
+Oui, je vais encore le répéter :P , la collaboration entre les gens, car au final c'est les hommes qui font le travail et qui réussissent de grande chose. Je ne sais pas qui a dit ça à l'origine, mais ce fut mentionné dans un emploie passé 
+
+> Tous seul on va plus vite, mais ensemble on va plus loin !! 
+
+J'aime bien cette citation , elle représente bien le travail collaboratif .
+
+Donc l'ensemble des personnes doivent être unis dans le but et travailler ensemble , voici une autre représentation de cette unité :
+
+![](./imgs/devOpsQA.png)
+
+Nous sommes interconnecter, quand le développeur à des questions sur l'infrastructure il questionne l'équipe TI / Opérateur. Lorsque l'équipe de l'assurance qualité rencontre une problématique applicative il consulte le développeur et / ou l'équipe d'opération . Lorsqu'il y a un problème applicatif avec l'application que l'infrastructure ne semble pas en cause l'opérateur consulte le développeur pour avoir plus d'information. En d'autre mot nous sommes lié ensemble autour du produit. 
+
+Nous ne voulons plus entendre : c'est la faute du Dev ou de l'installation , mais est-ce possible de me fournir cette information pour que je puisse analyser la situation .
+
+### Automatisation 
+
+L'automatisation est au centre du travail du DevOps, car la charge de travail qu'on lui demande est grande. Avec le nouveau mode de travail nous désirons qu'il y est plus d'intégration de l'application , plus de teste , plus de validation , plus de déploiement , plus de surveillance .
+Bien entendu il est toujours possible de réaliser ces opérations manuellement mais rapidement les  personnes n'auront plus d'intérêt et la productivité sera impacté. 
+
+Nous retrouverons donc souvent dans les équipes de **devops** une boite à outils qu'ils furent développé à l'interne, acheter ou l'utilisation de logiciel libre. Bien entendu, la majorité du temps c'est un mixe de l'ensemble.
+
+Je dirai même que l'objectif est d'automatiser au maximum , ceci aura l'avantage :
+
+* De réduire les erreurs humaines
+* De permettre de réaliser  à l'identique les opérations (Reproductible)
+* D'augmenter le temps de réalisation des tâches (Productivité)
+* Éventuellement permettre à n'importe qui d'exécuter l'opération librement sans votre assistance (Self-Service)
+
+Si vous avez peur de plus avoir de travail, pas de panique on arrive jamais à tous automatisé et on trouve toujours plus de chose à faire quand on a du temps :P.
+
+### Intégration continue 
+
+Intégration régulière / continue du travail des personnes de l'équipe. Nous partons du principe que l'équipe utilise un système de contrôle de révision telle que **Subversion** , **git** afin de mettre leur travaille ensemble. Ceci n'est techniquement peut-être pas requis cependant de mon point de vue il est essentiel pour simplifier le retour arrière , ainsi que les requêtes de fusion (merge) .
+
+L'objectif de cette étape et de voir **rapidement** s'il y a un problème d'intégration et de pouvoir l'adresser **rapidement** (au risque de me répéter :P ).
+
+#### Concrètement un cas pratique 1.
+
+L'équipe travaille sur une application 3 tiers ( frontale Web, Application __backend__ , Base de donnée ) .
+
+Un développeur pris par un excès de zèle décide de réalise de la documentation dans le code , __yep__ ça arrive parfois  :P . Remplie de confiance il pousse la modification du code sans compilation, car il a rien touche , selon son point de vue. Grâce à l'intégration continue du travaille dès que le code sera transmis au serveur Subversion ou Git ce dernier sera compilé et intégrer pour validation. L'erreur syntaxique pourra tous de suite identifier et une alerte sera transmise à l'équipe pour signaler la problématique. 
+
+La personne aillant fait la modification pourra tous de suite prendre action sachant exactement ce qu'il à réalisé. S'il ne le fait pas car il est partie en vacance l'équipe aura la connaissance que depuis le commit X qui fut réalisé à l'instant T l'application ne compile plus. 
+La personne qui aura transmis son travaille au serveur n'aura pas le doute à savoir. Est-ce que c'est MES modification qui on causé ce problème ? 
+
+### Test continues ( Applicatif et fonctionnel )
 
 ### Déploiement régulier des applications
 
@@ -192,3 +253,8 @@ ICI ICI
 
 ### Libre Service
 
+### Reproductible
+
+### Une source de référence
+
+### Une Documentation généré automatiquement
