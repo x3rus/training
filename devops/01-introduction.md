@@ -329,20 +329,48 @@ Telle que mentionné lors de la présentation de la méthode **agile** et de la 
 1. Environnements de developpement : Permet au développeur de réaliser l'intégration , de faire des testes de fonctionnalité sur un environnement similaire ( et non identique ) à la production. Bien souvent le developpeur travail sur windows avec une instance tomcat , jboss , apache sur ce système d'exploitation. Cette environnement permet donc d'avoir un système GNU/Linux. Exemple simple de différence , si le nom de fichier utilisé contient des majuscules, mais que le code utilise que des minuscules pour nommer le fichier !
 2. Environnements de QA : Ces environnements permettent au QA de faire leur teste , la version déploié est statique à une Release candidate spécifique ou alors une version spécifique de build. Ces environnements devrais représenter les cas de figures supporter , exemple avec ou sans balanceur de charge, avec un ou plusieurs serveur de backend.
 3. Environnement de certification : Ces environnements sont utilisé pour que vos partenaires d'affaire puisse réaliser leurs testes d'intégration avec votre application que ce soit lors de version majeur ou mineur. Ceci peut être aussi des environnements de validation de vos clients avant la mise en production du produit afin certifier que ceci réponds au requis.
-4. Environnement de pre-production : Cette environnement doit être la dernière étape avant de faire la production , ceci vous permet de faire un teste passant avec le déploiement en production ( **dry-run** ). Vous pouvez ainsi valider la procédure de déploiement, avant le jour J. Il est importe d'avoir la même architecture que la production. Dans un monde idéal ce serait aussi le même type de machine , mais difficile de demandé un serveur 24 core pour un environnement qui dort :P, mais assurer vous qu'il y est comme en production un load balancer , des pare-feu , etc
+4. Environnement de pre-production : Cette environnement doit être la dernière étape avant de faire la production , ceci vous permet de faire un teste passant avec le déploiement en production ( **dry-run** ). Vous pouvez ainsi valider la procédure de déploiement, avant le jour J. Il est importe d'avoir la même architecture que la production. Dans un monde idéal ce serait aussi le même type de machine , mais difficile de demandé un serveur 24 core pour un environnement qui dort :P, mais assurer vous qu'il y est comme en production un load balancer , des pare-feu , etc. Cette environnement pourra aussi vous servir en cas de problème en production pour reproduire un comportement !
 5. Environnement de performance : Si vous pouvez avoir cette environnement ceci vous permettra de vous assurez de ne pas avoir de surprise plus tard lors du déploiement.
 6. Environnement de production : Bien entendu faut être en prod :D
 
-### Surveillance étroite de l'exploitation 
+Je sais ça fait beaucoup d'environnement, cependant ceci vous assurera un confiance en votre déploiement et vous permettra surtout de ne pas vous marcher sur le pieds entre les personnes de QA , les testes d'intégration de vos partenaires ou client. Maintenant grâce à la virtualisation la multiplication des environnements est moins problématique et si nous introduisons le concept de conteneur avec docker vous pouvez aussi vous simplifier la vie ! 
 
-### Gestion de la configuration / Packaging 
+Point **TRÈS important** !! non en fait **ULTRA IMPORTANT** vous devez automatiser le processus de déploiement et voici les raisons :
+
+* Avec le nombre d'environnement l'opération de déploiement est pénible et surtout peu stimulante.
+* Avec un processus manuel vous aurez un nombre élevé d'erreur manuel, surtout si votre application est le moindrement complexe. 
+  * Erreur / oublie du fichiers de configuration 
+  * Erreur / oublie de permission de fichiers
+  * Erreur / oublie de commande d'initialisation 
+  * ...
+* Vous ne serez pas en mesure de reproduire 2 fois le même déploiement 
+* Si vous devez faire le déploiement la nuit, la fatigue vous jouera des tours 
+
+Je pourrai continuer longtemps mais vous avez compris le concept.
+
+Le déploiement des environnements doivent être identique sur l'ensemble de la chaine de développement, vous devez utiliser la même méthode pour déploy du premier environnement à la production. Ceci vous permet de valider le processus régulièrement et à chaque étape, résultat vous testez 6 fois votre déploiement ( Dev, QA , ..., Prod ) si votre méthode est différente pour la production vous n'avez plus qu'UN teste en pre-production. 
+
+Votre objectif est que lorsque vous fêtes le déploiement en production vous soyez tellement confiant que vous puissiez parler avec votre collègue en même temps du résultat des matches de la dernières journée de Ligue 1 ou du mercato !! 
+Cette confiance n'a PAS de prix !! 
+
+Ceci n'enlève en RIEN la préparation du plan de déploiement (**Play By Play**) , mais vous savez que la machine réalisé le gros du travail et ceci de bonne manière car elle n'est pas fatigué , blassé ou la tête ailleur.
+
+#### Les outils disponibles
+
+* Environnement multiple 
+  * Virtualisation : Xen, KVM , Vmware , ...
+  * Système de conteneur : **docker**
+* Système de déploiement : **puppet**, **ansible**, **salt**, ...
+
+### Gestion de la configuration / Packaging  ( Une source de référence )
 
 nexus + ansible
 
 
-### Reproductible
+### Surveillance étroite de l'exploitation 
 
-### Une source de référence
+
+### Reproductible
 
 ### Une Documentation généré automatiquement (Optionel)
 
