@@ -234,7 +234,9 @@ Intégration régulière / continue du travail des personnes de l'équipe. Nous 
 
 L'objectif de cette étape et de voir **rapidement** s'il y a un problème d'intégration et de pouvoir l'adresser **rapidement** (au risque de me répéter :P ).
 
-#### Concrètement un cas pratique 1.
+#### Concrètement
+
+##### cas 1 
 
 L'équipe travaille sur une application 3 tiers ( frontale Web, Application __backend__ , Base de donnée ) .
 
@@ -243,13 +245,82 @@ Un développeur pris par un excès de zèle décide de réalise de la documentat
 La personne aillant fait la modification pourra tous de suite prendre action sachant exactement ce qu'il à réalisé. S'il ne le fait pas car il est partie en vacance l'équipe aura la connaissance que depuis le commit X qui fut réalisé à l'instant T l'application ne compile plus. 
 La personne qui aura transmis son travaille au serveur n'aura pas le doute à savoir. Est-ce que c'est MES modification qui on causé ce problème ? 
 
+##### cas 2 
+
+Une personne réalise du développement avec une nouvelle librairie ou une nouvelle version lors de l'intégration il est possible que lors du processus de linkage des librairies il y est un problème. Le problème sera identifier rapidement et pourra être adressé est-ce la bonne librairie , devons nous procéder autrement ... Les choix sont multiple mais au moins la prise de décision peut être prise rapidement et pas attendre 1 mois ou plus que l'ensemble du code fut développé et que la décision soit plus difficile, car beaucoup de travail réalisé.
+
+#### Les outils disponible
+
+Nous verrons que les outils présenter seront identifier à plusieurs lieu. 
+
+* Outils d'intégration du code : **Subversion**, **Git** , **mercurial**, et autre 
+* Outils de traitement pour la réalisation de l'intégration automatique : **Jenkins**, **GitLab ci**, et autre 
+
+Je n'ai nommé que les options libre bien entendu :P.
+
 ### Test continues ( Applicatif et fonctionnel )
+
+Nous avons parlé de l'intégration du code en commun, ceci est un bon début pour valider que l'ensemble compile convenable ou du moins est un tous cohérent , mais est-ce que ça fonctionne vraiment ? :P .
+
+L'intégration de validation vous aidera aussi à identifier **rapidement** les problématiques et vous offrira aussi une plus grande sécurité. L'objectif ici est de faire plusieurs type de teste :
+
+* [Test unitaire](https://fr.wikipedia.org/wiki/Test_unitaire): le test unitaire (ou « T.U. », ou « U.T. » en anglais) ou test de composants est une procédure permettant de vérifier le bon fonctionnement d'une partie précise d'un logiciel ou d'une portion d'un programme (appelée « unité » ou « module »).
+* Test de déploiement : Faire un test de déploiement de l'application sur un environnement vierge ou presque , ceci permettra de valider que l'installation fonctionne toujours.
+* Test de validation simple (smoke test) : Suite au teste de déploiement , il est intéressant d'ajouter une validation fonctionnel de l'application, bien entendu cette étape peut comprendre peu ou énormément de chose. Selon la complexité de l'application et le temps alloué pour des testes applicatif automatisé.
+
+Pour les personnes qui se disent , woww j'aurais jamais le temps de faire tous cela. Effectivement, ce peut être une lourde tâche, mais il y a un gain non négligeable et il ne faut pas oublié ceci se construit au fur et à mesure !! Nous allons prendre les 3 points ci-dessus et essayé d'ajouter de l'explication.
+
+#### Test unitaire
+
+Le teste unitaire, j'ai moins d'expérience avec cette partie , car la majorité du temps les développeurs me les fournisse :P, car de plus en plus ces derniers le font pour confirmer que l'ajout de fonctionnalité n'a pas cassé quelque chose précédemment. 
+
+L'objectif est toujours le même :
+
+1. Nous réalisons une modification du code
+2. Nous identifions tout de suite la problématique
+3. Comme nous avons sommes au courant une décision peut être prise
+
+Bien entendu le teste unitaire doit être un processus automatisé, il n'est PAS pensable que chaque , mercredi une personne réalise l'ensemble des testes unitaire de l'application manuellement. Honnêtement est-ce que ce serait possible ? Je ne le crois pas de plus vous risquez d'avoir une lettre de démission rapidement de la personne, car ce doit être très ennuyeux !
+
+La réalisation des testes unitaire devrait être réaliser régulièrement , personnellement je préconise son exécution en même temps que l'intégration du code. Bien entendu si le temps des testes est trop long, car ils sont très très complet ce pourrait être à chaque nuit. Il faut pas être rigide , l'important est d'être au courant "rapidement" des problèmes .
+
+Donc en terme de temps requis , ceci est un travail de collaboration donc chacun réalise ça partie, le responsable va simplement mettre la colle ou le duck tape pour lier l'ensemble. 
+Et si au début il n'y a qu'une classe , qu'un module du code qui contient des testes unitaire et bien c'est déjà ça au fil du temps les autres seront réalisé. Tous comme un gratte ciel, il faut commencer par la première brique et monté tranquillement l'ensemble, mais il est plus facile d'ajouter une brique que de placer la première à même le sol !!
+
+#### Test de déploiement 
+
+Validation du déploiement de l'application sur un environnement, selon le type d'application le processus d'installation est plus ou moins complexe. Si nous prenons un site en php ce peut être très simple , uniquement copier les fichiers ou réalisé une mise à jour à l'aide du contrôleur de révision. Si vous avez une application 3 tiers avec un serveur jboss , tomcat, jetty l'ensemble des opérations peut être plus longue. 
+
+Lors de l'intégration nous avons valider que le code compile , lors des testes unitaires nous avons valider que le code fonctionne pour des sections spécifique. Maintenant nous voulons confirmer que l'installation de l'application est toujours convenable et que l'application démarre.
+
+Donc vous suggère de déployer l'application sur un environnement toutes les nuits afin de confirmer que l'application est toujours fonctionnel dans son ensemble. Voici un situation possible, du développement fut réalisé , le code compile ( Yeahh ), les testes unitaires fonctionnes ( Super ) , malheureusement lors que l'on active l'application dans le serveur Tomcat , ce dernier démarre mais n'arrive pas à charger le war / ear / l'application quoi :P . 
+
+Et là je veux pas entendre : **Oui mais ça marche sur mon poste !!** , heu , pour rester polie **I don't fucking care** :D . Sans blague si justement ça fonctionne sur le poste il est possible qu'il manque un fichier qui ne fut pas pousser au contrôleur de révision. L'identification du problème rapidement permettra au développeur de faire le correct , il supprimera pas son environnement de travail local , par erreur ou pour faire de la place risquant de perdre du travail essentiel.
+
+Nous le aussi dans la section [Déploiement régulier des applications](#Déploiement régulier des applications) , mais l'environnement qui fut déployer peut être aussi utilisé afin de voir la dernière version de l'application. Que ce soit au gestionnaire , chef de project , ...
+
+#### Test de validation simple (smoke test)
+
+Comme nous avons un environnement de déployer avec la dernière version de l'application est-ce possible d'automatiser quelque teste pour valider que l'application fonctionne ? 
+
+Si l'application est déjà en production, vous devez déjà avoir un monitoring en place qui fait quelque testes, pourquoi ne pas les exécuter sur cette environnement . Ceci vous permettra de voir si l'application semble saine ! Si vous débuter le développement et que votre application est web base pourquoi ne pas faire une simple validation de la page web et chercher un mot dans la page web. Ceci n'est pas compliqué et comme mentionné pour les testes unitaire ceci est la première brique !
+
+Si votre équipe de QA à déjà automatiser certaine étape de validation vous pourriez le réutilisé ici 
+
+#### Les outils disponibles
+
+* Validation de la qualité du code : [Sonar](https://www.sonarsource.com/)  ...
+* Test unitaire: junit, pyunit , ...
+
+
 
 ### Déploiement régulier des applications
 
 ### Surveillance étroite de l'exploitation 
 
 ### Gestion de la configuration
+
+nexus + ansible
 
 ### Libre Service
 
