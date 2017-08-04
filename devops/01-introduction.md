@@ -287,6 +287,8 @@ La réalisation des testes unitaire devrait être réaliser régulièrement , pe
 Donc en terme de temps requis , ceci est un travail de collaboration donc chacun réalise ça partie, le responsable va simplement mettre la colle ou le duck tape pour lier l'ensemble. 
 Et si au début il n'y a qu'une classe , qu'un module du code qui contient des testes unitaire et bien c'est déjà ça au fil du temps les autres seront réalisé. Tous comme un gratte ciel, il faut commencer par la première brique et monté tranquillement l'ensemble, mais il est plus facile d'ajouter une brique que de placer la première à même le sol !!
 
+
+
 #### Test de déploiement 
 
 Validation du déploiement de l'application sur un environnement, selon le type d'application le processus d'installation est plus ou moins complexe. Si nous prenons un site en php ce peut être très simple , uniquement copier les fichiers ou réalisé une mise à jour à l'aide du contrôleur de révision. Si vous avez une application 3 tiers avec un serveur jboss , tomcat, jetty l'ensemble des opérations peut être plus longue. 
@@ -305,27 +307,43 @@ Comme nous avons un environnement de déployer avec la dernière version de l'ap
 
 Si l'application est déjà en production, vous devez déjà avoir un monitoring en place qui fait quelque testes, pourquoi ne pas les exécuter sur cette environnement . Ceci vous permettra de voir si l'application semble saine ! Si vous débuter le développement et que votre application est web base pourquoi ne pas faire une simple validation de la page web et chercher un mot dans la page web. Ceci n'est pas compliqué et comme mentionné pour les testes unitaire ceci est la première brique !
 
-Si votre équipe de QA à déjà automatiser certaine étape de validation vous pourriez le réutilisé ici 
+Si votre équipe de QA à déjà automatiser certaine étape de validation vous pourriez le réutilisé ici. L'idée n'est pas de remplacer votre équipe de QA qui réalise des cas d'utilisation spécial et qui décrive adéquadement des comportements non attendu. Le but est d'avoir une serie de testes passant pour savoir si les fonctionnalité basique ne furent pas impacté par les dernières modifications.
+
+Je pense que tous comme pour le test de déploiement la réalisation au quotidien est une bonne chose, mais hebdomadaire est aussi adéquat l'important reste de savoir rapidement s'il y a un problème ! Bien entendu rien ne vous empêche dans le future d'ajouter plus de complexité dans vos testes ainsi que la réalisation de testes de performance. Par contre ne vous étouffez pas sous les taches inutilements, mais améliorez une solution présente tranquillement en grè du temps disponible !
 
 #### Les outils disponibles
 
-* Validation de la qualité du code : [Sonar](https://www.sonarsource.com/)  ...
-* Test unitaire: junit, pyunit , ...
+* Test Unitaire :
+  * Validation de la qualité du code : [Sonar](https://www.sonarsource.com/)  ...
+  * Test unitaire: junit, pyunit , ...
+* Test de déploiement :
+  * Déploiement de configuration : Puppet , Ansible , Cfengin , Chef , ... 
+* Smoke Test 
+  * Validation du service : djongo-smoketest , selenium , SoapUI 
+  * Test de performance : locust.io
 
+### Déploiement régulier des applications et de manière identique 
 
+Telle que mentionné lors de la présentation de la méthode **agile** et de la volonté de livrer les fonctionnalités en production régulièrement et rapidement. Il est essentiel d'avoir des environnements de **staging**. Votre cylcle de développement doit suivre un déploiement cyclique donc passer par les étapes :
 
-### Déploiement régulier des applications
+1. Environnements de developpement : Permet au développeur de réaliser l'intégration , de faire des testes de fonctionnalité sur un environnement similaire ( et non identique ) à la production. Bien souvent le developpeur travail sur windows avec une instance tomcat , jboss , apache sur ce système d'exploitation. Cette environnement permet donc d'avoir un système GNU/Linux. Exemple simple de différence , si le nom de fichier utilisé contient des majuscules, mais que le code utilise que des minuscules pour nommer le fichier !
+2. Environnements de QA : Ces environnements permettent au QA de faire leur teste , la version déploié est statique à une Release candidate spécifique ou alors une version spécifique de build. Ces environnements devrais représenter les cas de figures supporter , exemple avec ou sans balanceur de charge, avec un ou plusieurs serveur de backend.
+3. Environnement de certification : Ces environnements sont utilisé pour que vos partenaires d'affaire puisse réaliser leurs testes d'intégration avec votre application que ce soit lors de version majeur ou mineur. Ceci peut être aussi des environnements de validation de vos clients avant la mise en production du produit afin certifier que ceci réponds au requis.
+4. Environnement de pre-production : Cette environnement doit être la dernière étape avant de faire la production , ceci vous permet de faire un teste passant avec le déploiement en production ( **dry-run** ). Vous pouvez ainsi valider la procédure de déploiement, avant le jour J. Il est importe d'avoir la même architecture que la production. Dans un monde idéal ce serait aussi le même type de machine , mais difficile de demandé un serveur 24 core pour un environnement qui dort :P, mais assurer vous qu'il y est comme en production un load balancer , des pare-feu , etc
+5. Environnement de performance : Si vous pouvez avoir cette environnement ceci vous permettra de vous assurez de ne pas avoir de surprise plus tard lors du déploiement.
+6. Environnement de production : Bien entendu faut être en prod :D
 
 ### Surveillance étroite de l'exploitation 
 
-### Gestion de la configuration
+### Gestion de la configuration / Packaging 
 
 nexus + ansible
 
-### Libre Service
 
 ### Reproductible
 
 ### Une source de référence
 
-### Une Documentation généré automatiquement
+### Une Documentation généré automatiquement (Optionel)
+
+### Libre Service (Optionel)
