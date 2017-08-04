@@ -324,10 +324,10 @@ Je pense que tous comme pour le test de déploiement la réalisation au quotidie
 
 ### Déploiement régulier des applications et de manière identique 
 
-Telle que mentionné lors de la présentation de la méthode **agile** et de la volonté de livrer les fonctionnalités en production régulièrement et rapidement. Il est essentiel d'avoir des environnements de **staging**. Votre cylcle de développement doit suivre un déploiement cyclique donc passer par les étapes :
+Telle que mentionné lors de la présentation de la méthode **agile** et de la volonté de livrer les fonctionnalités en production régulièrement et rapidement. Il est essentiel d'avoir des environnements de **staging**. Votre cycle de développement doit suivre un déploiement cyclique donc passer par les étapes :
 
-1. Environnements de developpement : Permet au développeur de réaliser l'intégration , de faire des testes de fonctionnalité sur un environnement similaire ( et non identique ) à la production. Bien souvent le developpeur travail sur windows avec une instance tomcat , jboss , apache sur ce système d'exploitation. Cette environnement permet donc d'avoir un système GNU/Linux. Exemple simple de différence , si le nom de fichier utilisé contient des majuscules, mais que le code utilise que des minuscules pour nommer le fichier !
-2. Environnements de QA : Ces environnements permettent au QA de faire leur teste , la version déploié est statique à une Release candidate spécifique ou alors une version spécifique de build. Ces environnements devrais représenter les cas de figures supporter , exemple avec ou sans balanceur de charge, avec un ou plusieurs serveur de backend.
+1. Environnements de développement : Permet au développeur de réaliser l'intégration , de faire des testes de fonctionnalité sur un environnement similaire ( et non identique ) à la production. Bien souvent le développeur travail sur Windows avec une instance tomcat , jboss , apache sur ce système d'exploitation. Cette environnement permet donc d'avoir un système GNU/Linux. Exemple simple de différence , si le nom de fichier utilisé contient des majuscules, mais que le code utilise que des minuscules pour nommer le fichier !
+2. Environnements de QA : Ces environnements permettent au QA de faire leur teste , la version déployé est statique à une Release candidate spécifique ou alors une version spécifique de build. Ces environnements devrais représenter les cas de figures supporter , exemple avec ou sans balancer de charge, avec un ou plusieurs serveur de backend.
 3. Environnement de certification : Ces environnements sont utilisé pour que vos partenaires d'affaire puisse réaliser leurs testes d'intégration avec votre application que ce soit lors de version majeur ou mineur. Ceci peut être aussi des environnements de validation de vos clients avant la mise en production du produit afin certifier que ceci réponds au requis.
 4. Environnement de pre-production : Cette environnement doit être la dernière étape avant de faire la production , ceci vous permet de faire un teste passant avec le déploiement en production ( **dry-run** ). Vous pouvez ainsi valider la procédure de déploiement, avant le jour J. Il est importe d'avoir la même architecture que la production. Dans un monde idéal ce serait aussi le même type de machine , mais difficile de demandé un serveur 24 core pour un environnement qui dort :P, mais assurer vous qu'il y est comme en production un load balancer , des pare-feu , etc. Cette environnement pourra aussi vous servir en cas de problème en production pour reproduire un comportement !
 5. Environnement de performance : Si vous pouvez avoir cette environnement ceci vous permettra de vous assurez de ne pas avoir de surprise plus tard lors du déploiement.
@@ -353,7 +353,7 @@ Le déploiement des environnements doivent être identique sur l'ensemble de la 
 Votre objectif est que lorsque vous fêtes le déploiement en production vous soyez tellement confiant que vous puissiez parler avec votre collègue en même temps du résultat des matches de la dernières journée de Ligue 1 ou du mercato !! 
 Cette confiance n'a PAS de prix !! 
 
-Ceci n'enlève en RIEN la préparation du plan de déploiement (**Play By Play**) , mais vous savez que la machine réalisé le gros du travail et ceci de bonne manière car elle n'est pas fatigué , blassé ou la tête ailleur.
+Ceci n'enlève en RIEN la préparation du plan de déploiement (**Play By Play**) , mais vous savez que la machine réalisé le gros du travail et ceci de bonne manière car elle n'est pas fatigué , blasé ou la tête ailleurs.
 
 #### Les outils disponibles
 
@@ -364,13 +364,74 @@ Ceci n'enlève en RIEN la préparation du plan de déploiement (**Play By Play**
 
 ### Gestion de la configuration / Packaging  ( Une source de référence )
 
-nexus + ansible
+La gestion de vos configurations pour les environnements est crucial, car telle que mentionné plus tôt, le mode de déploiement doit être identique, cependant tous les environnements ne sont pas identique. Nous avons des architectures différente (Load balancer, environnement plus ou moins segmenté , paramètre des adresses courriel ou clé API diffère), vous devez donc ajuster les paramètres selon l'environnement , il est important de centralisé à UN lieu ces informations. 
+
+Vous ne voulez surtout pas avoir de lieux pour des informations identique, car lorsqu'il y a aura un problème quelle source est la bonne , laquelle fut mis à jour , fut-elle oublié ? L'ensemble des ces questions à 4 heures du matin, après un appel du client n'est vraiment pas agréable !! En ayant qu'une source cette dernière sera fiable et aura été mise à jour lors du dernier déploiement. 
+De plus l'ensemble de l'équipe pourra ci référer le moment venu en aillant une confiance au contenu , la confiance n'a pas de prix !
+
+Bien entendu je suggère fortement d'utiliser un système de contrôleur de révision pour conserver ces données , les raisons sont simple :
+
+* Savoir qui à fait la modification , pas pour tapé sur les doigts en cas d'erreur, mais comprendre la raison du changement. Il est possible que la raison soit mauvaise, mais ceci fut fait dans un but précis .
+* Savoir quand la modification fut effectué, encore une fois ceci permet d'identifier si la problématique est présente depuis 1 mois , 1 semaine ou est présente depuis le début du projets
+* Permettre de voir l'évolution de la configuration , si nous prenons l'exemple d'une configuration d'allocation de mémoire nous pourrions voir qu'a chaque version majeur nous doublons la limite ceci sera peut-être problématique plus tard. 
+* Ceci vous permettra aussi de ne pas avoir des fichiers du style .bak , .bak2, .old , ... :P
+
+Ceci vaut aussi pour la question des versions de votre application. Je ne sais pas si vous avez déjà eu le problème, mais j'ai déjà vécu que les fichiers de l'application était sur un serveur de fichier mal organisé . Résultat nous avions plusieurs fichiers avec le même nom , incluant la version dans plusieurs répertoire quelle est le bon ?? La date de création n'est clairement pas la bonne source pour garantir que nous avons le bon fichier !!! 
+
+Il existe plusieurs solution de stockage d'artefact pour conserver les versions , l'avantage aussi est de pouvoir faire du ménage dans ces versions pour ne conserver que les versions pertinente. Donc tous comme le code est centralisé , le résultat du code , la version compilé en d'autre mot les artefacts seront conservé dans 1 lieu. Ceci vous permettra aussi de conservé les anciennes version et de les avoir à porter de la main le moment venu si vous devez déployer un environnement avec une veille version pour un client en support.
+
+#### Les outils disponibles
+
+* Outils de gestion de configuration : **ansible** , puppet **hieradata**, jinja2 , **git**, **subversion**, ...
+* Outils de conservation des artefacts  : **nexus** , [archiva](https://github.com/apache/archiva), ...
+* Conservation de conteneur dans la voute : Docker registry
 
 
 ### Surveillance étroite de l'exploitation 
 
+Je vais me répéter, car on sait comment ça se passe sur internet on lit pas l'ensemble du texte :P , donc rapidement un rappel. Suite au nouveau mode de développement les déploiements sont plus fréquent , originalement on codait pendant plusieurs moins puis mettait en production , pendant 6 mois voir 1 ans un autre développement puis mise en production. La nouvelle réalité est que nous allons possiblement mettre en production à chaque mois ou 2 mois.
 
-### Reproductible
+Comme l'environnement va changer régulièrement et possiblement avoir des comportement différent vous devez avoir des yeux sur le système , mais des vraie eux pas juste le **CPU** et la **Mémoire**. Vous êtes avec les développeurs, même famille , même joie , même merde !! Donc vous devez être en mesure d'identifier les problèmes rapidement, afin d'informer vos collègues et établir un plan d'action. 
+
+Vous êtes maintenant en charge de l'application dans son ensemble, en plus du monitoring afin d'identifier si le port 80 / 443 fonctionne , vous devez être en mesure de savoir si la page s'affiche réellement. La certains ce disent, héhé , je le fais déjà ça , COOL et est-ce que vous avez aussi un limite si le temps d'affichage dépasse plus de xxx milliseconde ? Le temps de réponse est important pour l'utilisateur.
+
+Vous être en mesure d'avoir des métriques sur absolument tous, les requêtes à la base de données, le nombre d'erreur dans l'application , les erreurs d'envois de courriel, l'accès disque ( IO ). Idéalement ceci sur l'ensemble des environnements mais avec un attention particulière sur l'environnement de production ! 
+
+C'est donnée doivent être disponible pour une historique de 13 mois ! Ceci vous permettra de répondre adéquatement sur l'état de l'application , combien de fois vous avez reçu un courriel ou appel mentionnant que le système est lent . Vous essayez l'application et répondez pour moi ça va bien , depuis quand vous avez le problème ? Heu je sais pas 2 ou 3 jours ... c'est lent comment ? Voilà nous sommes partie dans des perceptions de part et d'autre lors du dialogue. Vous devez avoir des métriques pour identifier quelle requêtes est plus lente , est-ce plus lent qu'hier , le mois dernier ou à la même période l'année dernière ( il est possible que nous sommes pendant a saison haute ).
+
+Autre exemple concret, vous déployez une nouvelle version et le nombre d'erreur 404 augmente significativement pendant les heures qui suivent , une action doit être prise . Est-ce un lien erroné qui fut introduit dans cette version , malheureusement non identifier par l'équipe du QA ou l'erreur fut introduite dans la configuration ? 
+
+Les cas sont nombreux nous pourrions parlé d'un problème de performance lors de la génération de fichier ou de requête client ... L'objectif est que vous soyez au courant avant de recevoir l'appel des utilisateurs pour ce plaindre. Idéalement même être en mesure de corriger le problème avant que les courriels entre ou que le téléphone sonne. 
+
+Vous ne serez jamais en mesure de simulé complètement l'environnement de production, car vous avez des utilisateurs partout dans le monde, une charge réelle difficile à simuler . Prenons l'exemple de **FaceBook** , **google** comment voulez vous qu'il simule leur environnement de production , ils font de leur mieux puis déploie et il s'accroche sur le résultat de leur système de surveillance pour prendre action . Bien entendu nous ne sommes pas dans la même ligue, mais ceci offre une idée de l'objectif.
+
+Le secret pour y arriver est d'être en mesure de digéré une grande quantité de logs qui sont généré par les applications !
+
+Bien entendu comme pour les testes, il faut être réalise et construire la solution une brique à la fois. Donc débuter par le plus simple , si nous prenons les logs apache il est possible d'ajouter le temps de traitement de la page. Ceci vous offrira une base sur l'état de performance , ainsi que les erreurs de lien brisé, par la suite vous ajoutez des données. 
+
+#### Les outils disponibles
+
+* Traitement des logs / données : **Splunk** , **ELK** 
+* Détection d'intrusion ou anomalie : **wazuh** 
+
+### Reproductible  (Recommandé)
+
+On sort tranquillement des concepts obligatoire et ici j'ajoute ce que j'ai acquis lors de mon expérience. Je n'ai pas pu mettre Optionnel pour cette section, car je crois que c'est fortement recommander. 
+
+Vous devriez être en mesure de reproduire l'ensemble du travail depuis les fichiers de définition centralisé. 
+
+ICI ICI ICI 
+
+Crash ...
+Depuis le git / subversion 
+1. Création de l'artefacte
+2. Remise en place du serveur
+3. Déploiement de l'environnement avec les bonnes configuration 
+4. Potentiellement la restoration de la BD.
+
+back on business
+
+
 
 ### Une Documentation généré automatiquement (Optionel)
 
