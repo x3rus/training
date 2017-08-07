@@ -418,21 +418,47 @@ Bien entendu comme pour les testes, il faut être réalise et construire la solu
 
 On sort tranquillement des concepts obligatoire et ici j'ajoute ce que j'ai acquis lors de mon expérience. Je n'ai pas pu mettre Optionnel pour cette section, car je crois que c'est fortement recommander. 
 
-Vous devriez être en mesure de reproduire l'ensemble du travail depuis les fichiers de définition centralisé. 
+Vous devriez être en mesure de reproduire l'ensemble du travail depuis les fichiers de définition centralisé. En d'autre mot à TOUT moment en partant du code source , des fichiers de configuration de l'application vous devriez être en mesure de remettre une version de votre application. Ceci est particulièrement important pour toutes version de votre application en utilisation (localement ou chez le client). Ceci n'inclut pas les données de production bien entendu à moins de réaliser la restauration d'une sauvegarde. Idéalement vous pourriez aussi avoir un jeu de donnée pour réaliser quelques testes fonctionnel.
 
-ICI ICI ICI 
+Dans le même état d'esprit, si vous avez 2 serveurs applicatif en "redondance" (actif - actif ou actif - passif ), si un serveur crash au lieu de reprendre la sauvegarde vous devriez avoir un niveau de confiance élevé et simplement réinstallé l'ensemble du serveur et repartir. Vous me direz, oui mais les fichiers de traitement , ce pourrait être les seuls fichier récupéré mais encore ... Avoir des système  de traitement et de stockage reste idéal, mais on dévie des principes de base.
 
-Crash ...
+Voici donc le cheminement après un crash majeur , perte de l'ensemble de la compagnie ...
 Depuis le git / subversion 
-1. Création de l'artefacte
-2. Remise en place du serveur
-3. Déploiement de l'environnement avec les bonnes configuration 
-4. Potentiellement la restoration de la BD.
+1. Création des artefacts pour l'application (Build process, stockage centralisé)
+2. Remise en place du serveur ( Remise en place du serveur à l'aide d'un kickstart + configuration de la machine **puppet**)
+3. Déploiement de l'environnement avec les bonnes configuration ( Déploiement de l'application **ansible** )
+4. Potentiellement la restauration de la BD.
 
-back on business
-
-
+Vous êtes de nouveau en production, bon c'est une version très simpliste d'une réalité beaucoup plus catastrophique mais l'objectif et de mettre en lumière la reproductibilité du déploiement.
 
 ### Une Documentation généré automatiquement (Optionel)
 
+Continuons avec ce qui est plus une recommandation qu'une obligation, cependant ceci s'inscrit dans la philosophie DevOps, j'ai de l'information "brute" comment puis je capitalisé au maximum sur ces dernières pour que le travail ce réalise "tous seul". Parlons de documentation, même moi qui aime en faire , parfois j'oublie ou ne réalise pas une petite modification. 
+
+Prenons un cas simple, j'ai une application , je change 1 des serveurs applicatifs pour une machine plus puissante par exemple. Donc nouveau hostname, ip , version de l'OS , ... Si j'ai une page décrivant l'architecture de l'application dans le wiki ou autre , est-ce que je vais pensé à la mettre à jour. Malheureusement il y a de grande chance pour que j'oublie ce point. 
+Pourtant l'ensemble de l'information est connu , dans ma définition de l'application au niveau de mes outils **puppet** , **ansible** , ... La documentation devrais donc être auto généré afin d'assurer l'intégrité de l'information. Comme je vais faire la modification dans mes outils pour pousser la configuration c'est certain que je vais y pensé :D . 
+
+Bien entendu le point est de capitalisé au maximum sur ce que j'ai en place. Encore une fois une documentation à jour ça a beaucoup de valeur et l'avantage est que nous capitalisons sur cette fonctionnalité rapidement dans le temps. 
+
 ### Libre Service (Optionel)
+
+Toujours hors cadre, mais bon si on peut pas prendre position lors du formation libre , quand pourrions nous le faire !
+
+Donc nous avons mis en place plein de système automatisés, le déploiement des environnements Dev , QA, ... L'information des systèmes sont mis dans un système centralisé pour l'analyse , ... 
+L'ensemble est probablement pas totalement "bullet proof" en d'autre terme sans erreur ou à l'épreuve d'erreur d'entré d'information , mais ça fonctionne. Assez pour que vous l'utilisiez ! 
+
+Donc maintenant la question , est-ce vraiment pertinent que l'on vous emmerde pour faire un déploiement en Dev ou en QA ? J'exclus la production et la pré-production, mais encore une fois ceci peut varier selon votre organisation ! Si vous arrivez plus tard le matin et que les Dev attentes après vous pour déployé sur un environnement , on vous saute dessus à votre arrivé même pas le temps de prendre votre café tranquille. Quand vous partez en vacance, les gens transpire car il ne savent pas faire les tâches eux même ... 
+
+En déléguant ou en fournissant la possibilité au gens de le faire eux même :
+
+1. Ceci réduit votre charge de travail pour que vous puissiez travailler sur d'autre tâche d'automatisation 
+2. Vous rendez vos utilisateurs plus heureux, car de nos jours les gens ne veulent pas attendre après les gens :P 
+3. Vous avez des utilisateurs qui testes vos applications et vous rapporte des __bugs__ pour les améliorer, pour les personnes qui se disent ouin mais mon script est pas près ... Blablabla ... Nos stress faîte comme Microsoft tu sors l'application plein de bugs puis après tu patchs, on dira ce que l'on veut de Bill Gates mais au moins il a éduqué l'utilisateur. De nos jours personne s'attend à ce qu'un nouveau programme fonctionne bien :D ( Thanks Bill ) 
+
+Bien entendu ceci s'applique aussi pour la visualisation des logs, c'est vraiment ennuyeux de recevoir un courriel , est-ce possible de me transmettre les logs de telle serveurs ? Avec **splunk** , **ELK** ou peu importe la solution tu peux lui dire va y tous seul !! Puis ce qui est magnifique si le gars ou la fille rentre le matin à 7:00 du matin , la personne te fera pas chier si tôt si c'est une urgence, elle le consultera toute seule.
+
+# Conclusion et défie 
+
+Évolution 
+processing power 
+L'équipe de sécurité 
