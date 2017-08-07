@@ -457,8 +457,25 @@ En déléguant ou en fournissant la possibilité au gens de le faire eux même :
 
 Bien entendu ceci s'applique aussi pour la visualisation des logs, c'est vraiment ennuyeux de recevoir un courriel , est-ce possible de me transmettre les logs de telle serveurs ? Avec **splunk** , **ELK** ou peu importe la solution tu peux lui dire va y tous seul !! Puis ce qui est magnifique si le gars ou la fille rentre le matin à 7:00 du matin , la personne te fera pas chier si tôt si c'est une urgence, elle le consultera toute seule.
 
-# Conclusion et défie 
+# Conclusion
 
-Évolution 
-processing power 
-L'équipe de sécurité 
+En conclusion sans reprendre l'ensemble des concepts essentiel est d'être plus réactif pour la mise en place des nouvelles fonctionnalité et plus efficace en cassant le mur de l'incompréhension entre le développement et les opérations ! Le tous en augmentant le niveau de confiance des opérations ainsi que l'autonomie des développeurs. 
+
+**L'augmentation de la confiance** en mettant en place des outils sur l'ensemble du cycle de développement et au augmentant la visibilité sur l'état du service.
+**Accroitre l'autonomie des développeurs** en leurs fournissant des outils adéquat.
+
+Comme nous l'avons vue ceci suit la logique du besoin des entreprises , pour accroitre la compétitivité et la productivité ! 
+
+Pour ceux qui on peur pour leur emploie , dites vous que réalisé l'ensemble prendra du temps , beaucoup de temps et une fois terminé il y aura un autre produit un autre département qui aura besoin de vous pour réaliser ce type de déploiement. Vous ne serez pas en manque de travail , loin de là . 
+
+Parlons du temps pour la mise en place de l'ensemble , prenez garde de ne pas vouloir tous faire d'un coup et vous mettre trop de charge. Il est important de mettre en place l'automatisation pour les sections les plus couteuse en temps ou en gestion d'erreur ( humaine ) . Par la suite posez une brique à la fois et prenez le temps de vous retournez de temps en temps pour admirer le travail. Ne succombez pas au découragement , prenez le temps d'admirer le travail réalisé et de planifier la prochaine étape. Ce sera long, mais le résultat n'en sera que plus agréable.
+
+## Défie
+
+Les défies pour les DevOps sont nombreux , premièrement réalisé l'ensemble, en d'autre mot , finir car malheureusement il est parfois jugé non prioritaire de continuer. Un des défies est l'ensemble de l'aspect de la sécurité, car nous avons un nombre élevé de fonctionnalité à mettre en place et le temps n'est pas toujours entièrement disponible. Bien entendu nous sommes humain donc certains aspect sont moins bien réalisé par exemple la sécurité , une petite image pour sourire :
+
+![](./imgs/devops-vs-sec.jpg)
+
+Nous devons, nous assurer que la sécurité n'est pas mise en péril par nos méthodes de travail. 
+
+Ce changement de travail apportera sont lot de changement de les méthodes de travail, vous aurez aussi de la résistance de la part des développeurs , des opérateurs assurez vous de bien expliquer pourquoi et de montrer la lumière au bout. Même en réalisant cela , vous aurez des levé de bouclier à vous de gérer.
