@@ -52,16 +52,147 @@ x3rus-formations $ rm /tmp/unFichier
 
 Bien entendu le **sticky bit** peut être assigné à n'importe quelle répertoire
 
-## SetGID 
+## SetGID et SetUID
 
+Ces flags auront un comportement différent s'il est attribué à un répertoire ou un fichier. Il est important de soulever que l'application de cette configuration peut être un soucis de sécurité ... Donc prenez le temps de bien comprendre la situation . Nous allons débuter avec un fichier puis voir pour un répertoire :
+
+### SetGid sur un Fichier
+
+Pour rappel par défaut quand un processus est lancé par un utilisateur , ce dernier est exécuté sous le nom de l'utilisateur et il aura l'ensemble des permissions en terme de groupe auquel il est membre. 
+
+De plus lors de la création de fichier l'utilisateur propriétaire sera , l'utilisateur (oui je sais impressionnant :P ) et le groupe primaire de l'utilisateur ! Le groupe est souvent ennuyeux selon la situation . 
+
+L'utilisation du **setGID** vous permettra de force un groupe qui sera utiliser à l'exécution . Je vais faire une démonstration , voici un petit script c [sleep-write-file.c](./code/sleep-write-file.c) :
+
+```c
+ #include<stdio.h>
+ #include <unistd.h>
+
+int main()
+{
+        printf("start App and wait");
+        sleep(10);
+
+        FILE *fp;
+        fp=fopen("/tmp/test-bin.txt", "w");
+        fprintf(fp, "Testing...\n");
+        fclose(fp);
+
+        printf("Fin...");
+}
+```
+
+Le script fait pas grand chose il démarre , attend 10 seconde , ouvre un fichier en écriture et écrit Testing dedans. Je vais le compiler et l'exécuter normalement pour voir le comportement avant et après l'assignation du **setGID**.
+
+```bash
+$ gcc -o a sleep-write-file.c
+$ ls -l a
+-rwxr-xr-x 1 x3rus x3rus 8664 Aug 10 08:23 a
+$ ./a
+start AppWait ...Fin...
+$ ls -l /tmp/test-bin.txt
+-rw-r--r-- 1 x3rus x3rus 11 Aug 10 08:24 /tmp/test-bin.txt
+```
+
+Pour le moment normale exactement le comportement attendu , maintenant je vais lister les groupes qui m'appartienne et assigne le setgid au fichier pour le groupe tty :
+
+```bash
+$ id                          
+uid=1000(x3rus) gid=1000(x3rus) groups=1000(x3rus),3(sys),4(adm),10(wheel),19(log),994(docker)
+```
+
+Comme on peut le voir mon groupe primaire et le même que mon utilisateur et je n'ai PAS le groupe **tty** dans mes permissions 
+
+```bash
+$ sudo chown :tty a
+$ ls -ld a                    
+-rwxr-xr-x 1 x3rus tty 8664 Aug 10 08:23 a 
+$ sudo chmod g+s a
+$ ls -la a                    
+-rwxr-sr-x 1 x3rus tty 8664 Aug 10 08:23 a
+```
+
+Évidement vous allez voir le comportement tous le monde ne peut pas changer les permissions pour cette opération les risques serait trop grand :P .
+C'est partie pour l'exécution
+
+```bash
+$ rm /tmp/test-bin.txt
+$ ./a                         
+start AppWait ...Fin...
+$ ls -ld /tmp/test-bin.txt 
+-rw-r--r-- 1 x3rus tty 11 Aug 10 08:28 /tmp/test-bin.txt
+```
+
+Comme nous pouvons le voir le fichier est propriétaire de l'utilisateur et d'un groupe auquel il n'est pas membre **tty** dans le cas présent, car le processus fut exécuter avec ce groupe comme primaire. 
+
+* Utilisation possible :
+    * Permettre l'exécution d'un programme sans offrir l'ensemble des permissions du groupe , ce qui donnerai accès à l'ensemble des fichiers traiter par l'application
+    * Réaliser un wrapper pour docker , vous ne voulez pas leur permettre d'exécuter n'importe que en étant dans le groupe .
+* Alternative :
+    * Utiliser sudo , le problème est que sudo est au niveau de l'utilisateur et non le groupe , mais au moins vous avez une traçabilité dans la logs.
+
+Vous pouvez voir les fichiers qui ont se flags sur votre système en utilisant la commande __find__.
+
+```bash
  $ sudo find  / -perm -g+s      
- find: ‘/run/user/1000/gvfs’: Permission denied                                 
- find: ‘/proc/4567/task/4567/fd/6’: No such file or directory
- find: ‘/proc/4567/task/4567/fdinfo/6’: No such file or directory
- find: ‘/proc/4567/fd/5’: No such file or directory                                                                                                            find: ‘/proc/4567/fdinfo/5’: No such file or directory                         
- /srv/docker/x3-gitlab/gitlab/data/git-data/repositories
- /srv/docker/x3-gitlab-f/gitlab/data/git-data/repositories
- /srv/docker/x3-gitlab-f2/gitlab/data/git-data/repositories
  /usr/bin/wall
  /usr/bin/locate
+```
 
+* Pourquoi j'ai fait une application C qui a généré un binaire et pas un script bash ou python :P ?
+
+Ce n'est pas pour le plaisir au contraire :P , le problème est que ça ne fonctionne pas avec un script :P . La raison est simple si nous reprenons le même script en bash [sleep-write-file.sh](./code/sleep-write-file.sh). 
+
+Le première ligne est comme ceci : 
+
+> #!/bin/bash
+
+Résultat il démarre l'interpréteur de commande , qui va lire le contenue du fichier , donc ce devrait être lui à changer mais l'impacte est trop grand. De plus ceci augmenterai significativement les risques au niveau de sécurité qu'une personne modifie le contenue.
+
+
+### SetUid sur un Fichier
+
+Le concept pour le **setUID** est exactement le même mais sur un fichier , je ne vais que faire la démonstration .
+
+```bash
+$ getent passwd http
+http:x:33:33:http:/srv/http:/usr/bin/nologin
+$ id http
+uid=33(http) gid=33(http) groups=33(http)
+
+$ sudo chown http a 
+$ sudo chmod u+s a
+$ ls -l a                     
+-rwsr-xr-x 1 http x3rus 8664 Aug 10 08:23 a 
+```
+
+Nous allons réalisé l'exécution :
+
+```bash
+
+$ ./a
+
+[ ... Dans un autre terminal ... ] 
+
+$ ps aux | grep '/a'           
+http     11984  0.0  0.0   4192   600 pts/2    S+   08:40   0:00 ./a
+
+$ ls -l /tmp/test-bin.txt 
+-rw-r--r-- 1 http x3rus 11 Aug 10 08:41 /tmp/test-bin.txt
+```
+
+Nous voyons clairement que le processus ./a est exécuté avec l'utilisateur **http** et que le groupe est x3rus car c'est ce que le fichier générer nous indique et non le groupe primaire de l'utilisateur http. Bien entendu il est possible de combiné setUID et setGID 
+
+```bash
+$ sudo chown :tty a
+$ sudo chmod u+s a
+$ sudo chmod g+s a
+$ ls -la a                    
+-rwsr-sr-x 1 http tty 8664 Aug 10 08:23 a
+$ ./a                         
+start AppWait ...Fin...
+$ ls -la /tmp/test-bin.txt    
+-rw-r--r-- 1 http tty 11 Aug 10 08:44 /tmp/test-bin.txt
+```
+
+C'est magique :P 
