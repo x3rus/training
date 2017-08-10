@@ -1,0 +1,15 @@
+version: '2'
+services:
+    jenkins:
+      image: jenkins/jenkins
+      container_name : 'x3-jenkins-f'
+      hostname: jenkins.train.x3rus.com
+      environment:
+        - TZ=America/Montreal
+      volumes:
+        - "/srv/docker/x3-jenkins-f/jenkins-data:/var/jenkins_home"
+      # ports:
+      #- 8080:8080   # Web interface
+      #- 50000:50000 # Build Executors
+
+
