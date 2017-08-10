@@ -196,3 +196,80 @@ $ ls -la /tmp/test-bin.txt
 ```
 
 C'est magique :P 
+
+### SetGid sur un répertoire
+
+Le comportement sur un fichier de type répertoire est différent , l'opération aura pour but de conserver le propriétaire groupe ou utilisateur lors de la création d'un fichier .  Voyons un exemple :
+
+```bash
+x3rus $ cd /tmp
+x3rus $ mkdir toto
+x3rus $ chmod 777 toto/
+x3rus $ ls -ld toto
+drwxrwxrwx 2 x3rus x3rus 40 Aug 10 16:58 toto/ 
+
+x3rus-formations $ cd /tmp/toto
+x3rus-formations $ touch fichier-par-autre-utilisateur 
+x3rus-formations $ ls -ld fichier-par-autre-utilisateur                                
+-rw-r--r-- 1 x3rus-formations x3rus-formations 0 Aug 10 17:01 fichier-par-autre-utilisateur
+```
+
+Le système ce comporte comme il se doit donc le fichier appartiens à l'utilisateur et son groupe primaire , cependant le résultat peut ne pas être idéal surtout si on veut conservé le groupe propriétaire . Nous pouvons donc utiliser le setGid pour que le groupe assigné au répertoire précédent soit conservé .
+
+```bash
+x3rus $ chmod g+s toto/
+x3rus $ ls -ld toto/
+drwxrwsrwx 2 xerus xerus 60 Aug 10 17:01 toto/
+
+x3rus-formations $ touch avec-le-setgid
+x3rus-formations $ ls -ld avec-le-setgid
+-rw-r--r-- 1 x3rus-formations xerus 0 Aug 10 17:04 avec-le-setgid
+```
+
+Super malheureusement ça ne fonctionne qu'avec les fichiers de type fichier et non répertoire en fait ça va fonctionné mais le setgid n'est pas réactivé dans les sous répertoires, démonstration :
+
+```bash
+x3rus-formations $ ls -ld .
+drwxrwsrwx 2 xerus xerus 80 Aug 10 17:04 . 
+
+
+x3rus-formations $ mkdir unRepertoire
+x3rus-formations $ ls -ld unRepertoire
+drwxr-sr-x 2 x3rus-formations xerus 40 Aug 10 17:06 unRepertoire
+
+x3rus-formations $ cd unRepertoire
+x3rus-formations $ touch rien 
+x3rus-formations $ ls -ld rien 
+-rw-r--r-- 1 x3rus-formations xerus 0 Aug 10 17:06 rien 
+```
+
+En fait ça fonctionne **WOOWWW** c'est nouveau :P , avant c'était un problème :P 
+
+* Une alternative est d'utiliser les ACL Linux pour les fichiers qui inclue l'assignation de permission et de propriétaire et ceci en mode héritage aussi 
+
+### SetUid sur un répertoire
+
+Cette opération n'est pas possible , ce n'est pas interprété , voici un exemple :
+
+```bash
+x3rus $ cd /tmp
+x3rus $ mkdir toto-user
+x3rus $ chmod 777 toto-user
+x3rus $ chmod u+s toto-user
+
+x3rus-formations $ cd /tmp/toto-user
+x3rus-formations $ touch avec-setuid
+x3rus-formations $ ls -ld avec-setuid
+-rw-r--r-- 1 x3rus-formations x3rus-formations 0 Aug 10 17:09 avec-setuid
+```
+
+Même avec root ça ne fonctionne pas 
+
+```bash
+root $ cd /tmp/toto-user/
+root $ touch avec-root
+root $ ls -ld avec-root
+-rw-r--r-- 1 root root 0 Aug 10 17:10 avec-root
+```
+
+* Dans le cas présent l'alternative est d'utiliser les ACL Linux pour les fichiers qui inclue l'assignation de permission et de propriétaire et ceci en mode héritage aussi 
