@@ -193,4 +193,78 @@ Une fois cliquez sur **OK** vous aurez l'ensemble des possibilités de configura
 
 **RAPPEL** : il est probable que vous ayez plus ou moins de champs du à la mise en place de plugins ! (C'est le dernier avertissement :P)
 
+Nous avons donc plusieurs section :
+
+* **General** : Regroupant les informations global de la tâches , description et autre
+* **Source code Management** : Il est possible , mais non obligatoire que votre job récupère depuis un dépôt Subversion, git , etc des scripts ou des données.
+* **Build Triggers** : Ceci permet d'indiquer qu'est-ce qui déclenchera l'exécution de la tâche , nous y reviendrons 
+* **Build Environments** : Spécification de l'environnement de build , nous y retrouverons des variables et autre permettant de définir le contexte du build.* **Build** : La tâche proprement dite , donc les commandes et instruction de la job
+* **Post-build Action** : Définition de la tâche quand la job est terminé , nous verrons que nous allons pouvoir par exemple indiquer au système que si le build à bien fonctionné de poussé le résultat dans une voûte ou un docker registry ... 
+
+Ce sont les grosses étapes d'une tâche Jenkins , regardons les en détail en réalisant un job. Je vous préviens ne je vais pas couvrir chaque petit option mais celle que je juge importante . De plus je pense que ce sera plus pertinent de réaliser une job et de la modifier en cours de route plutôt que de descendre la page et expliquer le fonctionnement. 
+
+#### Au plus simple 
+
+Nous allons laisser l'ensemble des options par défaut et modifier les paramètres et option au fur et à mesure de la découverte. 
+
+Donc allons directement à l'étape de build , vous pouvez cliquer sur l'onglet en haut **build**.
+Nous allons ajouter une étape , je vais sélectionner **Execute shell**, pour garder ça simple mais honnêtement c'est principalement ce que j'utilise.
+
+![](./imgs/07-2-setup-job-add-build.png)
+
+Et je vais mettre une petite job simple qui affiche l'heure et le type de CPU de la machine de build, si vous vous dites c'est null oui je sais mais je manque d'imagination . :P
+
+Donc voici la commande :
+
+```bash
+$ cat /proc/cpuinfo  | grep 'model name'  | uniq
+```
+
+Et le résultat dans Jenkins :
+
+![](./imgs/07-3-setup-job-build-cmd.png)
+
+On peut pas dire que c'est bien différent d'un script bash classique , nous avons l'interpréteur de commande au début et la / les commandes. Nous sauvegardons puis on se réjouit du résultat !
+
+Il suffit de cliquer sur **Build NOW** .
+
+![](./imgs/07-4-setup-job-run-build.png)
+
+Nous cliquez sur le bouton et maintenant il y a dans la boite **build history** , le build __#1__, il faut sélectionner le build et cliquer sur console pour voir le résultat :
+
+![](./imgs/07-5-setup-job-view-build-result.png)
+
+Et voilà le résultat 
+
+![](./imgs/07-5-setup-job-view-build-result-consol.png) 
+
+Nous voyons donc le résultat , il pourrait être plus beau mais bon ... c'est exactement comme dans la console :D. Pas de panique la complexité arrive cependant le point important de cette partie est que n'importe quelle script devrais fonctionner si l'ensemble des commandes sont présente sur la machine où le build sera réalisé. 
+
+En d'autre mot , si vous utilisez python3 et que ce dernier n'est pas présent sur la machine de build ça ne passera pas ... Je sais c'est étrange :P.
+
+
+#### Du simple un peu dynamique
+
+Bon c'est cool, mais bon vos scripts ne sont pas si statique , il y a toujours des paramètres à fournir puis personne ne veut écrire les valeurs en dure dans le script qui est fournit . Introduisons le concept de variables ... Nous retourne dans la section configuration ...
+
+Dans la section **General** vous avez l'option **This project is parameterized** , vous allons donc pouvoir fournir des paramètres.
+
+Nous allons pouvoir ajouter plusieurs type de paramètres :
+
+![](./imgs/07-6-setup-job-type-of-parameter.png)
+
+Dans mon cas je ne vais définir 2 type :
+
+* **string** :  Nous allons écrire le résultat de l'opération dans un fichier qui sera passé en paramètre
+* **boolean** : Juste pour en mettre un deuxième :P , qui indiquera si oui ou non on crée un fichier ou juste l'afficher à l'écran :D
+
+Voici le résultat de la définition :
+
+![](./imgs/07-7-setup-job-define-parameter.png)
+
+Et nous allons modifier le code pour les utiliser 
+
+TODO 
+
+
 
