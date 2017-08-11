@@ -36,11 +36,11 @@ Dans la pratique le serveur Jenkins peut être aussi être utilisé comme slave,
 
 Telle que mentionné plus tôt le nombre de plugins sont impressionnant : [https://plugins.jenkins.io/](https://plugins.jenkins.io/)
 
-# Installation de Jenkins 
+## Installation de Jenkins 
 
 Bon nous orientons surtout la formation sur la pratique donc débutons avec l'installation , honnêtement je suis super paresseux et depuis l'arrivée **docker** ça n'a pas arrangé les choses. En d'autre mot je suis un bon DevOps / sysadmin :D , la paresse est un art mais demande beaucoup de temps pour la mettre en place :D. Nous réaliserons donc l'installation avec un conteneur !!
 
-## Installation avec Docker
+### Installation avec Docker
 
 Bon voilà le problème en ce moment avec **docker** et les images officiel parfois elle ne sont plus disponible :-/ , originalement il y avait [https://hub.docker.com/_/jenkins/](https://hub.docker.com/_/jenkins/) , mais si vous regardez la page il y a le message :
 
@@ -157,3 +157,40 @@ Nous installerons les plugins suggérer quand on débutte ces toujours une bonne
 * Prêt à jouer :D 
 
 ![](./imgs/04-initialisation-jenkins-pret-a-usage.png)
+
+Cette installation est simpliste mais fonctionnel , avant de voir comment nous allons pouvoir améliorer notre déploiement pour que ce soit plus complet lors du démarrage prenons le temps de comprendre ce que nous allons vouloir d'inclus dans le déploiement. Nous couvrirons donc cette partie dans la section [Amélioration de l'installation](#Amélioration de l'installation).
+
+# 
+
+## Tour d'horizon de Jenkins 
+
+
+Si nous reprenons la page d'accueil du logiciel :
+
+![](./imgs/05-home-jenkins.png)
+
+* **New Item** : Parfois on appel ça job , parfois item , j'ai voulu le mettre sous le projecteur
+* **Manage Jenkins** : Même raison , quand on vient de déployer une application et que l'on veut voir les options de configuration disponible , le voir tous de suite c'est cool :D.
+* **Agent / slave** :  Telle que mentionné pour le moment nous utiliserons le serveur Jenkins comme **orchestrateur** et serveur d'exécution , mais lorsque nous allons avoir d'autre slave nous aurons une plus grande liste !
+
+Nous allons faire une petite job très simple pour voir le comportement et les options , avant de voir les paramètres disponible , je crois qu'une présentation de ce que peux faire Jenkins est idéal . Plusieurs d'entre vous connaisse déjà le produit ce sera une révision et pour les autres ça permettra de mettre tous le monde à peu près sur le même pied.
+
+### Création d'un Tâche simple
+
+* Cliquez sur **new item** .
+
+![](./imgs/06-creation-job-selection-type.png)
+
+Vous devez choisir le type de projet que vous désirez , si vous avez déjà un serveur Jenkins dans votre organisation et que la liste et plus ou moins longue sachez que la mise en place de plugins change le comportement de Jenkins donc ne vous étonnez pas. Le premier exemple qui me vient à l'esprit est que vous aurez peut-être l'option de faire la création d'un projet **Maven** qui n'est pas lister ici. 
+
+* Vous devez attribuer un nom à la job , ici : **demo-tache-simple**
+
+Dans notre cas nous allons faire quelques chose des très simples , nous allons sélectionner **Freestyle project**, ceci nous laissera les mains libre pour faire **n'importe quoi** quelque chose de bien ou de mal :P. 
+
+Une fois cliquez sur **OK** vous aurez l'ensemble des possibilités de configuration , si vous regardez la configuration est structuré par section :
+
+![](./imgs/07-1-setup-job-tabs.png)
+
+**RAPPEL** : il est probable que vous ayez plus ou moins de champs du à la mise en place de plugins ! (C'est le dernier avertissement :P)
+
+
