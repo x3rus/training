@@ -361,5 +361,89 @@ Si nous retournons à la job vous pouvez définir un **Post-build Actions** :
 
 ![](./imgs/08-5-job-email-notification.png)
 
+#### L'espace de travail ou workspace 
 
-ICI ICI ICI
+Dans un des exemples j'ai réalisé l'écriture dans un fichier , dans la configuration du paramètre j'ai bloquer la possibilité de définir un chemin contenant un **/** donc le répertoire sera dans le répertoire courent. Bien entendu la question est il est où ? 
+
+L'ensemble des tâches sous Jenkins sont exécuté dans un espace de travail , en anglais __workspace__ . Vous pouvez le consulter et le télécharger depuis l'interface de Jenkins.
+
+![](./imgs/09-workspace.png)
+
+Comme vous pouvez le voir vous pouvez aussi supprimer le contenu de l'espace du travail en un clique. Ceci est parfois requis , car par défaut il n'y a pas de suppression de l'espace de travail , ce dernier est conserver et les données s'ajoute, lors d'un processus de compilation ceci peut faire gagner du temps mais aussi causer des problèmes. 
+
+Comme vous pouvez le voir sur la copie d'écran j'avais fait une erreur avec un nom de fichier contenant de **-** , le fichier __-NAME-2-WRITE__. 
+
+Mais il est où ? :P 
+
+Ce répertoire de travail peut être configurable que ce soit sur le serveur __master__ ou __slave__ , regardons par défaut sur le conteneur .
+
+```bash
+$ # répertoire contenant l'ensemble de la configuration de Jenkins
+$ docker exec  x3-jenkins-f ls /var/jenkins_home
+config.xml
+copy_reference_file.log
+hudson.model.UpdateCenter.xml
+hudson.plugins.emailext.ExtendedEmailPublisher.xml
+hudson.plugins.git.GitTool.xml
+identity.key.enc
+init.groovy.d
+jenkins.CLI.xml
+jenkins.install.InstallUtil.lastExecVersion
+jenkins.install.UpgradeWizard.state
+jobs
+logs
+nodeMonitors.xml
+nodes
+plugins
+queue.xml.bak
+secret.key
+secret.key.not-so-secret
+secrets
+updates
+userContent
+users
+war
+workflow-libs
+workspace
+
+$ # répertoire de l'espace de travail
+$ docker exec  x3-jenkins-f ls -l /var/jenkins_home/workspace         
+total 4                                
+drwxr-xr-x 2 jenkins jenkins 4096 Aug 11 17:40 demo-tache-simple 
+
+$ # et voilà 
+$ docker exec  x3-jenkins-f ls -l /var/jenkins_home/workspace/demo-tache-simple                                                                      
+total 8                                
+-rw-r--r-- 1 jenkins jenkins 54 Aug 11 17:39 -NAME-2-WRITE                     
+-rw-r--r-- 1 jenkins jenkins 54 Aug 14 08:21 toto   
+```
+
+Comme nous avons exporté le répertoire __/var/jenkins\_home__ du conteneur normalement ce répertoire est aussi disponible directement sur votre file système sans passer par le conteneur ! Et j'espère que vous l'avez fait sinon à la prochaine mise à jour vous perdrez vos configurations :D.
+
+### Quelque paramètre intéressant 
+
+Maintenant que nous avons une petite compréhension simpliste de ce que fait une job, prenons le temps de regarder les autres options disponible de la tache.
+
+* **Section général**
+    * **Discard old builds** :
+        Comme vous avez pu le voir le système conserve les informations sur les builds antérieur , le problème est que ça prendra de la place puis surtout il est possible que vous n'en avez rien à faire de se qui fut réalisé il y a + de 7 jours. De même après 10 build peut importent le contenu des vieux , il est donc possible de définir une rotation / suppression. **ATTENTION** ceci est traité lors de l'exécution d'une build , en d'autre mot si vous avez 20 build en historie et que vous activé cette configuration il ne va pas faire le traitement de nettoyage il faudra attendre la prochaine exécution.
+        ![](./imgs/10-1-parametre-discard-old.png)
+
+* **Source Code Management**
+    * C'est le prochain sujet, donc pas ça arrive .
+
+* **Build Triggers**
+    * **Trigger builds remotely (e.g., from scripts)** : 
+        Nous prendrons un peu de temps pour voir cette possibilité plus tard avec un exemple concret , cependant il est possible d'appeler la page Jenkins avec un TOKEN secret pour faire l'appel de la tâche très intéressant lors de la mis en place d'intégration tous en conservant une visibilité
+    * **Build periodically** : 
+        Permet de définir sous la forme de la syntaxe de **cron** une période d'exécution, une chose que je trouve intéressant avec cette méthode est que nous avons la possibilité d'avoir la tâche planifier et nous permettons à l'utilisateur de l'exécuter manuel quand il veut. De plus comme il voit si c'est en cours il ne pourra pas l'exécuter de manière simultané :D.
+
+* **Build Environment**
+    * **Delete workspace before build starts**:
+        Il est possible d'indiquer au processus de build de supprimer l'espace de travail avant de débutter le processus, il est même possible en cliquant sur advance de définir un pattern . Donc vous ne supprimer pas tous, mais uniquement un type de fichier, il est aussi possible d'utiliser une variables d'environnement pour l'avoir configurable.
+        ![](./imgs/10-2-delete-workspace-advance.png)
+    * **Abort the build if it's stuck**:
+        Définition de ce qui doit ce produire si la tâche ne progresse plus et oui parfois notre code contient des erreurs que faire alors ? Attendre indéfiniment ou l'arrêter ?!?! Tous comme pour l'avantage de la configuration du cron dans Jenkins ceci à l'avantage de ne pas être requis dans votre script . Vous laissez cette tâche ingrate à Jenkins :D.
+        ![](./imgs/10-3-build-stuck-so.png)
+    * **Add timestamps to the Console Output**:
+        Très bien ça surtout pour les tâches longue , car elle permet de voir l'évolution du script dans le temps directement dans le log de la console.
