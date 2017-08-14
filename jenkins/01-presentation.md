@@ -160,7 +160,6 @@ Nous installerons les plugins suggérer quand on débutte ces toujours une bonne
 
 Cette installation est simpliste mais fonctionnel , avant de voir comment nous allons pouvoir améliorer notre déploiement pour que ce soit plus complet lors du démarrage prenons le temps de comprendre ce que nous allons vouloir d'inclus dans le déploiement. Nous couvrirons donc cette partie dans la section [Amélioration de l'installation](#Amélioration de l'installation).
 
-# 
 
 ## Tour d'horizon de Jenkins 
 
@@ -264,7 +263,103 @@ Voici le résultat de la définition :
 
 Et nous allons modifier le code pour les utiliser 
 
-TODO 
+
+Voici le code :
+
+```bash
+ #!/bin/bash
+ #
+ # Description : un exemple de script
+ #########################################
+
+echo " debut script : "
+
+echo "Valeur de B_MUST_WRITE : $B_MUST_WRITE "
+echo "Valeur de FILE_NAME_2_WRITE : $FILE_NAME_2_WRITE "
+
+if [ "$B_MUST_WRITE" == "false" ] ; then
+
+    cat /proc/cpuinfo  | grep 'model name'  | uniq
+else
+    cat /proc/cpuinfo  | grep 'model name'  | uniq > $FILE_NAME_2_WRITE 
+fi
+``` 
+
+![](./imgs/07-8-setup-job-code-with-parameter.png)
+
+Le résultat lors de l'exécution :
+
+![](./imgs/07-9-setup-job-build-with-parameter.png)
+
+Comme vous pouvez le voir l'ensemble des arguments / paramètres fournit sont des variables d'environnement au script ce qui permet de faire la manipulation simplement. Jenkins offre plusieurs variables d'environnement , si vous regardez en bas de la boite pour saisir votre code vous avez le lien : __See the list of available environment variables__ en cliquant dessus vous aurez la liste . Nous y reviendrons avec un cas concret ...
+
+#### Gestion du paramètre et visualisation de l'erreur
+
+Pour terminer ce cas simple nous allons ajouter une validation pour le nom du fichier , je ne veux pas que les utilisateurs puisse définir un full __PATH__ avec des __/__ , sinon il risquerait de pouvoir définir un chemin d'un fichier système. Bon honnêtement j'exagère sur le niveau de risque, car le service Jenkins n'est pas exécuté comme **root**, mais bon pas toujours facile de trouver des exemples :P , a vous d'extrapoler pour votre usage.
+
+Voici le résultat du nouveau code :
+
+```bash
+ #!/bin/bash
+ #
+ # Description : un exemple de script
+ #########################################
+
+echo " debut script : "
+
+echo "Valeur de B_MUST_WRITE : $B_MUST_WRITE "
+echo "Valeur de FILE_NAME_2_WRITE : $FILE_NAME_2_WRITE "
+
+if [ "$B_MUST_WRITE" == "false" ] ; then
+
+	cat /proc/cpuinfo  | grep 'model name'  | uniq
+else
+	
+   	if echo $FILE_NAME_2_WRITE | grep -q '/' ; then
+    	echo "Le nom du fichier ne peut pas conteneur de / "
+        echo "c'est pour ne pas que vous ecriviez partout :P !!! "
+    	exit 1
+    else 
+		cat /proc/cpuinfo  | grep 'model name'  | uniq > $FILE_NAME_2_WRITE 
+    fi
+fi
+```
+
+Rien de très compliqué si vous réalisez déjà un peu de __scripting__ , Si nous utilisons la job pour afficher à l'écran donc sans coché l'option d'écrire dans un fichier :
+
+* Cas 1 : affichage à l'écran , pas de paramètre :
+    ![](./imgs/08-1-exemple-cas-parameter-B.png)
+    ![](./imgs/08-1-exemple-cas-parameter-A.png)
+* Cas 2 : Écriture dans un fichier , pas d'erreur :
+    ![](./imgs/08-2-exemple-cas-parameter-B.png)
+    ![](./imgs/08-2-exemple-cas-parameter-A.png)
+* Cas 3 : Écriture dans un fichier , mais mauvais non de fichier :
+    ![](./imgs/08-3-exemple-cas-parameter-B.png)
+    ![](./imgs/08-3-exemple-cas-parameter-A.png)
+
+De plus lors de l'affichage général de la tâche vous aurez le statu de l'ensemble des jobs.
+
+![](./imgs/08-4-job-status.png) 
+
+Vous savez comme moi que peu importe la qualité de votre script , même s'il est le plus merveilleux du monde et qu'il fait tous SUPER bien , quand vous dites à certaine personne d'ouvrir une console et de démarrer le script sur la ligne de commande ça bloque !!! 
+L'inquiétude , la peur , le stress de pas saisir la bonne chose , l'angoisse de ne pas savoir si ça a bien fonctionner , etc je présume que la liste peu être longue. 
+
+Avec Jenkins ceci vous offre la possibilité de réaliser une "interface" simple pour l'utilisateur pour démarrer l'exécution de la tâche !
+
+Comme vous pouvez le voir Jenkins utilise le code de retour du script pour savoir si l'exécution c'est passé adéquatement :
+
+* 0 == Pas de problème 
+* n == n'importe quelle autre valeur problème !!
+
+Pour la visualisation du problème vous pouvez en plus configurer la tâche pour qu'elle transmettre un courriel au personne afin de les aviser du problème.
+Ceci est SUPER pour les tâches automatisé que l'on regarde jamais :P .
+
+Si nous retournons à la job vous pouvez définir un **Post-build Actions** :
+
+1. **Add post-build action**
+2. Sélectionnez **E-mail Notification**
+
+![](./imgs/08-5-job-email-notification.png)
 
 
-
+ICI ICI ICI
