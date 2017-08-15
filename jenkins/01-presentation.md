@@ -447,3 +447,30 @@ Maintenant que nous avons une petite compréhension simpliste de ce que fait une
         ![](./imgs/10-3-build-stuck-so.png)
     * **Add timestamps to the Console Output**:
         Très bien ça surtout pour les tâches longue , car elle permet de voir l'évolution du script dans le temps directement dans le log de la console.
+
+## Tour d'horizon de la configuration de Jenkins 
+
+On peut pas dire que l'on maitrise Jenkins a ce stade cependant, nous avons une légère petite meilleur compréhension de ce que l'on peut faire , j'étais dans un problème d'œuf ou la poule. Montrer la configuration sans savoir les conséquences ou mettre en place une tâche sans la configuration, comme vous pouvez le constater j'ai fait un choix :D. 
+
+Revenons donc sur les configurations possible, encore une fois, j'ai une configuration minimal, très peu de plugins . Il est donc possible d'augmenter le nombre de fonctionnalité, nous en verrons quelques une par la suite.
+
+Pour accéder à la configuration dans le menu de gauche choisir **Manage Jenkins**, je ne couvrirai pas l'ensemble des options nous les explorerons au fur et à mesure.
+
+### Configure System : Configuration général de Jenkins
+
+Nous avons dans cette section les configurations général de Jenkins ( PATH, env globale , ... )
+
+* **Répertoire de Jenkins** : 
+    Vous pouvez re définir les répertoires pour Jenkins , le lieu où seront stocké les **workspace** , j'en fait mention surtout si vous avez acheter des disque spéciaux pour avoir une plus grande performance d'accès disque. Il est possible que vous vouliez les utilisés pour les lieux de travail.
+
+    ![](./imgs/11-1-global-config-path-jenkins.png)
+
+ 
+
+# TODO truc
+
+* plugin :
+    jobConfigHistory:latest                
+    nested-view:latest                     
+    global-build-stats:latest              
+    gitlab-plugin:latest  
