@@ -465,9 +465,45 @@ Nous avons dans cette section les configurations général de Jenkins ( PATH, en
 
     ![](./imgs/11-1-global-config-path-jenkins.png)
 
+* **System Message** :
+    Ceci vous permet d'afficher un message sur page principale de Jenkins , a ce stade nous ne pouvons que mettre du texte simple, mais nous verrons dans la prochaine section comment activer le mode html pour avoir plus d'option pour améliorer la visualisation.
+
+* **# of executors** :
+    Le nombre d'exécutant possible actuellement nous sommes à 2 exécuteurs pour le serveur master Jenkins , donc nous ne pouvons pas avoir plus de 2 job en exécution en même temps. Ceci peut être ennuyant si vous avez des jobs de compilation qui prenne du temps, s'il n'y a plus d'exécuteur disponible Jenkins va les mettre en queue. Nous verrons avec la mise en place des agents ( __slave__ ) que chacun ont leur nombre d'exécuteurs. 
+
+* **Quiet period** :
+    Quand Jenkins reçoit un évènement externe telle que c'est le cas avec un commit par exemple, Jenkins utilisera ce paramètre pour donner une période de grâce avant de débuter le build. L'objectif de cette méthode est de permettre au développeur de réalisé plusieurs commit avant que le système ne réalise le checkout et procède à la compilation.
+
+* **Restrict project naming** : 
+    Super important, d'un point de vue organisationnel, si vous avez Jenkins dans votre sous-sol se n'est probablement pas pertinent. Mais dans votre organisation si plusieurs personnes, ici je veux dire 3 personnes , car a 3 ça devient déjà le bordel :D . Si vous désirez standardiser le nom des job , je vous suggère fortement d'utiliser ce mécanisme , nous verrons probablement plus tard qu'il est possible d'organiser les vues selon les noms. Ce sera définitivement plus simple si nous avons forcé la standardisation des noms .
+
+* **Environment variables** :
+    Définition des variables d'environnement qui pourront être transmise à l'ensemble des jobs peut importe sur quelle machine ils seront traités. Nous pourrions par exemple penser que nous installions nos scripts sur les machines dans le répertoire /usr/local/Irules/ nous voudrions probablement avoir ce répertoire dans le PATH des jobs. Plutôt que de le redéfinir pour chaque job , le mettre global, ce qui ne veut pas dire que ce ne peut pas être surdéfinir au niveau de la job.
+
+* **Usage Statistics** :
+    Ici Jenkins sollicite votre aide pour recevoir l'utilisation et statistique **anonyme** de votre instance.
+    Bon moi ça j'aime PAS, mais ça dépends de l'environnement ... Par exemple mon conteneur pour préparer la formation pas de problème mais pour l'environnement de production ou interne, je partage très peu mes données.
  
+* **E-mail Notification**
+    Configuration de votre serveur de courriel , pour la transmission des problèmes de build.
+
+Bon comme vous pouvez le constater , j'ai pas tous couvert car il y a des choses évidentes ou il y a des sections que je vais couvrir lors de l'intégration future par exemple la configuration de git. 
+            
+### Configure Global Security : Configuration globale de sécurité pour Jenkins
+
+Comme son nom l'indique nous avons l'ensemble des configurations pour la gestion de la sécurité , je ne vais presque RIEN couvrir de cette section pour le moment nous prendrons le temps de le faire convenablement dans une section dédier à la sécurité de Jenkins. Je vais simplement mettre en lumière quelques paramètres .
+
+* **Access Control** :
+    Nous avons la possibilité de configurer Jenkins pour qu'il utilise Ldap pour l'ensemble de l'authentification, nous avons aussi la possibilité de définir une matrice de permission basé sur le groupe et / ou l'utilisateur afin d'assigner des droits. 
+    ![](./imgs/11-2-global-security-config-matrix-perms.png)
+    
+* **Markup Formatter** : 
+    Lors de la présentation de l'option __system message__ j'avais fait mention que nous pourrions définir le conteneur en HTML avec un modification de configuration . La voici la configuration, nous devons définir à **safe HTML** par la suite vous pourrez utiliser du html pour avoir un meilleur rendu et surtout une meilleur visibilité.
 
 # TODO truc
+
+* gestion des utilisateurs (http://172.31.0.2:8080/configureSecurity/)
+    * matrix permission
 
 * plugin :
     jobConfigHistory:latest                
