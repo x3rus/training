@@ -500,6 +500,80 @@ Comme son nom l'indique nous avons l'ensemble des configurations pour la gestion
 * **Markup Formatter** : 
     Lors de la présentation de l'option __system message__ j'avais fait mention que nous pourrions définir le conteneur en HTML avec un modification de configuration . La voici la configuration, nous devons définir à **safe HTML** par la suite vous pourrez utiliser du html pour avoir un meilleur rendu et surtout une meilleur visibilité.
 
+## Gestion des plugins 
+
+Nous allons voir rapidement l'utilisation des plugins dans Jenkins, bien entendu je ne peut pas couvrir l'ensemble des plugins vous verrez au fur et à mesure de votre utilisation ceux dont vous avez besoin. Bien entendu comme toujours, tous les plugins ne sont pas pertinent , non pas tous la même qualité , ... C'est à vous de le mettre dans un environnement de teste et de voir s'il répond à vos attentes.
+
+Pour les besoin de la démonstration nous allons mettre en place le plugin **job Configuration History** qui permet de conserver une historique des modifications des changements d'une job.
+Avant d'arriver à cette étape allons voir ce que nous avons installé lors de la mise en place des plugins suggérer lors de l'installation.
+
+Pour visualisé les plugins allez dans **Manage Jenkins** -> **Manage Plugins** .
+
+### État des plugins 
+
+La première vue que vous aurez est la liste des plugins qui doivent être mise à jour :
+
+![](./imgs/11-3-plugins-updates.png)
+
+Comme vous pouvez le voir sur la copie d'écran, la dernière validation des mise à jour date de plusieurs heures , ceci est réalisé périodiquement ( je sais plus la fréquence :P , mais comme je suis sur mon portable c'est encore moins fréquent :P ) . 
+
+Avant d'en mettre des nouveaux visualisons ceux déjà installé 
+
+![](./imgs/11-4-plugins-installed.png)
+
+Comme vous pouvez le constater , la liste est significativement longue, plusieurs plugins sont maintenant intégré à Jenkins donc ne peuvent pas être désinstallés. De plus ce n'est pas visible dans la copie d'écran mais la colonne **Previously installed version** parfois il y a le bouton qui permet de revenir à la version précédente du plugin. Dans le passé il est déjà arrivé que nous réalisions une mise à jour des plugins et le comportement de la nouvelle version n'est pas identique à l'ancienne. Selon la situation en attendant de trouver le correctif approprié, remettre la version précédent permet de réduire la pression ! Surtout quand vous avez quelques équipe qui sont bloqué suite à l'opération .
+
+### Installation d'un plugins 
+
+Réalisations de l'installation du plugins **job Configuration History** , nous allons dans l'onglet **available**, trouver votre plugin et cocher le.
+
+![](./imgs/11-9-plugins-install-job-history.png)
+
+Par la suite 2 choix :
+
+* Installation sans redémarrage
+* Téléchargement et installation lors du redémarrage 
+
+J'ai choisi de télécharger et d'installer au redémarrage voici le résultat :
+
+![](./imgs/11-10-plugins-install-download-install-at-restart.png)
+
+Comme vous pouvez le constater Jenkins à installé en plus : 
+
+* Javadoc Plugin
+* Maven Integration Plugin
+
+Donc Jenkins gère la dépendance de plugins :D , c'est merveilleux !
+
+En cochant la ligne : **Restart Jenkins when installation is complete and no jobs are running** , jenkins va redémarrer mais il va surtout s'assurer que aucun build ne va cassé car rien ne sera en exécution . 
+
+Voilà je vais revenir sur le plugins dans quelques instant, mais c'est aussi simple que ça !
+
+### Mise à jour d'un plugins 
+
+Bon je ne pensais pas le couvrir mas j'ai eu une occasion donc je l'ai saisie , en validation la liste des plugins disponible pour une mise à jour je suis tombé la dessus :
+
+![](./imgs/11-6-plugins-update-available-script-security.png)
+
+Avant de faire la mise à jour voici ce que j'avais dans l'onglet **installed** :
+
+![](./imgs/11-5-plugins-installed-script-security.png)
+
+J'ai donc fait la mise à jour qui est très, très similaire à l'installation d'un nouveau plugins 
+
+![](./imgs/11-7-processus-update.png)
+
+Par la suite quand je retourne dans la liste de ceux installé nous allons donc avoir la possibilité de réalisé une marche arrière avec la version précédente, même si le plugin ne peut pas être désinstaller.
+
+![](./imgs/11-8-plugins-rollback-script-security.png)
+
+
+## Démonstration de Job Configuration History 
+
+Bon si on l'a installer c'est pour l'utiliser :P 
+
+ICI ICI ICI 
+
 # TODO truc
 
 * gestion des utilisateurs (http://172.31.0.2:8080/configureSecurity/)
