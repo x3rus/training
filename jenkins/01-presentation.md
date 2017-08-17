@@ -608,8 +608,97 @@ J'en convient que actuellement vous n'avez probablement pas tous ça  cependant 
 
 Ce que je veux surtout mettre en lumière est que votre Jenkins risque d'avoir une importance dans votre organisation suite à son adoption et qu'il en découlera des accès.
 
+Référence : https://wiki.jenkins.io/display/JENKINS/Securing+Jenkins
+
 ### Restriction d'accès par utilisateur
 
 Premièrement nous allons nous assurer qu'il faut être authentifier pour accéder au service .
 
 Nous verrons que nous pourrions offrir une visualisation en lecture seul lors des accès anonyme, mais je ne suis pas pour cette pratique. Car vous aurez des appel de support , la personne oublie de s'authentifier puis elle vous appel pour dire que telle option n'est plus disponible ... Après un moment de silence de votre part , peut-être un crie de rage réalisé dans un coussin ( car c'est le 3 ieme appel que vous recevez ) vous lui indiquez gentiment qu'elle ( la personne ) n'est pas __logué__ ! Par la suite vous débranchez votre téléphone pour ménager votre cœur ;-)
+
+Nous ne couvrirons pas la configuration avec le service Ldap ou autre système externe pour le moment je vais me concentré avec la gestion de compte locaux , mais le concept est équivalent avec Ldap. 
+
+Premièrement activation du mode de sécurité dans Jenkins : **Manage Jenkins** --> **Configure Global Security**
+
+Cochez l'option **Enable security** , vous avez l'option de désactivé la fonctionnalité __remember me__ afin de désactivé l'authentification avec le cookie.
+
+Si nous analysons l'état actuelle nous avons une sources d'utilisateur localement définie dans Jenkins ( pas de LDAP ou Active Directory ) et quand la personne est authentifier elle peut tous faire l'équivalent d'administrateur.
+
+![](./imgs/12-01-security-access-global-config-defaut.png)
+
+Nous allons modifier un peu ça afin d'avoir des permissions définie par utilisateur.
+
+#### Création d'utilisateur 
+
+Si nous allons dans la section **Manage Jenkins** --> **Manage Users** , nous pourrons faire la gestion de nos utilisateurs :
+
+![](./imgs/12-02-security-access-manage-user.png)
+
+Bon rien d'exceptionnel dans le processus de création d'un utilisateur, une petite copie d'écran donne l'ensemble de l'information ...
+
+![](./imgs/12-03-security-access-create-user.png) 
+
+#### Création d'un groupe 
+
+Il n'y a pas de fonctionnalité intégré dans Jenkins pour faire la gestion de groupe , vous ne pouvez QUE faire la création d'utilisateur. Nous verrons lors de la mise en place des permissions qu'il est possible de les assigner à un groupe. Cependant conformément au [post de  Kohsuke Kawaguchi Jul 08, 2009; 8:33pm](http://jenkins-ci.361315.n4.nabble.com/Users-Groups-td383878.html) , les groupes ne peuvent être utilisé que lors de l'utilisation de LDAP ou Active Directory. Je confirme que ça fonctionne très bien avec Ldap :D.
+
+Vous avez cependant un plugin [Role Strategy Plugin](https://wiki.jenkins.io/display/JENKINS/Role+Strategy+Plugin) qui vous permet de mettre en place l'équivalent de groupe , nommé rôle pour faire cette opération. Il n'est pas prévu de le couvrir dans la formation.
+
+#### Assignation des permissions au utilisateur 
+
+Maintenant que nous avons 3 utilisateur :
+
+* admin : que j'utilise depuis le début.
+* thomas : que je viens de créer.
+* anonymous : pour les utilisateurs non authentifié.
+
+Nous allons voir comment faire l'assignation de permission, Jenkins utilise le système de Matrice de permission, nous retournons dans la section **Manage Jenkins** --> **Global security** 
+
+Dans la section autorisation nous allons sélectionner l'option **Matrix-based security** :
+
+![](./imgs/12-04-security-access-matrix-perms-vide.png)
+
+Nous allons ajouter nos utilisateurs et définir nos permissions :
+
+![](./imgs/12-05-security-access-matrix-perms-example.png)
+
+Si j'essaye d'établir une connexion avec l'utilisateur **thomas** voici le résultat :
+
+![](./imgs/12-06-security-access-test-thomas-perm-prob.png) 
+
+Ce n'est comme on dit pas l'idéal ... J'ai donc rajouté les permissions pour **Overall : read** , voici à présent le résultat :
+
+* Page d'accueil :
+    ![](./imgs/12-07-security-access-test-thomas-perm-homepage.png)
+
+* Page de la tâche :
+    ![](./imgs/12-07-security-access-test-thomas-perm-job-demo.png)
+
+Bien entendu l'assignation pour chaque utilisateur n'est définitivement pas l'idéal la gestion par groupe est mieux , mais on prend ce que l'on a :D.
+
+
+#### [Optionnel] Erreur lors de l'assignation des permissions , comment s'en sortir !!
+
+Lors de l'assignation des permissions la première fois lors de l'écriture de la formation j'ai fait une erreur:
+
+1. j'avais une matrice vide
+    ![](./imgs/12-04-security-access-matrix-perms-vide.png)
+2. j'ai saisi le nom admin et tapez la touche **Enter**
+3. Malheureusement le focus étant sur **save** je me suis retrouver avec ceci
+    ![](./imgs/12-08-security-access-Erreur-acces-admin.png)
+
+Malheureusement je n'ai pas d'autre compte pour établir une connexion et corriger mon erreur ... :-/ . Selon le niveau d'utilisation je peux pas dire je réinstalle , alors comment faire. 
+
+Je profite de l'occasion pour montrer le fichier de configuration de Jenkins , le nom du fichier est **config.xml** il est dans le home directory du service. Dans notre cas /var/jenkins_home et sur le docker host dans un répertoire associé. 
+
+Voici le contenu du fichier avec mon erreur [config.xml](./config-empty-matrix.xml) 
+
+En L'ouvrant j'ai regardé rapidement et j'ai identifier la ligne : 
+
+```
+<authorizationStrategy class="hudson.security.GlobalMatrixAuthorizationStrategy"/>
+```
+
+J'ai simplement supprimer la ligne et redémarrer le service , dans mon cas le conteneur ... Et MAGIE tous est revenu :P . En conclusion faire un backup du fichier :P et maintenant vous serez toujours en mesure de retomber sur vos pattes s'il y a un problème avec l'interface . Bien entendu SI vous avez accès à a machine :D .
+
+Si vous êtes curieux voici le fichier de configuration avec l'ensemble des configurations de la matrice : [config.xml](config-matrix-perms.xml).
