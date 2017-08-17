@@ -570,17 +570,46 @@ Par la suite quand je retourne dans la liste de ceux installé nous allons donc 
 
 ## Démonstration de Job Configuration History 
 
-Bon si on l'a installer c'est pour l'utiliser :P 
+Bon si on l'a installé c'est pour l'utiliser :P , donc démonstration rapide , l'objectif du plugin est de permettre une conservation de l'historique des changement de configuration d'une tâche . 
 
-ICI ICI ICI 
+Je vais donc retourner dans ma job **demo-tache-simple** pour réaliser 2 modifications.
 
-# TODO truc
+1. J'ai modifier le contenu de la job , j'ai changer le message écrit dans le script pour indiquer que l'on ne peut pas mettre de / dans le nom du fichier.
+2. Modification du nombre de jours retenu
 
-* gestion des utilisateurs (http://172.31.0.2:8080/configureSecurity/)
-    * matrix permission
+Suite à l'installation du plugin j'ai maintenant dans la liste de gauche de la job, le lien : **Job Config History**, en cliquant dessus je peux voir :
 
-* plugin :
-    jobConfigHistory:latest                
-    nested-view:latest                     
-    global-build-stats:latest              
-    gitlab-plugin:latest  
+* Qui à fait le changement 
+* Quand il fut réalisé ainsi que la différence .
+
+![](./imgs/11-11-plugins-job-history-view-change-manually.png)
+
+Voici le résultat en affichant la différence :
+
+![](./imgs/11-12-plugins-job-history-view-change-content.png)
+
+Mais ce qui est le plus beau, car je ne passe pas mon temps à regarder si une tâche a changé, c'est que lors du build suivant , il me mettra une petite clé à coté du build m'indiquant que la configuration n'est pas la même pour ce build.
+
+![](./imgs/11-13-plugins-job-history-show-build-with-change-conf.png)
+
+
+
+## Sécurisation de Jenkins
+
+Bon nous ne seront pas en mesure de couvrir l'ensemble , car ce doit être pensé régulièrement , par exemple peut importe le niveau de sécurité mis en place si le compte administrateur a le mot de passe **123soleil**, ce sera compliqué !!
+
+Les environnements Jenkins sont souvent mis en place dans le réseau local et non exposé sur Internet. Résultat il y a une fausse impression de sécurité, car uniquement les personnes à l'interne peuvent y accéder. Il faut le mettre en perspective par contre , que contient votre Jenkins ?
+
+* La compilation du code créer par votre entreprise , en d'autre mot votre savoir faire , votre produit.
+* Le déploiement de vos site web qui eux sont exposé sur Internet , l'image de votre entreprise.
+* La collecte et peut-être la réalisation de rapport vous permettant de savoir ce qui se passe sur vos environnements , donc vos yeux.
+
+J'en convient que actuellement vous n'avez probablement pas tous ça  cependant lors de l'augmentation de l'utilisation du service c'est fort probable que cette évolution arrive. Si dès le début les utilisateurs doivent se conformer au exigence de sécurité , avec l'ensemble des bien fait du nouveau service ça passera bien . Si vous ajoutez des restrictions par la suite, vous devrez faire fasse à la résistance au changement.
+
+Ce que je veux surtout mettre en lumière est que votre Jenkins risque d'avoir une importance dans votre organisation suite à son adoption et qu'il en découlera des accès.
+
+### Restriction d'accès par utilisateur
+
+Premièrement nous allons nous assurer qu'il faut être authentifier pour accéder au service .
+
+Nous verrons que nous pourrions offrir une visualisation en lecture seul lors des accès anonyme, mais je ne suis pas pour cette pratique. Car vous aurez des appel de support , la personne oublie de s'authentifier puis elle vous appel pour dire que telle option n'est plus disponible ... Après un moment de silence de votre part , peut-être un crie de rage réalisé dans un coussin ( car c'est le 3 ieme appel que vous recevez ) vous lui indiquez gentiment qu'elle ( la personne ) n'est pas __logué__ ! Par la suite vous débranchez votre téléphone pour ménager votre cœur ;-)

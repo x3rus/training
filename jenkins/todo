@@ -1,0 +1,10 @@
+# TODO truc
+
+* gestion des utilisateurs (http://172.31.0.2:8080/configureSecurity/)
+    * matrix permission
+
+* plugin :
+    jobConfigHistory:latest                
+    nested-view:latest                     
+    global-build-stats:latest              
+    gitlab-plugin:latest  
