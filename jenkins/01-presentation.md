@@ -701,4 +701,20 @@ En L'ouvrant j'ai regardé rapidement et j'ai identifier la ligne :
 
 J'ai simplement supprimer la ligne et redémarrer le service , dans mon cas le conteneur ... Et MAGIE tous est revenu :P . En conclusion faire un backup du fichier :P et maintenant vous serez toujours en mesure de retomber sur vos pattes s'il y a un problème avec l'interface . Bien entendu SI vous avez accès à a machine :D .
 
-Si vous êtes curieux voici le fichier de configuration avec l'ensemble des configurations de la matrice : [config.xml](config-matrix-perms.xml).
+Si vous êtes curieux voici le fichier de configuration avec l'ensemble des configurations de la matrice : [config.xml](config-matrix-perms.xml). 
+
+### Sécurisation des informations transmise 
+
+Nous avons mis en place la limitation par utilisateur , cependant comme vous pouvez le voir si vous utilisez firefox , lors de la saisi du nom d'utilisateur et mot de passe ce dernier passe en claire sur le réseau. De nos jour la mise en place du chiffrement en httpS est peu couteux, les processeurs que nous avons sont performant ! Il n'y a donc pas de raison de ne pas sécuriser cette communication  ! Nous allons donc mettre en place un serveur Apache devant pour utiliser TLS.
+
+![](./imgs/12-09-security-access-user-pass-not-crypt.png)
+
+Cette opération n'est pas complexe , si je ne le couvre pas dans la vidéo , désolé :P , il est possible que je coupe cette opération afin de gagner du temps ... 
+Nous allons utiliser un conteneur pour faire l'exercice , ceci nous offre encore une opportunité pour habituer avec le processus d'intégration multi conteneur.
+
+Voici la documentation sur le site de Jenkins pour la mise en place d'un proxy devant Jenkins : [https://wiki.jenkins.io/display/JENKINS/Apache+frontend+for+security](https://wiki.jenkins.io/display/JENKINS/Apache+frontend+for+security)
+
+
+
+
+
