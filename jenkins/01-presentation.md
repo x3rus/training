@@ -1,4 +1,6 @@
-# Présentation de Jenkins
+# Jenkins
+
+## Présentation de Jenkins
 
 
 En 2008 Jenkins devient LA solution pour l'intégration continue en remplacement de [CruiseControl](https://fr.wikipedia.org/wiki/CruiseControl). 
@@ -714,7 +716,173 @@ Nous allons utiliser un conteneur pour faire l'exercice , ceci nous offre encore
 
 Voici la documentation sur le site de Jenkins pour la mise en place d'un proxy devant Jenkins : [https://wiki.jenkins.io/display/JENKINS/Apache+frontend+for+security](https://wiki.jenkins.io/display/JENKINS/Apache+frontend+for+security)
 
+#### Création du conteneur apache
+
+Donc création du conteneur apache pour faire l'exercice, voici le fichier [**Dockerfile**](./dockers/apache-front/Dockerfile) décrivant la configuration :
+
+```
+FROM httpd:2.4
+MAINTAINER Thomas Boutry "thomas.boutry@x3rus.com"
+
+ # Enable Proxy , SSL and rewrite modules  configuration
+RUN sed -i 's/#LoadModule proxy_module modules\/mod_proxy.so/LoadModule proxy_module modules\/mod_proxy.so/g; \
+         s/#LoadModule proxy_connect_module modules\/mod_proxy_connect.so/LoadModule proxy_connect_module modules\/mod_proxy_connect.so/g; \
+         s/#LoadModule proxy_http_module modules\/mod_proxy_http.so/LoadModule proxy_http_module modules\/mod_proxy_http.so/g; \
+         s/#LoadModule rewrite_module modules\/mod_rewrite.so/LoadModule rewrite_module modules\/mod_rewrite.so/g; \
+         s/#LoadModule socache_shmcb_module modules\/mod_socache_shmcb.so/LoadModule socache_shmcb_module modules\/mod_socache_shmcb.so/g; \
+         s/#LoadModule ssl_module modules\/mod_ssl.so/LoadModule ssl_module modules\/mod_ssl.so/g;'  /usr/local/apache2/conf/httpd.conf
 
 
+ # Copie jenkins configuration file and include it in the httpd.conf
+COPY conf/jenkins.conf /usr/local/apache2/conf/jenkins.conf
+RUN echo "Include conf/jenkins.conf" >> /usr/local/apache2/conf/httpd.conf
+
+RUN mkdir /usr/local/apache2/ssl/
+COPY conf/ssl/* /usr/local/apache2/ssl/
+
+ # Validation de la configuration
+RUN /usr/local/apache2/bin/apachectl configtest
+```
+
+Donc rapidement :
+
+* Activation des différent module en réalisant un petit __sed__ dans le fichier de configuration __httpd.conf__
+* Copie du fichier de [configuration de jenkins](dockers/apache-front/conf/jenkins.conf) et inclusion du fichier dans le fichier __httpd.conf__
+* Copie des fichiers de certificat et clef privé qui fut réalisé avec la commande ( bien entendu un self signe ) :
+    ```bash
+    $ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -nodes -days 365
+    ```
+* Validation de la configuration juste pour être certain.
+
+Je reviens dans quelques instant sur la configuration apache , je veux juste le faire en dehors de la section **docker** pour les personnes qui n'utiliserons pas docker pour que ce soit plus simple à trouver :D.
+
+Voici le fichier [docker-compose.yml](./dockers/docker-compose-https.yml)
+
+```
+version: '2'
+services:
+    jenkins:
+        image: jenkins/jenkins
+        container_name : 'x3-jenkins-f'
+        hostname: jenkins.train.x3rus.com
+        environment:
+            - TZ=America/Montreal
+        volumes:
+            - "/srv/docker/x3-jenkins-f/jenkins-data:/var/jenkins_home"
+        # ports:
+            #- 8080:8080   # Web interface
+            #- 50000:50000 # Build Executors
+    apache-front:
+        image: x3-jenkins-front
+        build: ./apache-front/.
+        container_name : 'x3-jenkins-apache-f'
+        hostname : jenkins-front.train.x3rus.com
+        environment:
+            - TZ=America/Montreal
+            - JENKINS_FQDN=jenkins.local.x3rus.com
+            - JENKINS_ALIAS=jenkins2.local.x3rus.com
+            - ADM_EMAIL=admin@example.com
+        links:
+            - jenkins:jenkins
+```
+
+Donc nous avons le service apache-front de présent , rapidement encore :
+
+* image : Je définie ma propre image , car j'ai réalisé des modifications dans le conteneur httpd:2.4 original
+* build : Je définie ou est la définition du build , ceci me servira si je n'utilise pas de docker registrie
+* environnement : Toujours dans l'optique d'avoir un conteneur générique j'ai définie plusieurs configuration à l'aide de variable d'environnement nous allons le voir dans la prochaine section.
+* links : Je crée le lien entre le conteneur apache et jenkins.
+
+Bien entendu l'ensemble de l'effort est vraiment dans la configuration apache donc regardons cette section.
 
 
+#### Configuration apache 
+
+Le fonctionnement est simple, l'ensemble des communications passe par le service apache et se dernier fonctionne en mode proxy donc il réalise les requêtes au serveur Jenkins . Le serveur Jenkins répond au service apache qui retourne l'information au client ... Les communications entre le client et apache sont chiffré et entre apache et Jenkins sont en claire.
+
+Voici le fichier [jenkins.conf](dockers/apache-front/conf/jenkins.conf)
+
+```
+<VirtualHost *:80>
+    ServerName ${JENKINS_FQDN}
+    ServerAdmin ${ADM_EMAIL}
+
+    <IfDefine JENKINS_ALIAS_FQDN>
+        ServerAlias ${JENKINS_ALIAS_FQDN}
+    </IfDefine>
+
+    DocumentRoot /usr/local/apache2/htdocs
+
+    # Redirection en httpS
+    redirect / https://${JENKINS_FQDN}
+
+</VirtualHost>
+
+Listen 443
+SSLCipherSuite HIGH:MEDIUM:!MD5:!RC4
+SSLProxyCipherSuite HIGH:MEDIUM:!MD5:!RC4
+SSLHonorCipherOrder on 
+SSLProtocol all -SSLv3
+SSLProxyProtocol all -SSLv3
+SSLPassPhraseDialog  builtin
+SSLSessionCache        "shmcb:/usr/local/apache2/logs/ssl_scache(512000)"
+SSLSessionCacheTimeout  300
+
+<VirtualHost *:443>
+
+    SSLEngine on
+
+    # SSL certificat cree hors conteneur
+    SSLCertificateFile "/usr/local/apache2/ssl/jenkins.crt"
+    SSLCertificateKeyFile "/usr/local/apache2/ssl/jenkins.key"
+
+    ServerAdmin  ${ADM_EMAIL}
+    ProxyRequests     Off
+    ProxyPreserveHost On
+    AllowEncodedSlashes NoDecode
+
+    <Proxy http://jenkins:8080/*>
+        Order deny,allow
+        Allow from all
+    </Proxy>
+    ProxyPass         /  http://jenkins:8080/ nocanon
+    ProxyPassReverse  /  http://jenkins:8080/
+    ProxyPassReverse  /  http://${JENKINS_FQDN}/
+
+    RequestHeader set X-Forwarded-Proto "https"
+    RequestHeader set X-Forwarded-Port "443"
+</VirtualHost>
+```
+
+Comme vous pouvez le constater j'utilise les variables d'environnement :
+
+* JENKINS\_FQDN  : Ceci contient le hostname complet qui est afficher au client pour la communication à Jenkins par apache , ceci me permet lors de l'utilisation d'un conteneur d'avoir une marge de manœuvre d'avoir le même conteneur peu importe le nom DNS utilisé. Bien entendu je suis dépendant de la définition contenu dans le certificat, ce qui est plus ou moins un problème lors de l'utilisation d'un wildcard ssl.
+* JENKINS\_ALIAS\_FQDN : Paramètre optionnel pour avoir un autre nom , vous constatez l'utilisation du **IfDefine**
+* ADM\_EMAIL : Email de l'administrateur en paramètre aussi :D.
+
+
+### Sauvegarde de sécurité
+
+Pour parler de sauvegarde parlons de la structure des fichiers de Jenkins, la documentation sur le wiki de Jenkins est vraiment bien : [Page Administration](https://wiki.jenkins.io/display/JENKINS/Administering+Jenkins) . Voici le contenue de la page :
+
+```
+JENKINS_HOME
+ +- config.xml     (jenkins root configuration)
+ +- *.xml          (other site-wide configuration files)
+ +- userContent    (files in this directory will be served under your http://server/userContent/)
+ +- fingerprints   (stores fingerprint records)
+ +- plugins        (stores plugins)
+ +- workspace (working directory for the version control system)
+     +- [JOBNAME] (sub directory for each job)
+ +- jobs
+     +- [JOBNAME]      (sub directory for each job)
+         +- config.xml     (job configuration file)
+         +- latest         (symbolic link to the last successful build)
+         +- builds
+             +- [BUILD_ID]     (for each build)
+                 +- build.xml      (build result summary)
+                 +- log            (log file)
+                 +- changelog.xml  (change log)
+```
+
+Comme vous pouvez le constater TOUS est dans le répertoire **JENKINS\_HOME** , vous serez donc en mesure en réalisant une archive (tar.gz) d'avoir l'ensemble des données. C'est merveilleux :D
