@@ -108,7 +108,7 @@ Prenons le temps de la valider ensemble :
 
 ![](./imgs/13-01-int-gitlab-checkplugins.png) 
 
-#### Configuration du service GitLab pour l'échange d'information avec Jenkins
+#### Configuration du service Gitlab pour l'échange d'information avec Jenkins
 
 Dans Gitlab, nous avons le projet : **sysadmin/scripts** ( groupe sysadmin , projet scripts ) , créé avec mon utilisateur __thomas__.
 
@@ -165,3 +165,68 @@ README.md  UnScript.sh
 ```
 
 #### Configuration du service Jenkins pour communiquer avec gitlab
+
+Nous avons donc notre utilisateur **robot** configurer dans __gitlab__ avec 2 mode d'accès nom utilisateur / mot de passe et avec un jeton d'accès (__access token__).
+
+Nous allons configurer l'authentification de gitlab dans Jenkins  : **manage Jenkins** --> **global configue** --> **gitlab** 
+
+Pour rappel dans la définition du conteneur Jenkins, nous avons définie que le conteneur gitlab est disponible sous le nom gitlabsrv :
+
+```
+        links:                                                                 
+            - gitlab:gitlabsrv 
+```
+
+Nous allons donc créer une nouvelle job en utilisant cette accès pour la récupération des données. Je vais encore utiliser le mode libre __Free style__:
+
+![](./imgs/13-09-int-gitlab-setup-gitlabconnection-jenkins-1.png)
+
+
+Nous ajoutons donc une authentification par __Gitlab Token__  , voici le résultat :
+
+![](./imgs/13-09-int-gitlab-setup-gitlabconnection-credential-2.png)
+
+Ceci nous donnera au final ceci avec le petit bouton __Test connexion__ pour valider que tous est ok :
+
+![](./imgs/13-09-int-gitlab-setup-gitlabconnection-credential-3.png)
+
+Comme vous pouvez le voir il est possible de définir plusieurs connexion gitlab, donc n'hésitez pas à segmenter vos droit d'accès au système .
+
+
+#### Création d'une tache
+
+Nous allons ajouter dans les informations d'authentification l'information requis pour la communication ... en cliquant sur **Add**.
+
+![](./imgs/13-08-int-gitlab-create-job.png)
+
+Comme vous pouvez le voir directement maintenant j'ai la connexion avec gitlab de présent :
+
+![](./imgs/13-08-int-gitlab-create-job-1.png)
+
+Nous allons maintenant définir où récupérer les fichiers pour la tâches, bien entendu ceci sera dans la section __Source Code Management__ , sélectionnez **git**.
+
+Après avoir saisi l'URL du projet __git__ nous verrons ceci :
+
+![](./imgs/13-08-int-gitlab-create-job-source-git-2.png)
+
+Ceci est plutôt bon signe, car ceci confirme que l'accès n'est pas libre au projet :D. Nous allons donc ajouter les critères d'authentification . Vous allez voir que je n'ai pas utilisé le **jeton** en fait j'ai pas le choix quand j'ai essayé ça ne fonctionne pas ... il semble y avoir une limitation à ce niveau. Voici donc le résultat :
+
+![](./imgs/13-08-int-gitlab-create-job-source-git-credential-3.png) 
+
+Nous nous arrêterons là pour le moment, mais j'aimerai vous mettre en lumière la possibilité d'ajouter des fonctionnalités :
+
+![](./imgs/13-08-int-gitlab-create-job-source-git-behaviours-4.png)
+
+Je vais maintenant ajouter la description du **build** donc la tâche qui sera réalisé :
+
+![](./imgs/13-08-int-gitlab-create-job-build-info-5.png)
+
+J'ai aussi ajouter les informations pour les paramètres au script ( __FILE\_NAME\_2\_WRITE__ et __B\_MUST\_WRITE__ ) 
+
+Maintenant l'exécution :
+
+![](./imgs/13-09-run-job-gitlab-console.png)
+
+Nous voyons clairement l'extraction du dépôt __git__ et l'exécution du script !!
+
+
