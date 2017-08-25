@@ -229,4 +229,147 @@ Maintenant l'exécution :
 
 Nous voyons clairement l'extraction du dépôt __git__ et l'exécution du script !!
 
+Nous avons donc l'intégration **simple** de gitlab avec Jenkins pour l'exécution de code depuis un dépôt git !! 
+Nous allons continuer avec la configuration de Jenkins et la mise en place de slave , cependant nous reviendrons plus en détail sur la mise en place d'une solution plus complexe pour la réalisation de la compilation du code , création de conteneur et autre ... 
 
+## Configuration d'agent ( slave ) pour Jenkins
+
+Telle que mentionné le **master** Jenkins est une orchestrateur, nous pouvons compiler localement sur la machine cependant ceci n'est pas l'idéal surtout si vous désirez distribuer la charge et avoir plusieurs agent pour réaliser type d'opération.
+
+Nous allons voir comment faire la configuration , bien entendu votre agent doit être idéalement une machine puissante afin de pouvoir réaliser des compilations qui demandent des ressources. Comme Jenkins est un exécuteur, il est aussi possible de se connecter à n'importe quelle machine ce peut être un petit système mais vous désirez réaliser un backup de la BD __sql__ sur demande. Il existe plusieurs plugins disponible pour établir une connexion, dans l'exemple ici nous utiliserons la connexion **SSH** pour l'exercice. Je vais utiliser un conteneur pour que ce soit plus simple pour moi, et aussi pour que vous puissiez reproduire dans votre environnement de laboratoire la configuration.
+
+Donc pour que ceci fonction nous aurons besoin :
+
+1. Un utilisateur configurer sur la machine **slave** avec lequel Jenkins pourra initier la communication via ssh.
+2. La mise en place d'une clé ssh pour facilité l'authentification .
+3. L'ensemble des applications installé sur le slave pour réaliser les opérations définie dans la tâches.
+
+### Création d'une pair de clé ssh 
+
+Pour les personnes qui ont pas suivie les formations précédente ou pas mis en pratique ou tous simplement oublié puis soyons honnête c'est pénible chercher :P. Un petit rappel pour la génération d'un clé ssh :D. ( Oui vous pouvez dire merci :P ) .
+
+```bash
+[~/tmp/jenkins/data] {20990} 
+$ ssh-keygen -b 2048 
+ Generating public/private rsa key pair.
+ Enter file in which to save the key (/home/xerus/.ssh/id_rsa): ./jenkins-nodes_rsa
+ Enter passphrase (empty for no passphrase): 
+ Enter same passphrase again: 
+ Your identification has been saved in ./jenkins-nodes_rsa.
+ Your public key has been saved in ./jenkins-nodes_rsa.pub.
+ The key fingerprint is:
+ SHA256:nShQ8M9u1ANN7GhW8S8taOal/DRqR4sYAkmYcNczbwQ xerus@goishi
+ The key s randomart image is:
+ +---[RSA 2048]----+
+ |...oooE. .o.     |
+ | .o..o+ .oo.     |
+ |   ....=.+. .    |
+ |    o. o*=.o o   |
+ |     ..+S O + o  |
+ |      .+.= +.o   |
+ |       .oo+oo.   |
+ |       .. o+o.   |
+ |         ....    |
+ +----[SHA256]-----+
+[~/tmp/formations/jenkins/data] {20991} 
+$ ls
+jenkins-nodes_rsa  jenkins-nodes_rsa.pub
+```
+
+Nous avons donc :
+
+* **jenkins-nodes_rsa** : la clé privé qui ne sortira JAMAIS du serveur Jenkins, comme je n'ai pas mis de passphrase l'ensemble de la sécurité repose sur ce fichier. !!
+* **jenkins-nodes_rsa.pub** : la clé publique qui sera distribué sur l'ensemble des agents
+
+Prendre note qu'il est maintenant possible de configurer une passephrase dans Jenkins pour que ce soit utilisable avec la clé, comme j'utilise cette même clé pour des opérations en dehors de Jenkins j'ai tendance a ne pas en mettre. À tord ou à raison , ceci est une gestion de risque en relation avec la sécurité , libre à vous :D.
+
+### Création du conteneur ( Optionnel ) 
+
+Nous allons faire la création du conteneur , pour le moment je ne met que **ssh serveur** ainsi que Java , car l'agent Jenkins est développer en java !!
+
+Voici le résultat du [Dockerfile](./dockers/jenkins-slave/Dockerfile-v1) :
+
+```
+ #
+ # Description : Jenkins Slave pour formation
+ #
+ # Author : Thomas.boutry@x3rus.com
+ # Licence : GPLv3 ou plus
+ #
+ # Reference : https://docs.docker.com/engine/examples/running_ssh_service/#build-an-eg_sshd-image
+ ###########################################################
+
+FROM ubuntu:16.04
+MAINTAINER Thomas Boutry "thomas.boutry@x3rus.com"
+
+ # Installation des applications, besoin de ssh et de java pour le service Jenkins
+RUN apt-get update && \
+    apt-get install -y openssh-server sudo openjdk-8-jre && \
+    mkdir /var/run/sshd
+
+ # SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+
+
+ # Create default user "BOB" with password toto
+RUN useradd -s /bin/bash -m  jenkinbot && \
+    echo "jenkinbot:toto" | chpasswd && \
+    usermod -G sudo jenkinbot
+
+ # Creation du répertoire ssh pour l'utilisateur
+RUN mkdir /home/jenkinbot/.ssh/ && \
+    chmod 700 /home/jenkinbot/.ssh/
+
+ # Copie la clef publique pour jenkins 
+COPY conf/authorized_keys /home/jenkinbot/.ssh/authorized_keys
+
+ # Fix perms
+RUN chmod 700 /home/jenkinbot/.ssh/authorized_keys
+
+ # Port et service
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]
+```
+
+Nous allons ajuster aussi le [docker-compose.yml](./dockers/docker-compose-slave.yml)
+
+```
+[ ... OUTPUT COUPÉ ... ]
+    jenkins:
+        image: jenkins/jenkins
+        container_name : 'x3-jenkins-f'
+        hostname: jenkins.train.x3rus.com
+        environment:
+            - TZ=America/Montreal
+        volumes:
+            - "/srv/docker/x3-jenkins-f/jenkins-data:/var/jenkins_home"
+        # ports:
+            #- 8080:8080   # Web interface
+            #- 50000:50000 # Build Executors
+        links:
+            - gitlab:gitlabsrv 
+            - jenkins-slave:jenkins-s1 
+[ ... OUTPUT COUPÉ ... ]
+    jenkins-slave: 
+        image: x3-jenkins-slave        
+        build: ./jenkins-slave/.       
+        container_name : 'x3-jenkins-slave-f'                                  
+        hostname : jenkins-slave.train.x3rus.com                               
+        environment:
+            - TZ=America/Montreal  
+[ ... OUTPUT COUPÉ ... ]
+```
+
+```bash
+ $ docker-compose build jenkins-slave
+ [ ... OUTPUT COUPÉ ... ]
+ Step 12/12 : CMD /usr/sbin/sshd -D     
+  ---> Running in 06a94c85a558          
+   ---> d9f59db68318                     
+   Removing intermediate container 06a94c85a558                                   
+   Successfully built d9f59db68318        
+   Successfully tagged x3-jenkins-slave:latest  
+```
