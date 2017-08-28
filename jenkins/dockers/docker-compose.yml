@@ -33,6 +33,8 @@ services:
         hostname : jenkins-slave.train.x3rus.com
         environment:
             - TZ=America/Montreal
+        links:
+            - gitlab:gitlabsrv 
     gitlab:
         image: 'gitlab/gitlab-ce:latest'
         container_name : 'x3-gitlab-f'

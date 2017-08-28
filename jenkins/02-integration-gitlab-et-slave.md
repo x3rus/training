@@ -491,4 +491,80 @@ Nous allons à présent compléter les champs, voici le résultat , presque comp
 * Usage : Je privilégie l'utilisation des étiquettes afin d'avoir une meilleur gestion .
 * Launch method : Telle que mentionné , pour le moment j'utilise une connexion ssh pour l'établissement de connexion , en plus de la simplicité c'est qu'en plus d'utiliser les slaves avec Jenkins, je vais aussi utiliser les machines de build avec Ansible ou autre pour faire du déploiement . Les machines de build et d'exécution de jobs peuvent avoir plusieurs rôle.
 * Host Key Verification Strategy  : J'indique que je ne veux pas de validation , ici libre à vous , cette validation est l'échange de clé ssh qui est réalisé lors de la première connexion . Comme je veux être en mesure de déployer des slaves rapidement je désactive la validation , mais c'est une question de sécurité libre à vous de choisir la bonne option et elle peut être différente selon le slave :D.
-    
+* Credential : Information pour la connexion avec ssh , nous utiliserons la clé ssh préalablement créé . 
+
+![](./imgs/14-04-add-slave-credential-ADD-1.png)
+
+Voici le résultat  pour les critères d'authentification :
+
+![](./imgs/14-04-add-slave-credential-ADD-2.png) 
+
+Comme vous pouvez le voir j'ai opté pour la mise en place du PATH complet pour la clé j'aurai pu aussi copier / coller la clé priver cependant dans l'optique d'avoir une simplification de l'industrialisation de la configuration . J'ai préférer définir un chemin d'accès sur le file système. 
+
+Après avoir sauvegardé et réalisé un refresh de la page :
+
+![](./imgs/14-05-add-slave-status-slaves.png)
+
+En cliquant sur le slave et dans le menu de gauche vous avez l'option **System Information** qui vous permet de visualiser l'information du système , ceci est très bien surtout si ce n'est pas vous qui avait configurer les slaves en place de savoir ce que contient le slave :
+
+![](./imgs/14-05-add-slave-status-system-info.png)
+
+De plus vous pouvez voir le logs de l'agent , particulièrement intéressant quand il y a des problème d'établissement de connexion :P .
+
+![](./imgs/14-05-add-slave-status-log.png)
+
+Nous allons faire un ajustement au niveau de l'agent **master** afin que lui aussi utilise les étiquettes ( labels ), afin d'avoir une meilleur gestion du choix de machine. 
+
+![](./imgs/14-06-add-slave-change-master-1.png)
+
+Nous avons donc maintenant des labels différent :
+
+![](./imgs/14-06-add-slave-change-master-2.png)
+
+### Démonstration de l'utilisation 
+
+C'est bien beau tous ça mais voyons l'utilisation maintenant de ces exécuteurs , nous allons reprendre la tâche simpliste de récupération des informations du CPU et voir l'assignation au slave à l'aide des étiquettes .
+
+Je reprend la tâche **demo-gitlab** je l'édite pour modifier les labels :
+
+![](./imgs/15-01-use-slave-set-label-job-git.png)
+
+Comme vous pouvez le voir tout de suite Jenkins m'indique que certain slaves correspondes au critère saisie . 
+J'exécute la tâches et c'est un succès :
+
+![](./imgs/15-02-use-slave-run-job-success-1.png)
+
+En visualisant le résultat de la console **console output** je peux voir que ceci fut exécuter sur le __master__ :
+
+![](./imgs/15-02-use-slave-run-job-success-console-log.png)
+
+
+Je désire maintenant forcé que le build soit réalisé sur notre nouveau slave , je vais donc ajouter en plus de __git__ l'étiquette __jenkinbot__ 
+
+![](./imgs/15-03-use-slave-set-label-job-git-jenkinbot.png)
+
+Et on lance l'exécution, mais là **BOOOM** :
+
+![](./imgs/15-03-use-slave-run-job-crash-git.png) 
+
+Mais pourquoi ? Simplement parce que l'application git n'est PAS présente :
+
+```bash
+$ docker exec -it x3-jenkins-slave-f bash                                                                                                            
+root@jenkins-slave:/# git              
+bash: git: command not found   
+```
+
+Je voulais faire la démonstration afin de bien sensibilité que Jenkins ne réalise que des exécutions, mais vos slaves doivent être configurer adéquatement pour avoir l'ensemble des requis présents ! L'utilisation des labels doit donc être bien utilisé pour optimisé vos slaves et les licences si Jenkins utilise des applications qui vous oblige à payer des licences.
+
+J'ai installation l'application **git** pour les besoins de la démonstration :
+
+```bash
+root@jenkins-slave:/# git --version    
+git version 2.7.4
+
+```
+
+Si je le re roule :
+
+![](./imgs/15-03-use-slave-run-job-success-git.png)
