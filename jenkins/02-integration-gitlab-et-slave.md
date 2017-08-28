@@ -373,3 +373,122 @@ Nous allons ajuster aussi le [docker-compose.yml](./dockers/docker-compose-slave
    Successfully built d9f59db68318        
    Successfully tagged x3-jenkins-slave:latest  
 ```
+
+Comme la compilation de l'image est un succès nous passons à l'étape de démarrage de l'ensemble :
+
+```bash
+$ docker-compose up -d 
+
+$ docker ps                   
+CONTAINER ID        IMAGE                     COMMAND                  STATUS                             PORTS                     NAMES
+487a4c53773d        x3-jenkins-front          "httpd-foreground"       Up 35 seconds                      80/tcp                    x3-jenkins-apache-f
+de0200c746a1        jenkins/jenkins           "/bin/tini -- /usr..."   Up 36 seconds                      8080/tcp, 50000/tcp       x3-jenkins-f
+5695f7c6369c        x3-jenkins-slave          "/usr/sbin/sshd -D"      Up 37 seconds                      22/tcp                    x3-jenkins-slave-f
+b99c5fdcfde1        gitlab/gitlab-ce:latest   "/assets/wrapper"        Up 38 seconds (health: starting)   22/tcp, 80/tcp, 443/tcp   x3-gitlab-f
+
+```
+
+### Configuration du slave dans Jenkins
+
+Nous avons notre conteneur ou notre machine physique qui sera utilisé par Jenkins comme agent , avant de définir la configuration dans Jenkins nous allons d'abord valider que la configuration manuellement fonctionne avant d'ajouter la couche Jenkins. 
+
+Pour ce faire nous allons simplement utiliser la clé ssh, préalablement généré, et faire une connexion depuis le **master** jenkins vers le slave avec l'utilisateur définie. 
+
+1. Mise en place de la clé privé sur le serveur Jenkins ( ou le conteneur )
+2. Réalisation d'une connexion.
+
+
+```bash
+$ mkdir /srv/docker/x3-jenkins-f/jenkins-data/ssh
+$ cp jenkins-nodes_rsa /srv/docker/x3-jenkins-f/jenkins-data/ssh/
+
+$ docker exec -it x3-jenkins-f bash
+jenkins@jenkins:/$ ping jenkins-s1
+PING jenkins-s1 (172.31.0.3): 56 data bytes
+64 bytes from 172.31.0.3: icmp_seq=0 ttl=64 time=0.202 ms
+
+jenkins@jenkins:/$ ssh -i /var/jenkins_home/ssh/jenkins-nodes_rsa jenkinbot@jenkins-s1
+The authenticity of host 'jenkins-s1 (172.31.0.3)' can t be established.
+ECDSA key fingerprint is SHA256:ef8dN8StPBXRVqlWKjAedKxVN7sMO9y21kVan//cEYk.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'jenkins-s1,172.31.0.3' (ECDSA) to the list of known hosts.
+jenkinbot@jenkins-s1's password: 
+```
+
+Comme on peut le voir ça ne fonctionne pas :D , si nous avions eu un succès le système n'aurait PAS demandé de mot de passe :D. 
+Analyse rapide, j'en profite, car c'est une erreur très commun et quand on a pas l'habitude ça prend du temps à trouver, c'est tellement commun que je le fait encore :P.
+
+* Analyse des permissions des fichiers pour le fichier authorized_keys :
+
+```bash
+$ docker exec -it x3-jenkins-slave-f bash
+
+root@jenkins-slave:~# ls -la /home/jenkinbot
+total 12
+drwxr-xr-x 3 jenkinbot jenkinbot   69 Aug 25 17:45 .
+drwxr-xr-x 3 root      root        23 Aug 25 17:45 ..
+-rw-r--r-- 1 jenkinbot jenkinbot  220 Aug 31  2015 .bash_logout
+-rw-r--r-- 1 jenkinbot jenkinbot 3771 Aug 31  2015 .bashrc
+-rw-r--r-- 1 jenkinbot jenkinbot  655 Jun 24  2016 .profile
+drwx------ 2 root      root        29 Aug 25 17:45 .ssh
+
+root@jenkins-slave:~# ls -la /home/jenkinbot/.ssh/                             
+total 4                                
+drwx------ 2 root      root       29 Aug 25 17:45 .                            
+drwxr-xr-x 3 jenkinbot jenkinbot  69 Aug 25 17:45 ..                           
+-rwx------ 1 root      root      394 Aug 25 17:33 authorized_keys  
+```
+
+Le problème ici est le propriétaire du répertoire .ssh et authorized_keys , j'ai donc modifier mon conteneur pour que ce soit jenkinbot (utilisateur) et jenkinbot (le groupe) . Je redémarre les conteneurs et refait le teste :
+
+```bash
+$ docker exec -it x3-jenkins-f bash                                    
+jenkins@jenkins:/$ cat /proc/cpuinfo ^C                                        
+jenkins@jenkins:/$ ping jenkins-s1     
+PING jenkins-s1 (172.31.0.3): 56 data bytes                                    
+64 bytes from 172.31.0.3: icmp_seq=0 ttl=64 time=0.109 ms 
+
+jenkins@jenkins:/$ ssh -i /var/jenkins_home/ssh/jenkins-nodes_rsa jenkinbot@jenkins-s1                                                                        
+Welcome to Ubuntu 16.04.1 LTS (GNU/Linux 4.12.4-1-ARCH x86_64)                 
+
+ * Documentation:  https://help.ubuntu.com                                     
+ * Management:     https://landscape.canonical.com                             
+ * Support:        https://ubuntu.com/advantage                                
+
+The programs included with the Ubuntu system are free software;                
+the exact distribution terms for each program are described in the             
+individual files in /usr/share/doc/*/copyright.                                
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by           
+applicable law.                        
+
+To run a command as administrator (user "root"), use "sudo <command>".         
+See "man sudo_root" for details.       
+
+jenkinbot@jenkins-slave:~$
+```
+
+Succès comme le teste passant fonctionne bien nous pouvons passer à l'étape de la configuration dans Jenkins .
+
+Dans l'interface de Jenkins **Manage Jenkins** --> **Manage Nodes** :
+
+![](./imgs/14-01-add-slave-overview.png)
+
+Nous allons donner un nom à notre slave , le nom que je vais choisir est **jenkinbot=slave-c1** :
+
+![](./imgs/14-02-add-slave-nom-salve.png)
+
+Je vous suggère de définir le nom de l'utilisateur dans le nom du slave , en plus de la machine , lors que vous voulez voir l'activité vous savez les noms de vos machines donc souvent c'est ce que l'œil voit en premier. Pourquoi le nom de l'utilisateur , car pour des questions de sécurité je vais avoir parfois 2 ou 3 agent de configurer pour la MÊME machine mais avec des noms différents. L'objectif est de segmenter l'accès même si c'est sur la même box.
+
+Nous allons à présent compléter les champs, voici le résultat , presque complet.
+
+![](./imgs/14-03-add-slave-definition.png)
+
+* Description : c'est vraiment pour vous en fait encore plus pour vos collègue :D
+* # exécuteurs : Permet de définir le nombre de job qui pourra être exécuter sur la machine , bien entendu il faut faire attention de ne pas tuer la machine en définissant trop d'exécuteurs. Il semble y avoir des plugins pour avoir une gestion dynamique, mais n'ayant aucune expérience je vais vous laissez googlé ça :P.
+* Remote root Directory : Permet de définir le répertoire de travaille , idéalement les disques dur devrait être rapide afin de réduire les temps d'accès disque qui ralentisse le traitement des tâches.
+* Labels : Les étiquettes seront utilisé afin de définir les caractéristiques de l'agent, nous pourrions définir des applications ou librairies installé afin d'indiquer quelle tâches peux être exécuter sur ce slave.
+* Usage : Je privilégie l'utilisation des étiquettes afin d'avoir une meilleur gestion .
+* Launch method : Telle que mentionné , pour le moment j'utilise une connexion ssh pour l'établissement de connexion , en plus de la simplicité c'est qu'en plus d'utiliser les slaves avec Jenkins, je vais aussi utiliser les machines de build avec Ansible ou autre pour faire du déploiement . Les machines de build et d'exécution de jobs peuvent avoir plusieurs rôle.
+* Host Key Verification Strategy  : J'indique que je ne veux pas de validation , ici libre à vous , cette validation est l'échange de clé ssh qui est réalisé lors de la première connexion . Comme je veux être en mesure de déployer des slaves rapidement je désactive la validation , mais c'est une question de sécurité libre à vous de choisir la bonne option et elle peut être différente selon le slave :D.
+    

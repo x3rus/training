@@ -29,13 +29,15 @@ RUN useradd -s /bin/bash -m  jenkinbot && \
 
  # Creation du répertoire ssh pour l'utilisateur
 RUN mkdir /home/jenkinbot/.ssh/ && \
+    chown jenkinbot:jenkinbot /home/jenkinbot/.ssh && \
     chmod 700 /home/jenkinbot/.ssh/
 
  # Copie la clef publique pour jenkins 
 COPY conf/authorized_keys /home/jenkinbot/.ssh/authorized_keys
 
  # Fix perms
-RUN chmod 700 /home/jenkinbot/.ssh/authorized_keys
+RUN chown jenkinbot:jenkinbot /home/jenkinbot/.ssh/authorized_keys && \
+    chmod 700 /home/jenkinbot/.ssh/authorized_keys
 
  # Port et service
 EXPOSE 22
