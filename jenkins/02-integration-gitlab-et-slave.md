@@ -568,3 +568,10 @@ git version 2.7.4
 Si je le re roule :
 
 ![](./imgs/15-03-use-slave-run-job-success-git.png)
+
+### Recommandation pour vos slaves
+
+Bien de mon point de vue ceci devrait s'appliquer à l'ensemble de vos système, il est particulièrement important d'avoir un système de gestion de configuration de vos slaves. L'idée est d'avoir la certitude qu'ils sont tous pareil avec l'ensemble des outils de configuration requis. 
+L'idée est aussi que si vous avez besoin d'augmenter votre puissance de calcul l'ajout d'un slave qu'il soit permanent ou temporaire doit être simple et rapide ! De plus si votre / vos serveurs actuelle ont une problème matériel le remplacement ne devrait pas impacté le développement pendant plusieurs jours . Bien entendu si vous n'avez pas d'autre matériel sous la main il n'y a pas de miracle. 
+
+Pour ce faire nous pouvons utiliser **Puppet** que nous verrons bientôt ...
