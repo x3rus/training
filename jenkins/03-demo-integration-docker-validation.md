@@ -201,3 +201,122 @@ C'est bien maintenant j'ai l'erreur attendu :D :
 
 ![](./imgs/16-05-use-case-test-slave-docker-run-2.png)
 
+Pourquoi, il y a ce problème de permissions ?? En fait le problème dans la définition de notre conteneur , l'exécution des commandes est réalisé avec l'utilisateur jenkinbot . Cependant l'utilisateur n'est pas membre du groupe docker donc le binaire __docker__ n'est pas en mesure d'établir une connexion au docker .
+
+```bash
+$ ls -l /var/run/docker.sock
+srw-rw---- 1 root docker 0 Sep  1 17:05 /var/run/docker.sock
+
+$ ls -ln /var/run/docker.sock 
+srw-rw---- 1 0 994 0 Sep  1 17:05 /var/run/docker.sock 
+```
+
+Nous allons donc modifier la définition du conteneur pour ajouter **jenkinbot** au groupe dockers.
+
+Résultat [Dockerfile](./dockers/jenkins-slave/Dockerfile-v2):
+
+```
+ # package 
+
+ # Create default user "jenkinbot" with password toto
+ # Ajout du groupe docker pour communiquer avec le docker host
+ RUN useradd -s /bin/bash -m  jenkinbot && \
+     echo "jenkinbot:toto" | chpasswd && \
+     groupadd -g 994 docker && \
+     usermod -G sudo,docker jenkinbot
+```
+
+On reconstruit l'image et on redémarrage le tous :D.
+
+```bash
+$ docker-compose build jenkins-slave-dck
+[... OUTPUT COUPÉ ...]
+Step 11/12 : EXPOSE 22                 
+ ---> Running in af3c4aae8318          
+ ---> 2a3a863af8ac                     
+Removing intermediate container af3c4aae8318                                   
+Step 12/12 : CMD /usr/sbin/sshd -D     
+  ---> Running in 9bbd1e434c1e          
+  ---> 718bdc09cca0                     
+Removing intermediate container 9bbd1e434c1e                                   
+Successfully built 718bdc09cca0        
+Successfully tagged x3-jenkins-slave:latest 
+
+$ docker-compose rm jenkins-slave-dck
+Going to remove x3-jenkins-slave-dck-f
+Are you sure? [yN] y
+Removing x3-jenkins-slave-dck-f ... done
+
+```
+
+Validation de la configuration :
+
+```
+$ docker exec x3-jenkins-slave-f id jenkinbot
+uid=1000(jenkinbot) gid=1000(jenkinbot) groups=1000(jenkinbot),27(sudo),994(docker)
+```
+
+Résultat à l'exécution de notre tâche :
+
+![](./imgs/16-05-use-case-test-slave-docker-run-3-success.png)
+
+### Création de la tâche intégration Gitlab , compilation de l'image
+
+Je sais maintenant on maîtrise l'intégration __gitlab__, mais on va juste faire une révision .
+Voici ce que nous allons faire dans cette section :
+
+1. Création de la tâche qui nous servira par la suite 
+2. Récupération du dépôt avec la définition du conteneur
+3. Compilation d'une image docker avec la définition extraite du dépôt 
+
+Nous allons encore utiliser la tâche de type **FreeStyle** nous aurons les coudés franches .
+
+![](./imgs/17-01-use-case-create-tache-1.png) 
+
+Lors de la présentation j'avais déjà un dépôt **git** pour des conteneurs :
+
+![](./imgs/17-02-use-case-gitlab-docker-depot-index.png)
+
+Je vais donc ajouter l'utilisateur **robot** pour qu'il soit en mesure de communiquer avec ce dépôt .
+
+![](./imgs/17-02-use-case-gitlab-docker-setting-members.png)
+
+Je vais ajouter une définition docker dans le dépôt pour avoir du matériel à compiler ( générer l'image )
+
+```bash
+$ git clone http://thomas@git.training.x3rus.com/sysadmin/dockers.git 
+Cloning into 'dockers'...
+Password for 'http://thomas@git.training.x3rus.com': 
+remote: Counting objects: 18, done.
+remote: Compressing objects: 100% (13/13), done.
+remote: Total 18 (delta 2), reused 0 (delta 0)
+Unpacking objects: 100% (18/18), done.
+
+$ mkdir x3-webdav && cd x3-webdav
+$ ls
+docker-compose.yml  Dockerfile  README.md  scripts
+
+$ cd .. && git add x3-webdav
+$ git commit -a -m "Ajout du conteneur webdav"
+$ git push origin master
+```
+
+[Fichier tar.gz](./data/x3-webdav-basic.tar.gz) contenant le contenue du docker.
+
+Donc nous avons une définition d'image disponible , et l'utilisateur **robot** peut y accéder ! 
+
+Ajoutons ceci dans la définition de notre tâche :
+
+![](./imgs/17-03-use-case-create-config-gitlab.png)
+
+N'oubliez pas la restriction d'exécution :
+
+![](./imgs/17-03-use-case-create-config-label-restriction.png)
+
+On met une définition juste pour être certain que ça passe quelque chose de simple :
+
+![](./imgs/17-03-use-case-create-build-def.png)
+
+On exécute et on admire :D 
+
+![](./imgs/17-03-use-case-create-build-validation-1-success.png)

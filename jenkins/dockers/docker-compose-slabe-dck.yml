@@ -1,0 +1,68 @@
+version: '2'
+services:
+    jenkins:
+        image: jenkins/jenkins
+        container_name : 'x3-jenkins-f'
+        hostname: jenkins.train.x3rus.com
+        environment:
+            - TZ=America/Montreal
+        volumes:
+            - "/srv/docker/x3-jenkins-f/jenkins-data:/var/jenkins_home"
+        # ports:
+            #- 8080:8080   # Web interface
+            #- 50000:50000 # Build Executors
+        links:
+            - gitlab:gitlabsrv 
+            - jenkins-slave:jenkins-s1
+    apache-front:
+        image: x3-jenkins-front
+        build: ./apache-front/.
+        container_name : 'x3-jenkins-apache-f'
+        hostname : jenkins-front.train.x3rus.com
+        environment:
+            - TZ=America/Montreal
+            - JENKINS_FQDN=jenkins.local.x3rus.com
+            - JENKINS_ALIAS=jenkins2.local.x3rus.com
+            - ADM_EMAIL=admin@example.com
+        links:
+            - jenkins:jenkins
+    jenkins-slave: 
+        image: x3-jenkins-slave
+        build: ./jenkins-slave/.
+        container_name : 'x3-jenkins-slave-f'
+        hostname : jenkins-slave.train.x3rus.com
+        environment:
+            - TZ=America/Montreal
+        links:
+            - gitlab:gitlabsrv 
+    jenkins-slave-dck: 
+        image: x3-jenkins-slave
+        build: ./jenkins-slave/.
+        container_name : 'x3-jenkins-slave-dck-f'
+        hostname : jenkins-slave-dck.train.x3rus.com
+        environment:
+            - TZ=America/Montreal
+        links:
+            - gitlab:gitlabsrv 
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - /usr/bin/docker:/usr/bin/docker
+    gitlab:
+        image: 'gitlab/gitlab-ce:latest'
+        container_name : 'x3-gitlab-f'
+        hostname: git.training.x3rus.com
+        environment:
+            TZ: America/Montreal
+            GITLAB_OMNIBUS_CONFIG: |
+                gitlab_rails['time_zone'] = 'America/Montreal'
+                gitlab_rails['gitlab_email_from'] = 'noreply@x3rus.com'
+                gitlab_rails['manage_backup_path'] = true
+                gitlab_rails['backup_path'] = "/var/opt/gitlab/backups"
+                gitlab_rails['backup_archive_permissions'] = 0640 
+                gitlab_rails['backup_keep_time'] = 604800
+                gitlab_rails['smtp_enable'] = true
+        volumes:
+            - '/srv/docker/x3-gitlab-f/gitlab/etc:/etc/gitlab'
+            - '/srv/docker/x3-gitlab-f/gitlab/logs:/var/log/gitlab'
+            - '/srv/docker/x3-gitlab-f/gitlab/data/:/var/opt/gitlab'
+
