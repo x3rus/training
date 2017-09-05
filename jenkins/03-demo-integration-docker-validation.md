@@ -260,7 +260,7 @@ Résultat à l'exécution de notre tâche :
 
 ![](./imgs/16-05-use-case-test-slave-docker-run-3-success.png)
 
-### Création de la tâche intégration Gitlab , compilation de l'image
+### Création de la tâche intégration Gitlab , compilation de l'image Docker
 
 Je sais maintenant on maîtrise l'intégration __gitlab__, mais on va juste faire une révision .
 Voici ce que nous allons faire dans cette section :
@@ -320,3 +320,15 @@ On met une définition juste pour être certain que ça passe quelque chose de s
 On exécute et on admire :D 
 
 ![](./imgs/17-03-use-case-create-build-validation-1-success.png)
+
+Donc nous sommes en mesure d'en Jenkins de réaliser la compilation d'une image docker sans problème . 
+Nous voulions être aussi en mesure de réaliser un validation de notre image lors de la compilation , en d'autre mot un test unitaire.
+
+
+### Création d'un système de validation du conteneur
+
+Lors de la présentation DevOps j'avais insisté sur l'aspect de validation , de mise en place de teste unitaire préalable au déploiement. J'avais mentionné que ceci est principalement du côté du développement. Pour ce qui est des testes unitaire effectivement c'est plus pour l'équipe de développement par contre le côté test d'intégration nous incombe . Prenons l'exemple d'un conteneur pour le service **webdav**, quelle type de validation puis je réaliser ?
+
+
+
+
