@@ -329,6 +329,47 @@ Nous voulions être aussi en mesure de réaliser un validation de notre image lo
 
 Lors de la présentation DevOps j'avais insisté sur l'aspect de validation , de mise en place de teste unitaire préalable au déploiement. J'avais mentionné que ceci est principalement du côté du développement. Pour ce qui est des testes unitaire effectivement c'est plus pour l'équipe de développement par contre le côté test d'intégration nous incombe . Prenons l'exemple d'un conteneur pour le service **webdav**, quelle type de validation puis je réaliser ?
 
+Pour rappel un service **webdav** est : 
 
+> WebDAV (Web-based Distributed Authoring and Versioning) est un protocole (plus précisément, une extension du protocole HTTP) défini par le groupe de travail IETF du même nom. Décrit dans la RFC 49181, WebDAV permet de simplifier la gestion de fichiers avec des serveurs distants. Il permet de récupérer, déposer, synchroniser et publier des fichiers (et dossiers) rapidement et facilement. L'objectif principal de WebDAV est de rendre possible l'écriture à travers le web et pas seulement la lecture de données. WebDAV permet à plusieurs utilisateurs d'éditer le contenu d'un dossier web simultanément. Il saura gérer les droits d'accès aux fichiers (ou dossiers), en verrouillant momentanément les fichiers et dossiers édités.
+
+Référence : [wikipedia webdav](https://fr.wikipedia.org/wiki/WebDAV)
+
+Voici ce que nous allons valider, j'ai mis en place une liste de validation sur mon conteneur qui sont regroupés par type , je vais lister à haut niveau les validation. Bien entendu ceci évoluera dans le temps avec l'ajout de fonctionnalités
+
+* TestWebDavContainer : Test sur le conteneur webdav avec une utilisateur valide ...
+    * setUp : Initialisation pour le début du test , définition URL , utilisateur , mot de passe, ...
+    * 01_CreateDirectory : Création d'un répertoire 
+    * 02_UploadFile : Upload d'un fichier dans le répertoire
+    * 03_ListDirectoy : Liste les fichiers contenu dans le répertoire 
+    * 04_DownloadFile : Téléchargement du fichier et validation du hash afin de valider que le fichier est le même que lors de l'envoie
+    * 05_BadLoginGetFile : Récupération d'un fichier qui n'existe pas 
+* TestWebDavContainerBadLogin : Test sur le conteneur webdav avec une erreur d'authentification , l'ensemble des testes si dessus ne doivent PAS fonctionner.
+    * setUp : Initialisation pour le début du test , définition URL , utilisateur , ...
+    * 01_CanNotCreateDirectory : Création d'un répertoire alors que l'authentification est mauvaise
+    * 02_CanNotListFile : Récupération de la liste des fichiers 
+* TestWebDavContainerAnonymous : Test du le conteneur webdav en mode anonyme, l'ensemble des testes ne doivent pas fonctionner.
+    * setUp : Initialisation pour le début du test , définition URL .
+    * 01_CanNotCreateDirectory : Création d'un répertoire en mode anonyme 
+    * 02_CanNotListFile : Liste des fichiers disponible.
+
+
+Comme vous pouvez le voir il y a 3 bloques selon la situation , chaque bloque comprend une initialisation de l'environnement et des testes . 
+Le script python est [data/webdav-validation.py](./data/webdav-validation.py) 
+
+Lors de la présentation de la formation sur YouTube je prendrais un peu de temps pour décortiquer le scripts !
+
+Ce script peut être utilisé de n'importe quelle manière , si vous regardez le script comprend la variable avec l'URL :
+
+```python
+ #############
+ # Variables #
+URL = "http://webdav"
+
+```
+
+Mais comme on aime les conteneurs, franchement à outrance pourquoi ne pas mettre ce script dans un conteneur :D , résultat un aura un conteneur qui valide un conteneur :P . Bon si vous me dites ou mais qui valide le conteneur qui valide le conteneur ... je rigole et ne répond pas :P .
+
+#### Conteneur de validation pour webdav (x3-webdav-cli)
 
 
