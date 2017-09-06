@@ -499,3 +499,40 @@ Donc nous avons notre conteneur de validation et nous avons confirmer que l'ense
 ### Explication de la mécanique , la logique , le flux , workflow 
 
 Bon je savais pas quoi mettre comme titre j'ai tous mis :P . Cette section est plus important que la réalisation proprement dite , car c'est ici la compréhension , la mécanique pur dans le script n'est vraiment que les instructions de la logique définie préalablement !!
+
+**Rappel de l'objectif** : Je veux que le conteneur **x3-webdav** soit valider lorsqu'il y a des modifications dans ça définition que ce soit le contenu du __Dockerfile__ , le script de démarrage , fichier de configuration , ... De plus je désire que le conteneur final soit transmis à mon docker __registry__ privé. La définition du conteneur **x3-webdav** est dans un projet **git** contenant plusieurs définition de conteneur (x3-gitlab, x3-jenkins, ... ).
+
+En utilisant __git__ nous avons la puissance de la décentralisation des __commits__ les informations des modifications arrivent dans la branche par __batch__ que ce soit par un push classique ou un __merge request__. Résultat il est possible que lors de la réception des données plusieurs répertoire de définition de conteneur soit inclut .
+
+Le concept au niveau est : 
+
+1. Lors de la réalisation __push__ ou __merge__ requête au serveur git le système va démarrer automatiquement la tâche Jenkins 
+2. La tâches Jenkins aura plusieurs paramètres telle que : 
+    * la liste des répertoires à traiter (exemple : faire le traitement pour x3-webdav uniquement , aucune opération s'il y a eu une modification pour x3-jenkins.
+    * Ne réalise pas le traitement si le commit fut réalisé par une **robot** ( exemple : robot )
+    * Exclusion des commit réalisé antérieur à une date donnée.
+2. La tâches Jenkins va extraire le script pour la tâches depuis __gitlab__
+3. Le système va donc parcourir les logs des commit afin d'identifier si la compilation est requise. Selon les critères :
+    * Nom de l'utilisateur n'est pas exclut.
+    * Le répertoire est bien inclus ou exclut de la liste à prendre en considération.
+    * Le numéro de commit dans le répertoire ne fut pas déjà traité lors d'un build précédent.
+    * Le message du commit n'est pas identifier à être exclut !
+4. Lors de la compilation de l'image de validation, nous n'utiliserons pas le tag par défaut (__latest__) mais **build** l'objectif est que si nous sommes en train de valider un conteneur qui est en exécution sur la machine , il n'y aura pas "conflit" ou d'écrasement de l'image actuellement en utilisation.
+5. Si la compilation fonctionne, il y a une phase de test avec le __unittest__  précédemment présenté.
+6. Si le unit test fut un success une nouvelle compilation est réaliser pour générer le build avec le tag **latest** , car il y a eu validation du fonctionnement.
+7. Le script va mettre en place un fichier de configuration avec le dernier numéro de commit réalisé avec succès, indiquant le dernière commit qui fut compilé avec succès , ce fichier sera commité et poussé au serveur git. L'objectif est de m'assurer qu'il n'y aura pas plusieurs compilation pour les même tâches.
+8. Pousse l'image dans le docker registry
+
+Voici une représentation graphique du résultat :
+
+![](./imgs/WorkFlow.png)
+
+
+Bon là , je vois les yeux puis certain ce disent , woww il s'est vraiment fait chier pour mettre en place toute cette mécanique !! La réalisation de l'ensemble du processus fut long , et vous savez quoi je ne suis pas content de la solution que je vais vous présenter :P . Je travaille sur une autre version amélioré ou du moins différente :D, mais c'est une autre histoire. 
+
+Il faut le voir comme un processus d'apprentissage , de plus si je met une mécanique qui augmentera mon niveau de confiance lors de changement des mes conteneur . Après j'ai pris combien de temps ?? Nous allons dire 2 semaines , 5 jours semaine 2 heures par jours , ça ne fait que (2 x 5)x 2 = 20 heures . C'est juste 2 séries de qualité discutables sur Netflix :P , que celui qui n'a jamais écouté une série au complet même si c'était moyen juste parce que on l'avait commencé :D . Sauf que dans la situation présente j'en ressort avec plus de connaissance et une mécanique en place qui me servira dans le temps :D.
+C'est pas pire que faire des formations sur Youtube gratuitement pour aider les gens à progresser :P .
+
+### Mise en place de la solution !!
+
+
