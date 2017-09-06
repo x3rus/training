@@ -1,0 +1,15 @@
+version: '2'
+services:
+    x3-webdav:
+        image: my_private_registry/user/x3-webdav
+        build: .
+        container_name : 'x3-webdav-t'
+        hostname: webdav.x3rus.com
+        environment:
+            - TERM=xterm
+            - TZ=America/Montreal
+            - USERS_PASS=xerus=toto nat=titi
+        volumes:
+            -  /tmp/webdavUpload:/usr/local/apache2/uploads    # uid=33(www-data)
+#            -  /tmp/htpasswd-webdav:/usr/local/apache2/user.passwd
+ 

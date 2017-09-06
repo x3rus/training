@@ -372,4 +372,130 @@ Mais comme on aime les conteneurs, franchement à outrance pourquoi ne pas mettr
 
 #### Conteneur de validation pour webdav (x3-webdav-cli)
 
+Pour les personnes qui disent que j'utilise trop docker je vais dire oui peut-être, mais ceci permet d'avoir plusieurs cas d'utilisation !! Ça augmente l'intérêt de plus ceci offre une grande opportunité de packaging de l'application. Bon fini l'introduction, on se lance dans le Dockerfile. 
 
+Voici le Dockerfile brute [Dockerfile](./dockers/x3-webdav/validations/integration-testing/webdav-cli/Dockerfile) 
+
+```
+ # Description : Test client webdav 
+ #
+ # Author : Thomas Boutry <thomas.boutry@x3rus.com>
+ # Licence : GPLv3+
+
+FROM python:3.5
+MAINTAINER Thomas Boutry "thomas.boutry@x3rus.com"
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN mkdir /x3-apps/
+COPY apps/requirements.txt /x3-apps/
+RUN pip install --no-cache-dir -r /x3-apps/requirements.txt
+
+COPY apps/* /x3-apps/
+
+CMD ["python3", "/x3-apps/webdav-validation.py", "-v" ]
+```
+
+Donc rien de bien sorcier , ceci est un conteneur python classique pour une application :
+
+* Image : J'utilise l'image officiel de référence python 3.5
+* Application : Installation de l'application dans le répertoire **/x3-apps**  et j'utilise la définition des dépendances avec le fichier __requirements__ qui sera utilisé par l'application **pip**.
+* Commande : Je démarre le script ( application ) en mode verbose 
+
+Bien entendu afin d'orchestrer l'ensemble on va utiliser un petit [docker-compose.yml](./validations/integration-testing/docker-compose.yml) !
+
+```
+version: '2'
+services:
+    x3-webdav:
+        image: my_private_registry/user/x3-webdav:build
+        build: ../../
+        container_name : 'x3-webdav-build'
+        hostname: webdav.x3rus.com
+        environment:
+            - TERM=xterm
+            - TZ=America/Montreal
+            - USERS_PASS=thomas=toto
+ 
+    x3-webdav-cli:
+        image: my_private_registry/user/x3-webdav-int-validation:build
+        build: webdav-cli/.
+        container_name : 'x3-webdav-int-validation-b'
+        hostname: webdav-cli.x3rus.com
+        environment:
+            - TERM=xterm
+            - TZ=America/Montreal
+        links:
+            - x3-webdav:webdav
+```
+
+Donc nous avons 2 conteneurs le conteneur **x3-webdav** et le conteneur **x3-webdav-cli** .
+
+* **x3-webdav** : Ce conteneur sera compilé afin de générer l'image , comme vous pouvez le voir le **PATH** du build est relatif définie dans 2 répertoire supérieur. Le nom de l'image dans la situation est **x3-webdav:build** , j'ai opté pour un nom différent afin de générer l'image sous un tag différent que le classique **latest** . Ce que je voulais m'assurer est que cette image ne sera jamais utilisé pour une utilisation en "production" . L'utilisation du tag **latest** est parfois utilisé car c'est celui par défaut. 
+
+* **x3-webdav-cli** : Il y a le lien entre le conteneur de validation et le conteneur à valider :P ( __x3-webdav__ ) 
+
+Voyons un peu le comportement quand on veut faire un teste , c'est partie :
+
+```bash
+$ cd dockers/x3-webdav/validations/integration-testing
+$ docker-compose build                                                
+Building x3-webdav                     
+Step 1/9 : FROM httpd:2.4              
+ ---> 50f10ef90911   
+[ ... OUTPUT COUPE ... ]
+ ---> f35226f62936                     
+Removing intermediate container 1b36ecccf08d                                   
+Successfully built f35226f62936        
+Successfully tagged my_private_registry/user/x3-webdav-int-validation:build 
+
+$ # démarrage du conteneur avec le service webdav
+
+$ docker-compose up -d x3-webdav 
+Creating x3-webdav-build ...           
+Creating x3-webdav-build ... done   
+
+$ docker ps                   
+CONTAINER ID        IMAGE                                      COMMAND                  STATUS              PORTS               NAMES     
+a76031aed37e        my_private_registry/user/x3-webdav:build   "/x3-docker-entryp..."   Up 1 second         80/tcp              x3-webdav-build           
+
+$ # Je lance la validation du conteneur 
+
+$ docker-compose run x3-webdav-cli                                    
+Starting x3-webdav-build ... done      
+test_01_CreateDirectory (__main__.TestWebDavContainer) ... ok                  
+test_02_UploadFile (__main__.TestWebDavContainer) ... <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">                                                      
+<html><head>                           
+<title>201 Created</title>             
+</head><body>                          
+<h1>Created</h1>                       
+<p>Resource /uploads/intergrationTesting/tux.png has been created.</p>
+</body></html>
+ok                                     
+test_03_ListDirectoy (__main__.TestWebDavContainer) ... ok                     
+test_04_DownloadFile (__main__.TestWebDavContainer) ... ok                     
+test_05_BadLoginGetFile (__main__.TestWebDavContainer) ... ok                  
+test_01_CanNotCreateDirectory (__main__.TestWebDavContainerAnonymous) ... ok   
+test_02_CanNotListFile (__main__.TestWebDavContainerAnonymous) ... ok          
+test_01_CanNotCreateDirectory (__main__.TestWebDavContainerBadLogin) ... ok    
+test_02_CanNotListFile (__main__.TestWebDavContainerBadLogin) ... ok           
+
+----------------------------------------------------------------------         
+Ran 9 tests in 0.188s                  
+
+OK                         
+
+$ docker ps                   
+CONTAINER ID        IMAGE                                      COMMAND                  STATUS              PORTS               NAMES
+a76031aed37e        my_private_registry/user/x3-webdav:build   "/x3-docker-entryp..."   Up About a minute   80/tcp              x3-webdav-build
+
+```
+
+Comme vous pouvez le constater , j'ai utiliser l'instruction **docker-compose run** pour faire une exécution juste une fois du conteneur, pour la validation du système. 
+Nous voyons dans la description ci-dessus que tous à bien fonctionné !
+
+Donc nous avons notre conteneur de validation et nous avons confirmer que l'ensemble fonctionne à merveille !! Cependant pour le moment nous sommes dans une mécanique manuelle de validation. Nous allons maintenant voir comment j'ai réalisé l'intégration avec Jenkins. 
+
+### Explication de la mécanique , la logique , le flux , workflow 
+
+Bon je savais pas quoi mettre comme titre j'ai tous mis :P . Cette section est plus important que la réalisation proprement dite , car c'est ici la compréhension , la mécanique pur dans le script n'est vraiment que les instructions de la logique définie préalablement !!
