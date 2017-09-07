@@ -535,4 +535,117 @@ C'est pas pire que faire des formations sur Youtube gratuitement pour aider les 
 
 ### Mise en place de la solution !!
 
+J'aimerai signaler que la solution présenter n'est pas optimal , l'idéal serait de mettre en place une solution avec un repository d'artefact telle que **nexus** et d'utiliser **maven** pour l'orchestration du processus de build et la gestion des dépendances. Bon ceci étant dis ça reste quelque chose de très intéressant et ça nous permettra de voir l'amélioration de la solution. 
 
+Avant de mettre en place l'activation automatique lors des commit dans gitlab, je vais mettre en place la solution avec des exécutions manuel du build.
+
+#### Stockage du script qui réalisera la validation ( si le build doit avoir lieu ) 
+
+L'ensemble de la logique fut réalisé dans un script python pour faire la validation si le build doit avoir lieu ou non. Bien entendu ce script doit être conserver pour être appeler le moment venu. Dans la situation présente je voulais avoir une petite gestion de la version du script que je manipulerai , donc je voulais avoir un répository, mais pas l'ensemble de la mécanique avec **nexus** . J'ai donc analyser mes options :
+
+* Faire un git clone du projet 
+* Utiliser le système des branches dans git
+* Inclure dans mon dépôt de docker le script de __Jenkins__
+* Utiliser le système d'artefact dans Gitlab 
+
+J'ai opté pour la dernière option !
+
+Je vais donc inclure dans le dépôt projet mon script de Jenkins . 
+
+```bash
+$ git remote -v
+origin  http://thomas@git.training.x3rus.com/sysadmin/scripts.git (fetch)
+origin  http://thomas@git.training.x3rus.com/sysadmin/scripts.git (push)
+
+$ ls jenkins/
+documentation  gitBuildValidation.py  jenkins-build-EXAMPLE.cfg  __pycache__  README.md
+
+$ git add jenkins
+
+$ git commit -m "Ajout des scripts pour Jenkins "
+[master 348be69] Ajout des scripts pour Jenkins
+ 7 files changed, 587 insertions(+)
+ create mode 100644 jenkins/README.md
+ create mode 100644 jenkins/__pycache__/gitBuildValidation.cpython-36.pyc
+ create mode 100644 jenkins/documentation/gitBuildValidation/WorkFlow.png
+ create mode 100644 jenkins/documentation/gitBuildValidation/WorkFlow.xml
+ create mode 100644 jenkins/documentation/gitBuildValidation/tasks/test-build-error.md
+ create mode 100644 jenkins/gitBuildValidation.py
+ create mode 100644 jenkins/jenkins-build-EXAMPLE.cfg
+
+$  git push origin                                                                                                                                   
+Password for 'http://thomas@git.training.x3rus.com':                           
+Counting objects: 14, done.            
+Delta compression using up to 4 threads.                                       
+Compressing objects: 100% (12/12), done.                                       
+Writing objects: 100% (14/14), 186.27 KiB | 10.96 MiB/s, done.                 
+Total 14 (delta 0), reused 0 (delta 0) 
+To http://git.training.x3rus.com/sysadmin/scripts.git                          
+   83410f4..348be69  master -> master  
+
+```
+
+Si nous retournons dans __Gitlab__ et que nous allons dans le projet --> Repository --> Branches, nous avons la possibilité d'avoir un lien pour télécharger notre application / branche. 
+
+![](./imgs/18-01-use-case-ajout-script-jenkins-gitlab-extraction.png)
+
+Je vais utiliser cette URL pour faire l'extraction de mon outils , ceci est le **wget** du début :
+
+![](./imgs/18-02-use-case-ajout-script-jenkins-workflow-part1.png)
+
+Donc nous démarrons la création de la tâche Jenkins pour mettre en place la solution dans l'outil, nous les 2 points requis :
+
+* Les testes d'intégration.
+* Le scripts de validation si le build doit avoir lieu.
+
+#### Configuration de la tâche Jenkins
+
+Donc nous allons faire la création d'un tâche **FreeStyle** nommé build-dockers , telle que mentionné nous allons y allé par étape :
+
+1. Extraction du dépôt
+2. Récupération du script de validation depuis l'artefact de git 
+3. Exécution du script de validation pour savoir si nous devons traiter le commit
+4. Compilation et test intégration du conteneur
+
+Pour le moment ce sera tout, dans un deuxième temps nous ajouterons :
+
+1. Le build automatique lors des commit .
+2. La gestion multi-branche du dépôt.
+3. Le commit post-build , si ce dernier a bien fonctionné afin définir le dernier build avec succès
+
+Voici la définition de la tâche :
+
+![](./imgs/18-05-use-case-creation-tache-jenkins-p1.png)
+![](./imgs/18-05-use-case-creation-tache-jenkins-p2.png)
+![](./imgs/18-05-use-case-creation-tache-jenkins-p3.png)
+![](./imgs/18-05-use-case-creation-tache-jenkins-p4.png)
+![](./imgs/18-05-use-case-creation-tache-jenkins-p5.png)
+
+Voici le texte du contenu du champs Build. 
+
+```bash
+ #!/bin/bash
+echo "\n\n"
+echo "=========================================="
+
+ # clean up
+rm -rf scripts-master*
+  
+ # get file
+wget --config $HOME/.wget-gitlab http://gitlabsrv/sysadmin/scripts/repository/archive.tar.gz?ref=master -O scripts-master.tar.gz
+    
+ # untar and fix directory name
+tar -zxf scripts-master.tar.gz && mv scripts-master-* scripts-master
+
+echo "Banche name : $BRANCH_NAME"
+echo "change id : $CHANGE_ID"
+echo "change target : $CHANGE_TARGET"
+echo "tag name : ${TAGNAME}"
+echo "git variables: $GIT_BRANCH"
+echo "git variables: $GIT_BRANCH"
+echo "git commit  : $GIT_COMMIT"
+
+python3 scripts-master/jenkins/gitBuildValidation.py  -D ${LST_DIR_TO_PROCESS} -u ${USER_EXCLUDE}
+```
+
+Je vais me concentrer sur cette section, car pour le reste nous l'avons déjà "couvert" dans les autres session sur jenkins .
