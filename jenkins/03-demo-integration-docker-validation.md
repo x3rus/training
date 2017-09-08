@@ -748,11 +748,19 @@ Donc pour les plus jeune ou les personnes qui n'ont pas eu la CHANCE de travaill
 
 Voilà on va pas dire que c'est compliqué comme maven ;-).
 
+Regardons les cibles présent :
+
+* **all** : ceci est la cible par défaut quand on utilise la commande **make** sans argument
+* **help** : affiche l'aide pour le Makefile 
+* **unittest**: contient la cible : **build-and-test** et **cleanup-test**
+* **build-and-test** : change de répertoire pour allé dans le lieu de la définition des testes , utilise la commande __docker-compose__ en forçant la recompilation de l'ensemble des conteneur et démarre le conteneur x3-webdav. Par la suite il démarre le conteneur de validation qui exécutera les testes unitaire ( x3-webdav-cli ).
+* **cleanup-test** : réalise avec la commande docker-compose le nettoyage de l'environnement.
+
 Ajout dans git du Makefile et j'ai constater que je n'avais pas ajouter la validation dans le dépôt :
 
 ```bash
-$ git commit -m "Ajout du makefile et l'ensemble de la mécanique de validation "                                                                     
-[master 206f611] Ajout du makefile et l'ensemble de la mécanique de validation
+$ git commit -m "Ajout du makefile et l ensemble de la mécanique de validation "                                                                     
+[master 206f611] Ajout du makefile et l ensemble de la mécanique de validation
  8 files changed, 347 insertions(+)
  create mode 100644 x3-webdav/Makefile
  create mode 100644 x3-webdav/validations/READMEm.d
@@ -762,4 +770,159 @@ $ git commit -m "Ajout du makefile et l'ensemble de la mécanique de validation 
  create mode 100644 x3-webdav/validations/integration-testing/webdav-cli/apps/tux_avatars1.jpg
  create mode 100644 x3-webdav/validations/integration-testing/webdav-cli/apps/webdav-validation-ORI.py
  create mode 100644 x3-webdav/validations/integration-testing/webdav-cli/apps/webdav-validation.py 
+```
+
+
+Nous allons réaliser un autre test , soit dit en passant il y aura un autre problème :P et oui telle que mentionné lors de toutes mes formations j'aime laisser des erreurs . L'objectif est de voir la gestion du changement lors de la mise en place du système , car soyons honnête quand VOUS le ferez et quand JE le fait ça marche JAMAIS du premier coup , c'est la l'intérêt !
+
+Voici le résultat : 
+
+![](./imgs/18-06-use-case-third-execution.png)
+
+Donc il manque la commande make , en fait il manque plein d'application on va gagner du temps je vais modifier le Dockerfile pour ajuster l'ensemble .
+
+Voici ce qui fut ajouté dans le Dockerfile :
+
+```
+ # ajout des package oublié :P         
+RUN apt-get install -y libltdl7 git make  python3 python3-pip && \
+    pip3 install docker-compose
+```
+
+On stop, détruit , rebuild le conteneur et le redémarre 
+
+```bash
+$ docker-compose stop jenkins-slave-dck && docker-compose rm jenkins-slave-dck && docker-compose build jenkins-slave-dck && docker-compose up -d jenkins-slave-dck 
+```
+
+Je voulais vous montrer que ça vous arrivera tous le temps , une nouvelle réalité , un nouveau requis pour votre slave. Dans notre cas nous utilisons docker ceci est très bien . Si vous êtes amené à devoir utiliser des machines physique que vous ne pouvez pas utiliser docker , utiliser un système de gestion de configuration telle que puppet. 
+
+Exécutons de nouveau la tâche !
+
+Voici un exemple du résultat :
+
+```
+Banche name : 
+change id : 
+change target : 
+tag name : 
+git variables: origin/master
+git variables: origin/master
+git commit  : 614016e1b023c790781fd755aed7b4890ad3f02d
+
+WARNING: Conf file not found :  x3-webdav/jenkins-build.cfg
+b'614016e1b023c790781fd755aed7b4890ad3f02d' : ['x3-webdav']
+WARNING: Conf file not found :  x3-webdav/jenkins-build.cfg
+WARNING: Conf file not found :  x3-webdav/jenkins-build.cfg
+WARNING: Conf file not found :  x3-webdav/jenkins-build.cfg
+WARNING: Conf file not found :  x3-webdav/jenkins-build.cfg
+WARNING: Conf file not found :  x3-webdav/jenkins-build.cfg
+WARNING: Conf file not found :  x3-webdav/jenkins-build.cfg
+WARNING: Conf file not found :  x3-webdav/jenkins-build.cfg
+WARNING: Conf file not found :  x3-webdav/jenkins-build.cfg
+b'206f61194d43d5c93e974c15c56ea21ad97bd9c7' : ['x3-webdav', 'x3-webdav', 'x3-webdav', 'x3-webdav', 'x3-webdav', 'x3-webdav', 'x3-webdav', 'x3-webdav']
+WARNING: Conf file not found :  x3-webdav/jenkins-build.cfg
+WARNING: Conf file not found :  x3-webdav/jenkins-build.cfg
+WARNING: Conf file not found :  x3-webdav/jenkins-build.cfg
+WARNING: Conf file not found :  x3-webdav/jenkins-build.cfg
+b'c21f71be7a15ea916f4ddb438be09b29b2a4d72c' : ['x3-webdav', 'x3-webdav', 'x3-webdav', 'x3-webdav']
+Build must RUN
+Processing : x3-webdav
+WARNING: Unable to commit config file for Directory : x3-webdav
+==================================================
+ Directory		:		x3-webdav
+ Status		:		True
+ Message		:		SUCCESS: build x3-webdavBuild time used : 0:00:15.714915
+		##################################################
+		b"make: Entering directory '/home/jenkinbot/workspace/build-dockers/x3-webdav'\n"
+		b'cd validations/integration-testing && docker-compose build "--force-rm" && docker-compose up -d x3-webdav \n'
+		b'Building x3-webdav\n'
+		b'Step 1/9 : FROM httpd:2.4\n'
+		b' ---> 50f10ef90911\n'
+		b'Step 2/9 : MAINTAINER Thomas Boutry "thomas.boutry@x3rus.com"\n'
+		b' ---> Using cache\n'
+		b' ---> 2898140bee32\n'
+		b"Step 3/9 : RUN sed -i 's/#LoadModule dav_module modules\\/mod_dav.so/LoadModule dav_module modules\\/mod_dav.so/g;          s/#LoadModule dav_fs_module modules\\/mod_dav_fs.so/LoadModule dav_fs_module modules\\/mod_dav_fs.so/g;          s/#LoadModule dav_lock_module modules\\/mod_dav_lock.so/LoadModule dav_lock_module modules\\/mod_dav_lock.so/g;          s/#LoadModule auth_digest_module modules\\/mod_auth_digest.so/LoadModule auth_digest_module modules\\/mod_auth_digest.so/g;          s/#Include conf\\/extra\\/httpd-dav.conf/Include conf\\/extra\\/httpd-dav.conf/g' /usr/local/apache2/conf/httpd.conf\n"
+		b' ---> Using cache\n'
+		b' ---> 5f563e36c63c\n'
+		b"Step 4/9 : RUN sed -i 's/Require user admin/Require valid-user/g' /usr/local/apache2/conf/extra/httpd-dav.conf &&      sed -i 's/AuthType Digest/AuthType Basic/g' /usr/local/apache2/conf/extra/httpd-dav.conf &&     sed -i 's/Require method GET POST OPTIONS//g' /usr/local/apache2/conf/extra/httpd-dav.conf &&     sed -i 's/AuthDigestProvider file/Options Indexes/g' /usr/local/apache2/conf/extra/httpd-dav.conf\n"
+		b' ---> Using cache\n'
+		b' ---> 497c179df221\n'
+		b'Step 5/9 : RUN cat /usr/local/apache2/conf/extra/httpd-dav.conf\n'
+		b' ---> Using cache\n'
+		b' ---> 80407bdcea5e\n'
+		b'Step 6/9 : RUN mkdir /usr/local/apache2/uploads /usr/local/apache2/var     && chown daemon /usr/local/apache2/uploads /usr/local/apache2/var\n'
+		b' ---> Using cache\n'
+		b' ---> f7d3e7e92956\n'
+		b'Step 7/9 : RUN /usr/local/apache2/bin/apachectl configtest\n'
+		b' ---> Using cache\n'
+		b' ---> 3803f6a86f35\n'
+		b'Step 8/9 : COPY scripts/x3-docker-entrypoint.sh /\n'
+		b' ---> Using cache\n'
+		b' ---> 2036d73dd161\n'
+		b'Step 9/9 : ENTRYPOINT /x3-docker-entrypoint.sh\n'
+		b' ---> Using cache\n'
+		b' ---> 8be11f9ecb08\n'
+		b'Successfully built 8be11f9ecb08\n'
+		b'Successfully tagged my_private_registry/user/x3-webdav:build\n'
+		b'Building x3-webdav-cli\n'
+		b'Step 1/8 : FROM python:3.5\n'
+		b' ---> 538287ecca03\n'
+		b'Step 2/8 : MAINTAINER Thomas Boutry "thomas.boutry@x3rus.com"\n'
+		b' ---> Using cache\n'
+		b' ---> c9a242023da0\n'
+		b'Step 3/8 : ENV DEBIAN_FRONTEND noninteractive\n'
+		b' ---> Using cache\n'
+		b' ---> b2c4ea908669\n'
+		b'Step 4/8 : RUN mkdir /x3-apps/\n'
+		b' ---> Using cache\n'
+		b' ---> ed457a0c010c\n'
+		b'Step 5/8 : COPY apps/requirements.txt /x3-apps/\n'
+		b' ---> Using cache\n'
+		b' ---> 3f40c3fdcd3b\n'
+		b'Step 6/8 : RUN pip install --no-cache-dir -r /x3-apps/requirements.txt\n'
+		b' ---> Using cache\n'
+		b' ---> 7c06bd6b3e43\n'
+		b'Step 7/8 : COPY apps/* /x3-apps/\n'
+		b' ---> Using cache\n'
+		b' ---> b003626174ed\n'
+		b'Step 8/8 : CMD python3 /x3-apps/webdav-validation.py -v\n'
+		b' ---> Using cache\n'
+		b' ---> 8f089227f49f\n'
+		b'Successfully built 8f089227f49f\n'
+		b'Successfully tagged my_private_registry/user/x3-webdav-int-validation:build\n'
+		b'Creating x3-webdav-build ... \r\n'
+		b'Creating x3-webdav-build\n'
+		b'\x1b[1A\x1b[2K\rCreating x3-webdav-build ... \x1b[32mdone\x1b[0m\r\x1b[1Bcd validations/integration-testing && docker-compose run x3-webdav-cli\n'
+		b'Starting x3-webdav-build ... \r\n'
+		b'\x1b[1A\x1b[2K\rStarting x3-webdav-build ... \x1b[32mdone\x1b[0m\r\x1b[1Btest_01_CreateDirectory (__main__.TestWebDavContainer) ... ok\n'
+		b'test_02_UploadFile (__main__.TestWebDavContainer) ... ok\n'
+		b'test_03_ListDirectoy (__main__.TestWebDavContainer) ... ok\n'
+		b'test_04_DownloadFile (__main__.TestWebDavContainer) ... ok\n'
+		b'test_05_BadLoginGetFile (__main__.TestWebDavContainer) ... ok\n'
+		b'test_01_CanNotCreateDirectory (__main__.TestWebDavContainerAnonymous) ... ok\n'
+		b'test_02_CanNotListFile (__main__.TestWebDavContainerAnonymous) ... ok\n'
+		b'test_01_CanNotCreateDirectory (__main__.TestWebDavContainerBadLogin) ... ok\n'
+		b'test_02_CanNotListFile (__main__.TestWebDavContainerBadLogin) ... ok\n'
+		b'\n'
+		b'----------------------------------------------------------------------\n'
+		b'Ran 9 tests in 0.162s\n'
+		b'\n'
+		b'OK\n'
+		b'<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n'
+		b'<html><head>\n'
+		b'<title>201 Created</title>\n'
+		b'</head><body>\n'
+		b'<h1>Created</h1>\n'
+		b'<p>Resource /uploads/intergrationTesting/tux.png has been created.</p>\n'
+		b'</body></html>\n'
+		b'cd validations/integration-testing && docker-compose stop x3-webdav && docker-compose rm --force\n'
+		b'Stopping x3-webdav-build ... \r\n'
+		b'\x1b[1A\x1b[2K\rStopping x3-webdav-build ... \x1b[32mdone\x1b[0m\r\x1b[1BRemoving integrationtesting_x3-webdav-cli_run_1 ... \r\n'
+		b'Removing x3-webdav-build                        ... \r\n'
+		b'\x1b[2A\x1b[2K\rRemoving integrationtesting_x3-webdav-cli_run_1 ... \x1b[32mdone\x1b[0m\r\x1b[2B\x1b[1A\x1b[2K\rRemoving x3-webdav-build                        ... \x1b[32mdone\x1b[0m\r\x1b[1BGoing to remove integrationtesting_x3-webdav-cli_run_1, x3-webdav-build\n'
+		b"make: Leaving directory '/home/jenkinbot/workspace/build-dockers/x3-webdav'\n"
+		##################################################
+==================================================
+Finished: SUCCESS
 ```
