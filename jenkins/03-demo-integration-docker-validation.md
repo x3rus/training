@@ -648,4 +648,118 @@ echo "git commit  : $GIT_COMMIT"
 python3 scripts-master/jenkins/gitBuildValidation.py  -D ${LST_DIR_TO_PROCESS} -u ${USER_EXCLUDE}
 ```
 
-Je vais me concentrer sur cette section, car pour le reste nous l'avons déjà "couvert" dans les autres session sur jenkins .
+Je vais me concentrer sur cette section, car pour le reste nous l'avons déjà "couvert" dans les autres session sur Jenkins .
+Donc je supprimer l'ancienne définition du script , j'extrais le tar.gz du script Jenkins , j'affiche quelque information de débuggage qui ne seront pas pertinent lors de la mise en production ... mais bon c'est l'étape 1 de la mise en place. Finalement j'appelle le script avec **gitBuildValidation**.
+
+Je pense qu'un petit teste passant serait bien , en se rappelant ce qui n'est PAS inclut .
+
+Voici le résultat de la console : 
+
+![](./imgs/18-06-use-case-first-execution.png)
+
+Effectivement j'ai définie un fichier de configuration pour le __wget__ malheureusement ce dernier n'est pas définie :-/ , ceci me permet d'avoir une authentification avec gitlab pour récupérer mon artefact. 
+
+Nous allons donc corriger le conteneur **slave** afin d'avoir notre définition convenable :
+
+Édition du fichier __Dockerfile__ :
+
+```bash
+$ cat jenkins/dockers/jenkins-slave/conf/wget-gitlab
+header = PRIVATE-TOKEN: sRUqkvz7tvd8uoqs4LzH
+```
+
+Modification de la définition du Dockerfile :
+
+```bash
+
+  # Copie la clef publique pour jenkins 
+COPY conf/authorized_keys /home/jenkinbot/.ssh/authorized_keys                 
+COPY conf/wget-gitlab /home/jenkinbot/.wget-gitlab
+```
+
+On reprend le tous :
+
+```bash
+$ docker-compose stop jenkins-slave-dck                               
+Stopping x3-jenkins-slave-dck-f ... done      
+
+$ docker-compose build jenkins-slave-dck
+
+$ docker-compose up -d jenkins-slave-dck 
+x3-gitlab-f is up-to-date
+Recreating x3-jenkins-slave-dck-f ... 
+Recreating x3-jenkins-slave-dck-f ... done
+
+```
+
+Si votre Jenkins n'a pas automatiquement constater que le slave est de retour juste le redémarrer :D . 
+On relance l'exécution :
+
+![](./imgs/18-06-use-case-second-execution.png)
+
+Donc nous avons une erreur , il n'y a pas de __Makefile__ , voyons maintenant ce point.
+
+#### L'instruction du processus de build et validation
+
+Bon comme chaque répertoire contenu dans le projet __dockers__ est particulier je peux difficilement avoir une recette de build. De plus comme toujours peut importe le projet il faut être en mesure de gérer les exceptions . J'aurais pu choisir de faire l'opération avec Maven , comme je suis plus vieux et que je voulais avoir une stratégie en place rapidement je suis allé avec un bon vieux Make qui fonctionne à merveille . La rédaction est aussi plus simple. 
+
+Voyons le contenu du Makefile que je vais mettre en place :
+
+```
+ #
+ #
+ # Author : Thomas Boutry <thomas.boutry@x3rus.com>
+ # Licence : GPLv3+
+ # Description : Compilation / creation du conteneur x3-webdav
+ # #############################################################
+
+ ########
+ # VARS #
+
+DIR-VALIDATION = validations/integration-testing
+DCK-COMPOSE-OPT = "--force-rm"
+
+ ###########
+ # TARGETS #
+
+all: unittest build push
+
+help:
+        @echo Targets:
+        @echo -e " all\t\tBuild, unittest and push ."
+        @echo -e " unittest\tBuild contener with temporary name and perform integration script."
+        @echo -e " build\tDo unittest and build real conteneur."
+        @echo -e " push\t\tpush to the docker private docker registrie or public."
+
+unittest: build-and-test cleanup-test
+
+build-and-test:
+        cd $(DIR-VALIDATION) && docker-compose build $(DCK-COMPOSE-OPT) && docker-compose up -d x3-webdav 
+        cd $(DIR-VALIDATION) && docker-compose run x3-webdav-cli
+
+cleanup-test:
+        cd $(DIR-VALIDATION) && docker-compose stop x3-webdav && docker-compose rm --force
+
+```
+
+Donc pour les plus jeune ou les personnes qui n'ont pas eu la CHANCE de travailler avec un Makefile c'est bien simple rapidement :
+
+* **target : ** : nous définissons des cibles (__target__) pour la réalisation de tache , exemple si je réalise la commande **make help** il réalisera la liste des echo définie dans les lignes dessous.  Il est possible de définir des dépendances , dans le cas de **unittest** il faut préalablement réalisé la cible **build-and-test** puis **cleanup-test** .
+
+Voilà on va pas dire que c'est compliqué comme maven ;-).
+
+Ajout dans git du Makefile et j'ai constater que je n'avais pas ajouter la validation dans le dépôt :
+
+```bash
+$ git commit -m "Ajout du makefile et l'ensemble de la mécanique de validation "                                                                     
+[master 206f611] Ajout du makefile et l'ensemble de la mécanique de validation
+ 8 files changed, 347 insertions(+)
+ create mode 100644 x3-webdav/Makefile
+ create mode 100644 x3-webdav/validations/READMEm.d
+ create mode 100644 x3-webdav/validations/integration-testing/docker-compose.yml
+ create mode 100644 x3-webdav/validations/integration-testing/webdav-cli/Dockerfile
+ create mode 100644 x3-webdav/validations/integration-testing/webdav-cli/apps/requirements.txt
+ create mode 100644 x3-webdav/validations/integration-testing/webdav-cli/apps/tux_avatars1.jpg
+ create mode 100644 x3-webdav/validations/integration-testing/webdav-cli/apps/webdav-validation-ORI.py
+ create mode 100644 x3-webdav/validations/integration-testing/webdav-cli/apps/webdav-validation.py 
+```
