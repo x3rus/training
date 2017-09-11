@@ -952,3 +952,207 @@ Et le résultat :
 ![](./imgs/18-07-use-case-gitlab-launch-build-gitlab-setting-resultat.png)
 
 Comme vous pouvez le voir il y a le petit bouton **test** , si vous l'utilisez normalement vous devriez avoir un build qui démarre sur Jenkins. 
+
+Et voici ce que l'on voit dans la liste des tâches réalisé :
+
+![](./imgs/18-07-use-case-gitlab-launch-build-gitlab-setting-resultat-view-lst-job.png)
+
+Donc le TEST est un **succès**, validons à présent le comportement lors d'un __push__ dans le projet. 
+
+```bash
+xerus@goishi [~/git/training/sysadmin/dockers/x3-webdav] {22026} 
+٩(◠◡◠)۶ $ git remote -v
+origin  http://thomas@git.training.x3rus.com/sysadmin/dockers.git (fetch)
+origin  http://thomas@git.training.x3rus.com/sysadmin/dockers.git (push)
+
+```
+
+Je vais réalisé une modification afin de générer une erreur pour voir le comportement . 
+Je vais ajouter un fichier qui n'existe pas dans le Dockerfile afin d'avoir une erreur :
+
+```
+ # erreur pour la visualisation du comportement dans jenkins
+COPY ERREURFILE /tmp/
+```
+
+Je commit et pousse la modification sur le serveur :
+
+```bash
+$ git commit -a -m "Ajout erreur dans le Dockerfile "
+[master 88be4fc] Ajout erreur dans le Dockerfile
+ 1 file changed, 3 insertions(+)
+$ git push origin
+Password for 'http://thomas@git.training.x3rus.com': 
+
+```
+
+Automatiquement la tâche Jenkins est appeler :
+
+![](./imgs/18-08-use-case-gitlab-auto-launch-tache.png)
+
+Et effectivement il y a une erreur sur le build :
+
+![](./imgs/18-08-use-case-gitlab-auto-launch-tache-output.png)
+
+Nous allons refaire une modification pour remettre l'ensemble convenablement !! 
+
+```bash
+$ git commit -a -m "Supprimer l erreur dans le Dockerfile "
+[master bb78f89] Supprimer l erreur dans le Dockerfile
+ 1 file changed, 3 deletions(-)
+$ git push origin
+ Password for 'http://thomas@git.training.x3rus.com': 
+Counting objects: 4, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 383 bytes | 383.00 KiB/s, done.
+Total 4 (delta 3), reused 0 (delta 0)
+To http://git.training.x3rus.com/sysadmin/dockers.git
+  88be4fc..bb78f89  master -> master
+```
+
+Toujours le démarrage automatique et maintenant retour au bon fonctionnement :
+
+![](./imgs/18-08-use-case-gitlab-auto-launch-tache-output-good.png)
+
+Nous avons donc une solution qui fonctionne en fait presque ... 
+
+#### Gestion multi branche
+
+Un des gros avantage de **GIT** est la possibilité d'avoir une gestion multi branche de nos projets , regardons le cas présent ce qui se passe si je crée un branche et que je réalise un commit.
+
+```bash
+xerus@goishi [~/git/training/sysadmin/dockers/x3-webdav] {22039} 
+$ git branch
+* master
+
+$ git checkout -b ze-new-branche 
+Switched to a new branch 'ze-new-branche'
+$ git branch
+master
+* ze-new-branche
+
+```
+
+Dans cette nouvelle branche je vais définir une erreur dans le Dockerfile afin de voir le comportement , je remet sensiblement la même ligne que lors de la démonstration du "bon" fonctionnement de notre tâche automatique.
+
+```
+ # Nouvelle erreur 
+ COPY ERREURFILE /tmp
+```
+
+```bash
+$ git commit -a -m "erreur dans la branche ze-new-branche"
+[ze-new-branche 2c0ec8e] erreur dans la branche ze-new-branche
+  1 file changed, 3 insertions(+)
+
+$  git push origin ze-new-branche                                                                                                                    
+Password for 'http://thomas@git.training.x3rus.com':                           
+Counting objects: 4, done.             
+Delta compression using up to 4 threads.                                       
+Compressing objects: 100% (4/4), done. 
+Writing objects: 100% (4/4), 423 bytes | 423.00 KiB/s, done.                   
+Total 4 (delta 3), reused 0 (delta 0)  
+remote:                                
+remote: To create a merge request for ze-new-branche, visit:
+remote:   http://git.training.x3rus.com/sysadmin/dockers/merge_requests/new?merge_request%5Bsource_branch%5D=ze-new-branche
+remote:                                
+To http://git.training.x3rus.com/sysadmin/dockers.git                          
+ * [new branch]      ze-new-branche -> ze-new-branche     
+```
+
+Jenkins a bien démarré la tâche , cependant il n'y a PAS d'erreur : 
+
+![](./imgs/18-09-use-case-gitlab-multibranche-pas-erreur.png)
+
+Mais pourquoi ? Si la tâche fut bien démarrer l'erreur ne fut pas attrapé ? Est-ce une erreur dans le script ? 
+
+Non en fait le problème est que la tâche fut configurer pour extraire la branche **Master** peut importe la provenance du commit :P.
+
+![](./imgs/18-09-use-case-gitlab-multibranche-pas-erreur-output.png)
+
+Nous pouvons le voir clairement dans la configuration de la tâche :
+
+![](./imgs/18-10-use-case-gitlab-multibranche-bad-config.png)
+
+Ajustons la configuration pour prendre l'ensemble des branches . 
+
+![](./imgs/18-10-use-case-gitlab-multibranche-fix-jenkin-config.png)
+
+Nous réalisons un autre commit dans la branche pour faire le comportement ! 
+
+```bash
+$ git commit -a -m "erreur dans la branche ze-new-branche, avec un commit "                                                                          
+[ze-new-branche 95e2bfc] erreur dans la branche ze-new-branche, avec un commit 
+ 1 file changed, 1 insertion(+), 1 deletion(-)                                 
+$  git push origin ze-new-branche
+Password for 'http://thomas@git.training.x3rus.com': 
+Counting objects: 4, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 390 bytes | 390.00 KiB/s, done.
+Total 4 (delta 3), reused 0 (delta 0)
+remote: 
+remote: To create a merge request for ze-new-branche, visit:
+remote:   http://git.training.x3rus.com/sysadmin/dockers/merge_requests/new?merge_request%5Bsource_branch%5D=ze-new-branche
+remote: 
+To http://git.training.x3rus.com/sysadmin/dockers.git
+   2c0ec8e..95e2bfc  ze-new-branche -> ze-new-branche
+
+```
+
+Suite à l'opération nous avons maintenant une erreur dans Jenkins , suite au build automatique :
+
+![](./imgs/18-10-use-case-gitlab-multibranche-fix-jenkin-config-than-error.png)
+
+Voici donc le résultat à la console : 
+
+![](./imgs/18-10-use-case-gitlab-multibranche-fix-jenkin-config-than-error-output.png)
+
+Nous voyons bien l'extraction de la branche ze-new-branche et l'erreur concorde :
+
+![](./imgs/18-10-use-case-gitlab-multibranche-fix-jenkin-config-than-error-output2.png) 
+
+Nous pouvons dire que c'est un succès ENCORE .
+
+#### Optimisation et commit post-build 
+
+Un point qui m'ennuie dans la solution présente est qu'il est probable que la compilation d'un même répertoire soit réalisé plusieurs fois inutilement , surtout si la compilation est initialisé manuellement. Est-ce importe ? Assurément pas, cependant j'avais envie de mettre en place un fichier de configuration dans le répertoire afin d'identifier le dernier build réalisé avec succès. C'est principalement un cas d'utilisation pour être en mesure plus tard de faire autre chose avec plus de valeur.
+
+Bien entendu si je veux être en mesure d'ajouter ce fichier, ceci veut dire que ma tâche Jenkins doit être en mesure de poussé un commit dans __gitlab__ :P , de plus elle doit le faire uniquement en cas de succès :P .
+
+Réalisons cette configuration afin de voir le comportement , **robot** à déjà les permissions de développeur sur le projet, il pourra donc réalisé le commit / __push__. 
+
+Le script contient déjà la création du fichier de configuration , si nous regardons dans le répertoire de travail de la tâche nous trouverons ça définition : 
+
+```bash
+$ docker exec x3-jenkins-slave-dck-f ls /home/jenkinbot/workspace/build-dockers/x3-webdav/jenkins-build.cfg
+/home/jenkinbot/workspace/build-dockers/x3-webdav/jenkins-build.cfg
+
+$ docker exec x3-jenkins-slave-dck-f cat /home/jenkinbot/workspace/build-dockers/x3-webdav/jenkins-build.cfg
+[DEFAULT]
+commitdatebuildwithsuccess = 1505165825
+```
+
+Cependant ce fichier est inexistant dans le dépôt git :
+
+```bash
+$ ls                          
+docker-compose.yml  Dockerfile  Makefile  README.md  scripts  validations
+```
+
+Veuillez prendre note que script python réalise déjà le commit du fichier :
+
+```python
+390         # Commit config file TODO : Ajouter un critère de commit pour que ce soit pas obligatoire
+391         cmdOs_addConfFile = Popen(['git', 'add', configFullPath], stdout=PIPE, stderr=STDOUT)
+392 
+[ ... OUTPUT COUPÉ ... ]
+
+201         Msg2Commit = commitMsg + " ; " + jenkinsInfo
+202         # Commit config file TODO : Ajouter un critère de commit pour que ce soit pas obligatoire
+203         cmdOs_commitConfFile = Popen(['git', 'commit', '-m', Msg2Commit], stdout=PIPE, stderr=STDOUT)
+204 
+```
+
+Donc le script ajoute le fichier et le commit !! Par contre ce dernier n'est pas transmis au serveur __gitlab__.
