@@ -828,7 +828,7 @@ WARNING: Conf file not found :  x3-webdav/jenkins-build.cfg
 b'c21f71be7a15ea916f4ddb438be09b29b2a4d72c' : ['x3-webdav', 'x3-webdav', 'x3-webdav', 'x3-webdav']
 Build must RUN
 Processing : x3-webdav
-WARNING: Unable to commit config file for Directory : x3-webdav
+ WARNING: Unable to commit config file for Directory : x3-webdav
 ==================================================
  Directory		:		x3-webdav
  Status		:		True
@@ -926,3 +926,29 @@ WARNING: Unable to commit config file for Directory : x3-webdav
 ==================================================
 Finished: SUCCESS
 ```
+
+Maintenant que nous avons un système fonctionnel nous allons ajouter l'intégration avec gitlab. 
+
+#### Intégration avec gitlab pour la compilation lors de commit
+
+Nous sommes rendu au stade que la compilation de l'image du conteneur ainsi que la validation du conteneur fonctionne bien. Un des objectifs reste d'avoir cette compilation automatique lors de commit dans le projet .
+
+Nous allons donc faire en sorte que lors d'un commit dans __gitlab__ le système appel automatiquement Jenkins. Nous allons donc aller dans gitlab pour activer cette configuration. 
+
+Pour débuter nous allons activer la possibilité de démarrer une tâche depuis gitlab via une URL , nous éditons la tâche et nous allons dans la section  **Build Triggers** .
+
+![](./imgs/18-07-use-case-gitlab-launch-build.png)
+
+Vous voyez l'URL dans ma copie d'écran : __http://172.31.0.2:8080/project/build-dockers__ cette dernière est erroné en fait Jenkins utilise l'URL définie dans **Manage Jenkins** --> **Configure System** --> **Jenkins URL**. Avec l'utilisation de docker et l'adressage d'IP dynamique c'est le problème ...
+
+Lors de l'écriture nous ajusterons pour que la communication soit adéquate , vous avez plusieurs option pour activé le build selon l'évènement. Nous sauvegardons et nous allons maintenant passer à l'étape de gitlab.
+
+Nous allons dans le projet **sysadmin/dockers** dans la section **Settings** -> **Integrations** . Voici la configuration :
+
+![](./imgs/18-07-use-case-gitlab-launch-build-gitlab-setting.png)
+
+Et le résultat : 
+
+![](./imgs/18-07-use-case-gitlab-launch-build-gitlab-setting-resultat.png)
+
+Comme vous pouvez le voir il y a le petit bouton **test** , si vous l'utilisez normalement vous devriez avoir un build qui démarre sur Jenkins. 
