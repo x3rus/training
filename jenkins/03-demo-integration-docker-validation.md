@@ -1155,4 +1155,162 @@ Veuillez prendre note que script python réalise déjà le commit du fichier :
 204 
 ```
 
-Donc le script ajoute le fichier et le commit !! Par contre ce dernier n'est pas transmis au serveur __gitlab__.
+Donc le script ajoute le fichier et le commit !! Par contre ce dernier n'est pas transmis au serveur __gitlab__. Nous allons donc modifier la configuration Jenkins pour inclure un __push__ commit si la compilation fut un succès ! 
+
+Nous allons ajouter un **post build Action**, pour réaliser l'opération, de type **git publisher** .
+Nous réaliserons l'opération QUE si le build fut un succès . Comme nous avons une gestion multi-branche du projet je vais pousser dans la branche identifier avec une variable ... 
+
+![](./imgs/18-10-use-case-gitlab-multibranche-push-resultat.png)
+
+Nous allons maintenant valider l'opération en réalisant une modification :
+
+```bash
+$ git branch
+  master
+* ze-new-branche
+
+$ git commit -a -m "Ajout modification du Dockerfile pour declancher un build "
+[ze-new-branche 364e324] Ajout modification du Dockerfile pour declancher un build
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+$  git push origin ze-new-branche                                      
+Password for 'http://thomas@git.training.x3rus.com':                           
+Counting objects: 4, done.             
+Delta compression using up to 4 threads.                                       
+Compressing objects: 100% (4/4), done. 
+Writing objects: 100% (4/4), 401 bytes | 401.00 KiB/s, done.                   
+Total 4 (delta 3), reused 0 (delta 0)  
+remote:                                
+remote: To create a merge request for ze-new-branche, visit:
+remote:   http://git.training.x3rus.com/sysadmin/dockers/merge_requests/new?merge_request%5Bsource_branch%5D=ze-new-branche
+remote:                                
+To http://git.training.x3rus.com/sysadmin/dockers.git                          
+   3f39e94..364e324  ze-new-branche -> ze-new-branche   
+``` 
+
+Donc nous avons maintenant l'exécution du build avec le __push__ :
+
+![](./imgs/18-11-use-case-jenkins-push-gitlab-resultat.png)
+
+Bon j'y ai cru, mais il y a un problème :P , une belle occasion de visualiser l'analyse du problème, on va en profiter :D, je vais faire une sous-section pour bien diviser la configuration.
+
+##### Analyse problème de commit post-build 
+
+Si je regarde le résultat via l'interface de __gitlab__ je ne vois pas mon fichier **jenkins-build.cfg**. 
+
+![](./imgs/18-11-use-case-jenkins-push-gitlab-no-cfg-file-in-gitlab.png)
+
+MAIS pourquoi , si je regarde le résultat à l'écran du build je vais avoir le message suivant : 
+
+```
+b'c21f71be7a15ea916f4ddb438be09b29b2a4d72c' : ['x3-webdav', 'x3-webdav', 'x3-webdav', 'x3-webdav']
+Build must RUN
+Processing : x3-webdav
+WARNING: Unable to commit config file for Directory : x3-webdav
+ ==================================================
+ Directory		:		x3-webdav
+ Status		:		True
+ Message		:		SUCCESS: build x3-webdavBuild time used : 0:00:16.210810
+		##################################################
+```
+
+Je vais établir une connexion afin de visualiser l'état du dépôt git sur le slave .
+
+```bash
+$ docker exec -it x3-jenkins-slave-dck-f bash
+root@jenkins-slave-dck:/#
+
+ # switch comme l'utilisateur jenkins
+root@jenkins-slave-dck:/# su - jenkinbot
+
+ # Je vais dans le répertoire , et je vois bien mon fichier
+jenkinbot@jenkins-slave-dck:~/workspace/build-dockers/x3-webdav$ ls
+Dockerfile  Makefile  README.md  docker-compose.yml  jenkins-build.cfg  scripts  validations
+
+ # le fichier fut bien ajouter au dépôt git local 
+jenkinbot@jenkins-slave-dck:~/workspace/build-dockers/x3-webdav$ git status    
+HEAD detached at 364e324
+Changes to be committed:
+  (use "git reset HEAD <file>..." to unstage)
+
+        new file:   jenkins-build.cfg
+```
+
+Donc tous semble bon mais le commit n'a définitivement pas fonctionné , nous allons donc essayer de le faire manuellement pour comprendre !
+
+```bash
+jenkinbot@jenkins-slave-dck:~/workspace/build-dockers/x3-webdav$ git commit -m "Test Ajout du fichier de configuration "
+
+*** Please tell me who you are.
+
+Run
+
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+
+to set your account s default identity.
+Omit --global to set the identity only in this repository.
+
+fatal: empty ident name (for <jenkinbot@jenkins-slave-dck.train.x3rus.com>) not allowed
+
+```
+
+COOL , maintenant nous avons l'explication de la problématique, nous allons donc ajuste le conteneur pour qu'il ai un fichier de configuration pour git !! Résultat on va ENCORE le détruire :P , et le recréer , on maitrise maintenant :D.
+
+```bash
+
+$ cd dockers/jenkins-slave/conf
+$ cat git-config
+[user]
+        email = robot@example.com
+        name = Mon Robot
+
+ # Ajout de la ligne suivante dans le Dockerfile
+
+COPY conf/git-config /home/jenkinbot/.gitconfig
+```
+
+Bon on stop , rebuild , redémarrer :D.
+
+```bash
+$ docker-compose stop jenkins-slave-dck && docker-compose rm jenkins-slave-dck && docker-compose build jenkins-slave-dck && docker-compose up -d jenkins-slave-dck 
+```
+
+On redémarre le slave dans Jenkins s'il n'est pas repartie tout seul ... et on refait une modification dans le projet Docker pour visualiser que ça fonctionne bien !
+
+```bash
+$ git branch                  
+  master                               
+* ze-new-branche  
+$ vim Dockerfile 
+
+$ git commit -m "petite modification pour declancher le build "
+[ze-new-branche 2265084] petite modification pour declancher le build
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+$ git push origin ze-new-branche
+Password for 'http://thomas@git.training.x3rus.com': 
+Counting objects: 4, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 386 bytes | 386.00 KiB/s, done.
+Total 4 (delta 3), reused 0 (delta 0)
+remote: 
+remote: To create a merge request for ze-new-branche, visit:
+remote:   http://git.training.x3rus.com/sysadmin/dockers/merge_requests/new?merge_request%5Bsource_branch%5D=ze-new-branche
+remote: 
+To http://git.training.x3rus.com/sysadmin/dockers.git
+   364e324..2265084  ze-new-branche -> ze-new-branche
+
+```
+
+Regardons les tâches qui furent généré par cette opération :
+
+![](./imgs/18-12-use-case-jenkins-push-gitlab-build-overview.png)
+
+Nous voyons deux tâches, un déclenché par mon commit ( __push__ ) et une déclenché par le commit ( __push__ ) de l'utilisateur **Robot** nous avons donc eu un commit / push réalisé avec succès. 
+
+Si vous vous rappelez j'ai exclut le traitement des commits réalisé par l'utilisateur **robot**, si je n'avais pas fait cette opération nous aurions eu un build en boucle. Chaque commit réalisé par **robot** aurait généré un autre commit , qui aurait généré un autre build !! 
+
+
+### Conclusion 

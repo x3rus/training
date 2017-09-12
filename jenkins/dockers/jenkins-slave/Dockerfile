@@ -41,6 +41,7 @@ RUN mkdir /home/jenkinbot/.ssh/ && \
  # Copie la clef publique pour jenkins 
 COPY conf/authorized_keys /home/jenkinbot/.ssh/authorized_keys
 COPY conf/wget-gitlab /home/jenkinbot/.wget-gitlab
+COPY conf/git-config /home/jenkinbot/.gitconfig
 
  # Fix perms
 RUN chown jenkinbot:jenkinbot /home/jenkinbot/.ssh/authorized_keys && \
