@@ -1314,3 +1314,8 @@ Si vous vous rappelez j'ai exclut le traitement des commits réalisé par l'util
 
 
 ### Conclusion 
+
+Le système fonctionne bien et permet d'avoir une gestion des exceptions pour chaque répertoire, le gros défit lors de la mise en place des ce type de solution est que chaque "projet" conteneur à ça particularité . Résultat on essaye de mettre en place une solution pérenne qui s'applique à l'ensemble des cas d'utilisation . Nous sommes rapidement confronté au contrainte de telle ou telle situation, voici pourquoi ma solution offre la souplesse :
+
+* Utilisation d'un Makefile par répertoire , qui définie le travail à réaliser , ceci permet d'avoir un cas de figure distinct pour chaque "projet". 
+* Le script Jenkins ne réalise pas grand chose et essaye de laisser l'ensemble du traitement à Jenkins.
