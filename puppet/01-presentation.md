@@ -35,6 +35,42 @@ Les défis d'un gestion de configuration :
 3. **Temps et Documentation** : Bien entendu nous avons tous réalisé des configurations manuellement sur le système ceci va "vite", car c'est un reflex . La monté en compétence prendra un peu de temps et donc ça prendra un plus de temps. Vous aurez un gain sur le long terme. La documentation de vos modules / playbook, classe, ... devra être aussi réalisé , sinon vous risquez d'avoir un duplicata des configurations ceci mélangera une personne qui cherche quelle configuration appliquer. Encore une fois la configuration prend du temps.
 4. **Visibilité** : Dans le concept de DevOps, mais c'était déjà le cas dans le passé , assurez vous d'avoir une visibilité sur les clients géré par le système de gestion de configuration. Vous devez au moins avoir l'information suivante : Quand fut la dernière fois que le client fut synchronisé ? Est-ce qu'il y a eu des erreurs , si oui combien ?
 
+### Mode de fonctionnement d'un système de gestion de configuration
+
+Il y a plusieurs méthode de fonctionnement pour les système de gestion de configuration , nous allons nous concentrer sur le mode opératoire de puppet, cependant peut-être que pour votre utilisation ce système n'est pas l'idéal. En aillant la connaissance des différents option possible vous pourrez faire le bon choix :D.
+
+* **Conservation d'état** ( __pull__ ) : Dans le cadre de la conservation de l'état le système client ou nœud exécute un agent sur le système est régulièrement va voir si la définition de ça configuration a changé. S'il y a eu modification de la définition de la configuration ce dernier applique le changement. Ceci permet aussi de réinitialisé une configuration qui fut changé manuellement sur le système , telle qu'un fichier de configuration (ex. sshd_config ) ou la configuration des règles de firewall. L'agent est exécuté de manière régulière , si nous prenons le cas de puppet par défaut ce dernier est exécuter au 30 minutes. Ce mode est idéal pour la conservation d'une configuration telle que l'infrastructure. Si nous reprenons, en exemple le travail réalisé pour la présentation de Jenkins. Le déploiement d'un nouveau slave sera grandement facilité avec ce mode opératoire , ce qui sera idéal est que même si on personne modifie, par exemple les configurations de l'environnement le gestionnaire réinitialisera la configuration afin de s'assurer que l'ensemble de nœud soit identique. Donc dans ce contexte c'est le client qui __pull / tire__ la configuration à une intervalle donnée.
+* **Système de déploiement** ( __push__) :  L'autre mode de fonctionnement est de pousser la configuration sur les systèmes dans ce contexte c'est le serveur centrale va transmettre les nouvelles configurations sur le nœud. Il n'y a pas de méthode de synchronisation périodique de la configuration , ceci est appliqué sur demande, bien entendu rien ne vous empêche de le programmé périodiquement. Ce mode de fonctionnement est particulièrement intéressant pour faire du déploiement applicatif. Nous avons la version 1.2 du logiciel __patate__ qui doit être déployer, ceci est une opération définie dans le temps et qui n'est réalisé que lors de la mise en production peut importe l'environnement (dev, qa, ...) . Comme il n'y a pas une validation régulière de la configuration, si vous avez dû faire une modification d'urgence pour ajuster un paramètre en production ce dernier ne sera pas réécrit. En fait il le sera lors du prochain déploiement , donc il faut faire attention. __Ansible__ est un exemple de système utilisant ce mode de déploiement.
+
+En conclusion, je pense qu'utiliser les 2 systèmes permet d'avoir une grande puissance !!
+
+* **Gestion de l'infrastructure** : __conservation d'état__ nous utiliserons cette méthode pour s'assurer de la configuration du service SSH  , l'authentification centralisé , les applications de base , le système d'inventaire , ... Ceci permet que même si un développeur a plus de droit sur le serveur un minimum de configuration sera conservé.
+* **Déploiement applicatif** : __Système de déploiement__ comme sont nom l'indique pour toutes opérations occasionnel comme l'installation d'une application , la mise en place d'une configuration ( __one shoot__ )
+
+Dans un mode idéal, le système de déploiement utilisera la même base de référence de machines pour le système de déploiement afin de ne conserver qu'une source de définition de machine. 
+
+## Architecture du système de gestion de configuration Puppet
+
+Nous avons parlé des principes d'un système de gestion de configuration à haut niveau, il est temps de parler plus spécifiquement de puppet, le système que nous allons couvrir dans cette formation. Nous allons voir le principe de l'architecture de puppet , le mode de communication entre le serveur et les serveurs .
+
+Telle que mentionné plus tôt **Puppet** est un système de gestion de configuration principalement orienté **Pull** (tirer) , donc principalement **conservation d'état**. Je vais couvrir plus loin la méthode pour l'utiliser en mode **déploiement** , c'est moins évidant vous le constaterez tout de suite que l'architecture fut orienté vers l'autre modèle.
+
+Bon l'architecture , nous l'avons déjà mentionné c'est basé sur le modèle **Client / Serveur** , mais au delà de ce simple modèle , le serveur Puppet va limiter l'accès à la configuration en authentifiant le client qui désire avoir la configuration. En effet, les configurations poussé par le système peut être des choses aussi simple que la définition des DNS, mais nous pourrions aussi y définir la clé privé pour une application afin de lui permettre d'établir une connexion ssh, un fichier contenant un mot de passe , ... Il est probable que des informations sensible soit transmise. Bien entendu il est possible de réaliser une limitation par IP , mais l'IP spoofing existe et il est difficile de garantir l'ensemble des communications sur le réseau.
+Il aurait était possible de définir un système d'authentification Utilisateur / mot de passe , cependant ceci ne __scale__ pas et surtout ne permet pas de valider une machine en particulier. 
+De plus le serveur désire valider le client qui l'interroge, mais le client aussi désire valider qu'il parle bien avec le bon serveur pas un système qui désire lui transmettre une fausse configuration afin d'avoir accès au système. 
+
+Vous voyez la sécurité doit être bidirectionnel , dans ce contexte quelle est la meilleur méthode pour valider les deux partie ?? 
+
+La meilleur solution est la mise en place d'une infrastructure [PKI ou infrastructure à clés publiques](https://fr.wikipedia.org/wiki/Infrastructure_%C3%A0_cl%C3%A9s_publiques) en d'autre mot la mise ne place d'un Autorité de certificats. Lors de la mise en place de serveur puppet (master) se dernier inclut un **C.A** qui permettra de signé les requêtes d'un client et de révoquer son certificat s'il ne fait plus partie du parc. Ceci empêche toute possibilité d'utiliser un vieux certificat pour extraire une configuration. Il est aussi possible d'utiliser un C.A externe cependant je n'ai d'expérience sur cette configuration. 
+
+Voici donc un exemple du flux de communication :
+
+![](./imgs/architecture-communication-client-srv.png) 
+
+J'ai voulu représenter aussi les certificats qui sont expiré ou en attente de signature. 
+
+
+
 # NOTE :
 
 * __Puppet IDE__ : https://puppet.com/blog/geppetto-a-puppet-ide 
