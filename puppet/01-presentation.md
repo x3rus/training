@@ -67,12 +67,45 @@ Voici donc un exemple du flux de communication :
 
 ![](./imgs/architecture-communication-client-srv.png) 
 
-J'ai voulu représenter aussi les certificats qui sont expiré ou en attente de signature. 
+J'ai voulu représenter aussi les certificats qui sont expiré ou en attente de signature, afin de bien mettre en lumière le système d'autorité de certification. 
+
+En conclusion , l'ensemble des communications entre l'agent (client) et le serveur sont chiffré et il y a une authentification mutuel grâce au système de certificat.
+
+### Flux de donnée entre le client et le serveur 
+
+Avant de débuter l'explication de la configuration proprement dit de puppet, j'aime compléter la théorie , car honnêtement elle est plus importante dans le contexte que la réalisation pure. Comprendre la théorie, nous permettra d'identifier plus rapidement nos problèmes de configuration à venir, car oui comme tout le monde, on y arrive pas du premier coup :P.
+
+Voyons donc le mécanisme de communication du client avec le serveur , en d'autre mot le flux de donné. 
+
+Voici une représentation graphique de la communication :
+
+![](./imgs/dataflow.png)
+
+Partons du haut donc du **node** , en d'autre mot du client / agent. 
+
+* **Établissement de la connexion** : Telle que mentionné dans la section précédente, le client utilisera le système de certificat pour valider le serveur avec qui il communique et le serveur fera de même afin de confirmer que le certificat du client est toujours valide. Je part du principe que le serveur contient une configuration disponible pour l'agent. En d'autre mot je ne couvre pas la gestion d'erreur ici, nous sommes dans __l'happy path__.
+1. **Facts** : Le client va transmettre au serveur les informations relatif à son système , puppet nomme ce regroupement d'informations sous le terme **facts** , nous le couvrirons plus en détail par la suite. Si vous avez déjà un système sous puppet , vous pouvez utiliser la commande **facter** pour extraire les informations de votre nœud. Nous y retrouvons les informations telle que : le système d'exploitation , l'adresse ip , le hostname court et long, ... 
+2. **Catalog** : Suite à la réception des **facts** par le serveur ce dernier sera en mesure de générer le **catalog**, ce dernier est en fait la définition de la configuration qui doit être réalisé sur le nœud. Le serveur a besoin des informations du nœud (__facts__) , car nous verrons que lors de la rédaction des configurations a appliquer nous allons définir des conditions selon les informations du nœud. Un exemple rapidement, il est possible de définir la mémoire d'une JVM java selon la mémoire disponible du serveur , donc si nous désirons que la JVM prenne la moitié de la mémoire du serveur , sur un système avec 16 Gigs la JVM aura 8 Gigs alors que si le système n'a que 8 Gigs la JVM aura 4 Gigs. Vous aurez aussi assurément des configurations particulière selon le système d'exploitation et/ ou la version de la release ( ex: Centos 6 et Centos 7 ).
+    * **Application du Catalog** : Lors de la réception du catalog l'agent applique les nouvelles configurations et valide que l'ensemble de la définition est toujours présentes. Si le système puppet indique que l'application DNS __bind__ doit être installé , il le réinstallera si le package fut enlevé, de plus il validera le fichier de configuration __named.conf__ afin de confirmer que la définition sur le nœud et le serveur sont identique.
+3. **Report client** : Le client informe le serveur du résultat de l'application de la configuration , s'il y a un problème , l'information sera contenu sur le serveur de plus le nœud conserve une copie de l'information.
+4. **Report serveur** : Il est possible d'avoir plusieurs outils de visualisation des rapports d'exécution de puppet.
+
+Ceci est donc le flux de donné haut niveau entre le client et le serveur.
+
+Voici une autre représentation avec plus de détail sur le mode de communcation :
+
+![](./imgs/agent-master-https-sequence-small.gif)
+
+### La méthode sans serveur ( standalone ) 
+
+Il est possible de fonctionner en mode autonome , donc sans le serveur mais d'appliquer localement sur le nœud un catalogue, définie en suivant la syntaxe puppet . Comme vous pourrez le lire sur la documentation officiel  [Puppet doc 5.2 architecture #differences-between-agentmaster-and-stand-alone](https://docs.puppet.com/puppet/5.2/architecture.html#differences-between-agentmaster-and-stand-alone) , il y a une grosse préférence pour le mode agent / serveur.
+
+Au delà des points mentionné sur le site, il y a des avantages à utiliser le mode __standalone__ principalement pour réalisé une première phase de teste de configuration. Si vous avez déjà joué sur une infrastructure puppet conséquente, vous savez comme moi que réaliser une modification qui aura un impact sur un nombre important de serveurs est un peu stressant et étrangement la température de la pièce augmente ;-).
+
+L'utilisation de ce mode vous permettra d'effectuer une validation de votre syntaxe et des résultats de vos définitions sans impacté l'ensemble du parc. Vous aurez donc la validation dans le langage Puppet. Bien entendu, ce ne sera jamais TOTALEMENT garantie, par contre ça peut grandement améliorer votre bien être lors des changements :P.
+
+Ce mode est parfois utilisé pour faire un déploiement en mode **Système de déploiement** ( __push__) avec puppet, on pousse la définition sur le serveur localement et on exécute les instructions. 
 
 
-
-# NOTE :
-
-* __Puppet IDE__ : https://puppet.com/blog/geppetto-a-puppet-ide 
-
+Maintenant que nous avons compris en gros le concept d'un système de gestion de configuration réalisons un peu de pratique pour saisir le fonctionnement , rien de telle qu'un peu de pratique pour saisir l'ensemble avec des exemples.
 
