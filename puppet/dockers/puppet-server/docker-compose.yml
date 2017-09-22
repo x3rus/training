@@ -1,0 +1,49 @@
+version: '2'
+
+services:
+  puppet:
+    container_name: x3-puppet-f
+    hostname: puppet
+    image: puppet/puppetserver
+    # ports:
+    #  - 8140
+    volumes:
+      - /srv/docker/x3-puppet-f/code:/etc/puppetlabs/code/
+      - /srv/docker/x3-puppet-f/puppet/ssl:/etc/puppetlabs/puppet/ssl/
+      - /srv/docker/x3-puppet-f/puppet/serverdata:/opt/puppetlabs/server/data/puppetserver/
+    links:
+      - puppetdb:puppetdb
+
+  puppetdbpostgres:
+    container_name: x3-puppet-postgresdb-f
+    image: puppet/puppetdb-postgres
+    environment:
+      - POSTGRES_PASSWORD=puppetdb
+      - POSTGRES_USER=puppetdb
+    #expose:
+      #- 5432
+    volumes:
+      - /srv/docker/x3-puppet-f/puppetdb-postgres/data:/var/lib/postgresql/data/
+
+  puppetdb:
+    hostname: puppetdb
+    image: puppet/puppetdb
+    container_name: x3-puppet-db-f
+    #ports:
+    #  - 8080
+    #  - 8081
+    volumes:
+      - /srv/docker/x3-puppet-f/puppetdb/ssl:/etc/puppetlabs/puppet/ssl/
+    links:
+      - puppetdbpostgres:postgres
+
+  puppetboard:
+    image: puppet/puppetboard
+    #ports:
+    #  - 8000
+
+  puppetexplorer:
+    image: puppet/puppetexplorer
+    #ports:
+    #  - 80
+    read_only: true
