@@ -87,11 +87,10 @@ Donc passons à l'explication, la méthode est identique en HTTP ou HTTP**S**, d
 
 * Étape 1 
 
- efhkehfeh ERREUR ICI  hejhkfj
 
-Lors du démarrage l'agent génère une pair de clé , en d'autre mot le **CSR** (Certificate Signing Request) ainsi que la clé privé , prendre note que la clé privé généré ne sort JAMAIS du serveur !! Le certificat sera généré avec un __Common Name__ ( nom du certificat ) fournit en paramètre . Vous devrez aussi spécifier le répertoire __DocumentRoot__ du site afin que l'agent dépose des fichiers qui seront utilisé lors de l'échange avec l'autorité de certification (Let's encrypt). 
+Lors du démarrage l'agent génère une pair de clé , qui n'est **PAS le certificat pour le site web**, ceci sera utilisé lors des échanges avec le service CA de Let's encrypt. Prendre note que la clé privé généré ne sort JAMAIS du serveur !! Vous devrez aussi spécifier le répertoire __DocumentRoot__ du site afin que l'agent dépose des fichiers qui seront utilisé lors de l'échange avec l'autorité de certification (Let's encrypt). 
 
-Nous avons donc à cette étape l'installation de l'agent dans le site web (Racine du site) et la pair de clé que l'humain génère normalement manuellement.
+L'agent va aussi créer un compte automatiquement avec le service Let's encrypt , l'assignation d'une adresse courriel sera assigné au compte , mais ceci n'est PAS obligatoire !
 
 * Étape 2 
 
@@ -112,6 +111,75 @@ Je le répète si vous voulez le détail réelle consulter le RFC : [8.3. HTTP C
 
 L'agent informe le CA que le fichier est maintenant présent pour la prochaine étape.
 
+Le serveur CA de Let's encrypt communique à l'URL fournit et valide que le fichier est bien présent dans le répertoire que le contenu est valide ainsi que la signature du fichier correspond à la clé publique échangé préalablement.
+
+![](./imgs/howitworks_authorization.png)
+
 * Étape 4 
+
+L'agent est donc maintenant en mesure de communiquer avec le CA et validation du domaine est complété. Il est maintenant en mesure de faire des demandes de certificat , des révocations , des renouvellements , ...
+
+L'agent va donc générer une nouvelle pair de clé , cette fois pour le site web , donc un [CSR (Certificate Signing Request)](http://tools.ietf.org/html/rfc2986) ceci est la clé publique avec les informations pour un certificat web ( URL , adresse courriel , Pays, Province , ... ). Bien entendu la clé privé associé sera aussi généré dans la foulé , cette clé privé ne sortira **jamais** du serveur. 
+
+Pourquoi cette double création de pair de clé ? Car un agent peut géré plusieurs certificat TLS pour let's encrypt !
+
+L'agent va transmettre la demande de certificat au serveur Let's encrypt , cette demande sera signé avec la clé privé utilisé pour la communication entre l'agent et le serveur . 
+
+![](./imgs/howitworks_certificate.png)
+
+Le CA Let's encrypt valide , la signature de la demande ainsi que le nom de domaine utilisé dans la demande . Si l'ensemble est conforme il transmet le certificat valide à l'agent pour qu'il l'installe.
+
+
+## Mise en place manuellement
+
+Bon honnêtement , comme on utilise Docker je vais pas vraiment le couvrir , je vais vous laisser vous amuser sur le sujet puis on vous me donnerait des nouvelle :P. 
+
+Je vous suggère de consulter l'application [certbot](https://certbot.eff.org/) la doc est super ... 
+
+Bon mais comment ça s'intègre tous ça dans Apache par exemple , car on a fait pas mal d'apache on sait la configuration du SSL en gros. Si le fichier est gérer par un agent comment j'indique à Apache que le certificat est "dynamique" . 
+L'application [certbot](https://certbot.eff.org/) réalisera la configuration , automatiquement d'apache pour le bon domaine, mais comme on aime savoir ce qu'il fait prenons 2 minutes pour voir le résultat. Car il y a pas / peu de documentation sur le sujet puis on aime savoir un peu :D.
+
+Donc lors de l'utilisation de la commande certbot .
+
+```bash
+$ sudo certbot --apache -d example.com
+```
+
+Vous aurez un répertoire **/etc/letsencrypt/live** , dans la pratique l'application __certbot__ qui utilise __libaugeas__ pour ceux qui on utilisé un peu puppet ça permet de modifier le contenu d'un fichier sans altérer l'ensemble. Voici le résultat de la modification :
+
+```
+<VirtualHost *:443> 
+
+     [Webserver setup. DocumentRoot, ServerName, etc. You should already have this information for your website for port 80 and regular web traffic.] 
+
+     SSLEngine on 
+
+     SSLCertificateFile /etc/letsencrypt/live/[yourdomain].com/fullchain.pem 
+
+     SSLCertificateKeyFile /etc/letsencrypt/live/[yourdomain].com/privkey.pem
+
+</VirtualHost>
+```
+
+En d'autre mot pour apache ce n'est qu'un fichier de certificat et de clé tout à fait normale :D. 
+
+### Renouvellement de certificat 
+
+Les certificats fournit par Let's encrypt ont une validité de **90 Jours** c'est pas long , mais c'est gratuit , il est donc **TRÈS** important de mettre en place un système de renouvellement automatique. Vous pouvez simplement mettre dans le crontab de l'utilisateur root :
+
+```bash
+$ sudo crontab -e
+
+0 0 * * sun /usr/bin/certbot renew
+
+```
+
+Bon mais c'est mieux les dockers :P 
+
+## Limitation , yep y en a toujours ... 
+
+* https://letsencrypt.org/docs/rate-limits/
+
+
 
 
