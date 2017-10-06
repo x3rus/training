@@ -248,6 +248,43 @@ Je ne vais pas couvrir [docker-gen](https://github.com/jwilder/docker-gen) en d�
 
 ### Docker-gen avec exemple de génération de configuration
 
+Le système __docker-gen__ utilise la méthode de template du langage **go** , lors de la définition d'un conteneur nous allons passer la variable d'environnement **VIRTUAL_HOST** , cette dernière sera interprété par le script __docker-gen__ . 
+
+Voici un exemple d'un fichier de template  :
+
+```
+{{ range $host, $containers := groupBy $ "Env.VIRTUAL_HOST" }}
+upstream {{ $host }} {
+
+{{ range $index, $value := $containers }}
+    {{ with $address := index $value.Addresses 0 }}
+    server {{ $address.IP }}:{{ $address.Port }};
+    {{ end }}
+{{ end }}
+
+}
+
+server {
+    #ssl_certificate /etc/nginx/certs/demo.pem;
+    #ssl_certificate_key /etc/nginx/certs/demo.key;
+
+    gzip_types text/plain text/css application/json application/x-javascript
+               text/xml application/xml application/xml+rss text/javascript;
+
+    server_name {{ $host }};
+
+    location / {
+        proxy_pass http://{{ $host }};
+        include /etc/nginx/proxy_params;
+    }
+}
+{{ end }}
+```
+
+A placer l'image !!
+
+![](./imgs/docker-gen-3-conteneurs.png)
+
 
 
 
