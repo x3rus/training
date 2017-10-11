@@ -340,9 +340,12 @@ Voyons maintenant, concrètement, comment nous allons pouvoir l'utiliser nous ut
 * [jwilder/nginx-proxy](https://github.com/jwilder/nginx-proxy) : Le proxy nginx dynamique "simple" je dirais 
 * [jrcs/letsencrypt-nginx-proxy-companion](https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion) : Un module complémentaire pour le conteneur précédent afin d'offrir le support Let's encrypt.
 
+
+#### Configuration Nginx avec Let's encrypt
+
 Nous allons initialiser le service nginx en premier , si vous avez déjà vos services actif ceci n'est pas un problème vous ne devrez que rajouter une variable d'environnement à votre conteneur. 
 
-Nous allons définir un fichier __docker-compose__ pour le service nginx :
+Nous allons définir un fichier [docker-compose](./dockers/docker-compose-nginx.yml) pour le service nginx :
 
 ```
 version: '2'
@@ -378,7 +381,197 @@ services:
 networks:
   proxy-tier:
     external:
-       name: br-frontal
+       name: br-proxy
 ```
 
+Petite explication du __docker-compose__ il y a plusieurs point important :
 
+* **Network** : Comme vous pouvez le voir j'ai créé un réseau dédier pour ce service , en gros je fait l'équivalent d'une __DMZ__ afin de segmenter le service de nginx avec le reste des conteneurs qui seront dans un autre réseau. Dans un monde idéal je limiterai aussi les communications grâce à __iptables__ entre les réseaux à ce stade ceci est surtout pour mettre une toute petite sécurité en plus :P. Nous allons voir comment réaliser la création du réseau dans quelques instant.
+* **Ports** : Bien entendu si vous désirez que votre service nginx fournit des services pour N conteneurs il devra avoir une ouverture pour les communications provenant de l'externe. L'ouverture n'est QUE pour le service nginx et NON pour le compagnon qui réalise le traitement pour Let's encrypt
+* **Volumes** :  Accessibilité des fichiers depuis le conteneur
+    * __Nginx__ : comme vous pouvez le constater il y a un partage pour les répertoires  
+        * __vhosts.d__ : Nous verrons que nous serons en mesure de surdéfinir des paramètres à la configuration nginx qui sera généré , vous allez voir c'est VRAIMENT bien fait ! Ce répertoire nous permettra donc d'avoir des données statique particulière pour le vhosts qui lui sera dynamiquement assigné. Bien entendu on espère ne pas l'utiliser mais comme vous le savez les exceptions font partie de la réalité.
+        * __html__ : Ceci nous permettra de mettre aussi des pages statique pour un virtual hosts
+        * __certs__ : Ce répertoire vous permettra de définir des certificats / clés classique provenant d'un CA telle que godaddy , verysign , ... De plus il contiendra les fichiers générés par le compagnon __letsencrypt-nginx-proxy-companion__, nous y reviendrons dans la section __volumes\_from__.
+    * __Présent sur les deux__ (docker.sock): Comme vous pouvez le voir le __socket__  de docker est passé au 2 conteneurs , honnêtement j'ai eu quelque difficulté avec cette solution. C'est comme ça que j'ai lu le code source du conteneur pour comprendre son utilisation. Lors de la présentation de Jenkins nous avions vu que ceci offre beaucoup de contrôle sur les conteneurs. Heureusement il est possible de définir l'accès en Lecture Seule (RO == Read Only) pour limité les risques. Pourquoi fournir un accès à ce fichier, si vous remontez plus haut ceci est utilisé par docker-gen afin de communiquer avec L'API du docker hôte. Ce __socket__ permet de détecter les conteneurs qui démarrerons ou s'arrêteront. Nous y reviendrons ... Si on a le temps.
+* **Volumes\_from** : Nous assignons l'ensemble des volumes au conteneur de Let's encrypt afin de lui permettre de mettre en place les fichiers de certificats.
+
+##### Configuration du réseau pour Nginx
+
+Telle que mentionné nous allons isoler les 2 conteneurs pour __nginx__ , nous allons donc faire la création d'un réseau, nous pourrions aussi le définir dans le __docker-compose__ comme ceci ... Mais on va profiter de l'occasion pour en voir plus :P , car on l'a pas encore fait la création d'un réseau externe au docker-compose :D .
+
+Voici un exemple pour le docker-compose :
+
+```
+services:
+  app:
+    image: busybox
+    command: ifconfig
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.10
+        ipv6_address: 2001:3984:3989::10
+
+networks:
+  app_net:
+    driver: bridge
+    enable_ipv6: true
+    ipam:
+      driver: default
+      config:
+      -
+        subnet: 172.16.238.0/24
+      -
+        subnet: 2001:3984:3989::/64
+```
+
+Visualisons les réseaux actuellement présent :
+
+```bash
+docker network ls            
+NETWORK ID          NAME                                DRIVER              SCOPE
+3c0fa372eba1        bd_default                          bridge              local
+e9ce18f2309f        bridge                              bridge              local
+7c5883a0db08        docker_default                      bridge              local
+b4ea4a856f8d        dockerelk_elk                       bridge              local
+e5bb35d71ea7        dockers_default                     bridge              local
+221510ca7da7        gitlab_default                      bridge              local
+cb068b1480af        host                                host                local
+5a5c63e89444        integrationtesting_default          bridge              local
+94689b0e93df        maildockerized_mailcow-network   bridge              local
+41c396729575        none                                null                local
+0d47cb65fc8e        x3gitlabjenkins_default             bridge              local
+9f2bdd9fbdd2        x3mail_default                   bridge              local
+83dd18835ced        x3webdav_default                    bridge              local
+
+$ for dNetwork in $(docker network ls | cut -d " " -f 1 | grep -v NETWORK) ; do
+> docker network inspect --format='{{json .IPAM.Config}}' $dNetwork            
+> done                                 
+[{"Subnet":"172.24.0.0/16","Gateway":"172.24.0.1"}]                            
+[{"Subnet":"172.17.0.0/16","Gateway":"172.17.0.1"}]                            
+[{"Subnet":"172.29.0.0/16","Gateway":"172.29.01"}]                                                                                                           [{"Subnet":"172.20.0.0/16","Gateway":"172.20.0.1"}]
+[{"Subnet":"172.31.0.0/16","Gateway":"172.31.0.1"}]                            
+[{"Subnet":"172.30.0.0/16","Gateway":"172.30.0.1"}]                            
+[]                                                                             
+[{"Subnet":"172.18.0.0/16","Gateway":"172.18.0.1"}]                            
+[{"Subnet":"172.22.1.0/24","Gateway":"172.22.1.1"},{"Subnet":"fd4d:6169:6c63:6f77::/64","Gateway":"fd4d:6169:6c63:6f77::1"}]
+[]                                                                             
+[{"Subnet":"172.28.0.0/16","Gateway":"172.28.0.1"}]
+[{"Subnet":"172.19.0.0/16","Gateway":"172.19.0.1"}]                            
+[{"Subnet":"172.26.0.0/16","Gateway":"172.26.0.1"}]  
+```
+
+Ce que je n'aime pas avec docker-compose , mais en même temps c'est bien et qu'il créer un réseau distinct automatiquement pour chaque regroupement de conteneur ... c'est ennuyeux car il te pollue les plages de réseaux. Mais ce doit être l'administrateur réseau en moi qui n'aime pas, en plus il te fait des **/16** . Ha __well__ :P 
+
+Bon comme vous pouvez le voir le segment 172.23.0.0/24 est disponible nous allons le prendre ( je ferais du ménage plus tard :P ).
+
+Donc la création :
+
+```bash
+$ docker network create -d bridge  --subnet 172.23.0.0/27 --gateway=172.23.0.1 --ip-range=172.23.0.0/27 br-proxy                                     
+c46c80d5d47cfc359a21775c59b02408f7804d7b09a13d54f1a6be6cd63d60ec
+
+$ docker inspect br-proxy
+[                                      
+    {                                  
+        "Name": "br-proxy",            
+        "Id": "c46c80d5d47cfc359a21775c59b02408f7804d7b09a13d54f1a6be6cd63d60ec",                                                                             
+        "Created": "2017-10-11T17:35:41.347637521-04:00",                      
+        "Scope": "local",              
+        "Driver": "bridge",            
+        "EnableIPv6": false,           
+        "IPAM": {                      
+            "Driver": "default",       
+            "Options": {},             
+            "Config": [                
+                {                      
+                    "Subnet": "172.23.0.0/27",                                 
+                    "IPRange": "172.23.0.0/27",                                
+                    "Gateway": "172.23.0.1"                                    
+                }                      
+            ]                          
+        },                             
+        "Internal": false,             
+        "Attachable": false,           
+        "Ingress": false,              
+        "ConfigFrom": {                
+            "Network": ""              
+        },                             
+        "ConfigOnly": false,           
+        "Containers": {},              
+        "Options": {},                 
+        "Labels": {}                   
+    }                                  
+]   
+```
+
+Nous avons donc le réseau vous pouvez toujours faire une validation en démarrant un conteneur :
+
+```bash
+$ docker run --rm -it --network=br-proxy   busybox 
+Unable to find image 'busybox:latest' locally
+latest: Pulling from library/busybox
+03b1be98f3f9: Pull complete 
+Digest: sha256:3e8fa85ddfef1af9ca85a5cfb714148956984e02f00bec3f7f49d3925a91e0e7
+Status: Downloaded newer image for busybox:latest
+/ $ ifconfig
+eth0      Link encap:Ethernet  HWaddr 02:42:AC:17:00:02  
+          inet addr:172.23.0.2  Bcast:0.0.0.0  Mask:255.255.255.224
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:9 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:1006 (1006.0 B)  TX bytes:0 (0.0 B)
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+/ $ ping google.com
+PING google.com (172.217.13.206): 56 data bytes
+64 bytes from 172.217.13.206: seq=0 ttl=53 time=41.253 ms
+```
+
+Nous sommes prêt à démarrer notre conteneur nginx :
+
+```bash
+$ docker-compose -f docker-compose-nginx.yml up 
+Creating nginx-proxy-p ... 
+Creating nginx-proxy-p ... done
+Creating nginx-letsencrypt-p ... 
+Creating nginx-letsencrypt-p ... done
+Attaching to nginx-proxy-p, nginx-letsencrypt-p
+nginx-proxy-p                        | WARNING: /etc/nginx/dhparam/dhparam.pem was not found. A pre-generated dhparam.pem will be used for now while a new one
+nginx-proxy-p                        | is being generated in the background.  Once the new dhparam.pem is in place, nginx will be reloaded.
+nginx-proxy-p                        | forego     | starting dockergen.1 on port 5000
+nginx-proxy-p                        | forego     | starting nginx.1 on port 5100
+nginx-letsencrypt-p                  | Creating Diffie-Hellman group (can take several minutes...)
+nginx-letsencrypt-p                  | Generating DH parameters, 2048 bit long safe prime, generator 2
+nginx-letsencrypt-p                  | This is going to take a long time
+nginx-proxy-p                        | dockergen.1 | 2017/10/11 21:41:29 Generated '/etc/nginx/conf.d/default.conf' from 2 containers
+nginx-proxy-p                        | dockergen.1 | 2017/10/11 21:41:29 Running 'nginx -s reload'
+nginx-proxy-p                        | dockergen.1 | 2017/10/11 21:41:29 Watching docker events
+nginx-proxy-p                        | dockergen.1 | 2017/10/11 21:41:30 Contents of /etc/nginx/conf.d/default.conf did not change. Skipping notification 'nginx -s reload'
+
+
+$ docker ps                   
+CONTAINER ID   IMAGE                                    COMMAND                  STATUS              PORTS                                      NAMES
+fe356479ac43   jrcs/letsencrypt-nginx-proxy-companion   "/bin/bash /app/en..."   Up 29 seconds                                                  nginx-letsencrypt-p
+055b01e6e7a3   jwilder/nginx-proxy                      "/app/docker-entry..."   Up 30 seconds       0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp   nginx-proxy-p
+
+$ docker inspect nginx-letsencrypt-p | grep IPA 
+            "IPAddress": "",           
+                    "IPAMConfig": null,                                        
+                    "IPAddress": "172.23.0.3",                                 
+$ docker inspect nginx-proxy-p | grep IPA                             
+            "IPAddress": "",           
+                    "IPAMConfig": null,                                        
+                    "IPAddress": "172.23.0.2",    
+
+```
+
+#### Configuration d'un conteneur web
