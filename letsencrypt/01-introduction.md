@@ -281,10 +281,104 @@ server {
 {{ end }}
 ```
 
-A placer l'image !!
+Si nous avons 3 conteneurs : 
+
+* 2 pour le domaine : demo1.example.com
+* 1 pour le domaine : demo2.example.com
 
 ![](./imgs/docker-gen-3-conteneurs.png)
 
 
+Nous pouvons avoir la génération suivante dans nginx avec le fichier de template définie ci-dessus  :
+
+```
+upstream demo1.localhost {
+    server 172.17.0.4:5000;
+    server 172.17.0.3:5000;
+}
+
+server {
+    #ssl_certificate /etc/nginx/certs/demo.pem;
+    #ssl_certificate_key /etc/nginx/certs/demo.key;
+
+    gzip_types text/plain text/css application/json application/x-javascript
+               text/xml application/xml application/xml+rss text/javascript;
+
+    server_name demo1.localhost;
+
+    location / {
+        proxy_pass http://demo.localhost;
+        include /etc/nginx/proxy_params;
+    }
+}
+
+upstream demo2.localhost {
+    server 172.17.0.5:5000;
+}
+
+server {
+    #ssl_certificate /etc/nginx/certs/demo.pem;
+    #ssl_certificate_key /etc/nginx/certs/demo.key;
+
+    gzip_types text/plain text/css application/json application/x-javascript
+               text/xml application/xml application/xml+rss text/javascript;
+
+    server_name demo2.localhost;
+
+    location / {
+        proxy_pass http://demo2.localhost;
+        include /etc/nginx/proxy_params;
+    }
+}
+```
+
+
+### Mise en place de LA solution Nginx et Let's encrypt
+
+Voyons maintenant, concrètement, comment nous allons pouvoir l'utiliser nous utiliserons 2 conteneur :
+
+* [jwilder/nginx-proxy](https://github.com/jwilder/nginx-proxy) : Le proxy nginx dynamique "simple" je dirais 
+* [jrcs/letsencrypt-nginx-proxy-companion](https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion) : Un module complémentaire pour le conteneur précédent afin d'offrir le support Let's encrypt.
+
+Nous allons initialiser le service nginx en premier , si vous avez déjà vos services actif ceci n'est pas un problème vous ne devrez que rajouter une variable d'environnement à votre conteneur. 
+
+Nous allons définir un fichier __docker-compose__ pour le service nginx :
+
+```
+version: '2'
+
+services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name : 'nginx-proxy-p'
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/srv/docker/nginx-proxy-p/nginx/vhost.d:/etc/nginx/vhost.d"
+      - "/srv/docker/nginx-proxy-p/nginx/html:/usr/share/nginx/html"
+      - "/srv/docker/nginx-proxy-p/nginx/certs:/etc/nginx/certs"
+      - "/var/run/docker.sock:/tmp/docker.sock:ro"
+    networks:
+      - proxy-tier
+
+  letsencrypt-nginx-proxy-companion:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name : 'nginx-letsencrypt-p'
+    restart: unless-stopped
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    volumes_from:
+      - "nginx-proxy"
+    networks:
+      - proxy-tier
+
+
+networks:
+  proxy-tier:
+    external:
+       name: br-frontal
+```
 
 
