@@ -1,0 +1,20 @@
+version: '2'
+
+services:
+  demo1-c1:
+    image: x3-demo1
+    build: ./web-servers/demo1/
+    environment:
+        - VIRTUAL_HOST=demo1.x3rus.com
+  demo1-c2:
+    image: x3-demo1
+    build: ./web-servers/demo1/
+    environment:
+        - VIRTUAL_HOST=demo1.x3rus.com
+  demo2-c1:
+    image: x3-demo2
+    build: ./web-servers/demo2/
+    environment:
+        - VIRTUAL_HOST=demo2.x3rus.com
+
+

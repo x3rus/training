@@ -176,9 +176,6 @@ $ sudo crontab -e
 
 Bon mais c'est mieux les dockers :P 
 
-## Configuration avec Docker
-
-
 
 ## Limitation , yep y en a toujours ... 
 
@@ -574,4 +571,105 @@ $ docker inspect nginx-proxy-p | grep IPA
 
 ```
 
+Résultat au niveau des volumes :
+
+```bash
+$ ls /srv/docker/nginx-proxy-p/nginx/certs/ /srv/docker/nginx-proxy-p/nginx/vhost.d /srv/docker/nginx-proxy-p/nginx/html/
+/srv/docker/nginx-proxy-p/nginx/certs/:
+dhparam.pem
+
+/srv/docker/nginx-proxy-p/nginx/html/:
+
+/srv/docker/nginx-proxy-p/nginx/vhost.d:
+```
+
 #### Configuration d'un conteneur web
+
+Nous allons faire la création de 3 conteneur pour reprendre l'exemple précédant soit :
+
+* demo1-c1  : Premier conteneur pour le site demo1 
+* demo1-c2  : Deuxième conteneur pour le site demo1
+* demo2-c1  : Un seul conteneur pour le site demo2
+
+Voici le [docker-compose](./dockers/docker-compose-web-sites.yml) , vous retrouverez sous le répertoire dockers/web-servers l'ensemble de la définition des conteneur. 
+
+Je démarre l'ensemble :
+
+```bash
+$ docker-compose -f docker-compose-web-sites.yml  up                                                                                                 
+Building demo1-c1 
+Step 1/2 : FROM httpd:2.4              
+ ---> 50f10ef90911 
+Step 2/2 : COPY site/* /usr/local/apache2/htdocs/
+ ---> 4faa6cf356e7 
+Removing intermediate container f10a7ffa63b3
+Successfully built 4faa6cf356e7 
+Successfully tagged x3-demo1:latest
+[... OUTPUT COUPÉ ...]
+
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND              CREATED             STATUS              PORTS               NAMES
+a5ea3baebead        x3-demo1            "httpd-foreground"   5 minutes ago       Up 5 minutes        80/tcp              dockers_demo1-c2_1
+c934fd004ef5        x3-demo1            "httpd-foreground"   5 minutes ago       Up 5 minutes        80/tcp              dockers_demo1-c1_1
+c806276bb70f        x3-demo2            "httpd-foreground"   5 minutes ago       Up 5 minutes        80/tcp              dockers_demo2-c1_1
+
+$ docker inspect dockers_demo1-c1_1 | grep IPAddress | grep 172
+                    "IPAddress": "172.31.0.3",
+$ docker inspect dockers_demo2-c1_1 | grep IPAddress | grep 172                                                                                      
+                    "IPAddress": "172.31.0.2", 
+```
+
+Validation de la disponibilité des sites :
+
+![](./imgs/validation-site-demo1-single.png)
+
+Nous avons donc des conteneurs qui furent initialisés "normalement" et accéssible sur leur réseau interne à docker.
+
+J'arrête les conteneurs, car nous allons devoir modifier la configuration pour la prochaine étape 
+
+```bash
+$ docker-compose -f docker-compose-web-sites.yml stop
+```
+
+#### Intégration des conteneur avec le proxy nginx
+
+Nous arrivons à l'étape de la magie :D, ou devrais je dire du fabuleux travaille des autres :P . 
+Nous avons notre proxy nginx :
+
+```bash
+$ docker ps
+CONTAINER ID        IMAGE                                    COMMAND                  STATUS              PORTS                                      NAMES
+fe356479ac43        jrcs/letsencrypt-nginx-proxy-companion   "/bin/bash /app/en..."   Up 2 minutes                                                   nginx-letsencrypt-p
+055b01e6e7a3        jwilder/nginx-proxy                      "/app/docker-entry..."   Up 2 minutes        0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp   nginx-proxy-p
+
+$ docker inspect nginx-letsencrypt-p | grep IPAddress | grep 172      
+                    "IPAddress": "172.23.0.3",
+```
+
+Je vais maintenant modifier le docker-compose afin d'avoir la variable **VIRTUAL\_HOST** qui sera interprété par le proxy nginx.
+
+```
+version: '2'
+
+services:
+  demo1-c1:
+    image: x3-demo1
+    build: ./web-servers/demo1/
+    environment:
+        - VIRTUAL_HOST=demo1.x3rus.com
+  demo1-c2:
+    image: x3-demo1
+    build: ./web-servers/demo1/
+    environment:
+        - VIRTUAL_HOST=demo1.x3rus.com
+  demo2-c1:
+    image: x3-demo2
+    build: ./web-servers/demo2/
+    environment:
+        - VIRTUAL_HOST=demo2.x3rus.com
+```
+
+
+On démarre l'ensemble : 
+
+HEU FAIL :P 
