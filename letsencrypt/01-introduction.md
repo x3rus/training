@@ -673,3 +673,54 @@ services:
 On démarre l'ensemble : 
 
 HEU FAIL :P 
+
+Problème si on utilise un autre réseau , fichier de template de nginx : 
+lien : https://github.com/jwilder/nginx-proxy/blob/f05f7a0ff965d7a5fa38b4dd567f4913ce874fe8/nginx.tmpl#L125
+
+Si on l'enlève c ok mais problème réseaux  . Visualisation du drop 
+
+```bash
+$ sudo iptables -L -n -v  | grep -v "0     0"                         
+Chain INPUT (policy ACCEPT 21734 packets, 6582K bytes)                         
+ pkts bytes target     prot opt in     out     source               destination                                                                               
+
+Chain FORWARD (policy DROP 0 packets, 0 bytes)                                 
+ pkts bytes target     prot opt in     out     source               destination                                                                               
+10780   11M DOCKER-USER  all  --  *      *       0.0.0.0/0            0.0.0.0/0                                                                               
+10780   11M DOCKER-ISOLATION  all  --  *      *       0.0.0.0/0            0.0.0.0/0                                                                          
+ 7377   11M ACCEPT     all  --  *      br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED                                 
+    5   300 DOCKER     all  --  *      br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0                                                                        
+ 3383  179K ACCEPT     all  --  br-c46c80d5d47c !br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0                                                              
+    5   300 ACCEPT     all  --  br-c46c80d5d47c br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0                                                               
+
+Chain OUTPUT (policy ACCEPT 22733 packets, 2338K bytes)                        
+ pkts bytes target     prot opt in     out     source               destination                                                                               
+
+Chain DOCKER (12 references)           
+ pkts bytes target     prot opt in     out     source               destination                                                                               
+
+Chain DOCKER-ISOLATION (1 references)  
+ pkts bytes target     prot opt in     out     source               destination                                                                               
+   15   900 DROP       all  --  br-c46c80d5d47c br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0                                                               
+10765   11M RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0                                                                                 
+
+Chain DOCKER-USER (1 references)       
+ pkts bytes target     prot opt in     out     source               destination                                                                               
+10780   11M RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0 
+
+```
+
+La ligne qui Change : 
+
+```
+   15   900 DROP       all  --  br-c46c80d5d47c br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0 
+```
+
+Je réalisais un telnet en même temps sur le nginx :
+
+```bash
+root@1954de39d19a:/app# telnet 172.31.0.2 80                                                                                                                  
+Trying 172.31.0.2...                   
+^C                                     
+root@1954de39d19a:/app# 
+```
