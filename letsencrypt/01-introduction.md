@@ -646,7 +646,7 @@ $ docker inspect nginx-letsencrypt-p | grep IPAddress | grep 172
                     "IPAddress": "172.23.0.3",
 ```
 
-Je vais maintenant modifier le docker-compose afin d'avoir la variable **VIRTUAL\_HOST** qui sera interprété par le proxy nginx.
+Je vais maintenant modifier le docker-compose afin d'avoir la variable **VIRTUAL\_HOST** qui sera interprété par le proxy nginx. Je vais aussi les mettres sur le même réseau que le proxy pour le moment ... Nous ajouterons de la complexité par la suite afin d'avoir le proxy et les instances web sur 2 réseaux distinct.
 
 ```
 version: '2'
@@ -657,18 +657,169 @@ services:
     build: ./web-servers/demo1/
     environment:
         - VIRTUAL_HOST=demo1.x3rus.com
+    networks:
+      - proxy-tier
   demo1-c2:
     image: x3-demo1
     build: ./web-servers/demo1/
     environment:
         - VIRTUAL_HOST=demo1.x3rus.com
+    networks:
+      - proxy-tier
   demo2-c1:
     image: x3-demo2
     build: ./web-servers/demo2/
     environment:
         - VIRTUAL_HOST=demo2.x3rus.com
+    networks:
+      - proxy-tier
+
+networks:
+  proxy-tier:
+    external:
+       name: br-proxy
+
 ```
 
+
+Nous allons donc démarrer le site web puis le conteneur nginx !
+
+```bash
+$ docker-compose -f docker-compose-web-sites.yml up 
+
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND              CREATED             STATUS              PORTS               NAMES
+3929a6db7f6b        x3-demo2            "httpd-foreground"   23 seconds ago      Up 20 seconds       80/tcp              dockers_demo2-c1_1
+315ecb44cc32        x3-demo1            "httpd-foreground"   23 seconds ago      Up 21 seconds       80/tcp              dockers_demo1-c1_1
+99acc13cc12a        x3-demo1            "httpd-foreground"   23 seconds ago      Up 21 seconds       80/tcp              dockers_demo1-c2_1
+
+$ docker inspect dockers_demo2-c1_1 | grep IPAdd                      
+            "IPAddress": "172.23.0.4", 
+
+$ docker-compose -f docker-compose-nginx.yml up
+[... OUTPUT COUPÉ ...]
+Attaching to nginx-proxy-p, nginx-letsencrypt-p                                
+nginx-proxy-p                        | Custom dhparam.pem file found, generation skipped  
+nginx-proxy-p                        | forego     | starting dockergen.1 on port 5000 
+nginx-proxy-p                        | forego     | starting nginx.1 on port 5100 
+nginx-letsencrypt-p                  | Sleep for 3600s                         
+nginx-proxy-p                        | dockergen.1 | 2017/10/18 11:50:11 Generated '/etc/nginx/conf.d/default.conf' from 5 containers 
+nginx-proxy-p                        | dockergen.1 | 2017/10/18 11:50:11 Running 'nginx -s reload' 
+nginx-proxy-p                        | dockergen.1 | 2017/10/18 11:50:11 Watching docker events   
+[... OUTPUT COUPÉ ...]
+```
+
+Si nous ajustons notre fichier __/etc/host__ afin de définir les hostsname :
+
+* demo1.x3rus.com 
+* demo2.x3rus.com
+
+```
+127.0.0.1       demo1.x3rus.com        
+127.0.0.1       demo2.x3rus.com  
+```
+
+Validons que ça fonctionne via nginx :
+
+![](./imgs/visualisation-demo2-via-nginx.png)
+
+```
+nginx-proxy-p                        | nginx.1    | demo2.x3rus.com 172.23.0.1 - - [18/Oct/2017:11:55:31 +0000] "GET /favicon.ico HTTP/1.1" 404 209 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0"               
+nginx-proxy-p                        | nginx.1    | demo2.x3rus.com 172.23.0.1 - - [18/Oct/2017:11:55:31 +0000] "GET /favicon.ico HTTP/1.1" 404 209 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0"               
+nginx-proxy-p                        | nginx.1    | demo2.x3rus.com 172.23.0.1 - - [18/Oct/2017:11:55:31 +0000] "GET /favicon.ico HTTP/1.1" 404 209 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0"               
+nginx-proxy-p                        | nginx.1    | demo2.x3rus.com 172.23.0.1 - - [18/Oct/2017:11:55:31 +0000] "GET / HTTP/1.1" 200 72 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0"                           
+nginx-proxy-p                        | nginx.1    | demo2.x3rus.com 172.23.0.1 - - [18/Oct/2017:11:55:35 +0000] "GET / HTTP/1.1" 200 72 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0"      
+
+    # ET 
+demo2-c1_1  | [Wed Oct 18 11:48:56.554371 2017] [mpm_event:notice] [pid 1:tid 139914081003392] AH00489: Apache/2.4.23 (Unix) configured -- resuming normal operations
+demo2-c1_1  | [Wed Oct 18 11:48:56.554524 2017] [core:notice] [pid 1:tid 139914081003392] AH00094: Command line: 'httpd -D FOREGROUND'
+demo2-c1_1  | 172.23.0.5 - - [18/Oct/2017:11:55:31 +0000] "GET /favicon.ico HTTP/1.1" 404 209 
+demo2-c1_1  | 172.23.0.5 - - [18/Oct/2017:11:55:31 +0000] "GET /favicon.ico HTTP/1.1" 404 209 
+demo2-c1_1  | 172.23.0.5 - - [18/Oct/2017:11:55:31 +0000] "GET /favicon.ico HTTP/1.1" 404 209 
+demo2-c1_1  | 172.23.0.5 - - [18/Oct/2017:11:55:31 +0000] "GET / HTTP/1.1" 200 72 
+demo2-c1_1  | 172.23.0.5 - - [18/Oct/2017:11:55:35 +0000] "GET / HTTP/1.1" 200 72 
+```
+
+Visualisation du fichier de configuration nginx qui fut généré : 
+
+```bash
+$ docker cp nginx-proxy-p:/etc/nginx/conf.d/default.conf .
+```
+
+Vous avez le fichier disponible [default.conf](./data/default-v1.conf) , voici une extraction de ce qui nous intéresse :
+
+```
+
+ # demo1.x3rus.com
+upstream demo1.x3rus.com {
+				## Can be connect with "br-proxy" network
+			# dockers_demo1-c1_1
+			server 172.23.0.3:80;
+				## Can be connect with "br-proxy" network
+			# dockers_demo1-c2_1
+			server 172.23.0.2:80;
+}
+server {
+	server_name demo1.x3rus.com;
+	listen 80 ;
+	access_log /var/log/nginx/access.log vhost;
+	location / {
+		proxy_pass http://demo1.x3rus.com;
+	}
+}
+ # demo2.x3rus.com
+upstream demo2.x3rus.com {
+				## Can be connect with "br-proxy" network
+			# dockers_demo2-c1_1
+			server 172.23.0.4:80;
+}
+server {
+	server_name demo2.x3rus.com;
+	listen 80 ;
+	access_log /var/log/nginx/access.log vhost;
+	location / {
+		proxy_pass http://demo2.x3rus.com;
+	}
+}
+```
+
+Nous voyons donc clairement la définition de __demo1__ avec 2 conteneurs ainsi que __demo2__ avec  1 conteneur. 
+
+
+### Paramétrisation et gestion des spécificité des conteneurs 
+
+Bien entendu ceci était une exemple simple pour ce faire la main , éviter d'avoir trop d'erreur dès le départ . Par contre la mise en place d'un simple redirecteur pour le site web rencontrera très rapidement des limitations afin de répondre au particularité de chaque site. Prenons quelque instant pour analyser le système de template disponible pour la génération de la configuration de nginx .
+
+#### Template nginx 
+
+Le fichier de génération fut "rapidement" présenter un peu plus tôt lors de l'explication de __docker-gen__ regardons celui disponible dans le conteneur :
+
+```bash
+$ docker cp  nginx-proxy-p:/app/nginx.tmpl .
+```
+
+Fichier complet disponible [nginx.tmpl](./data/nginx-ORI.tmpl) ou sur github pour la dernière version [github nginx.tmpl](https://github.com/jwilder/nginx-proxy/blob/master/nginx.tmpl).
+
+Prenez le temps de consulter le fichier quelques minutes , rechercher la section généré par le fichier default.conf en association avec le template. Nous allons voir quelque cas d'utilisation, afin de ce faire la main , bien entendu je ne couvrirai pas tous mais ça devrait vous fournir la base pour allé de l'avant et expérimenter :D.
+
+#### Mise en place d'une authentification htaccess par fichier
+
+Prenons le site demo2 qui réalise une redirection vers le conteneur demo2 :P .
+
+```
+server {
+	server_name demo2.x3rus.com;
+	listen 80 ;
+	access_log /var/log/nginx/access.log vhost;
+	location / {
+		proxy_pass http://demo2.x3rus.com;
+	}
+```
+
+Si nous désirons qu'un nom d'utilisateur / mot de passe soit demandé lors de la connexion , un simple htaccess , rien de bien complexe.
+
+
+# Note raw pour plus tard 
 
 On démarre l'ensemble : 
 
