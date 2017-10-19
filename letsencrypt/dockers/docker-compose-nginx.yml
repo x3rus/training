@@ -9,9 +9,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - "/srv/docker/nginx-proxy-p/nginx/vhost.d:/etc/nginx/vhost.d"
-      - "/srv/docker/nginx-proxy-p/nginx/html:/usr/share/nginx/html"
       - "/srv/docker/nginx-proxy-p/nginx/certs:/etc/nginx/certs"
+      - "/srv/docker/nginx-proxy-p/nginx/html:/usr/share/nginx/html"
+      - "/srv/docker/nginx-proxy-p/nginx/htpasswd:/etc/nginx/htpasswd"
+      - "/srv/docker/nginx-proxy-p/nginx/vhost.d:/etc/nginx/vhost.d"
       - "/var/run/docker.sock:/tmp/docker.sock:ro"
     networks:
       - proxy-tier

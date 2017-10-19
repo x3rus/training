@@ -358,6 +358,7 @@ services:
     volumes:
       - "/srv/docker/nginx-proxy-p/nginx/vhost.d:/etc/nginx/vhost.d"
       - "/srv/docker/nginx-proxy-p/nginx/html:/usr/share/nginx/html"
+	  - "/srv/docker/nginx-proxy-p/nginx/htpasswd:/etc/nginx/htpasswd"
       - "/srv/docker/nginx-proxy-p/nginx/certs:/etc/nginx/certs"
       - "/var/run/docker.sock:/tmp/docker.sock:ro"
     networks:
@@ -816,10 +817,260 @@ server {
 	}
 ```
 
-Si nous désirons qu'un nom d'utilisateur / mot de passe soit demandé lors de la connexion , un simple htaccess , rien de bien complexe.
+Si nous désirons qu'un nom d'utilisateur / mot de passe soit demandé lors de la connexion , un simple htaccess , rien de bien complexe. Nous allons voir le le fichier template qui a été utilisé pour la génération de la section si dessus . Bien entendu notre objectif est d'avoir dans la section **location /** les instructions pour l'authentification .
 
+Regardons donc le fichier de template :
+
+```
+245 server {                           
+246     server_name {{ $host }};       
+247     listen 80 {{ $default_server }};                                       
+248     {{ if $enable_ipv6 }}          
+249     listen [::]:80 {{ $default_server }};                                  
+250     {{ end }}                      
+251     access_log /var/log/nginx/access.log vhost;                            
+252 
+253     {{ if (exists (printf "/etc/nginx/vhost.d/%s" $host)) }}               
+254     include {{ printf "/etc/nginx/vhost.d/%s" $host }};                    
+255     {{ else if (exists "/etc/nginx/vhost.d/default") }}                    
+256     include /etc/nginx/vhost.d/default;                                    
+257     {{ end }}                      
+258 
+259     location / {                   
+260         {{ if eq $proto "uwsgi" }} 
+261         include uwsgi_params;      
+262         uwsgi_pass {{ trim $proto }}://{{ trim $upstream_name }};          
+263         {{ else }}                 
+264         proxy_pass {{ trim $proto }}://{{ trim $upstream_name }};          
+265         {{ end }}                  
+266         {{ if (exists (printf "/etc/nginx/htpasswd/%s" $host)) }}          
+267         auth_basic  "Restricted {{ $host }}";                              
+268         auth_basic_user_file    {{ (printf "/etc/nginx/htpasswd/%s" $host) }};
+269         {{ end }}                  
+270                 {{ if (exists (printf "/etc/nginx/vhost.d/%s_location" $host)) }}
+271                 include {{ printf "/etc/nginx/vhost.d/%s_location" $host}};
+272                 {{ else if (exists "/etc/nginx/vhost.d/default_location") }} 
+273                 include /etc/nginx/vhost.d/default_location;               
+274                 {{ end }}          
+275     }       
+276 }      
+```
+
+Ceci est le contenu du fichier de template pour la section de la redirection avec une page web non SSL , donc la situation dans laquelle nous sommes. 
+Si nous regardons les ligne 266 à 269 nous retrouvons les instructions pour inclure l'authentification via __htaccess__  , le système regarde si nous avons un fichier htpasswd présent dans le répertoire **/etc/nginx/htpasswd/** contenant le nom du host si c'est le cas il rajoute les instructions .
+
+Justement :D , nous avons fait la configuration de ce volume dans notre docker-compose , quelle belle surprise :P .
+
+```
+    volumes:
+      - "/srv/docker/nginx-proxy-p/nginx/certs:/etc/nginx/certs"
+      - "/srv/docker/nginx-proxy-p/nginx/html:/usr/share/nginx/html"
+      - "/srv/docker/nginx-proxy-p/nginx/htpasswd:/etc/nginx/htpasswd"
+      - "/srv/docker/nginx-proxy-p/nginx/vhost.d:/etc/nginx/vhost.d"
+      - "/var/run/docker.sock:/tmp/docker.sock:ro"
+
+```
+
+Nous allons donc faire la création d'un fichier dans le répertoire htpasswd avec le nom de fichier **demo2.x3rus.com** , je vais créer le fichier avec l'utilisateur : thomas et le mot de passe toto .
+
+Prendre note que le répertoire est propriétaire de root donc un petit sudo s'impose ou vous changez les permissions mais autant voir quelque chose de nouveau :D .
+
+```bash
+$ ls -ld /srv/docker/nginx-proxy-p/nginx/htpasswd
+drwxr-xr-x 2 root root 4096 Oct 18 17:16 /srv/docker/nginx-proxy-p/nginx/htpasswd
+```
+
+```bash
+$ sudo sh -c "echo -n 'thomas:' >> /srv/docker/nginx-proxy-p/nginx/htpasswd/demo2.x3rus.com"
+$ sudo sh -c "openssl passwd -apr1 >> /srv/docker/nginx-proxy-p/nginx/htpasswd/demo2.x3rus.com "
+Password: 
+Verifying - Password: 
+
+$ cat /srv/docker/nginx-proxy-p/nginx/htpasswd/demo2.x3rus.com
+thomas:$apr1$/suRnLwl$m9nlIB5hwCqm5iEYu8udw.
+``` 
+
+J'ai arrêter les conteneurs web et les ai redémarrés 
+
+```bash
+Gracefully stopping... (press Ctrl+C again to force)                         
+Stopping dockers_demo2-c1_1 ... done   
+Stopping dockers_demo1-c1_1 ... done   
+Stopping dockers_demo1-c2_1 ... done 
+
+$ docker-compose -f docker-compose-web-sites.yml up
+[ ... OUTPUT COUPÉ ... ]
+```
+
+Je retourne sur la page : (ATTENTION au cache) 
+
+![](./imgs/visualisation-demo2-via-nginx-htpasswd.png) 
+
+Au delà de la magie reprenons le fichier de configuration :
+
+```bash
+$ docker cp nginx-proxy-p:/etc/nginx/conf.d/default.conf default-htpasswd-demo2.conf
+```
+
+[default-htpasswd-demo2.conf](./data/default-htpasswd-demo2.conf)
+
+Nous avons bien le contenu désiré : 
+
+```
+server {
+    server_name demo2.x3rus.com;
+    listen 80 ;
+    access_log /var/log/nginx/access.log vhost;
+    location / {
+        proxy_pass http://demo2.x3rus.com;
+        auth_basic  "Restricted demo2.x3rus.com";
+        auth_basic_user_file    /etc/nginx/htpasswd/demo2.x3rus.com;
+    }
+}
+
+```
+
+```bash
+$ curl -X GET -u "thomas:toto" -I demo2.x3rus.com
+HTTP/1.1 200 OK
+Server: nginx/1.13.5
+Date: Wed, 18 Oct 2017 21:50:26 GMT
+Content-Type: text/html
+Content-Length: 72
+Connection: keep-alive
+Last-Modified: Thu, 12 Oct 2017 11:41:11 GMT
+ETag: "48-55b58044da3c0"
+Accept-Ranges: bytes
+
+```
+
+
+#### Configuration spécial pour la racine du site
+
+Parfait nous avons vue l'authentification, mais bon c'est un peu limite , il y a bien plus de configuration possible dans le nginx que simplement l'authentification. La personne qui a fait le conteneur y a déjà pensé et nous offre la possibilité d'inclure un fichier de configuration avec n'importe quelle contenue. Ceci donne beaucoup de possibilité telle que introduire des erreurs de configuration :P.
+
+Si nous reprenons encore le template : 
+
+```
+245 server {                           
+246     server_name {{ $host }};       
+247     listen 80 {{ $default_server }};                                       
+248     {{ if $enable_ipv6 }}          
+249     listen [::]:80 {{ $default_server }};                                  
+250     {{ end }}                      
+251     access_log /var/log/nginx/access.log vhost;                            
+252 
+253     {{ if (exists (printf "/etc/nginx/vhost.d/%s" $host)) }}               
+254     include {{ printf "/etc/nginx/vhost.d/%s" $host }};                    
+255     {{ else if (exists "/etc/nginx/vhost.d/default") }}                    
+256     include /etc/nginx/vhost.d/default;                                    
+257     {{ end }}                      
+258 
+259     location / {                   
+260         {{ if eq $proto "uwsgi" }} 
+261         include uwsgi_params;      
+262         uwsgi_pass {{ trim $proto }}://{{ trim $upstream_name }};          
+263         {{ else }}                 
+264         proxy_pass {{ trim $proto }}://{{ trim $upstream_name }};          
+265         {{ end }}                  
+266         {{ if (exists (printf "/etc/nginx/htpasswd/%s" $host)) }}          
+267         auth_basic  "Restricted {{ $host }}";                              
+268         auth_basic_user_file    {{ (printf "/etc/nginx/htpasswd/%s" $host) }};
+269         {{ end }}                  
+270                 {{ if (exists (printf "/etc/nginx/vhost.d/%s_location" $host)) }}
+271                 include {{ printf "/etc/nginx/vhost.d/%s_location" $host}};
+272                 {{ else if (exists "/etc/nginx/vhost.d/default_location") }} 
+273                 include /etc/nginx/vhost.d/default_location;               
+274                 {{ end }}          
+275     }       
+276 }      
+```
+
+Nous retrouvons exactement le même concept le répertoire __/etc/nginx/vhost.d/__ est consulté s'il trouve le nom du host avec le suffix \_location il ajoutera le contenu de la configuration . 
+
+Un petit test pour valider l'ensemble :
+
+```bash
+$ pwd
+/srv/docker/nginx-proxy-p/nginx/vhost.d
+$ sudo vim demo2.x3rus.com_location 
+
+$ cat demo2.x3rus.com_location
+ # Définition d'un cache spécial d'une heure
+expires 1h;
+add_header Cache-Control "public";
+```
+
+On recharge que le site demo2 :
+
+
+
+```bash
+$ docker-compose -f docker-compose-web-sites.yml restart demo2-c1                                                                                    
+Restarting dockers_demo2-c1_1 ... done 
+```
+
+
+On refait l'opération : 
+
+```bash
+$ curl -X GET -u "thomas:toto" -I demo2.x3rus.com
+HTTP/1.1 200 OK
+Server: nginx/1.13.5
+Date: Wed, 18 Oct 2017 21:51:15 GMT
+Content-Type: text/html
+Content-Length: 72
+Connection: keep-alive
+Last-Modified: Thu, 12 Oct 2017 11:41:11 GMT
+ETag: "48-55b58044da3c0"
+Accept-Ranges: bytes
+Expires: Wed, 18 Oct 2017 22:51:15 GMT
+Cache-Control: max-age=3600
+Cache-Control: public
+
+``` 
+
+C'est magnifique :D !! Bon ce n'est pas grand chose mais c'était pour montrer le concept :P.
+
+
+#### Configuration du virtual host libre
+
+Bon je ne réaliserai pas l'exemple pour chaque petite configuration , je vais principalement porter votre attention à une section du template. Si vous désirez définir des configurations qui ne sont PAS dans la section **Location /** , il existe aussi la possibilité d'inclure un fichier de configuration 
+
+```
+245 server { 
+[ .... ]
+253     {{ if (exists (printf "/etc/nginx/vhost.d/%s" $host)) }}
+254     include {{ printf "/etc/nginx/vhost.d/%s" $host }};
+255     {{ else if (exists "/etc/nginx/vhost.d/default") }}
+256     include /etc/nginx/vhost.d/default;
+257     {{ end }}
+258
+259     location / {  
+[ .... ]
+```
+
+Comme vous pouvez le voir il est possible en utilisant le même principe de définir un fichier avec le nom du host dans le répertoire **/etc/nginx/vhost.d/** et ce répertoire fut définie dans le __docker-compose__ afin de l'avoir localement sur la machine.
+
+### C'est beau mais ou est let's encrypt ?
+
+Effectivement pour le moment je n'ai pas couvert la gestion automatique de certificat avec Let's encrypt pour le conteneur, la raison est simple. L'ensemble de la formation est réalisé en semi hors connexion, car je le fait dans le train . Par conséquent , comme une des conditions pour utilisé Let's encrypt est d'avoir le service publique sur internet c'est un peu plus compliqué. 
+
+Mais voici donc cette section, pas moins importante , mais il fallait que je trouve le temps disponible pour l'écrire :D.
+
+TODO 
+
+### Configuration avec de multiple réseaux 
+
+Selon votre expérience si vous êtes plus développeur , administrateur système ou network dude , il est possible que l'architecture ne vous convient pas trop surtout pour la production. Pour le moment nous avons couvert 3 conteneur avec des services web simple apache , mais si nous nous projetons dans une utilisation de production avec un service soit développé à l'interne ou un tomcat / jboss ... nous aimerions mettre en place une solution [3 tièrs](https://fr.wikipedia.org/wiki/Architecture_trois_tiers) .
+
+Voici un exemple d'une représentation de l'architecture 3 tières :
+
+![](./imgs/three-tier-infra.png)
 
 # Note raw pour plus tard 
+
+## Problème multi network 
 
 On démarre l'ensemble : 
 
@@ -874,4 +1125,33 @@ root@1954de39d19a:/app# telnet 172.31.0.2 80
 Trying 172.31.0.2...                   
 ^C                                     
 root@1954de39d19a:/app# 
+```
+
+## problème email letencrypt invalide 
+
+au startup de nginx :
+
+```
+nginx-letsencrypt-p                  | 2017/10/19 11:47:07 Contents of /app/letsencrypt_service_data did not change. Skipping notification '/app/update_certs'
+nginx-letsencrypt-p                  | Q2017/10/19 11:47:08 Generated '/etc/nginx/conf.d/default.conf' from 4 containers 
+nginx-letsencrypt-p                  | ;2017/10/19 11:47:08 [notice] 67#67: signal process started 
+nginx-letsencrypt-p                  | Creating/renewal demo2.x3rus.com certificates... (demo2.x3rus.com)
+nginx-letsencrypt-p                  | 2017-10-19 11:47:08,781:INFO:simp_le:1213: Generating new account key 
+nginx-letsencrypt-p                  | ACME server returned an error: urn:acme:error:invalidEmail :: The provided email for a registration was invalid :: Error creating new registration :: not a valid e-mail address 
+nginx-letsencrypt-p                  | 
+nginx-letsencrypt-p                  |
+nginx-letsencrypt-p                  | Debugging tips: -v improves output verbosity. Help is available under --help. 
+nginx-letsencrypt-p                  | Sleep for 3600s   
+```
+
+* Bon email mais pas de DNS pas dispo de l'externe :
+
+```
+nginx-letsencrypt-p                  | 2017/10/19 11:50:56 Contents of /app/letsencrypt_service_data did not change. Skipping notification '/app/update_certs'
+nginx-letsencrypt-p                  | 2017-10-19 11:51:00,379:ERROR:acme.challenges:311: Unable to reach http://demo2.x3rus.com/.well-known/acme-challenge/iqorLBiXpVuFZfUJ0d7oDhL1lAI47HPR1oEY5yG8Vm4: HTTPConnectionPool(host='demo2.x3rus.com', port=80): Max retries exceeded with url: /.well-known/acme-challenge/iqorLBiXpVuFZfUJ0d7oDhL1lAI47HPR1oEY5yG8Vm4 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f89a7eb00d0>: Failed to establish a new connection: [Errno -2] Name does not resolve',))
+nginx-letsencrypt-p                  | 2017-10-19 11:51:00,379:WARNING:simp_le:1304: demo2.x3rus.com was not successfully self-verified. CA is likely to fail as well!
+nginx-letsencrypt-p                  | 2017-10-19 11:51:01,147:INFO:simp_le:1314: Generating new certificate private key
+nginx-letsencrypt-p                  | 2017-10-19 11:51:02,901:ERROR:simp_le:1272: CA marked some of the authorizations as invalid, which likely means it could not access http://example.com/.well-known/acme-challenge/X. Did you set correct path in -d example.com:path or --default_root? Is there a warning log entry about unsuccessful self-verification? Are all your domains accessible from the internet? Failing authorizations: https://acme-v01.api.letsencrypt.org/acme/authz/cjuUb0rasz8j_jvOMSwF89IDHwBq2p9MNpWnVyHEk88
+nginx-letsencrypt-p                  | Challenge validation has failed, see error log.
+nginx-letsencrypt-p                  | 
 ```

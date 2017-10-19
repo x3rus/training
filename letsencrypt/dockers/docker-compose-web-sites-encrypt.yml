@@ -1,0 +1,36 @@
+version: '2'
+
+services:
+  demo1-c1:
+    image: x3-demo1
+    build: ./web-servers/demo1/
+    environment:
+        - VIRTUAL_HOST=demo1.x3rus.com
+        - VIRTUAL_PORT=80
+    networks:
+      - proxy-tier
+  demo1-c2:
+    image: x3-demo1
+    build: ./web-servers/demo1/
+    environment:
+        - VIRTUAL_HOST=demo1.x3rus.com
+        - VIRTUAL_PORT=80
+    networks:
+      - proxy-tier
+  demo2-c1:
+    image: x3-demo2
+    build: ./web-servers/demo2/
+    environment:
+        - VIRTUAL_HOST=demo2.x3rus.com
+        - VIRTUAL_PORT=80
+        - LETSENCRYPT_HOST=demo2.x3rus.com
+        - LETSENCRYPT_EMAIL=demo2-toto@x3rus.com
+    networks:
+      - proxy-tier
+
+
+networks:
+  proxy-tier:
+    external:
+       name: br-proxy
+
