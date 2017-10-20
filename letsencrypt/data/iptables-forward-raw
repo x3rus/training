@@ -1,0 +1,52 @@
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+11066   11M DOCKER-USER  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+11066   11M DOCKER-ISOLATION  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      docker0  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  docker0 !docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  docker0 docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-3c0fa372eba1 !br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-3c0fa372eba1 br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-221510ca7da7  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-221510ca7da7 !br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-221510ca7da7 br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+ 7340   11M ACCEPT     all  --  *      br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+ 3713  198K ACCEPT     all  --  br-c46c80d5d47c !br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-c46c80d5d47c br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-b4ea4a856f8d !br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-b4ea4a856f8d br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-9f2bdd9fbdd2 !br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-9f2bdd9fbdd2 br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-94689b0e93df  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-94689b0e93df !br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-94689b0e93df br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-83dd18835ced  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-83dd18835ced !br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-83dd18835ced br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-7c5883a0db08 !br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-7c5883a0db08 br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-5a5c63e89444 !br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-5a5c63e89444 br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-0d47cb65fc8e !br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-0d47cb65fc8e br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-e5bb35d71ea7 !br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-e5bb35d71ea7 br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           

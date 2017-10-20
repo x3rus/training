@@ -1068,6 +1068,289 @@ Voici un exemple d'une représentation de l'architecture 3 tières :
 
 ![](./imgs/three-tier-infra.png)
 
+Bon dans notre exemple ce sera plus comme ceci , car nous n'aurons que 2 couches réseaux celle du proxy (__nginx__) et celle des sites web :
+
+![](./imgs/notre-infra-multi-network.png)
+
+Nous allons avoir 2 problèmes si nous définissons essayons de définir des réseaux différent pour le proxy nginx et le service web :
+
+* Le template [nginx.tmpl](./data/nginx-ORI.tmpl) , réalise une validation du réseaux .
+* Les règles de __firewall__ par défaut de docker qui limite la communication entre les segments.
+
+Nous allons voir comment se sortir de ces deux problèmes , bien entendu ça sort du cadre de nginx , mais c'est surtout une opportunité de mieux comprendre le système de docker et du service de template dynamique de nginx.
+
+#### Utilisation de jwilder/nginx-proxy avec des conteneurs dans d'autres réseaux
+
+Avant de modifier la définition des conteneurs web __demo1__ et __demo2__ , nous allons extraire la configuration généré par le conteneur nginx quand nous sommes sur le même réseau .
+
+Voici le fichier [default.conf](./data/default.conf)
+
+La partie qui nous intéresse particulièrement : 
+
+```
+[ ... ]
+ # ligne : 53 à 61
+ # demo1.x3rus.com
+upstream demo1.x3rus.com {
+				## Can be connect with "br-proxy" network
+			# dockers_demo1-c1_1
+			server 172.23.0.3:80;
+				## Can be connect with "br-proxy" network
+			# dockers_demo1-c2_1
+			server 172.23.0.2:80;
+}
+[ ... ]
+
+ # ligne : 70 à 75
+ # demo2.x3rus.com
+upstream demo2.x3rus.com {
+				## Can be connect with "br-proxy" network
+			# dockers_demo2-c1_1
+			server 172.23.0.4:80;
+}
+[ ... ]
+```
+
+Pour rappel l'IP du proxy nginx est :  172.23.0.2.
+
+Donc maintenant nous allons modifier le docker-compose des conteneurs web afin de supprimer la définition du proxy-tier. Vous avez le fichier ici : [docker-compose.yml](./dockers/docker-compose-web-sites-other-network.yml) .
+
+Donc je vais arrêter le docker nginx et les web s'il tourne encore et redémarrer l'ensemble ... 
+
+```bash
+$ docker-compose -f docker-compose-web-sites-other-network.yml up -d 
+Recreating dockers_demo1-c2_1 ... 
+Recreating dockers_demo2-c1_1 ... 
+Recreating dockers_demo1-c2_1
+Recreating dockers_demo2-c1_1
+Recreating dockers_demo1-c1_1 ... 
+Recreating dockers_demo1-c1_1 ... done
+
+$ docker inspect dockers_demo2-c1_1 | grep IPAd
+                    "IPAddress": "172.31.0.3",
+
+$ docker-compose -f docker-compose-nginx.yml up
+
+$ docker inspect nginx-proxy-p | grep IPAd                             
+                    "IPAddress": "172.23.0.2", 
+```
+
+Donc nous avons bien les conteneurs web sur 1 segment réseau et le conteneur nginx sur un autre . Regardons à présent le fichier défaut généré :
+
+```bash
+$ docker cp nginx-proxy-p:/etc/nginx/conf.d/default.conf default-not-same-network.conf
+```
+
+Le fichier est la : [default-not-same-network.conf](./data/default-not-same-network.conf)
+
+Voici le vimdiff , l'original à gauche et le nouveau généré à droite :
+
+![](./imgs/diff-default-same-network-not-same-network.png)
+
+Comme vous pouvez le voir il n'y a pas les IP vers les conteneurs ... mais pourquoi !!! 
+Ceci est du à la ligne : 
+
+```
+125             {{ if (and (ne $containerNetwork.Name "ingress") (or (eq $knownNetwork.Name $containerNetwork.Name) (eq $knownNetwork.Name "host"))) }}
+```
+
+Dans le fichier de template [nginx.tmpl](./data/nginx.tmpl) , qui réalise une validation du réseau afin de confirmer qu'il est soit sur le même network que le proxy ou qu'il est associer au réseau du docker host ! Ceci est pour votre bien !! Le système réalise une validation viable pour vous, pour votre bien être ... 
+Yep mais non !! Nous allons changer ça , la solution pérenne est de faire une nouvelle image avec notre fichier template modifier donc un Dockerfile qui ressemble à ceci :
+
+```
+FROM jwilder/nginx-proxy
+
+COPY conf/my-nginx.tmlp /app/nginx.tmlp
+```
+
+Faire l'image avec le nom que vous désirez et voilà :D .
+
+Bon c'est bien ça mais si je veux faire des teste de configuration il doit bien y avoir un méthode un peu plus rapide et moins belle pour faire des testes le temps de trouver la recette pour mon template . Mais bien sûr mes amis :D ... 
+
+Procédons , procédons !!! 
+
+Nous allons d'abord extraire le fichier en cours d'utilisation depuis le conteneur , car j'ai peut-être une veille version sur mon dépot git .
+
+```bash
+$ docker cp nginx-proxy-p:/app/nginx.tmpl nginx-ORI.tmpl
+$ cp nginx-ORI.tmpl nginx.tmpl
+```
+
+Nous allons supprimer la ligne du if et le __end__ associé !! ATTENTION ne pas les mettre en commentaire car le système va tous de même les traiter :P , j'ai eu la surprise la première fois :P . 
+
+Voici le résultat :
+
+![](./imgs/diff-ori-nginx-tmpl-new-nginx-tmpl-multi-network.png)
+
+Nous repoussons ce fichier dans le conteneur pour faire la validation ! 
+
+```bash
+$ docker cp nginx.tmpl nginx-proxy-p:/app/nginx.tmpl
+```
+
+On redémarre les conteneurs web !! 
+
+```bash
+$ docker-compose -f docker-compose-web-sites-other-network.yml restart
+Restarting dockers_demo1-c1_1 ... done
+Restarting dockers_demo2-c1_1 ... done
+Restarting dockers_demo1-c2_1 ... done
+
+```
+
+On reprend le fichier généré :
+
+```
+$ docker cp nginx-proxy-p:/etc/nginx/conf.d/default.conf default-GOOD-same-network.conf 
+```
+
+![](./imgs/diff-default-same-network-GOOD-same-network.png)
+
+Nous voyons clairement maintenant les adresses IP des conteneurs sur le second réseau , maintenant réalisons une connexion sur la page web , pas de panique ça ne fonctionnera pas :) . Donc je vais sur l'URL : __demo2.x3rus.com__ 
+
+J'ai la demande de mot de passe, car j'avais fermé mon browser , donc le service nginx répond bien . 
+
+
+![](./imgs/visualisation-demo2-via-nginx-htpasswd.png)
+
+
+Malheureusement voici le résultat par la suite : 
+
+![](./imgs/demo2-timeout.png)
+
+Si nous regardons les message des logs du conteneur nginx nous voyons clairement le message :
+
+```
+nginx-proxy-p                        | nginx.1    | 2017/10/20 11:39:43 [error] 49#49: *1 upstream timed out (110: Connection timed out) while connecting to upstream, client: 172.23.0.1, server: demo2.x3rus.com, request: "GET / HTTP/1.1", upstream: "http://172.31.0.3:80/", host: "demo2.x3rus.com"
+nginx-proxy-p                        | nginx.1    | demo2.x3rus.com 172.23.0.1 - thomas [20/Oct/2017:11:39:43 +0000] "GET / HTTP/1.1" 504 183 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0"
+```
+
+Je vais donc passer à la prochaine section sur la problématique du réseau.
+
+
+#### Problématique de réseautique / firewall
+
+Donc l'état de la situation si vous avez pas suivie avant la configuration de nginx est bien généré, mais la communication entre le conteneur nginx ne passe pas vers les conteneur web . Nous allons faire l'analyse.
+
+Pour faire l'analyse je vais établir une connexion sur le conteneur nginx et faire des testes de connexion avec notre ami __telnet__ pour comprendre l'état.
+
+```bash
+$ docker exec -it nginx-proxy-p bash
+root@8b0a0f353b2b:/app$ 
+
+root@8b0a0f353b2b:/app$ telnet
+bash: telnet: command not found
+
+root@8b0a0f353b2b:/app$ apt-get update && apt-get install telnet
+```
+
+J'installe __telnet__ de toute manière une fois la recette trouvé je vais devoir refaire le conteneur nginx pour avoir mon fichier de template.
+Je vais reprendre le fichier généré pour avoir les adresses IP identifier et je vais faire un telnet sur le port :
+
+```bash
+root@8b0a0f353b2b:/app$ cat /etc/nginx/conf.d/default.conf | grep server
+server_names_hash_bucket_size 128;     
+server {                               
+        server_name _; # This is just an invalid value which will never trigger on a real hostname.                                                           
+                        server 172.31.0.2:80;                                  
+                        server 172.31.0.4:80;                                  
+server {                               
+        server_name demo1.x3rus.com;   
+                        server 172.31.0.3:80;                                  
+server {                               
+        server_name demo2.x3rus.com; 
+
+root@8b0a0f353b2b:/app$ telnet 172.31.0.3 80                                   
+Trying 172.31.0.3...
+telnet: Unable to connect to remote host: Connection timed out 
+```
+
+COOL , même comportement ce n'est donc clairement pas un problème avec l'application nginx , ok je le savais déjà mais dans le processus analytique c'est toujours bien de confirmer les aprioris. 
+
+Je vais maintenant me déplacer sur le docker host pour analyser la situation , fonctionnement rapide du réseau docker , GNU/Linux va faire la création d'interface virtuel , vous pouvez les visualiser :
+
+```bash
+$ ip addr show | egrep '^[1-9]*:|inet 172' 
+4: br-e5bb35d71ea7: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default  
+    inet 172.31.0.1/16 scope global br-e5bb35d71ea7                            
+5: br-0d47cb65fc8e: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default 
+    inet 172.28.0.1/16 scope global br-0d47cb65fc8e                            
+6: br-5a5c63e89444: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default
+    inet 172.18.0.1/16 scope global br-5a5c63e89444                            
+7: br-7c5883a0db08: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default
+    inet 172.29.0.1/16 scope global br-7c5883a0db08                            
+8: br-83dd18835ced: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default
+    inet 172.26.0.1/16 scope global br-83dd18835ced                            
+9: br-94689b0e93df: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default
+    inet 172.22.1.1/24 scope global br-94689b0e93df                            
+    inet 172.19.0.1/16 scope global br-9f2bdd9fbdd2                            
+11: br-b4ea4a856f8d: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default
+    inet 172.20.0.1/16 scope global br-b4ea4a856f8d                            
+12: br-c46c80d5d47c: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default
+    inet 172.23.0.1/27 scope global br-c46c80d5d47c                            
+13: br-221510ca7da7: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default
+    inet 172.30.0.1/16 scope global br-221510ca7da7                            
+14: br-3c0fa372eba1: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default
+    inet 172.24.0.1/16 scope global br-3c0fa372eba1                            
+15: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default 
+	inet 172.17.0.1/16 scope global docker0
+```
+
+Donc si nous réalisons l'association :
+
+* proxy nginx ( 172.23.0.2 ) == br-c46c80d5d47c (172.23.0.1/27)
+* demo\[1,2\] ( 172.31.0.\[2,3,4\]) == br-e5bb35d71ea7 (172.31.0.1/16)
+
+Donc lors de la communication entre le proxy et les conteneurs web ceci doit passer de l'interface br-c46c80d5d47c à br-e5bb35d71ea7 et bien entendu revenir aussi :P . 
+
+Le firewall en place sur les machines que j'utilise (__ArchLinux__ ou Ubuntu LTS 16.04) est  iptables , docker s'appuie dessus pour mettre en place les règles de firewall ainsi que les redirections de port , natting , etc. 
+
+Je ne ferai pas une formation iptables mais on va regarder rapidement , car c'est justement à ce lieu que ça bloque . Les règles stipulant les permissions aux paquets s'ils ont droit de passer ou non d'une interface à l'autre sont définie dans la **chain FORWARD**  :
+
+```bash
+$ sudo iptables -L -n -v | grep ^Chain
+Chain INPUT (policy ACCEPT 582 packets, 198K bytes)
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+Chain OUTPUT (policy ACCEPT 666 packets, 67616 bytes)
+Chain DOCKER (12 references)
+Chain DOCKER-ISOLATION (1 references)
+Chain DOCKER-USER (1 references)
+```
+
+Nous allons visualiser les règles de cette chaine , ainsi que les chaines quelle inclut , vous avez le fichier brut disponible ici : [iptables-forward-raw](./data/iptables-forward-raw) . Bon pour les puristes , ou ceux qui cherche la bête noir , je passe sous silences la chaine de sortie __OUTPUT__, car il n'y a aucune règles limitatif : 
+
+> Chain OUTPUT (policy **ACCEPT**
+
+Donc la chaine Forward :P 
+
+```bash
+$ sudo iptables -L FORWARD -n -v 
+```
+
+Voici un tableau du résultat :
+
+| pkts | bytes | target | prot | opt | in | out | source | destination | 
+|:-----|-------|--------|------|-----|:---|----:|--------|------------:|
+| 11066 | 11M | **DOCKER-USER** | all | -- | * | * | 0.0.0.0/0 | 0.0.0.0/0 | 
+| 11066 | 11M | **DOCKER-ISOLATION** | all | -- | * | * | 0.0.0.0/0 | 0.0.0.0/0 | 
+| 0 | 0 | ACCEPT | all | -- | * | docker0 | 0.0.0.0/0 | 0.0.0.0/0 | ctstate | RELATED,ESTABLISHED
+| 0 | 0 | DOCKER | all | -- | * | docker0 | 0.0.0.0/0 | 0.0.0.0/0 | 
+| 0 | 0 | ACCEPT | all | -- | docker0 | !docker0 | 0.0.0.0/0 | 0.0.0.0/0 | 
+| 0 | 0 | ACCEPT | all | -- | docker0 | docker0 | 0.0.0.0/0 | 0.0.0.0/0 | 
+| 0 | 0 | ACCEPT | all | -- | * | br-3c0fa372eba1 | 0.0.0.0/0 | 0.0.0.0/0 | ctstate | RELATED,ESTABLISHED
+| 0 | 0 | DOCKER | all | -- | * | br-3c0fa372eba1 | 0.0.0.0/0 | 0.0.0.0/0 | 
+| 0 | 0 | ACCEPT | all | -- | br-3c0fa372eba1 | !br-3c0fa372eba1 | 0.0.0.0/0 | 0.0.0.0/0 | 
+| 0 | 0 | ACCEPT | all | -- | br-3c0fa372eba1 | br-3c0fa372eba1 | 0.0.0.0/0 | 0.0.0.0/0 | 
+| 0 | 0 | ACCEPT | all | -- | * | br-221510ca7da7 | 0.0.0.0/0 | 0.0.0.0/0 | ctstate | RELATED,ESTABLISHED
+| 0 | 0 | DOCKER | all | -- | * | br-221510ca7da7 | 0.0.0.0/0 | 0.0.0.0/0 | 
+| 0 | 0 | ACCEPT | all | -- | br-221510ca7da7 | !br-221510ca7da7 | 0.0.0.0/0 | 0.0.0.0/0 | 
+| 0 | 0 | ACCEPT | all | -- | br-221510ca7da7 | br-221510ca7da7 | 0.0.0.0/0 | 0.0.0.0/0 | 
+| 7340 | 11M | ACCEPT | all | -- | * | br-c46c80d5d47c | 0.0.0.0/0 | 0.0.0.0/0 | ctstate | RELATED,ESTABLISHED
+| 0 | 0 | DOCKER | all | -- | * | br-c46c80d5d47c | 0.0.0.0/0 | 0.0.0.0/0 | 
+| 3713 | 198K | ACCEPT | all | -- | br-c46c80d5d47c | !br-c46c80d5d47c | 0.0.0.0/0 | 0.0.0.0/0 | 
+
+
+
 # Note raw pour plus tard 
 
 ## Problème multi network 
