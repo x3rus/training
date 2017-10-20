@@ -1349,6 +1349,20 @@ Voici un tableau du résultat :
 | 0 | 0 | DOCKER | all | -- | * | br-c46c80d5d47c | 0.0.0.0/0 | 0.0.0.0/0 | 
 | 3713 | 198K | ACCEPT | all | -- | br-c46c80d5d47c | !br-c46c80d5d47c | 0.0.0.0/0 | 0.0.0.0/0 | 
 
+Donc prenons le temps de visualiser le flux de la communication via ce diagramme : 
+
+![](./imgs/flux-communication-docker-iptables.png) 
+
+C'est la version simplifier pour ceux qui en veulent plus je vous invite à consulter ce lien  : [iptables packet flow](https://commons.wikimedia.org/wiki/File:Netfilter-packet-flow.svg), c'est plus complet et plus mélangeant :P
+
+Donc comme nous le voyons dans le schéma , la communication va passer par le Chaine FORWARD , le système de règle de firewall est simple s'il trouve une des **target** suivante il arrête et faire l'opération de la règle :
+
+* ACCEPT : évidement accepte le paquets donc plus aucune règle n'est traité par la suite
+* DROP : laisse tombé le paquet résultat la personne qui à fait la requête recevra un timeout
+* REJECT : Refuse la connexion donc le demander recevra tous de suite un connexion refused.
+
+S'il y a la **target** RETURN il arrête de traiter la chaine en cours et poursuit avec les autres règles . Si aucune règle concorde alors il applique la politique globale , qui est souvent DROP pour le input , ACCEPT pour l'output et forward.
+
 
 
 # Note raw pour plus tard 
@@ -1408,6 +1422,23 @@ root@1954de39d19a:/app# telnet 172.31.0.2 80
 Trying 172.31.0.2...                   
 ^C                                     
 root@1954de39d19a:/app# 
+```
+
+SOLUTION : 
+
+```
+Chain DOCKER-USER (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+  10   680 ACCEPT     all  --  br-e5bb35d71ea7 br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+  21  1235 ACCEPT     tcp  --  br-c46c80d5d47c br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+  73  4380 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+```
+
+Commande : 
+
+```
+-A DOCKER-USER -i br-e5bb35d71ea7 -o br-c46c80d5d47c -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A DOCKER-USER -i br-c46c80d5d47c -o br-e5bb35d71ea7 -p tcp -m tcp --dport 80 -j ACCEPT
 ```
 
 ## problème email letencrypt invalide 
