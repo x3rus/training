@@ -1,0 +1,203 @@
+Chain INPUT (policy ACCEPT 48 packets, 4579 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    7   420 DOCKER-USER  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+    7   420 DOCKER-ISOLATION  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      docker0  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  docker0 !docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  docker0 docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-3c0fa372eba1 !br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-3c0fa372eba1 br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-0d47cb65fc8e !br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-0d47cb65fc8e br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-83dd18835ced  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-83dd18835ced !br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-83dd18835ced br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-7c5883a0db08 !br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-7c5883a0db08 br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-5a5c63e89444 !br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-5a5c63e89444 br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-94689b0e93df  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-94689b0e93df !br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-94689b0e93df br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-221510ca7da7  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-221510ca7da7 !br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-221510ca7da7 br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-e5bb35d71ea7 !br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-e5bb35d71ea7 br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-c46c80d5d47c !br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-c46c80d5d47c br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-b4ea4a856f8d !br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-b4ea4a856f8d br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  *      br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-9f2bdd9fbdd2 !br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  br-9f2bdd9fbdd2 br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+
+Chain OUTPUT (policy ACCEPT 48 packets, 3679 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain DOCKER (12 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 ACCEPT     tcp  --  !br-c46c80d5d47c br-c46c80d5d47c  0.0.0.0/0            172.23.0.2           tcp dpt:443
+    0     0 ACCEPT     tcp  --  !br-c46c80d5d47c br-c46c80d5d47c  0.0.0.0/0            172.23.0.2           tcp dpt:80
+
+Chain DOCKER-ISOLATION (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 DROP       all  --  br-3c0fa372eba1 docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  docker0 br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-83dd18835ced docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  docker0 br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-5a5c63e89444 docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  docker0 br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-94689b0e93df docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  docker0 br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-221510ca7da7 docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  docker0 br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-c46c80d5d47c docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  docker0 br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-0d47cb65fc8e docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  docker0 br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-7c5883a0db08 docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  docker0 br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-e5bb35d71ea7 docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  docker0 br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-b4ea4a856f8d docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  docker0 br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-9f2bdd9fbdd2 docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  docker0 br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-83dd18835ced br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-3c0fa372eba1 br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-5a5c63e89444 br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-3c0fa372eba1 br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-94689b0e93df br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-3c0fa372eba1 br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-221510ca7da7 br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-3c0fa372eba1 br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-c46c80d5d47c br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-3c0fa372eba1 br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-0d47cb65fc8e br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-3c0fa372eba1 br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-7c5883a0db08 br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-3c0fa372eba1 br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-e5bb35d71ea7 br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-3c0fa372eba1 br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-b4ea4a856f8d br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-3c0fa372eba1 br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-9f2bdd9fbdd2 br-3c0fa372eba1  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-3c0fa372eba1 br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-7c5883a0db08 br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-0d47cb65fc8e br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-e5bb35d71ea7 br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-0d47cb65fc8e br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-b4ea4a856f8d br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-0d47cb65fc8e br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-9f2bdd9fbdd2 br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-0d47cb65fc8e br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-83dd18835ced br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-0d47cb65fc8e br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-5a5c63e89444 br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-0d47cb65fc8e br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-94689b0e93df br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-0d47cb65fc8e br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-221510ca7da7 br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-0d47cb65fc8e br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-c46c80d5d47c br-0d47cb65fc8e  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-0d47cb65fc8e br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-221510ca7da7 br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-83dd18835ced br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-c46c80d5d47c br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-83dd18835ced br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-5a5c63e89444 br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-83dd18835ced br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-94689b0e93df br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-83dd18835ced br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-9f2bdd9fbdd2 br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-83dd18835ced br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-7c5883a0db08 br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-83dd18835ced br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-e5bb35d71ea7 br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-83dd18835ced br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-b4ea4a856f8d br-83dd18835ced  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-83dd18835ced br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-e5bb35d71ea7 br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-7c5883a0db08 br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-c46c80d5d47c br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-7c5883a0db08 br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-b4ea4a856f8d br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-7c5883a0db08 br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-9f2bdd9fbdd2 br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-7c5883a0db08 br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-5a5c63e89444 br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-7c5883a0db08 br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-94689b0e93df br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-7c5883a0db08 br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-221510ca7da7 br-7c5883a0db08  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-7c5883a0db08 br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-94689b0e93df br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-5a5c63e89444 br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-221510ca7da7 br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-5a5c63e89444 br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-e5bb35d71ea7 br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-5a5c63e89444 br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-c46c80d5d47c br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-5a5c63e89444 br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-b4ea4a856f8d br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-5a5c63e89444 br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-9f2bdd9fbdd2 br-5a5c63e89444  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-5a5c63e89444 br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-221510ca7da7 br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-94689b0e93df br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-e5bb35d71ea7 br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-94689b0e93df br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-c46c80d5d47c br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-94689b0e93df br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-b4ea4a856f8d br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-94689b0e93df br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-9f2bdd9fbdd2 br-94689b0e93df  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-94689b0e93df br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-9f2bdd9fbdd2 br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-221510ca7da7 br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-e5bb35d71ea7 br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-221510ca7da7 br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-c46c80d5d47c br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-221510ca7da7 br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-b4ea4a856f8d br-221510ca7da7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-221510ca7da7 br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    7   420 DROP       all  --  br-c46c80d5d47c br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-e5bb35d71ea7 br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-b4ea4a856f8d br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-e5bb35d71ea7 br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-9f2bdd9fbdd2 br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-e5bb35d71ea7 br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-9f2bdd9fbdd2 br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-c46c80d5d47c br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-b4ea4a856f8d br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-c46c80d5d47c br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-9f2bdd9fbdd2 br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-b4ea4a856f8d br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain DOCKER-USER (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    7   420 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           

@@ -1357,13 +1357,89 @@ C'est la version simplifier pour ceux qui en veulent plus je vous invite à cons
 
 Donc comme nous le voyons dans le schéma , la communication va passer par le Chaine FORWARD , le système de règle de firewall est simple s'il trouve une des **target** suivante il arrête et faire l'opération de la règle :
 
-* ACCEPT : évidement accepte le paquets donc plus aucune règle n'est traité par la suite
-* DROP : laisse tombé le paquet résultat la personne qui à fait la requête recevra un timeout
-* REJECT : Refuse la connexion donc le demander recevra tous de suite un connexion refused.
+* **ACCEPT** : évidement accepte le paquets donc plus aucune règle n'est traité par la suite
+* **DROP** : laisse tombé le paquet résultat la personne qui à fait la requête recevra un timeout
+* **REJECT** : Refuse la connexion donc le demander recevra tous de suite un connexion refused.
 
 S'il y a la **target** RETURN il arrête de traiter la chaine en cours et poursuit avec les autres règles . Si aucune règle concorde alors il applique la politique globale , qui est souvent DROP pour le input , ACCEPT pour l'output et forward.
 
+Je suis actuellement dans une position privilégié , car je suis sur mon portable et les conteneurs actif ne sont QUE ceux utilisé par nginx et les conteneur web. Ceci va grandement facilité l'analyse, cependant ceci veux aussi dire que la mise en place d'un laboratoire peut être mis en place pour comprendre le comportement de vos conteneurs.
 
+Nous allons visualiser le trafic , je vais établir la connexion au conteneur nginx :
+
+```bash
+$ docker exec -it nginx-proxy-p bash
+root@8b0a0f353b2b:/app$ 
+```
+
+Je vais lister les règles iptables actuellement en place incluant les statistiques :
+
+```bash
+ # un répertoire temporaire pour stocker des fichiers
+$ mkdir ./data/tmp
+
+$ sudo iptables -L -n -v > ./data/tmp/iptables-v1
+$ tail -7 iptables-v1 
+    0     0 DROP       all  --  br-9f2bdd9fbdd2 br-b4ea4a856f8d  0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  br-b4ea4a856f8d br-9f2bdd9fbdd2  0.0.0.0/0            0.0.0.0/0           
+    0     0 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain DOCKER-USER (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0  
+```
+
+Maintenant je vais faire un telnet depuis la machine nginx vers la machine web.
+
+```bash
+root@8b0a0f353b2b:/app# telnet 172.31.0.2 80 
+Trying 172.31.0.2...
+```
+
+Donc le problème est toujours présent , et ça va faire un timeout , je vais donc refaire dans une autre fenêtre le listing des règles avec les statistiques.
+
+```bash
+$ sudo iptables -L -n -v > ./data/tmp/iptables-v2
+```
+
+Nous allons maintenant pouvoir voir où les paquets passent et surtout où il sont bloqué :P , je réalise un petit vimdiff entre les 2 fichiers pour identifier le lieu. Le premier fichier à gauche et le nouveau à droite :
+
+```bash
+$ vimdiff iptables-v1 iptables-v2
+```
+
+![](./imgs/view-stats-iptables-packets-droped.png)
+
+![](./imgs/view-stats-iptables-packets-droped-2.png)
+
+Donc analysons la situation en relation avec mon schéma du flux réseau précédemment présenté.
+
+* **FORWARD** : Donc nous voyons des paquets qui ont transigé par la chaine **FORWARD**  , nous avons 7 paquets qui sont passé par les chaines **DOCKER-USER** et **DOCKER-ISOLATION**. Nous allons donc suivre le flux.
+	* **DOCKER-USER** : Si nous regardons cette chaine , la seule règles qu'elle contient et la target **RETURN** , donc il n'y a pas de traitement réaliser à ce niveau , cette chaine à la possibilité d'avoir des règles personnalisé mais dans la situation présente il n'y a pas de règles. Donc elle retourne les paquets au autres règle pour traitement.  Passons à la prochaine règles ...
+    * **DOCKER-ISOLATION** : Cette chaine contient plusieurs règles mais nous constatons qu'une ligne à des paquets de comptabilité, j'ai ajouter ci-dessous le nom humain des interfaces afin que ce soit plus claire . Donc la règle suivante est claire DROP (timeout) les paquets en provenance du réseaux br-proxy contenant le conteneur nginx vers le réseau des conteneurs web.
+
+        ```
+        7   420 DROP       all  --  br-c46c80d5d47c (== br-proxy) br-e5bb35d71ea7 ( == web-conteneur)
+        ```
+
+YEAHHH !! Nous avons identifier le problème :D , nous avons déjà fait un gros travail :D. Pour corriger le problème nous allons donc utiliser la chaine DOCKER-USER afin de définir nos règles personnalisés. 
+
+Je le répète l'objectif n'est pas de faire une session iptables , mais offrir au personne avec une certain connaissance d'être plus confortable pour l'identification et la manipulation des règles dans le cadre de docker.
+
+Je vais donc ajouter la règle suivante , 
+
+```bash
+$ sudo iptables -I DOCKER-USER -i br-c46c80d5d47c -o br-e5bb35d71ea7 -p tcp -m tcp --dport 80 -j ACCEPT
+```
+
+* -I DOCKER-USER : Je fais une insertion au DÉBUT de la chaine avec ma règle , attention ne pas utiliser l'option -A qui réalise un append car votre règle ce retrouvera après l'instruction RETURN , donc ne sera JAMAIS traité.
+* -i br-c46c80d5d47c : Les paquets en provenance de l'interface br-proxy donc du réseaux de nginx, je définie le réseaux car il est possible que le service nginx change d'IP
+* -o br-e5bb35d71ea7 : Les paquets en destination de l'interface des conteneurs web , encore une fois je définie l'interface et non les ip afin de me prévenir du changement d'adresse ip par le DHCP.
+* -p tcp -m tcp : Utilisation du protocole tcp
+* --dport 80 : La destination étant le port 80 
+* -j ACCEPT : Indique que le paquet sera accepté donc iptables arrêtera de traiter ce paquet et le laissera passer.
+
+TODO : Ajout info pour règles firewall persistante.
 
 # Note raw pour plus tard 
 
