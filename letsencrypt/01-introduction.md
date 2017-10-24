@@ -1432,90 +1432,133 @@ Je vais donc ajouter la règle suivante ,
 $ sudo iptables -I DOCKER-USER -i br-c46c80d5d47c -o br-e5bb35d71ea7 -p tcp -m tcp --dport 80 -j ACCEPT
 ```
 
-* -I DOCKER-USER : Je fais une insertion au DÉBUT de la chaine avec ma règle , attention ne pas utiliser l'option -A qui réalise un append car votre règle ce retrouvera après l'instruction RETURN , donc ne sera JAMAIS traité.
-* -i br-c46c80d5d47c : Les paquets en provenance de l'interface br-proxy donc du réseaux de nginx, je définie le réseaux car il est possible que le service nginx change d'IP
-* -o br-e5bb35d71ea7 : Les paquets en destination de l'interface des conteneurs web , encore une fois je définie l'interface et non les ip afin de me prévenir du changement d'adresse ip par le DHCP.
-* -p tcp -m tcp : Utilisation du protocole tcp
-* --dport 80 : La destination étant le port 80 
-* -j ACCEPT : Indique que le paquet sera accepté donc iptables arrêtera de traiter ce paquet et le laissera passer.
+* __-I DOCKER-USER__ : Je fais une insertion au DÉBUT de la chaine avec ma règle , attention ne pas utiliser l'option -A qui réalise un append car votre règle ce retrouvera après l'instruction RETURN , donc ne sera JAMAIS traité.
+* __-i br-c46c80d5d47c__ : Les paquets en provenance de l'interface br-proxy donc du réseaux de nginx, je définie le réseaux car il est possible que le service nginx change d'IP
+* __-o br-e5bb35d71ea7__ : Les paquets en destination de l'interface des conteneurs web , encore une fois je définie l'interface et non les ip afin de me prévenir du changement d'adresse ip par le DHCP.
+* __-p tcp -m tcp__ : Utilisation du protocole tcp
+* __--dport 80__ : La destination étant le port 80 
+* __-j ACCEPT__ : Indique que le paquet sera accepté donc iptables arrêtera de traiter ce paquet et le laissera passer.
+
+Je vais re lister les règles de firewall :
+
+```bash
+$ sudo iptables -L -n -v > iptables-v3
+
+ # voici le rsultat juste pour la section DOCKER-USER
+$ sudo iptables -L DOCKER-USER -n -v
+Chain DOCKER-USER (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 ACCEPT     tcp  --  br-c46c80d5d47c br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+    7   420 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0      
+```
+
+Donc nous faisons un test depuis nginx :
+
+```bash
+root@8b0a0f353b2b:/app# telnet 172.31.0.3 80
+Trying 172.31.0.3...
+
+```
+
+Et non pas mieux :P , nous allons refaire l'analyse pour savoir où ça bloque !!! 
+
+```bash
+$ sudo iptables -L -n -v > iptables-v4
+```
+
+Et un petit vimdiff pour faire la comparaison :D
+
+```bash
+$ vimdiff iptables-v3 iptables-v4 
+```
+
+![](./imgs/view-stats-iptables-packets-droped-step2-01.png)
+
+![](./imgs/view-stats-iptables-packets-droped-step2-02.png)
+
+Donc nous reprenons :
+
+* **FORWARD** : nous voyons des paquets qui transige par cette chaine , nous voyons que ceci est bien allé dans la chaine DOCKER-USER 
+    * **DOCKER-USER** : Nous voyons bien que 6 paquets ont bien tapé notre règle , par contre si nous regardons il y a 18 paquets qui ont continuer leurs chemin après notre règle et qui sont retourné pour être traiter par d'autres règles.
+    * **DOCKER-ISOLATION** : Nous voyons que la chaine **DOCKER-ISOLATION** référencé dans la chaine **FORWARD** à justement traité 18 paquets :) , la belle affaire alors regardons ce que contient cette chaine et surtout qui à changé. Voici les 18 paquets , pour rappel lors de notre premier TEST nous avions 7 paquets qui étaient passé déjà il nous en reste donc 11 !! Faut le garder en tête
+
+    ```
+    11   660 DROP       all  --  br-e5bb35d71ea7 br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0           
+    7   420 DROP       all  --  br-c46c80d5d47c br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0           
+    ```
+
+Donc nous retrouvons les 7 déjà identifiés, donc les 11 quelle est cette règle ... elle ressemble étrangement à la celle que nous savons déjà corriger . 
+Donc la règle bloque les communications depuis br-e5bb35d71ea7 ( == web-conteneur) vers br-c46c80d5d47c (== br-proxy) . En d'autre mot la règle inverse !
+
+Nous avons déjà autorisé l'accès dans un sens, pour le retour le problème avec le TCP/IP est que le port source est dynamique petit rappel du mode de communication en TCP/IP . 
+
+![](./imgs/tcp_connexion_state.png)
+
+Comme nous le voyons dans le schéma ci-dessus la communication initié par l'IP 192.168.43.245 va vers l'IP 192.99.12.211 sur le port 80 mais le retour de la communication se fait sur un des port dynamique vers l'IP 192.168.43.245 sur le port 34068. 
+
+Bonne nouvelle iptables est une firewall STATE-FULL en d'autre mot il est en mesure de comprendre l'état d'une communication et d'ouvrir le flux si les paquets furent déjà ouvert dans un sens. Mais pour ça il faut tous de même lui signaler :P , il obéit bien mais faut lui dire :P. 
+
+Pour ce faire nous allons définir la règles suivante : 
+
+```bash
+$ sudo iptables -I DOCKER-USER -i br-e5bb35d71ea7 -o br-c46c80d5d47c -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+```
+
+* __-I DOCKER-USER__ : Insertion au début de la chaine DOCKER-USER afin qu'elle soit traiter avec le **return**
+* __-i br-e5bb35d71ea7__ : Lors que les paquets provienne de l'interface br-e5bb35d71ea7 ( == web-conteneur) 
+* __-o br-c46c80d5d47c__ : Lors que les paquets sorte vers l'interface  br-c46c80d5d47c (== br-proxy)
+* __-m conntrack__ : Identifier avec le tag d'une connexion en court
+* __--ctstate RELATED,ESTABLISHED__ : que le paquet est identifier comme en état de relation ou déjà connecté ( donc que le 3 hand shake est complété)
+* __-j ACCEPT__ : Autorise le paquet à passer .
+
+Bon , on l'essaye :D !!!
+
+```bash
+$ sudo iptables -L DOCKER-USER -n -v
+Chain DOCKER-USER (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+     0     0 ACCEPT     all  --  br-e5bb35d71ea7 br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+     6   360 ACCEPT     tcp  --  br-c46c80d5d47c br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+    18  1080 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0   
+```
+
+Toujours depuis le conteneur nginx :
+
+```bash
+root@8b0a0f353b2b:/app# telnet 172.31.0.3 80                                   
+Trying 172.31.0.3...                   
+Connected to 172.31.0.3.               
+Escape character is '^]'.              
+GET /                                  
+Le site web de demo2                   
+
+demo2                                  
+demo2                                  
+demo2                                  
+demo2                                  
+demo2                                  
+demo2                                  
+demo2                                  
+Connection closed by foreign host.    
+```
+
+Et si on visualise  les règles :
+
+```bash
+$ sudo iptables -L DOCKER-USER -n -v                                  
+Chain DOCKER-USER (1 references)       
+ pkts bytes target     prot opt in     out     source               destination                                                                               
+    5   340 ACCEPT     all  --  br-e5bb35d71ea7 br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED 
+   11   635 ACCEPT     tcp  --  br-c46c80d5d47c br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+   18  1080 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0   
+```
+
+Et voilà :D 
 
 TODO : Ajout info pour règles firewall persistante.
 
 # Note raw pour plus tard 
 
-## Problème multi network 
-
-On démarre l'ensemble : 
-
-HEU FAIL :P 
-
-Problème si on utilise un autre réseau , fichier de template de nginx : 
-lien : https://github.com/jwilder/nginx-proxy/blob/f05f7a0ff965d7a5fa38b4dd567f4913ce874fe8/nginx.tmpl#L125
-
-Si on l'enlève c ok mais problème réseaux  . Visualisation du drop 
-
-```bash
-$ sudo iptables -L -n -v  | grep -v "0     0"                         
-Chain INPUT (policy ACCEPT 21734 packets, 6582K bytes)                         
- pkts bytes target     prot opt in     out     source               destination                                                                               
-
-Chain FORWARD (policy DROP 0 packets, 0 bytes)                                 
- pkts bytes target     prot opt in     out     source               destination                                                                               
-10780   11M DOCKER-USER  all  --  *      *       0.0.0.0/0            0.0.0.0/0                                                                               
-10780   11M DOCKER-ISOLATION  all  --  *      *       0.0.0.0/0            0.0.0.0/0                                                                          
- 7377   11M ACCEPT     all  --  *      br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED                                 
-    5   300 DOCKER     all  --  *      br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0                                                                        
- 3383  179K ACCEPT     all  --  br-c46c80d5d47c !br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0                                                              
-    5   300 ACCEPT     all  --  br-c46c80d5d47c br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0                                                               
-
-Chain OUTPUT (policy ACCEPT 22733 packets, 2338K bytes)                        
- pkts bytes target     prot opt in     out     source               destination                                                                               
-
-Chain DOCKER (12 references)           
- pkts bytes target     prot opt in     out     source               destination                                                                               
-
-Chain DOCKER-ISOLATION (1 references)  
- pkts bytes target     prot opt in     out     source               destination                                                                               
-   15   900 DROP       all  --  br-c46c80d5d47c br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0                                                               
-10765   11M RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0                                                                                 
-
-Chain DOCKER-USER (1 references)       
- pkts bytes target     prot opt in     out     source               destination                                                                               
-10780   11M RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0 
-
-```
-
-La ligne qui Change : 
-
-```
-   15   900 DROP       all  --  br-c46c80d5d47c br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0 
-```
-
-Je réalisais un telnet en même temps sur le nginx :
-
-```bash
-root@1954de39d19a:/app# telnet 172.31.0.2 80                                                                                                                  
-Trying 172.31.0.2...                   
-^C                                     
-root@1954de39d19a:/app# 
-```
-
-SOLUTION : 
-
-```
-Chain DOCKER-USER (1 references)
- pkts bytes target     prot opt in     out     source               destination         
-  10   680 ACCEPT     all  --  br-e5bb35d71ea7 br-c46c80d5d47c  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
-  21  1235 ACCEPT     tcp  --  br-c46c80d5d47c br-e5bb35d71ea7  0.0.0.0/0            0.0.0.0/0            tcp dpt:80
-  73  4380 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
-```
-
-Commande : 
-
-```
--A DOCKER-USER -i br-e5bb35d71ea7 -o br-c46c80d5d47c -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
--A DOCKER-USER -i br-c46c80d5d47c -o br-e5bb35d71ea7 -p tcp -m tcp --dport 80 -j ACCEPT
-```
 
 ## problème email letencrypt invalide 
 
