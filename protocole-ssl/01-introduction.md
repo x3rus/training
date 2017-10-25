@@ -85,7 +85,7 @@ Generating a 2048 bit RSA private key
 ................+++
 ....................................................................................+++
 writing new private key to 'server.key'
------
+ -----
 
 You are about to be asked to enter information that will be incorporated
 into your certificate request.
@@ -93,7 +93,7 @@ What you are about to enter is what is called a Distinguished Name or a DN.
 There are quite a few fields but you can leave some blank
 For some fields there will be a default value,
 If you enter '.', the field will be left blank.
------
+ -----
 
 Country Name (2 letter code) [AU]:CA
 State or Province Name (full name) [Some-State]:Quebec
@@ -108,14 +108,14 @@ server.crt  server.key
 
 $ head -5 server.key server.crt 
 ==> server.key <==
------BEGIN PRIVATE KEY-----
+ -----BEGIN PRIVATE KEY-----
 MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDJsYXLGDBE8Zlh
 4++b6bI0zDxonvPvuS/BI9M1wF7G2JPAhXHmBT7TpVfp3ekR7SuFIJVKEOn7xQiV
 4kJwtnLexZDx3MaEJnBVsOcmz8dvyJ2eYif3p2WkGxbcyRRAV+KTXHSZgHdY6LfB
 H08nBasY5nqJ5v27W2O/gC1RavsjAuHIPW7khcP2ksJEdbTsW1ihxp03NkA8xRX/
 
 ==> server.crt <==
------BEGIN CERTIFICATE-----
+ -----BEGIN CERTIFICATE-----
 MIIDrTCCApWgAwIBAgIJAIM6pAb71wACMA0GCSqGSIb3DQEBCwUAMG0xCzAJBgNV
 BAYTAkNBMQ8wDQYDVQQIDAZRdWViZWMxETAPBgNVBAcMCE1vbnRyZWFsMQ4wDAYD
 VQQKDAVYM3J1czESMBAGA1UECwwJRm9ybWF0aW9uMRYwFAYDVQQDDA13d3cueDNy
@@ -424,6 +424,18 @@ Un fois le certificat accepté , le site nous est présenté :
 
 ![sitea-ssl.png](./imgs/sitea-ssl.png)
 
+
+# Mais il est où le CA ?
+
+Bon ok j'ai fait la démonstration de la configuration avec un certificat auto signé , malheureusement bien souvent c'est quoi le comportement ? Ça marche numéro 1 avec un __self-signe__ , mais le certificat n'est pas reconnue avec un certificat fournit par un CA. Bien entendu le problème n'est pas au niveau du fournisseur de service mais bien avec votre configuration. Donc nous allons couvrir la fonctionnalité d'un CA et la mise en place d'un certificat avec l'ensemble de la chaine. 
+
+Alors là comme d'habitude je sais pas trop limiter mes formations :P , faut toujours que j'en fasse plus certain diront trop ... donc je vais le mettre la section suivante optionnel pour pas avoir un document trop gros. 
+Comment comprendre quelque chose , le faire :D !!! C'est la meilleur manière de bien le comprendre avoir une réalité pratique de ce qui faut faire. Ça marche autant pour la mise en place d'une planché , une toilette , la céramique , ... Ceci est pareil pour l'informatique faut juste la documentation qui vient avec et une petite démonstration en plus ça l'aide :D. 
+Donc le lien suivant c'est pour mettre en place une [Autorité de Certification CA](../setup-un-CA/01-introduction.md) , l'équivalent d'un digicert, very-sign, goDaddy , ... 
+
+* [Autorité de Certification CA](../setup-un-CA/01-introduction.md)
+
+Donc ça vous motive pas passez direct à la prochaine section no stress :D.
 
 # Communication entre 2 systèmes
 
