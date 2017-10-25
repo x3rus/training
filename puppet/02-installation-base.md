@@ -77,9 +77,9 @@ Prenons quelques minutes juste pour voir les composantes :
 
 * __puppetserver__ : Ceci est donc le puppet master , l'ensemble des machines devront être en mesure de communiquer avec ce conteneur via le port 8140 , l'ensemble de la configuration du système sera dans ce conteneur. Il est le point central de l'ensemble du système sans lui plus de puppet.
 * __puppetdb__ : Ce conteneur nous permettra de conserver l'ensemble des données du serveur puppet de manière structure, ceci permettra à d'autre application satellite d'extraire les données de puppet pour les manipuler si requis.  
-* puppetdb-postgres : Ce conteneur est le backend de puppetdb :P , car puppetdb est un service par défaut  je crois qu'il stock les informations avec sqlite mais ça ne scale pas . Ici nous utilisons postgress pour faire le stockage des informations.
-* puppetboard : Nous aurons la chance d'avoir une visualisation de l'état du système puppet , ce conteneur établira une connexion au conteneur puppetdb est réalisera une présentation de l'état de santé du système. Est-ce que les machines communique bien avec le serveur , ...
-* puppetexplorer : Ce conteneur permet d'explorer les données dans la base de donnée puppetdb facilement, contrairement au puppetboard qui offre une visualisation structurer , puppet explorer vous permet de voir les données sans traitement.
+* **puppetdb-postgres** : Ce conteneur est le backend de puppetdb :P , car puppetdb est un service par défaut  je crois qu'il stock les informations avec sqlite mais ça ne scale pas . Ici nous utilisons postgress pour faire le stockage des informations.
+* **puppetboard** : Nous aurons la chance d'avoir une visualisation de l'état du système puppet , ce conteneur établira une connexion au conteneur puppetdb est réalisera une présentation de l'état de santé du système. Est-ce que les machines communique bien avec le serveur , ...
+* **puppetexplorer** : Ce conteneur permet d'explorer les données dans la base de donnée puppetdb facilement, contrairement au puppetboard qui offre une visualisation structurer , puppet explorer vous permet de voir les données sans traitement.
 
 # NOTE :
 

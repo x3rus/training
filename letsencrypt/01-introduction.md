@@ -1555,9 +1555,13 @@ Chain DOCKER-USER (1 references)
 
 Et voilà :D 
 
-TODO : Ajout info pour règles firewall persistante.
+#### Définir ces règles de manière permanente
 
-# Note raw pour plus tard 
+Lors des testes vous constaterez que le nom des interfaces ne change pas peut importe le nombre de redémarrage. Malheureusement la chaine DOCKER-USER est réinitialisé à chaque démarrage de la machine . J'ai fait quelque recherche pour voir ce qui peut être fait pour que la configuration soit permanente malheureusement rien de bien claire. Certain modifie le script de démarrage pour réaliser une opération post démarrage de docker . 
+
+Personnellement la méthode que j'utilse et la mise en place de puppet qui gère l'ensemble de mes règles de firewall et qui s'assure de conserver l'état des règles. Si je réalise une modification en 30 minutes la configuration sera remise en place comme définie dans les règles de puppet , donc ceci me permet de concerver l'ensemble de mes règles peut importe qui essaye de faire un changement. 
+
+Pour la formation puppet ... ça vient si j'arrête de débuter des petites formations et finalement m'étendre ... :P
 
 
 ## problème email letencrypt invalide 
