@@ -1,0 +1,18 @@
+version: '2'
+
+services:
+    ca:
+        image: x3-my-ca
+        build: .
+        container_name : 'x3-CA-f'
+#    restart: unless-stopped
+        volumes:
+            - "./volumes/my-CA:/root/"
+        networks:
+            - none
+
+networks:
+    none:
+        external: true
+
+
