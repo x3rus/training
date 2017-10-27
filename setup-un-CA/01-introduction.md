@@ -420,10 +420,211 @@ $ openssl x509 -noout -text -in certs/ca.cert.pem  | egrep --color  'Signature A
 ![](./imgs/01-view-root-ca.png)
 
 
-Nous avons donc terminé avec le ROOT CA , je comprend que pour le moment vous voyez un peu déconcerté car finalement c'est presque que comme un certificat auto signé ... j'en convient , mais il y a le flag **CA:TRUE** :P . Sans farce effectivement en fait nous allons voir que le mécanisme de certificat est tous simple que c'est toujours le même principe qui s'applique . En conservant ça le plus simple possible la validation est d'autant plus simple .
-
-
+Nous avons donc terminé avec le ROOT CA , je comprend que pour le moment vous soyez un peu déconcerté car finalement c'est presque que comme un certificat auto signé ... j'en convient , mais il y a le flag **CA:TRUE** :P . Sans farce effectivement en fait nous allons voir que le mécanisme de certificat est tous simple que c'est toujours le même principe qui s'applique . En conservant ça le plus simple possible la validation est d'autant plus simple .
 
 ## Autorité de certification  Intermédiaire
 
+L'autorité de certification intermédiaire sera utilisé pour faire la signature des certificats que nous parlions de certificat pour utilisateur ou pour les serveurs , en fait tous type de certificat. L'autorité de certificat intermédiaire a son identité ( son certificat) signé par le ROOT CA et l'intermédiaire signe les certificats ceci crée une chaine de validation avec comme point primaire le ROOT CA. 
 
+L'idée d'utiliser une autorité de certificat intermédiaire est de ne JAMAIS utiliser le ROOT CA, mais uniquement l'intermédiaire. En d'autre mot le ROOT CA est offline et inaccessible  par la majorité des personnes , réduisant le risque que la clé privé soit compromise par un administrateur. Pour ce qui est de l'autorité de certificat intermédiaire comme nous avons toujours le ROOT CA il est possible de révoquer l'intermédiaire et d'en recréer un autre car nous avons encore le ROOT CA.
+
+Procédons à la création de cette intermédiaire, vous allez constater que ceci ressemble BEAUCOUP à notre ROOT CA :D, mais c'est une pair de clé différente :P.
+
+```bash
+$ mkdir /root/ca-intermediate
+```
+
+* Création de la structure des répertoires , les fichiers __index.txt__ et __serial__ sont des fichiers de base de donnée plat qui servirons à conserver l'information sur les certificats signés.
+
+```bash
+$ cd /root/ca-intermediate
+$ mkdir certs crl csr newcerts private
+$ chmod 700 private
+$ touch index.txt
+$ echo 1000 > serial
+```
+
+Bien entendu le répertoire private contiendra des clé privé il est important de s'assurer que les droits d'accès au fichier sont adéquat .
+
+### Fichier de configuration du intermediate CA
+
+Nous allons faire comme pour le CA réaliser un fichier de configuration pour la création du certificat , nous y retrouvons globalement les mêmes paramètres que lors de la définition du ROOT CA. Je ne repasserai pas l'ensemble des options car je me répéterai. 
+Vous avez le fichier de configuration disponible sur le dépôt Git :  [intermediate-config.txt](./data/intermediate-config.txt)
+
+Voici les différences entre les 2 fichiers suite à la modification :
+
+![](./imgs/02-vimdiff-openssl-root-vs-intermediate-ca.png)
+
+Donc nous avons : 
+
+* dir             = /root/ca-intermediate
+* private_key     = \$dir/private/intermediate.key.pem
+* certificate     = \$dir/certs/intermediate.cert.pem
+* crl             = \$dir/crl/intermediate.crl.pem
+* policy          = policy\_loose
+
+* Copier la configuration 
+
+```bash
+$ cp cp x3-intermediate-config.txt /root/ca-intermediate/openssl.cnf
+```
+
+### Création des clé du intermediate CA
+
+Tous comme pour le ROOT CA , nous allons définir une clé privé pour cette autorité .
+
+```bash
+$ cd /root/ca-intermediate
+$ openssl genrsa -aes256 \
+  -out private/intermediate.key.pem 4096
+
+Enter pass phrase for intermediate.key.pem: 
+Verifying - Enter pass phrase for intermediate.key.pem: 
+
+$ chmod 400 intermediate/private/intermediate.key.pem
+```
+
+Assignation du mot de passe : intermediate-pass
+
+
+### Création du certificat pour du intermediate CA
+
+Nous avons la clé, nous passons à la génération du certificat , en fait je viens de faire un abus de langage , car ce n'est PAS un certificat que nous allons faire. La première étape est la génération d'une demande de certificat , donc d'une clé publique, cette demande sera par la suite signé par le ROOT CA , pour attester que le ROOT CA fait confiance ( trust )à cette autorité .
+
+C'est partie :
+
+```bash
+cd /root/ca-intermediate
+openssl req -config openssl.cnf -new -sha256 \
+      -key private/intermediate.key.pem \
+      -out csr/intermediate.csr.pem
+
+Enter pass phrase for private/intermediate.key.pem:
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+ -----
+Country Name (2 letter code) [CA]:
+State or Province Name [Quebec]:
+Locality Name [Montreal]:
+Organization Name [X3rus]:
+Organizational Unit Name []:Ti-Training
+Common Name []:Training intermediate CA
+Email Address []:intermediate-ca@x3rus.com
+
+```
+
+Nous avons donc notre demande de certificat prête qui fut réalisé avec la clé privé de l'autorité de certification intermédiaire. Nous allons donc maintenant signé / valider / indiquer que nous trustons l'autorité intermédiaire en signant la demande de certificat. 
+Nous allons définir une expiration plus courte pour le certificat intermédiaire , nous allons définir 10 ans , ça nous laisse du temps :P.
+
+Nous allons allé dans le répertoire du CA pour faire cette opération , l'avantage les fichiers sont sur la même machine , si ce n'était pas le cas nous n'aurions à copier QUE et UNIQUEMENT le fichier intermediate.csr.pem du serveur intermédiate CA vers le ROOT CA.
+
+```bash
+$ cd /root/ca
+openssl ca -config openssl.cnf -extensions v3_intermediate_ca \
+      -days 3650 -notext -md sha256 \
+      -in /root/ca-intermediate/csr/intermediate.csr.pem \
+      -out /root/ca-intermediate/certs/intermediate.cert.pem
+```
+
+Comme vous pouvez le voir dans l'instruction ci-dessus nous indiquons d'utiliser les configurations / extensions __v3\_intermediate\_ca__ lors de la signature . 
+
+Voici le résultat à l'écran :
+
+```
+Using configuration from openssl.cnf
+Enter pass phrase for /root/ca/private/ca.key.pem:  [ password saisie : mon_super_root_ca ]
+Check that the request matches the signature
+Signature ok
+Certificate Details:
+        Serial Number: 4096 (0x1000)
+        Validity
+            Not Before: Oct 27 21:31:33 2017 GMT
+            Not After : Oct 25 21:31:33 2027 GMT
+        Subject:
+            countryName               = CA
+            stateOrProvinceName       = Quebec
+            organizationName          = X3rus
+            organizationalUnitName    = Ti-Training
+            commonName                = Training intermediate CA
+            emailAddress              = intermediate-ca@x3rus.com
+        X509v3 extensions:
+            X509v3 Subject Key Identifier: 
+                D7:41:E8:4B:34:C0:27:B4:29:9E:EA:3C:7B:2C:DA:C5:C2:CB:6C:18
+            X509v3 Authority Key Identifier: 
+                keyid:1D:AF:3B:B8:E4:32:5C:9B:8E:39:49:79:B9:1E:E3:F5:1C:A4:68:29
+
+            X509v3 Basic Constraints: critical
+                CA:TRUE, pathlen:0
+            X509v3 Key Usage: critical
+                Digital Signature, Certificate Sign, CRL Sign
+Certificate is to be certified until Oct 25 21:31:33 2027 GMT (3650 days)
+Sign the certificate? [y/n]:y
+
+
+1 out of 1 certificate requests certified, commit? [y/n]y
+Write out database with 1 new entries
+Data Base Updated
+```
+
+Ajustement des permissions :
+
+```bash
+$ chmod 444 /root/ca-intermediate/certs/intermediate.cert.pem
+```
+
+Nous pouvons voir à présent la liste des certificats que le ROOT CA a signé , dans la "base de donnée" , le fichier plat index.txt
+
+```bash
+$ cat /root/ca/index.txt
+V       271025213133Z           1000    unknown /C=CA/ST=Quebec/O=X3rus/OU=Ti-Training/CN=Training intermediate CA/emailAddress=intermediate-ca@x3rus.com
+```
+
+Il est important de ne pas éditer ce fichier manuellement :P !! 
+
+### Vérification du intermediate CA certificat
+
+Nous avions fait l'exercice lors de la création du ROOT CA , nous allons aussi valider le résultat de nos commandes pour l'intermédiaire. Autant corrigé un problème tous de suite avant que ce soit plus compliqué.
+
+```bash
+$ openssl x509 -noout -text \                            
+         -in /root/ca-intermediate/certs/intermediate.cert.pem 
+
+ # ou la grosse commande pour avoir de la couleur :P
+$ openssl x509 -noout -text -in /root/ca-intermediate/certs/intermediate.cert.pem  | egrep --color  'Signature Algorithm|Validity|Publi$
+-Key|Issuer|Subject|X509v3|$'
+```
+
+Voici l'extraction :
+
+```
+    Signature Algorithm: sha256WithRSAEncryption                               
+        Issuer: C=CA, ST=Quebec, L=Montreal, O=X3rus, OU=Sec, CN=ROOT CA/emailAddress=sec@x3rus.com 
+        Validity                                                               
+            Not Before: Oct 27 21:31:33 2017 GMT                               
+            Not After : Oct 25 21:31:33 2027 GMT                               
+        Subject: C=CA, ST=Quebec, O=X3rus, OU=Ti-Training, CN=Training intermediate CA/emailAddress=intermediate-ca@x3rus.com
+		Subject Public Key Info:       
+            Public Key Algorithm: rsaEncryption                                
+                Public-Key: (4096 bit) 
+	[ .... ]
+	        X509v3 extensions:                                                                                                                                    
+            X509v3 Subject Key Identifier:
+                D7:41:E8:4B:34:C0:27:B4:29:9E:EA:3C:7B:2C:DA:C5:C2:CB:6C:18    
+            X509v3 Authority Key Identifier:
+                keyid:1D:AF:3B:B8:E4:32:5C:9B:8E:39:49:79:B9:1E:E3:F5:1C:A4:68:29
+                                                                               
+            X509v3 Basic Constraints: critical                                 
+                CA:TRUE, pathlen:0                                             
+            X509v3 Key Usage: critical                                         
+                Digital Signature, Certificate Sign, CRL Sign  
+```
+
+Donc rapidement , le certificat contient bien les informations descriptif propre à lui telle que "**Training intermediate CA**" , nous pouvons aussi voir que l'émetteur de ce certificat est "**CN=ROOT CA**" donc c'est bien notre ROOT CA. De plus le flag **CA:TRUE** est présent pour qu'il soit identifier comme un CA donc qu'il puisse lui aussi signer des certificats. 
+
+C'est magnifique , on travaille bien !!! 
+
+### Création de la chaine de certificat 
