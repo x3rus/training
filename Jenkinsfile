@@ -1,7 +1,7 @@
 pipeline {
   agent {
     node {
-      label 'premiertest'
+      label 'master'
     }
     
   }
@@ -23,7 +23,7 @@ pipeline {
 
 
 '''
-            node(label: 'toto')
+            node(label: 'master')
           }
         }
         stage('titi') {
