@@ -435,7 +435,29 @@ Donc le lien suivant c'est pour mettre en place une [Autorité de Certification 
 
 * [Autorité de Certification CA](../setup-un-CA/01-introduction.md)
 
-Donc ça vous motive pas passez direct à la prochaine section no stress :D.
+Donc si ça ne vous motive pas passez direct à la prochaine section no stress :D.
+
+## Mise en place d'un certificat reçu d'une tierce partie
+
+Donc dans la présentation sur la mise en place d'une autorité de certification nous avons mis en place un CA , nous avons fait la création d'une requête de certificat , avec la commande suivante :
+
+```bash
+$ openssl req -new -newkey rsa:2048 -nodes -keyout toto.x3rus.com.key -out toto.x3rus.com.csr 
+```
+
+Le FQDN assigné fut **toto.x3rus.com** nous avons donc la clé privé **toto.x3rus.com.key** et transmis le fichier la demande de signature de certificat ( CSR - Certificat Signing Request) à l'autorité de certification. Nous avons reçu un fichier zip contenant 2 fichier :
+
+* ca-chain.cert.pem
+* toto.x3rus.com.cert.pem
+
+Avec la clé nous avons l'ensemble requis pour faire la configuration.
+
+* TODO :
+    * Mise en place de la configuration sans la chaine de CA 
+    * Erreur de certificat 
+    * mise en place du ROOT CA dans les trustes toujours l'erreur
+    * Mise en place de la chaine de certification dans la configue apache
+
 
 # Communication entre 2 systèmes
 

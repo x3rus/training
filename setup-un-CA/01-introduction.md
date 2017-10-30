@@ -628,3 +628,171 @@ Donc rapidement , le certificat contient bien les informations descriptif propre
 C'est magnifique , on travaille bien !!! 
 
 ### Création de la chaine de certificat 
+
+Nous allons maintenant faire la création de la chaine de certificat , lors de la configuration de votre site web apache nous devrons mettre en place la chaîne afin de faire le lien entre le CA qui à fait la création du certificat et ceux listé dans le fureteur. 
+Votre Browser a plusieurs certificats inclus dans sa configuration , cependant le système ne peux pas avoir l'ensemble des certificats présent sur internet , car l'ensemble du processus de validation ne fut pas réalisé pour garantir l'authenticité !  De plus ceci serait très limité pour offrir une marge de manœuvre afin de permettre au fournisseur de certificat de gérer leur système comme il l'entende. 
+
+Donc votre fureteur à une liste de ROOT CA , inclut avec le système , par la suite le système de **trust chaine** se met en place , comme le ROOT CA à signé le certificat intermédiaire , donc qu'il le trust , le browser va faire confiance au certificat intermédiaire. Le certificat du site web fut signé par le CA intermédiaire , comme nous faisons confiance au CA intermédiaire (signé par le ROOT CA) nous faisons confiance au certificat du site. 
+Peut-être une petite image serait plus simple :
+
+![](./imgs/trust-chain-CA.png)
+
+
+Regardons les chaines de certificats disponible chez les fournisseurs populaire de certificat : 
+
+* https://certs.godaddy.com/repository/
+    ![](./imgs/Screenshot_godaddy-certs-repo.png)
+
+* https://knowledge.symantec.com/support/ssl-certificates-support/index?page=content&actp=CROSSLINK&id=INFO4033
+    ![](./imgs/Screenshot_symantec-certs-repo.png)
+
+* https://www.digicert.com/digicert-root-certificates.htm
+    ![](./imgs/Screenshot_digicert-certs-repo.png)
+
+Si je clique sur le ROOT CA de digicert et que je sélection download voici le résultat :  
+
+![](./imgs/digicert-download-root-ca.png)
+
+
+Woww ça ressemble étrangement à notre configuration , avec un ROOT CA et un intermédiaire :D . Réalisons donc notre fichier de chaine comme nous le fournie habituellement notre fournisseur de certificat .
+
+```bash
+$ cd /root
+$ cat ca-intermediate/certs/intermediate.cert.pem ca/certs/ca.cert.pem > ca-intermediate/certs/ca-chain.cert.pem
+$ chmod 444 ca-intermediate/certs/ca-chain.cert.pem
+```
+
+Ceci fait simplement la concaténation des 2 fichiers :D.
+
+Si votre organisation à un système pour faire du déploiement que nous parlions de GPO , GPP , puppet , etc ... vous pourriez faire le déploiement du ROOT CA sur l'ensemble de vos postes de travail afin que le fureteur reconnaisse nativement votre ROOT CA . Dans ce cas uniquement l'intermédiaire serait requis. 
+
+
+## Création de certificats pour des serveurs
+
+Bon tous ça pour enfin faire un certificat que nous utiliserons en frontale sur un serveur :P . Oui je sais beaucoup de choses pour assurer une sécurité , mais comme nous disons lors d'un voyage le trajet et aussi voir plus important que la destination :D. Un peu de philosophie ça fait pas de mal .
+
+Le site de référence est parfait si vous êtes l'émetteur du certificat et le créateur , nous allons donc dévier de la documentation original afin d'avoir une couverture plus classique de la configuration. En d'autre mot nous allons partir du principe que l'administrateur du service réalise la création de la clé et de la demande de certificat depuis son serveur . L'utilisateur vous transmet uniquement le CSR donc le Certificat Signing Request pour que l'autorité de certification intermédiaire le signe.
+
+* Création de la clé et du CSR 
+
+Nous allons faire la création de la clé ET de la demande de certificat en une commande , vous trouverez plusieurs instruction qui sont réalisée en 2 temps. Libre à vous de choisir la méthode que vous désirez. Moi j'aime avoir tous dans la même commande ...
+
+```bash
+root@4f75d8abe3f9:~/server$ openssl req -new -newkey rsa:2048 -nodes -keyout toto.x3rus.com.key -out toto.x3rus.com.csr 
+Generating a 2048 bit RSA private key
+................................+++
+.....................................................+++
+writing new private key to 'toto.x3rus.com.key'
+ -----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+ -----
+Country Name (2 letter code) [AU]:CA
+State or Province Name (full name) [Some-State]:Quebec
+Locality Name (eg, city) []:Montreal
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:X3rus 
+Organizational Unit Name (eg, section) []:Training
+Common Name (e.g. server FQDN or YOUR name) []:toto.x3rus.com
+Email Address []:
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:     [Aucun mot de passe de saisie]
+An optional company name []: [Aucun mot de passe de saisie]
+```
+
+* Validation de la demande de certificat
+
+Dans le cas présent il n'y a pas de conséquence négatif si vous réalisé une mauvaise demande de certificat , car ceci est à l'interne . Vous vous serez peut-être moins apprécié si pour chaque certificat vous vous y reprenez plusieurs fois , mais ça va. Dans le cadre d'un fournisseur externe vous aurez des frais non négligeable. Alors prenons quelque seconde pour valider le certificat surtout la section **Common Name** qui représente le nom de domaine .
+
+```bash
+root@4f75d8abe3f9:~/server$ openssl req -text -in toto.x3rus.com.csr           
+Certificate Request:                                                           
+    Data:                                                                      
+        Version: 0 (0x0)                                                       
+        Subject: C=CA, ST=Quebec, L=Montreal, O=X3rus, OU=Training, CN=toto.x3rus.com
+        Subject Public Key Info:       
+            Public Key Algorithm: rsaEncryption                                
+                Public-Key: (2048 bit)      
+```
+
+* Réception du CSR et signature avec intermediate CA 
+
+Nous avons reçu le demande via courriel ou billet , qu'importe nous allons copier le fichier csr dans le répertoire __/root/ca-intermediate/csr__
+
+```bash
+$ cp toto.x3rus.com.csr ~/ca-intermediate/csr/
+```
+
+Nous allons aller sous le répertoire ca-intermediate et utiliser la configuration en place avec l'extention server\_cert , le certificat sera valide pour une période d'un an. C'est un peu court mais bon c'est une démonstration :P
+
+
+```bash
+$ cd /root/ca-intermediate
+$ openssl ca -config /root/ca-intermediate/openssl.cnf \
+            -extensions server_cert -days 375 -notext -md sha256 \
+            -in /root/ca-intermediate/csr/toto.x3rus.com.csr.pem \
+            -out /root/ca-intermediate/certs/toto.x3rus.com.cert.pem
+
+Using configuration from /root/ca-intermediate/openssl.cnf                     
+Enter pass phrase for /root/ca-intermediate/private/intermediate.key.pem:      
+
+Check that the request matches the signature
+Signature ok
+Certificate Details:
+        Serial Number: 4096 (0x1000)
+        Validity
+            Not Before: Oct 30 21:30:20 2017 GMT
+            Not After : Nov  9 21:30:20 2018 GMT
+        Subject:
+            countryName               = CA
+            stateOrProvinceName       = Quebec
+            localityName              = Montreal
+            organizationName          = X3rus
+            organizationalUnitName    = Training
+            commonName                = toto.x3rus.com
+        X509v3 extensions:
+            X509v3 Basic Constraints: 
+                CA:FALSE
+            Netscape Cert Type: 
+                SSL Server
+            Netscape Comment: 
+                OpenSSL Generated Server Certificate
+            X509v3 Subject Key Identifier: 
+                E1:52:D5:FF:8D:D5:0D:21:7C:10:A5:2B:4C:90:F2:29:2C:4E:20:B3
+            X509v3 Authority Key Identifier: 
+                keyid:D7:41:E8:4B:34:C0:27:B4:29:9E:EA:3C:7B:2C:DA:C5:C2:CB:6C:18
+                DirName:/C=CA/ST=Quebec/L=Montreal/O=X3rus/OU=Sec/CN=ROOT CA/emailAddress=sec@x3rus.com
+                serial:10:00
+
+            X509v3 Key Usage: critical
+                Digital Signature, Key Encipherment
+            X509v3 Extended Key Usage: 
+                TLS Web Server Authentication
+ Certificate is to be certified u ntil Nov  9 21:30:20 2018 GMT (375 days)
+ Sign the certificate? [y/n]: y
+
+
+ 1 out of 1 certificate requests certified, commit? [y/n] y
+ Write out database with 1 new entries
+ Data Base Updated
+```
+
+Nous avons donc maintenant le certificat de signé : 
+
+```bash
+root@4f75d8abe3f9:~/ca-intermediate$ cat index.txt
+V       181109213020Z           1000    unknown /C=CA/ST=Quebec/L=Montreal/O=X3rus/OU=Training/CN=toto.x3rus.com
+
+root@4f75d8abe3f9:~/ca-intermediate$ ls -ltr certs/                            
+total 16                               
+-r--r--r-- 1 root root 2122 Oct 27 21:31 intermediate.cert.pem                 
+-r--r--r-- 1 root root 4224 Oct 30 21:00 ca-chain.cert.pem                     
+-rw-r--r-- 1 root root 2065 Oct 30 21:30 toto.x3rus.com.cert.pem 
+```
+
+Nous réaliserons un fichier zip contenant les 2 fichiers intermediate.cert.pem ET toto.x3rus.com.cert.pem. L'utilisateur devrais avoir la clé privé en ça possession.
