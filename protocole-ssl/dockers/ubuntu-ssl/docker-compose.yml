@@ -1,0 +1,18 @@
+version: '2'
+
+services:
+    website:
+        image: ubuntu-apache
+        build: .
+        container_name : 'demo-ssl-with-ca'
+#        restart: unless-stopped
+        environment:
+            - APACHE_RUN_USER=www-data
+            - APACHE_RUN_GROUP=www-data
+            - APACHE_PID_FILE=/var/run/apache2.pid
+            - APACHE_RUN_DIR=/var/run/apache2
+            - APACHE_LOCK_DIR=/var/lock/apache2
+            - APACHE_LOG_DIR=/var/log/apache2
+        ports:
+          - "80:80"
+          - "443:443"

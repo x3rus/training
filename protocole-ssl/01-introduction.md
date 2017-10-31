@@ -450,7 +450,102 @@ Le FQDN assigné fut **toto.x3rus.com** nous avons donc la clé privé **toto.x3
 * ca-chain.cert.pem
 * toto.x3rus.com.cert.pem
 
-Avec la clé nous avons l'ensemble requis pour faire la configuration.
+Avec la clé nous avons l'ensemble requis pour faire la configuration. 
+
+## Mise en place de la solution + setup site http
+
+Bon désolé cette formation est un regroupement de 2 formations passé donc c'est un peu décousue , je vais donc reprendre ici la création du site style Ubuntu:16.04 (LTS) avec apache2 . Je part d'un docker ... disponible dans le répertoire dockers/ubuntu-ssl avec le Dockerfile et le docker-compose qui va bien.
+
+```bash
+$ cd dockers/ubuntu-ssl/
+$ docker-compose up 
+Creating demo-ssl-with-ca ... done   
+Attaching to demo-ssl-with-ca          
+demo-ssl-with-ca | AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.21.0.2. Set the 'ServerName' directive globally to suppress this message   
+```
+
+Donc nous avons la page de démonstration d'Ubuntu si nous allons à l'URL HTTP du conteneur. 
+
+Création de la configuration : [./data/toto.x3rus.com.conf](./data/toto.x3rus.com.conf)
+
+```
+<VirtualHost *:80>
+    # Nom des site FQDN 
+    ServerName toto.x3rus.com
+    ServerAlias titi.x3rus.com
+
+    DocumentRoot /var/www/html/toto.x3rus.com/
+
+    # Pas de définition de <Directory> car sous html :D
+</VirtualHost>
+```
+
+Copie dans le conteneur 
+
+```bash
+$ docker cp toto.x3rus.com.conf demo-ssl-with-ca:/etc/apache2/sites-available/
+```
+
+Copie du site web dans le conteneur disponible sous data/site.
+
+```bash
+$ docker cp site/ demo-ssl-with-ca:/var/www/html/toto.x3rus.com/
+```
+
+Activation du site :
+
+```bash
+$ docker exec -it demo-ssl-with-ca bash
+root@99565ded33c8:/$ cd /etc/apache2/sites-enabled/
+root@99565ded33c8:/etc/apache2/sites-enabled$ ln -s ../sites-available/toto.x3rus.com.conf .    # y a un point à la fin
+
+root@99565ded33c8:/etc/apache2/sites-enabled$ apachectl configtest             
+AH00558: apache2: Could not reliably determine the server\'s fully qualified domain name, using 172.21.0.2. Set the 'ServerName' directive globally to suppress this message
+Syntax OK
+```
+
+Pour faire rapide j'ai arrêté le conteneur et redémarrer ce dernier , j'ai modifier aussi mon fichier /etc/hosts pour que toto.x3rus.com pointe vers l'IP du conteneur :
+
+![](./imgs/toto-x3rus-http.png)
+
+
+
+## Activation du SSL + Installation du / des certificat(s)
+
+Telle que présenté plus haut voici les instructions pour activer le SSL , telle que mentionné aussi plus haut il y a une commande qui le fait pour vous , je suis un peu vieux jeu parfois.
+
+```bash
+$ docker exec -it demo-ssl-with-ca bash
+$ cd /etc/apache2/mods-enabled
+$ ln -s ../mods-available/ssl.load .
+$ ln -s ../mods-available/socache_shmcb.load .
+$ ln -s ../mods-available/ssl.conf .
+```
+
+Copie des fichiers clé , certificat et chaine de certificat 
+
+```bash
+$ docker cp toto.x3rus.com.csr demo-ssl-with-ca:/root/
+$ docker cp toto.x3rus.com.key demo-ssl-with-ca:/root/
+$ docker cp toto.x3rus.com.cert.pem demo-ssl-with-ca:/root/
+$ docker cp ca-chain.cert.pem demo-ssl-with-ca:/root/
+```
+
+Nous allons mettre les fichiers dans le bon répertoire pour la configuration :
+
+```bash
+$ docker exec -it demo-ssl-with-ca bash
+$ cd /root
+$ mkdir /etc/apache2/ssl
+$ cp * /etc/apache2/ssl
+```
+ 
+ ICI ICI ICI ICI ICI
+
+Le fichier de configuration de Apache à présent.
+
+Nous allons ajouter une instruction : 
+
 
 * TODO :
     * Mise en place de la configuration sans la chaine de CA 
