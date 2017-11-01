@@ -527,7 +527,7 @@ Copie des fichiers clé , certificat et chaine de certificat
 ```bash
 $ docker cp toto.x3rus.com.csr demo-ssl-with-ca:/root/
 $ docker cp toto.x3rus.com.key demo-ssl-with-ca:/root/
-$ docker cp toto.x3rus.com.cert.pem demo-ssl-with-ca:/root/
+$ docker cp toto.x3rus.com.cert.pem demo-ssl-with-ca:/root/toto.x3rus.com.crt
 $ docker cp ca-chain.cert.pem demo-ssl-with-ca:/root/
 ```
 
@@ -540,12 +540,91 @@ $ mkdir /etc/apache2/ssl
 $ cp * /etc/apache2/ssl
 ```
  
- ICI ICI ICI ICI ICI
+Le fichier de configuration de Apache à présent pour le ssl , je vais y allé en X étapes , pour débuter mettons en place la configuration avec le certificat et la clé .
 
-Le fichier de configuration de Apache à présent.
+```
+<VirtualHost *:443>
+    # Nom des site FQDN 
+    ServerName toto.x3rus.com
+    ServerAlias titi.x3rus.com
 
-Nous allons ajouter une instruction : 
+    DocumentRoot /var/www/html/toto.x3rus.com/
 
+    # Pas de définition de <Directory> car sous html :D
+
+    ## SSL section            
+    SSLEngine on              
+    SSLCertificateFile "/etc/apache2/ssl/toto.x3rus.com.crt"
+    SSLCertificateKeyFile "/etc/apache2/ssl/toto.x3rus.com.key"
+
+    # apache 2.4.8 > 
+    # SSLCertificateFile "/etc/apache2/ssl/ca-chain.cert.pem"
+
+    # apache 2.4.8 <
+    # SSLCertificateChainFile "/etc/apache2/ssl/ca-chain.cert.pem"
+
+</VirtualHost>
+```
+
+```bash
+$ docker cp toto.x3rus.com-SSL.conf demo-ssl-with-ca:/etc/apache2/sites-available/
+$ docker exec -it demo-ssl-with-ca bash
+root@99565ded33c8:/$ cd /etc/apache2/sites-enabled
+root@99565ded33c8:/etc/apache2/sites-enabled$ ln -s ../sites-available/toto.x3rus.com-SSL.conf .
+```
+
+Je redémarre le conteneur web ... je sais, ce n'est pas  l'idéale , mais bon ...
+
+Nous allons sur le site https://toto.x3rus.com , voici le résultat , le système ne connait pas l'émetteur du certificat.
+
+![](./imgs/toto-x3rus-https-unknow-issuer.png)
+
+Si nous visualisons le certificat nous pourrons constater que c'est le BON ! 
+
+![](./imgs/toto-x3rus-https-view-certificat-issuer.png)
+
+
+### Installation du ROOT CA dans le browser 
+
+Bon pour rappel la relation de confiance entre l'application dans notre cas le fureteur ou browser , et les certificats des sites .
+
+![](./imgs/trust-chain-CA.png)
+
+Quand vous avez un certificat d'une autorité reconnu comme dans le dessin ci-dessus le ROOT CA est déjà présent dans votre browser le problème dans notre cas est que le ROOT CA n'est pas présent dans mon fureteur, car il ne fut pas valider comme authentique ou de confiance par les pairs. 
+Par le fait même la chaine de confiance est cassé dès le début. 
+
+Nous allons procéder à l'ajout du ROOT CA dans le browser , je vais la démonstration avec le browser mais il serait aussi possible de le définir globalement sur le système particulièrement pratique si vous avez des applications en commande ligne.
+
+La démonstration sera réalisé avec **Firefox** , je vous laisse le plaisir de chercher pour les autres navigateur. 
+
+1. Allez dans le menu préférence :
+    ![](./imgs/01-add-root-ca-firefox.png)
+2. Sélectionnez Advanced et Certificates
+    ![](./imgs/02-add-root-ca-firefox.png)
+3. View certificats et l'onglet Authaurities
+    ![](./imgs/03-add-root-ca-firefox.png)
+4. Cliquez sur import et allé chercher le fichier certificat du ROOT CA 
+    ![](./imgs/04-add-root-ca-firefox.png)
+5. Indiquez pour quelle type de certificat, ce ROOT CA est jugé apte à valider , vous pouvez tous cocher a votre convenance
+    ![](./imgs/05-add-root-ca-firefox.png)
+6. Visualisation du résultat 
+    ![](./imgs/06-add-root-ca-firefox.png)
+
+Retournons à présent sur le site web, pour voir que notre certificat pour toto.x3rus.com ............... fonctionne PAS :P , mais on va le voir .
+
+J'ai exactement le même problème :
+
+![](./imgs/toto-x3rus-https-unknow-issuer.png)
+
+Pourquoi ?? Réponse prochaine section 
+
+### Pourquoi mon certificat n'est pas reconnu ?
+
+Je remet le schéma du processus de validation , nous avons le navigateur , nous avons le ROOT CA directement dans le fureteur qui est autorisé , alors pourquoi la chaine ne se fait pas ?
+
+![](./imgs/trust-chain-CA.png)
+
+ICI ICI ICI 
 
 * TODO :
     * Mise en place de la configuration sans la chaine de CA 
