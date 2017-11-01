@@ -624,7 +624,27 @@ Je remet le schéma du processus de validation , nous avons le navigateur , nous
 
 ![](./imgs/trust-chain-CA.png)
 
-ICI ICI ICI 
+Donc nous comprenons la chaîne, pas de problème la dessus mais le ROOT CA est présent donc il devrait être en mesure de confirmer l'authenticité du certificat du site. 
+
+Voyons un autre schéma du processus :
+
+![](./imgs/processus-validation-chaine-crt.png)
+
+Si vous regardez le schéma , le navigateur utilise le certificat , donc la clé publique contenu dans le certificat pour réalisé la validation. Le problème dans notre cas est que nous avons 2 certificat, que le navigateur  a en sa possession :
+
+* ROOT CA : fournit par le fournisseur du produit ou installé manuellement comme nous l'avons fait.
+* Site web Certificat : Le certificat du site web fournit par le serveur Apache.
+
+Malheureusement ou heureusement :P , le navigateur doit avoir le certificat en ça possession pour extraire la clé publique pour valider la clé. Pour des questions de sécurité ou aussi car ce serait difficile de l'informer où aller chercher l'information. Le navigateur ne va pas chercher lui même des certificats sur internet .
+
+Voici donc un autre schéma de notre problème :
+
+![](./imgs/trust-chain-CA-broken.png)
+
+Donc comment remédier à ce problème ??!!??? Lui fournir le certificat intermédiaire afin de lui permettre de réaliser l'ensemble de la chaine de validation . Ceci est réalisé avec l'instruction dans apache **SSLCertificateFile** .
+
+Je vais donc définir cette ligne dans la configuration d'apache.
+
 
 * TODO :
     * Mise en place de la configuration sans la chaine de CA 
