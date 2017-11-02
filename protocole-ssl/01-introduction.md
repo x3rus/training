@@ -558,10 +558,10 @@ Le fichier de configuration de Apache à présent pour le ssl , je vais y allé 
     SSLCertificateKeyFile "/etc/apache2/ssl/toto.x3rus.com.key"
 
     # apache 2.4.8 > 
-    # SSLCertificateFile "/etc/apache2/ssl/ca-chain.cert.pem"
+    # SSLCACertificateFile "/etc/apache2/ssl/ca-chain.cert.pem"
 
     # apache 2.4.8 <
-    # SSLCertificateChainFile "/etc/apache2/ssl/ca-chain.cert.pem"
+    # SSLCACertificateFile "/etc/apache2/ssl/ca-chain.cert.pem"
 
 </VirtualHost>
 ```
@@ -641,16 +641,17 @@ Voici donc un autre schéma de notre problème :
 
 ![](./imgs/trust-chain-CA-broken.png)
 
-Donc comment remédier à ce problème ??!!??? Lui fournir le certificat intermédiaire afin de lui permettre de réaliser l'ensemble de la chaine de validation . Ceci est réalisé avec l'instruction dans apache **SSLCertificateFile** .
+Donc comment remédier à ce problème ??!!??? Lui fournir le certificat intermédiaire afin de lui permettre de réaliser l'ensemble de la chaine de validation . Ceci est réalisé avec l'instruction dans apache **SSLCACertificateFile** .
 
 Je vais donc définir cette ligne dans la configuration d'apache.
 
+```
+SSLCACertificateFile "/etc/apache2/ssl/ca-chain.cert.pem"
+```
 
-* TODO :
-    * Mise en place de la configuration sans la chaine de CA 
-    * Erreur de certificat 
-    * mise en place du ROOT CA dans les trustes toujours l'erreur
-    * Mise en place de la chaine de certification dans la configue apache
+On redémarre le service / docker apache et ... et ... et voilà :
+
+![](./imgs/toto-x3rus-https-GOOD-issuer.png)
 
 
 # Communication entre 2 systèmes
