@@ -11,9 +11,21 @@ De plus je présume que l'ensemble de ce que je vais présenté en disant que ce
 
 # Utilisation de GNU/Linux 
 
-Donc démonstration de l'utilisation de Linux avec un parallèle à Windows ...
+Donc démonstration de l'utilisation de Linux avec comme idée le choque que j'ai eu avec Windows ...
 
 ## Trop de fenêtre ou utilisation des bureaux virtuel
+
+Utilisation du workspace par rôle 
+
+1. Pour le navigateur + console
+2. Pour les courriels
+3. Pour la musique
+4. Pour autre tâche temporaire
+
+## Déplacement des fenêtres 
+
+* Déplacement de fenêtre : CTRL + clique gauche de la souris
+* Redimensionné les fenêtres : CTRL + clique droit de la souris
 
 
 ## Installation application 
@@ -26,14 +38,17 @@ Donc démonstration de l'utilisation de Linux avec un parallèle à Windows ...
 * copie de fichier avec les tabulations 
     * cmd pour selection trie de fichier : ls -ltr
 
+* client droit sur un dossier ... sélection automatique
+
 ## Recherche de fichier
 
 ## Démarrage application 
 
-## Utilisation de l'espace
+## Utilisation de l'espace disque
 
 ## Accès à distance uniquement 1 utilisateur
 
 # Conclusion 
 
 Depuis 2001 franchement zéro évolution sous Windows :P , un petite pique pour finir :P
+Bon ok , mais Linux a vraiment trop de type d'interface manque d'uniformité :P , voilà ...
