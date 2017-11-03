@@ -83,6 +83,19 @@ Prenons quelques minutes juste pour voir les composantes :
 * **puppetboard** : Nous aurons la chance d'avoir une visualisation de l'état du système puppet , ce conteneur établira une connexion au conteneur puppetdb est réalisera une présentation de l'état de santé du système. Est-ce que les machines communique bien avec le serveur , ...
 * **puppetexplorer** : Ce conteneur permet d'explorer les données dans la base de donnée puppetdb facilement, contrairement au puppetboard qui offre une visualisation structurer , puppet explorer vous permet de voir les données sans traitement.
 
+### Présentation de PuppetServer
+
+L'ensemble des composantes est très important, cependant le premier a couvrir reste le serveur , car sans le serveur les autres n'ont que très peu d'importance. Lors du démarrage du service, vous pouvez utiliser le script de démarrage avec __systemctl__ ou __init.d__ selon votre système, les fichiers qui seront lu sont contenu dans le répertoire : **/etc/puppetlabs/puppetserver/conf.d** . L'ensemble des fichiers .conf seront lu, s'il y a une modification dans ces derniers vous devrez redémarrer le service. 
+
+Voici le contenu du répertoire :
+
+* auth.conf : Permet de définir les règles d'autorisation à l'api de puppet via le serveur web.
+* global.conf : Contient les configurations général de puppet [vue d'ensemble](https://puppet.com/docs/puppetserver/5.1/configuration.html) , en temps normale aucune modification n'est réalisé à ce niveau.
+* metrics.conf : Permet de configurer les métrique qui seront conservé lors de la communication entre le serveur et les agents.
+* puppetserver.conf : Comme son nom l'indique permet de définir l'ensemble de la configuration du serveur puppet , principalement quelle répertoire sera consulté par la suite , les paramètres de la jruby vm, le niveau de chiffrement requis , ...
+* web-routes.conf : Permet de définir les chemins d'accès du serveur web quand on communique avec le webserver , quelle application appelé lors de l'utilisation de /patate dans l'URL.
+* webserver.conf : Permet de définir la configuration du serveur web , si vous regardez le contenu ceci inclut la définition du  port 8140 utilisé par les client (agent) pour communiquer avec le serveur puppet.
+
 # NOTE :
 
 * type langage https://docs.puppet.com/puppet/5.2/type.html
