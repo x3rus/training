@@ -272,6 +272,11 @@ Une représentation plus détaillé du protocole __SSL__ avec l'ensemble des cl�
 
 ![SSLHandshake-v3-two-way-auth.png](./imgs/SSLHandshake-v3-two-way-auth.png)
 
+
+#### Protocole SSL vraiment sécuritaire 
+
+OUI enfin presque :P , il y a un petit problème , je vais l'expliquer plus tard pour les trop pressés : [Comment outre passé la sécurité SSL !](#Comment outre passé la sécurité SSL)
+
 ## Configuration simple d'un site web avec mod_ssl
 
 Nous allons précéder à la mise en place d'une configuration très simpliste , ceci nous permettra avec l'ensemble des options de couvrir la théorie autour. 
@@ -652,6 +657,25 @@ SSLCACertificateFile "/etc/apache2/ssl/ca-chain.cert.pem"
 On redémarre le service / docker apache et ... et ... et voilà :
 
 ![](./imgs/toto-x3rus-https-GOOD-issuer.png)
+
+## Comment outre passé la sécurité SSL
+
+Nous avons donc vu le protocole SSL en détail ainsi que le mode de fonctionnement pour la validation de l'authenticité du site à l'aide de la chaine de certificat et de la relation de confiance avec des ROOT CA jugé comme authentique ou fiable. 
+
+Nous n'avons pas le choix d'avoir une source de confiance quelque part . Voici un schéma d'une méthode pour que outre passé la validation du SSL de manière silencieuse . Il y a plusieurs requis pour faire cette opération je vais les lister par la suite :
+
+![](./imgs/proxy-ssl-hijack-ssl.png)
+
+Et oui ça marche à merveille :P !!!
+
+La seul solution est de ne pas faire confiance au navigateur et le petit cadenas fermé, mais bien valider qu'elle certificat fut utilisé et surtout valider qui fut l'émetteur est-il vraiment de confiance ??
+
+Il y a plusieurs requis bien entendu , pour être en mesure de réaliser cette configuration :
+
+* **ROOT CA maison installé** : Bien entendu pour être en mesure de réalisé cette configuration, l'organisation ou l'attaquant doit être en mesure d'installer le ROOT CA maison dans le navigateur ou le système d'exploitation . En d'autre mot dans un café publique ce serait très difficile , car vous aurez un message d'erreur du à la non validation du certificat émis par le proxy n'étant pas signé par un ROOT CA de confiance.
+* **Infrastructure réseaux** : Bien entendu il faut que la requête sur le port 443 vers le site web soit redirigé vers le proxy , ainsi que l'ensemble des communications sinon il y aura un problème de communication. Donc rediriger l'ensemble des communications sortante du port 443 vers le proxy , ou modifier l'adresse IP via le DNS ...
+* **Puissance de calcule** : La mise en place du proxy pour 20 personnes sera très facile et ne demandera pas énormément de puissance de calcule , nous avons de nos jour des processeurs très performant. Cependant si nous avons une organisation avec 10 000 utilisateurs , le proxy devra être distribué, car pour chaque communication SSL le proxy en réalise 2 , une entre lui et la station de travail et l'autre vers le serveur "réel"
+
 
 
 # Communication entre 2 systèmes
