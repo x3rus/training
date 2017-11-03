@@ -73,6 +73,8 @@ services:
 
 Bon voilà on a la définition de puppet , pour ceux qui ont utilisé les veilles version de puppet le premier réflexe est **woww** c'est quoi tous ça , moi j'avais juste le puppetmaster puis ça fonctionné très bien. Effectivement nous aurions pu mettre uniquement le service puppetmaster, mais on va allé un peu plus loin. Même avec la version 3.8 auquel je vais faire référence tous au long de la présentation il était possible de mettre en combinaisons puppetmaster avec puppetdb , ... Mais comme nous avions pas docker c'était un peu pénible. Docker nous offrant une plus grande facilité de combiner l'ensemble autant en profiter. 
 
+#### liste et description des composantes
+
 Prenons quelques minutes juste pour voir les composantes :
 
 * __puppetserver__ : Ceci est donc le puppet master , l'ensemble des machines devront être en mesure de communiquer avec ce conteneur via le port 8140 , l'ensemble de la configuration du système sera dans ce conteneur. Il est le point central de l'ensemble du système sans lui plus de puppet.
