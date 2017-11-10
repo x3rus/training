@@ -19,7 +19,7 @@ Avant de débuter la configuration nous allons faire 2 choses .
 
 Je fais la distinction entre les 2 , ceci vous permettra de vous organiser tout seul si finalement le cas que je propose ne vous intéresse pas :P .
 
-### Préparation de l'environnement 
+### Préparation de l'environnement (Minimal)
 
 Oui malheureusement pour pouvoir faire tous ça faut d'abord ce préparer , comme toujours nous allons utiliser Docker pour l'exercice , je vas passer très très rapidement sur ce point. Je vous invite à consulter la [première session sur Jenkins](../jenkins/01-presentation.md) pour avoir l'ensemble des instructions. 
 
@@ -47,7 +47,46 @@ Démarrons le conteneur jenkins nous devrons refaire la configuration initialis�
 3. Création d'un utilisateur dans gitlab avec possibilité de créer des projets...
 4. Configuration du slave, comme ceci est peut-être moins évident un peu d'information
     * Vous avez la clé privé du slave disponible dans le fichier [data/jenkins-nodes_rsa](./data/jenkins-nodes_rsa)
-    * Je aussi réalisé une copie d'écran [01-jenkins-setup-slave-dck01.png](./imgs/01-jenkins-setup-slave-dck01.png)
+    * J'ai aussi réalisé une copie d'écran [01-jenkins-setup-slave-dck01.png](./imgs/01-jenkins-setup-slave-dck01.png)
+
+
+### Cas d'utilisation
+
+Je vais reprendre le cas utilisé lors de la présentation de Jenkins , en d'autre mot le cas de :
+
+1. la compilation d'un conteneur **docker** 
+2. La validation si un conteneur doit être compiler 
+3. La compilation de ce dernier
+4. La validation du conteneur 
+5. Pousser le conteneur dans le __docker registry__ \[Ajout comparativement à la session passé\]
+6. Possibilité de démarrer le conteneur sur un __docker host__ \[Ajout comparativement à la session passé\]
+
+Pour rappel mon dépôt git contenant la définition de mes conteneurs n'est pas idéal , j'ai un dépôt pour l'ensemble des mes dockers , il serait plus adéquat d'avoir un projet par conteneur. Pour le moment je garde cette organisation et tricote autour. 
+
+Comme toujours nous avancerons par phase :
+
+1. Extraction du dépôt , compilation du conteneur identifié en paramètre (nom du répertoire) , processus de validation de ce dernier.
+2. Reprise des opérations de la **phase 1**  plus , validation du requis de compilation , pousser l'imagine du conteneur dans le __docker registry__ 
+3. Démarrage du service sur le docker host.
+
+### Suite de la préparation avec le cas d'utilisation
+
+Bon bien entendu nous allons avoir besoin dans un premier temps de la configuration de notre Gitlab afin d'être en mesure d'extraire le code source. 
+Bien entendu vous pouvez toujours utiliser Github pour l'exercice , comme toujours l'objectif est d'être autonome et maître de notre environnement Github est un service gratuit mais pas libre. Vous ne pouvez pas l'avoir en service hébergé à l'interne et il y a des coûts pour fermer l'accès au code. 
+
+J'ai donc ( Pour les informations sur la configuration gitlab , j'ai une formation sur le sujet : [Gitlab Formation](../gitlab/01-presentation.md):
+
+1. Créé MON utilisateur 
+2. Créer un groupe Devops 
+3. Création du projet dockers contenant 3 répertoires avec des conteneurs
+
+Une copie d'écran disponible ici : [02-setup-gitlab-depot-conteneur.png](./imgs/02-setup-gitlab-depot-conteneur.png) 
+
+Le dépôt est aussi disponible sur Github : [training-jenkins-dockers-pipeline](https://github.com/x3rus/training-jenkins-dockers-pipeline)
+
+En plus de mes accès je vais aussi définir un utilisateur "robot" qui pourra extraire et écrire dans le dépôt. Son nom sera "BobLeRobot" 
+Encore une fois l'ensemble des ces opérations furent couvert dans la formation initial de Jenkins lors de l'intégration avec GitLab
+
 
 
 
