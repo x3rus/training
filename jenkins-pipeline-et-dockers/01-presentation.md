@@ -115,5 +115,66 @@ Le concept de pipe fut mis en place afin de facilité le mécanisme. Nous allons
 TODO : à compléter
 
 * https://jenkins.io/doc/book/pipeline/
+* https://jenkins.io/doc/book/pipeline/syntax
+* https://jenkins.io/doc/pipeline/steps/
 
-### 
+### Un exemple simple avant la démonstration complexe
+
+Voici un petit exemple de mise en place d'un pipeline , l'objectif est simplement de démontré l'utilisation avec les steps sans aucune complexité , dans un second temps nous mettrons l'ensemble du système de **SCM**.
+
+* Création de la tâches
+
+![](./imgs/03-creation-pipeline-simple-exemple.png)
+
+* Voici la configuration mise en place pour le **pipeline** :
+
+```
+pipeline {
+    
+    agent { node { label 'docker' } }
+    
+    stages {
+        stage('extraction') { 
+            steps { 
+                sh 'echo " Ze extraction" ' 
+            }
+        }
+        stage('Build') { 
+            steps { 
+                sh 'echo "make" '
+                sh 'sleep 30' 
+            }
+        }
+        stage('Test'){
+            steps {
+                sh 'echo "make check"'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh 'echo "make publish"'
+            }
+        }
+    }
+}
+```
+
+Explication rapide :
+
+1. **[agent](https://jenkins.io/doc/book/pipeline/syntax/#agent)** : Je sélectionne un node avec l'étiquette __docker__
+2. **[stages](https://jenkins.io/doc/book/pipeline/syntax/#stages)** : Je définie que nous allons avoir plusieurs étapes 
+3. **[stage](https://jenkins.io/doc/book/pipeline/syntax/#stage)** : Définition des différentes groupe de tache "stage", comme nous voyons dans le stage Build il y a 2 étapes.
+4. **[steps](https://jenkins.io/doc/book/pipeline/syntax/#steps)** : Permet de définir les étapes qui seront réalisé lors de ce stage.
+5. **[sh](https://jenkins.io/doc/pipeline/steps/workflow-durable-task-step/#sh-shell-script)** : Permet d'exécuter un script lors de l'étape mais il existe énormément de méthode disponible : [listes de step disponible](https://jenkins.io/doc/pipeline/steps/) 
+
+Voici le résultat , comme vous pouvez le voir j'ai fait une erreur lors de la première exécution :D : 
+
+![](./imgs/04-run-pipeline-simple-exemple.png) 
+
+Ce qui est intéressant est que vous êtes en mesure de visualiser les logs d'une seule étapes , simplifiant l'analyse de la situation :
+
+![](./imgs/05a-visualisation-logs-pipeline-simple-exemple.png)
+
+Ainsi que voir le détail :
+
+![](./imgs/05b-visualisation-logs-pipeline-simple-exemple.png)
