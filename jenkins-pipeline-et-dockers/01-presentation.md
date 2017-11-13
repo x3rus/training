@@ -178,3 +178,105 @@ Ce qui est intéressant est que vous êtes en mesure de visualiser les logs d'un
 Ainsi que voir le détail :
 
 ![](./imgs/05b-visualisation-logs-pipeline-simple-exemple.png)
+
+## Mise en place du pipeline pour notre cas d'utilisation
+
+Bon voilà on a vu un cas d'utilisation super simpliste pour ce faire la main , maintenant c'est le moment de votre nos cas d'utilisation concret. 
+Pour les besoins de la présentation je vais diviser la présentation avec les étapes (step) de notre pipeline.  
+
+Donc nous reprenons la création de la tâche en mode pipeline :
+
+![](./imgs/10-job-dockers-build-validate-push-creation.png)
+
+Nous allons conserver les logs de compilations  pour les 20 dernières exécution, et passez en paramètre le nom du répertoire donc du conteneur à traiter. Bien entendu nous alimenterons la configuration au furent et à mesure que nous ajoutons des fonctionnalités.
+
+![](./imgs/11-job-dockers-build-validate-push-setup1.png) 
+
+
+### Configuration initiale pour le choix du node 
+
+Comme nous avons un conteneur à compiler nous allons identifier que le node qui réalisera l'opération doit avoir l'étiquette __docker__ , la documentation est disponible **[pipeline syntaxe agent](https://jenkins.io/doc/book/pipeline/syntax/#agent)**  pour voir les autres options disponible.
+
+```
+pipeline {
+    
+    agent { node { label 'docker' } }
+```
+
+### Extraction du projet depuis gitlab.
+
+Donc je vais utiliser le **pipeline syntax** éditeur pour m'aider à faire la configuration de mon extraction de git. Voici l'interface résultant de l'opération : 
+
+![](./imgs/12-job-dockers-build-validate-push-creation-gitlab-scm-checkout.png)
+
+J'ai aussi fait la création de l'identifiant dans jenkins afin de permettre **BobLeRobot** d'avoir les informations (user + password) dans jenkins et utilisable globalement 
+
+![](./imgs/13-job-dockers-build-validate-push-setup-gitlab-user.png)
+
+J'ai par la suite cliqué pour généré l'instruction pipeline :
+
+![](./imgs/14-job-dockers-build-validate-push-setup-pipeline-syntax-result.png)
+
+Voici le résultat dans son ensemble :
+
+```
+
+pipeline {
+
+    agent { node { label 'docker' } }
+    
+     stages {
+         stage('GitExtraction') {
+             steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/dockers.git']]])
+            }
+        }
+     }
+}
+```
+
+Nous l'exécutons pour se faire plaisir :
+
+![](./imgs/15-job-dockers-build-validate-push-setup-exec-just-step-gitcheckout.png) 
+
+Ceci fonctionne bien , cependant mon script pour le traitement du build , donc la logique est aussi dans un autre dépôt GIT , plusieurs option s'offre à moi :
+
+* mettre en place un __submodule__ dans le projet de dockers afin qu'il puisse faire l'extraction de l'outil. C'est bien mais que ce passe t'il si j'ai pas le contrôle des 2 dépôt . T'AS JUSTE À FORKER !!! ok ok , mais si je peux pas / veux pas ... Blabla :P 
+* Récupérer le scripts depuis un dépôt d'artefacts telle que Maven ou autre , donc pas depuis une source qui peut bouger, ceci est la meilleur option. Dans le cadre professionnel c'est le bon choix ... Mais moi ça bouge beaucoup je veux pas faire une release de mon script même si c automatique la nuit ... Pas pour le moment. Puis en plus c'est l'option facile :P. On y reviendra si vous le voulez bien.
+* Je vais faire l'extraction des 2 dépôt Git .
+
+Voici la syntaxe pipeline, juste pour ennuyer ou montrer d'autre option j'ai utilisé le module git de pipeline syntaxe :
+
+```
+
+pipeline {
+
+    agent { node { label 'docker' } }
+    
+     stages {
+         stage('GitExtraction') {
+             steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/dockers.git']]])
+
+                git credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/scripts.git'
+            }
+        }
+     }
+}
+
+```
+
+Donc nous avons les 2 commandes GIT dans le stage __GitExtraction__ , mais voici le résultat , pas d'erreur mais ...
+
+![](./imgs/16-job-dockers-build-validate-push-setup-exec-2-git-no-erreur-mais-prob.png) 
+
+Donc il est où le problème , si nous regardons le workspace sur le slave il n'y a QUE le second git clone :
+
+```
+root@jenkins-slave-dck:/home/jenkinbot/workspace/docker-build-validate-push-deploy# ls -ltr                                                                   
+total 4                                
+-rw-rw-r-- 1 jenkinbot jenkinbot  32 Nov 13 17:36 README.md                    
+drwxrwxr-x 4 jenkinbot jenkinbot 189 Nov 13 17:36 jenkins         
+```
+
+Voici la solution à notre problèmes.
