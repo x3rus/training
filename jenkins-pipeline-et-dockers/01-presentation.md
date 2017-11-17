@@ -279,4 +279,229 @@ total 4
 drwxrwxr-x 4 jenkinbot jenkinbot 189 Nov 13 17:36 jenkins         
 ```
 
-Voici la solution à notre problèmes.
+Voici la solution à notre problèmes. Je fais la création de 2 répertoire 1 pour les dockers et un pour les scripts  et j'exécute les git fetch depuis le répertoire.
+
+```
+pipeline {
+
+    agent { node { label 'docker' } }
+    
+    stages {
+         stage('GitExtraction') {
+             steps {
+                dir('dockers') {
+                    checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/dockers.git']]])
+                }
+                dir('scripts') {
+                    git credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/scripts.git'
+                }
+            }
+        }
+    }
+}
+```
+
+Voici le résultat lors de l'exécution :
+
+```bash
+root@jenkins-slave-dck:/home/jenkinbot/workspace/docker-build-validate-push-deploy$ ls -l
+total 4
+-rw-rw-r-- 1 jenkinbot jenkinbot  32 Nov 13 17:36 README.md
+drwxrwxr-x 6 jenkinbot jenkinbot  96 Nov 14 07:48 dockers
+drwxrwxr-x 2 jenkinbot jenkinbot   6 Nov 14 07:48 dockers@tmp
+drwxrwxr-x 4 jenkinbot jenkinbot 189 Nov 13 17:36 jenkins
+drwxrwxr-x 4 jenkinbot jenkinbot  50 Nov 14 07:48 scripts
+drwxrwxr-x 2 jenkinbot jenkinbot   6 Nov 14 07:48 scripts@tmp
+
+```
+
+Super maintenant nous avons nos informations depuis le dépôt gitlab :D yeahh , on va continuer avec la réalisation de la création du conteneur .
+
+### Création de l'image du conteneur
+
+Nous allons passer à l'étape de création de l'image du conteneur , suivant le système mis en place lors de notre dernière formation Jenkins j'avais mis un système de condition permettant de valider si une image de conteneur doit être construite ou non. Un petit rappel du système de validation réalisé : 
+
+* Nom utilisateur (inclus / exclus) 
+* Message dans le commit 
+* Répertoire inclus 
+* Numéro du commit si transmis ( Expérimental  , la réalité tous est expérimental :P , mais cette partie plus !! )
+
+Voici le schéma :
+
+![](../jenkins/imgs/WorkFlow.png)
+
+
+#### Mise en place de la validation si le build est requis
+
+Je vais donc mettre en place le processus de validation avec mon script Jenkins , voici le résultat :
+
+```
+pipeline {
+
+    agent { node { label 'docker' } }
+    
+     stages {
+         stage('GitExtraction') {
+             steps {
+                dir('dockers') {
+                    checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/dockers.git']]])
+                }
+                dir('scripts') {
+                    git credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/scripts.git'
+                }
+            }
+         }
+         stage('ValidationIfBuildRequiered') {
+             steps {
+                    dir('dockers') {
+                        sh returnStatus: true, script: 'python3 ../scripts/jenkins/gitBuildValidation.py --include-dir $DOCKER_NAME --exclude-user BobLeRobot --verbose'
+                    }
+                }
+            }
+    }
+}
+
+```
+
+Donc dans le cas présent j'exécute et ajoute affiche le résultat :
+
+![](./imgs/17a-job-dockers-build-validate-push-setup-exec-git-validation-2-build.png)
+
+Même exécution mais pour un répertoire inexistant : 
+
+![](./imgs/17b-job-dockers-build-validate-push-setup-exec-git-validation-2-build.png)
+
+Ceci est donc un exemple d'étape de validation , mais l'étape n'est PAS vraiment la mise en place de la condition l'étape est de savoir SI nous devons ......... Dans notre cas compiler le répertoire qui contient le conteneur, après plusieurs essaie et exploration voici la formule . Nous allons passer à travers :
+
+```
+
+// Methode loop pour faire l'appel du MAKE
+def int loop_build_docker(list) {
+
+    for (def dockerDir : list.split(",")  ) {
+           dir("dockers")
+           {
+                sh (script: "make -C ${dockerDir} build-4-test")
+           }
+    }
+} 
+    
+pipeline {
+
+    agent { node { label 'docker' } }
+   
+
+     stages {
+         stage('GitExtraction') {
+             steps {
+                dir('dockers') {
+                    checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/dockers.git']]])
+                }
+                dir('scripts') {
+                    git credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/scripts.git'
+                }
+            } // End Steps
+         } // End Stage GitExtraction
+
+         stage('BuildDockers') {
+             when {
+                expression {
+                    dir('dockers') {
+                        // Version avec le code de retour
+                        MUST_BUILD = sh( returnStatus: true,
+                                        script: 'python3 ../scripts/jenkins/gitBuildValidation.py --include-dir $DOCKER_NAME --exclude-user BobLeRobot' 
+                                       )
+                        // Corrige le comportement du bash pour qui : 
+                        // 0 ==  True 
+                        // autre == False :P 
+                        if (MUST_BUILD == 0) {
+                            return 1
+                        }
+                    } // END repertoire docker
+                } // fin expression 
+             } // END When
+
+            steps {
+                loop_build_docker(DOCKER_NAME)
+            }
+
+         } // END Stage 'BuildDockers'
+     } // End StageS
+    
+} // END pipeline
+```
+
+Donc Regardons un peu l'étape **BuildDockers** , nous avons les bloques :
+
+* **when** : Ceci nous permet d'indiquer qu'il y a une condition pour cette étape 
+
+### tmp copie de sécurité :P
+
+```
+def int loop_build_docker(list) {
+
+    for (def dockerDir : list.split(",")  ) {
+           dir("dockers")
+           {
+                sh (script: "make -C ${dockerDir} build-4-test")
+           }
+    }
+} 
+    
+pipeline {
+
+    agent { node { label 'docker' } }
+   
+
+     stages {
+         stage('GitExtraction') {
+             steps {
+                dir('dockers') {
+                    checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/dockers.git']]])
+                }
+                dir('scripts') {
+                    git credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/scripts.git'
+                }
+            } // End Steps
+         } // End Stage GitExtraction
+
+         stage('BuildDockers') {
+             when {
+                expression {
+                    dir('dockers') {
+                        // Version avec le output
+                        // LST_DIR = sh( returnStdout: true,
+                        //        script: 'python3 ../scripts/jenkins/gitBuildValidation.py --include-dir $DOCKER_NAME --exclude-user BobLeRobot' )
+                            
+                        // Version avec le code de retour
+                        MUST_BUILD = sh( returnStatus: true,
+                                        script: 'python3 ../scripts/jenkins/gitBuildValidation.py --include-dir $DOCKER_NAME --exclude-user BobLeRobot' 
+                                       )
+                            
+                        // Debug mod pour comprendre 
+                        println "return code dirs value " 
+                        println MUST_BUILD
+                        // Corrige le comportement du bash pour qui : 
+                        // 0 ==  True 
+                        // autre == False :P 
+                        if (MUST_BUILD == 0) {
+                            return 1
+                        }
+                    }
+                    
+                }
+             } // END When
+
+            steps {
+                loop_build_docker(DOCKER_NAME)
+            }
+
+         } // END Stage 'BuildDockers'
+     } // End StageS
+    
+} // END pipeline
+
+
+```
+
+Référence intéressante : https://support.cloudbees.com/hc/en-us/articles/230610987-Pipeline-How-to-print-out-env-variables-available-in-a-build
