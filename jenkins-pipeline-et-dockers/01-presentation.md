@@ -433,78 +433,30 @@ pipeline {
 
 Donc Regardons un peu l'étape **BuildDockers** , nous avons les bloques :
 
-* **when** : Ceci nous permet d'indiquer qu'il y a une condition pour cette étape 
+* **when** : Ceci nous permet d'indiquer qu'il y a une condition pour cette étape , j'exécute le script __python__ de validation du build du conteneur. Comme ceci est un script Linux , mon code de retour si tous est OK est 0 . Cependant il y un petit problème car 0 == __false__ . Je fais donc une petite substitution du code de retour 0 pour retourner 1 donc **true**.
 
-### tmp copie de sécurité :P
+En d'autre mot si la condition n'est pas respecté le système ne va PAS donné une erreur mais uniquement sauté l'étape , voici le résultat à la console :
 
-```
-def int loop_build_docker(list) {
+![](./imgs/18a-job-dockers-build-validate-push-setup-exec-skippe-build-dck-console.png)
 
-    for (def dockerDir : list.split(",")  ) {
-           dir("dockers")
-           {
-                sh (script: "make -C ${dockerDir} build-4-test")
-           }
-    }
-} 
-    
-pipeline {
+Et depuis l'interface de la tâche jenkins:
 
-    agent { node { label 'docker' } }
-   
+![](./imgs/18b-job-dockers-build-validate-push-setup-exec-skippe-build-dck-pipelineView.png) .
 
-     stages {
-         stage('GitExtraction') {
-             steps {
-                dir('dockers') {
-                    checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/dockers.git']]])
-                }
-                dir('scripts') {
-                    git credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/scripts.git'
-                }
-            } // End Steps
-         } // End Stage GitExtraction
+Quand la tâche est exécuté :
 
-         stage('BuildDockers') {
-             when {
-                expression {
-                    dir('dockers') {
-                        // Version avec le output
-                        // LST_DIR = sh( returnStdout: true,
-                        //        script: 'python3 ../scripts/jenkins/gitBuildValidation.py --include-dir $DOCKER_NAME --exclude-user BobLeRobot' )
-                            
-                        // Version avec le code de retour
-                        MUST_BUILD = sh( returnStatus: true,
-                                        script: 'python3 ../scripts/jenkins/gitBuildValidation.py --include-dir $DOCKER_NAME --exclude-user BobLeRobot' 
-                                       )
-                            
-                        // Debug mod pour comprendre 
-                        println "return code dirs value " 
-                        println MUST_BUILD
-                        // Corrige le comportement du bash pour qui : 
-                        // 0 ==  True 
-                        // autre == False :P 
-                        if (MUST_BUILD == 0) {
-                            return 1
-                        }
-                    }
-                    
-                }
-             } // END When
+![](./imgs/19a-job-dockers-build-validate-push-setup-exec-not-skippe-build-dck-console.png)
 
-            steps {
-                loop_build_docker(DOCKER_NAME)
-            }
+Et la vue du pipeline : 
 
-         } // END Stage 'BuildDockers'
-     } // End StageS
-    
-} // END pipeline
+![](./imgs/19b-job-dockers-build-validate-push-setup-exec-not-skippe-build-dck-piplineView.png)
 
 
-```
+### Réalisation de la validation du conteneur  (QA)
 
-### tmp copie de sécurité :P
+Nous avons validé que l'image du conteneur doit être créé , nous avons une autre partie dans notre processus de génération du conteneur. Nous réalisons des testes applicative sur le résultat. Nous allons donc mettre en place cette étape :
+
+Voici le texte du pipeline :
 
 ```
 
@@ -542,18 +494,11 @@ pipeline {
              when {
                 expression {
                     dir('dockers') {
-                        // Version avec le output
-                        // LST_DIR = sh( returnStdout: true,
-                        //        script: 'python3 ../scripts/jenkins/gitBuildValidation.py --include-dir $DOCKER_NAME --exclude-user BobLeRobot' )
-                            
                         // Version avec le code de retour
                         MUST_BUILD = sh( returnStatus: true,
                                         script: 'python3 ../scripts/jenkins/gitBuildValidation.py --include-dir $DOCKER_NAME --exclude-user BobLeRobot' 
                                        )
                             
-                        // Debug mod pour comprendre 
-                        println "return code dirs value " 
-                        println MUST_BUILD
                         // Corrige le comportement du bash pour qui : 
                         // 0 ==  True 
                         // autre == False :P 
@@ -577,7 +522,6 @@ pipeline {
         stage('ValidationConteneur') {
              when {
                 expression {
-                    println CONTINUE_STATUS
                     return CONTINUE_STATUS
                 }
               }
@@ -589,9 +533,15 @@ pipeline {
     
 } // END pipeline
 
-
-
 ```
+
+Pour cette étape , bien entendu si je n'ai PAS compilé l'image du conteneur je n'ai PAS de validation à réaliser . Je me suis confronté à un problème tout bête qui est le passage d'une variable d'un stage à l'autre. Lors de la définition du stage **BuildDockers**, étape conditionnelle (**when**) je sais si je dois poursuivre ou non . Lors de l'assignation de variable une fois dans l'étape **Validationconteneur** , la valeur n'était plus définie. 
+Pour palier ce problème j'ai définie la variable dans la section **environnement** ce qui m'a permit d'avoir une variable globale réutilisable dans l'ensemble du processus. Ici le nom de ma variable est **CONTINUE_STATUS** . Résultat si le processus de build ne doit pas être réalisé l'étape de validation ne sera pas réalisé non plus . 
+
+Prendre note que j'ai aussi modifié ma méthode **loop\_container\_make** afin de prendre en argument la target pour le make.
+
+### Pousse au docker registry  
+
 
 
 Référence intéressante : https://support.cloudbees.com/hc/en-us/articles/230610987-Pipeline-How-to-print-out-env-variables-available-in-a-build
