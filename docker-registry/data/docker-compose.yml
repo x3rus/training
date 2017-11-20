@@ -1,0 +1,73 @@
+version: '2'
+services:
+    portus-haproxy:
+        image: x3-portus-haproxy
+        build: .
+        container_name : 'x3-portus-haproxy-p'
+        hostname: registry-ha.portus.x3rus.com
+        environment:
+            - TERM=xterm
+        external_links:
+            - registry:dck-registry-host
+            - web:dck-registry-web
+        networks:
+            - portus-net
+ 
+    web:
+        build: /volumes/x3-portus-p/portus/.
+        container_name : 'x3-portus-web-p'
+        command: puma -b tcp://0.0.0.0:3000 -w 3
+        environment:
+          - PORTUS_MACHINE_FQDN_VALUE=registry.portus.x3rus.com
+          - PORTUS_DB_HOST=db
+        volumes:
+          - /volumes/x3-portus-p/portus:/portus
+      #  ports:
+      #    - 3000:3000
+        links:
+          - db:db
+        networks:
+          - portus-net
+      
+    crono:
+        image: portus_web
+        container_name : 'x3-portus-crono-p'
+        entrypoint: bin/crono
+        environment:
+          - PORTUS_MACHINE_FQDN=registry.portus.x3rus.com
+          - PORTUS_DB_HOST=db
+        volumes:
+          - /volumes/x3-portus-p/portus/:/portus
+        links:
+          - db:db
+        networks:
+          - portus-net
+      
+    db:
+        image: library/mariadb:10.0.23
+        container_name : 'x3-portus-db-p'
+        environment:
+          MYSQL_ROOT_PASSWORD: portus
+        networks:
+          - portus-net
+      
+    registry:
+        image: library/registry:2.3.1
+        container_name : 'x3-portus-registry-p'
+        volumes:
+          - /volumes/x3-portus-p/registry_data:/registry_data
+          - /volumes/x3-portus-p/portus/compose/registry/portus.crt:/etc/docker/registry/portus.crt:ro
+          - /volumes/x3-portus-p/portus/compose/registry/config.yml:/etc/docker/registry/config.yml:ro
+      #  ports:
+      #    - 5000:5000
+      #    - 5001:5001 # required to access debug service
+        links:
+          - web
+        networks:
+          - portus-net
+
+networks:
+    portus-net:
+        external: true
+
+
