@@ -542,6 +542,146 @@ Prendre note que j'ai aussi modifié ma méthode **loop\_container\_make** afin 
 
 ### Pousse au docker registry  
 
+L'image du conteneur est généré , nous avons réalisé la modification du conteneur nous allons être prêt pour l'envoyer sur notre docker registry  publique ou privé , selon votre réalité !
 
+J'ai mis en place un docker registry [harbor](https://github.com/vmware/harbor) produit libre, bien entendu, fait par VMware , j'avais mis avant Portus produit réalisé par Suse. J'ai eu envie d'essayer un autre nous allons voir ... Si vous voulez avoir la documentation de ma procédure de réalisation de la configuration ceci est disponible ici : TODO : Ajout documentation pour faire le setup de harbor !!
+
+```bash
+root@jenkins-slave-dck:~/.docker# docker login harbor.x3rus.com
+Username (tboutry): BobLeRobot
+Password: 
+Login Succeeded
+root@jenkins-slave-dck:~/.docker# cat config.json 
+{
+        "auths": {
+                "harbor.x3rus.com": {
+                        "auth": "Qm9iTGVSb2JvdDpUYXNvZXVyMTIz"
+                }
+        }
+
+```
+
+Au début j'avais définie dans le pipeline la mise en place de la configuration du fichier de docker , malheureusement Jenkins ne peut pas écrire en dehors de son workspace résultat tous comme l'installation de pré requis application , création d'utilisateur doit être fait par un autre système ( puppet , ansible, manuellement par un humain ... ) . Vous constaterez que j'ai laissé la configuration dans la définition du pipeline pour l'identifier :D .
+
+```
+
+def int loop_container_make(list,target) {
+
+    for (def dockerDir : list.split(",")  ) {
+           dir("dockers")
+           {
+                sh (script: "make -C ${dockerDir} ${target}")
+           }
+    }
+} 
+    
+pipeline {
+
+    agent { node { label 'docker' } }
+    
+    environment {
+        CONTINUE_STATUS = true
+    }
+
+     stages {
+         stage('GitExtraction') {
+             steps {
+                dir('dockers') {
+                    checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/dockers.git']]])
+                }
+                dir('scripts') {
+                    git credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/scripts.git'
+                }
+            } // End Steps
+         } // End Stage GitExtraction
+
+         stage('BuildDockers') {
+             when {
+                expression {
+                    dir('dockers') {
+                        // Version avec le output
+                        // LST_DIR = sh( returnStdout: true,
+                        //        script: 'python3 ../scripts/jenkins/gitBuildValidation.py --include-dir $DOCKER_NAME --exclude-user BobLeRobot' )
+                            
+                        // Version avec le code de retour
+                        MUST_BUILD = sh( returnStatus: true,
+                                        script: 'python3 ../scripts/jenkins/gitBuildValidation.py --include-dir $DOCKER_NAME --exclude-user BobLeRobot' 
+                                       )
+                            
+                        // Debug mod pour comprendre 
+                        println "return code dirs value " 
+                        println MUST_BUILD
+                        // Corrige le comportement du bash pour qui : 
+                        // 0 ==  True 
+                        // autre == False :P 
+                        if (MUST_BUILD == 0) {
+                            return 1
+                        } else {
+                            CONTINUE_STATUS = false
+                            return false
+                            
+                        }
+                    }
+                    
+                }
+             } // END When
+
+            steps {
+                    loop_container_make(DOCKER_NAME, 'build-4-test')
+            }
+
+         } // END Stage 'BuildDockers'
+        stage('ValidationConteneur') {
+             when {
+                expression {
+                    return CONTINUE_STATUS
+                }
+              }
+            steps {
+                loop_container_make(DOCKER_NAME, 'test-build')
+            }
+        } // END Validationconteneur
+        stage('PushImgRegistry') {
+              when {
+                expression {
+                    return CONTINUE_STATUS
+                }
+              }
+            steps {
+                // Setup Docker Authentication with user BobLeRobot
+                // fonctionne PAS car ecriture en dehors du Workspace
+                // writeFile file: '~/.docker/config.json',
+                //                 text: '''
+                //                {                                      
+                //                "auths": {                     
+                //                    "harbor.x3rus.com": {  
+                //                        "auth": "Qm9iTGVSb2JvdDpUYXNvZXVyMTIz"                 
+                //                    }                      
+                //                }                              
+                //              }'''
+                
+                loop_container_make(DOCKER_NAME, 'buildLatestPush')
+            }
+        } // END stage PushImgRegistry
+     } // End StageS
+    
+} // END pipeline
+```
+
+Voici le résultat à l'exécution :
+
+![](./imgs/20a-job-dockers-build-validate-push-setup-with-push-registry-piplineView.png)
+
+Visualisation d'un logs :
+
+![](./imgs/20b-job-dockers-build-validate-push-setup-with-push-registry-ViewLogs.png)
+
+
+Si je met un mauvais répertoire l'ensemble des tâches non applicable seront sautées. Nous avons donc un pipeline fonctionnel !
+
+
+# Amelioratio TODO 
+TODO avec le git hash tag 
+![](./imgs/21a-job-dockers-build-validate-push-setup-with-push-registry-Visualisation-dck-registry.png)
 
 Référence intéressante : https://support.cloudbees.com/hc/en-us/articles/230610987-Pipeline-How-to-print-out-env-variables-available-in-a-build

@@ -1058,6 +1058,7 @@ Effectivement pour le moment je n'ai pas couvert la gestion automatique de certi
 
 Mais voici donc cette section, pas moins importante , mais il fallait que je trouve le temps disponible pour l'écrire :D.
 
+Prendre note que la solution présenté ne supporte pas le dns challenge : https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion/issues/236
 TODO 
 
 ### Configuration avec de multiple réseaux 
