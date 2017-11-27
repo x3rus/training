@@ -680,8 +680,62 @@ Visualisation d'un logs :
 Si je met un mauvais répertoire l'ensemble des tâches non applicable seront sautées. Nous avons donc un pipeline fonctionnel !
 
 
-# Amelioratio TODO 
-TODO avec le git hash tag 
+## Amélioration 
+
+Nous avons un environnement de travail convenable, nous cliquons sur le bouton il y a une validation si le build est requis en relation au commit qui furent réalisé. Nous sommes en mesure de définir un numéro de build et de réaliser la compilation de notre conteneur , il n'y a pas d'erreur si le répertoire fournit n'est pas bon , mais dans la situation présente un conteneur valide sera régulièrement recompilé puis transmis au docker registry. Est-ce critique assurément pas car comme chaque layer est réutilisé il n'y aura à peu prêt de transfert. Cependant pour l'exercice, ne serait t'il pas mieux de valider si le conteneur avec le numéro de commit est déjà présent ? 
+Bien entendu vous pourriez faire comme lors de ma première présentation commiter un fichier de configuration du Jenkins qui conserve le numéro de build de la dernière compilation. Mais c'est pas idéal car je n'aime moi le fait que le système de build commit dans le contrôleur de révision du projet , les 2 fonctionnent de pair mais sont indépendant. 
+
+### Transférer l'image avec le numéro de commit
+
+Procédons à l'ajout de l'image docker avec le numéro du commit en plus de la version "latest".
+
+J'ai modifier le fichier de Makefile dans le répertoire du conteneur afin d'avoir une nouvelle définition, voici les sections ajouter :
+
+```bash
+
+ # Quelques variables au début 
+DCK-COMPOSE-MAIN-DCK = x3-webdav
+IMAGE-REMOTE-NAME = harbor.x3rus.com/xerus/x3-webdav
+GIT-COMMIT-HASH := $(shell git rev-parse --short HEAD)
+
+ # instruction de compilation du latest et ajout du tag pour le latest
+build-latest:
+    docker-compose build 
+    docker tag ${IMAGE-REMOTE-NAME}:latest ${IMAGE-REMOTE-NAME}:${GIT-COMMIT-HASH}
+
+ # pousse les 2 images vers le registry
+push-to-registry:
+    docker push ${IMAGE-REMOTE-NAME}
+    docker push ${IMAGE-REMOTE-NAME}:${GIT-COMMIT-HASH}
+
+```
+
+Je relance le build et voilà j'ai mes 2 images sur le registry docker.
+
 ![](./imgs/21a-job-dockers-build-validate-push-setup-with-push-registry-Visualisation-dck-registry.png)
+
+
+### Validation de la présence du conteneur avec le numéro de tag
+
+Nous sommes donc en mesure de pousser sur le serveur de registry le conteneur avec le numéro du commit ID. Comme nous avons l'information nous seront en mesure de valider la présence pour savoir si nous devons construire la nouvelle image. J'ai fait beaucoup de recherche sur internet pour être en mesure de communiquer avec le registry et valider si le tag est présent. J'ai probablement mal cherché ou pas utilisé les bon **buzz** word mais j'ai pas réussi à avoir le résultat voulu avec Curl. Toujours des problèmes d'authentification pour avoir les tags , finalement j'ai vu dans le projet Github de **harbor** un script python qui réalise exactement ce que je désire. Est-ce que ceci est fonctionnel uniquement avec Harbor ? À valider pour le moment je procède avec ce mécanisme et nous verrons par la suite, lorsque j'utiliserai autre chose :D .
+
+Voici un exemple d'utilisation :
+
+```
+$ git remote -v
+origin  https://github.com/vmware/harbor.git (fetch)
+
+$ cd harbor/contrib/registryapi
+
+$ ./cli.py --username BobLeRobot --password MonSuperPassword --registry_endpoint https://harbor.x3rus.com tag list --repo xerus/x3-webdav                  {                                      
+    "name": "xerus/x3-webdav",         
+    "tags": [                          
+        "d5605b2",                     
+        "latest"                       
+    ]                                  
+}              
+```
+
+Nous allons donc l'intégrer dans l'ensemble du processus.
 
 Référence intéressante : https://support.cloudbees.com/hc/en-us/articles/230610987-Pipeline-How-to-print-out-env-variables-available-in-a-build
