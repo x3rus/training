@@ -1,4 +1,4 @@
-# Jenkins PipeLine et Docker
+
 
 Lors de la présentation de Jenkins nous avons fait une démonstration de l'outil je dirait de manière classique , nous avons mis en place Jenkins et définie des slaves que nous avons configurer. Dans les slaves nous avions permis l'utilisation de Docker grâce au commande **docker \*** , cependant nos conteneurs avec la fonctionnalité docker avait un problème. Nous avions notre conteneur en exécution continuel , alors que l'avantage du système de conteneur est d'avoir une démarrage des services au besoin. Nous allons donc voir comment modifier notre configuration afin de permettre que ceci soit plus dynamique selon le besoin . En d'autre mot suivre les meilleurs pratique actuellement. 
 
@@ -739,3 +739,150 @@ $ ./cli.py --username BobLeRobot --password MonSuperPassword --registry_endpoint
 Nous allons donc l'intégrer dans l'ensemble du processus.
 
 Référence intéressante : https://support.cloudbees.com/hc/en-us/articles/230610987-Pipeline-How-to-print-out-env-variables-available-in-a-build
+
+#### Stop , analyse et reconcidération de la configuration
+
+Bon, comme toujours la démonstration ici est un travail en mouvement , je pars d'une idée et je la bâti pour répondre à un "besoin" ou disons que je me crée un cas d'école pour monter en compétence. Bien entendu l'ensemble de cette apprentissage est bénéfique et me permet de le réutilisé quand le contexte est plus chaud , mais l'objectif est avant tous de m'amuser et découvrir . 
+
+Bon plusieurs problème sont présent dans la solution actuelle et je désire les corriger , voici les points et les solutions proposé :
+
+1. Le build ne supporte, réellement, que la compilation d'une image , il est possible d'en passé plusieurs mais la gestion d'erreur est inadéquate. Il est important de corriger ce problème. 
+2. Le transfère de l'image vers le registry docker n'est pas bonne , actuellement l'entrée dans le docker-compose ne supporte qu'une image il est possible de modifier le Makefile mais l'ensemble de l'information est déjà dans le docker-compose.yml . Il serait plus adéquat d'utiliser l'information présente, surtout s'il y a plusieurs image pour un même service.
+3. Aujourd'hui le Makefile est self content mais si nous désirons mettre d'autre fonctionnalité dans le Makefile des scripts seront requis. Je ne veux pas avoir des scripts dans le dépôt des projets dockers et des scripts dans le dépôts scripts. Voir pour mettre le système de submodules de git afin d'inclure le dépôt scripts. L'objectif est que le Makefile soit fonctionnel avec ou SANS Jenkins.
+4. Il n'y a pas de validation si l'image fut déjà compiler , nous pourrions optimiser le temps de CPU afin que si l'image est déjà dans le registry avec le numéro hash git , ne pas perdre du cycle de CPU et utiliser de la bande passante.
+
+Il y a probablement plusieurs autre point d'amélioration que nous pourrions apporter , mais c'est déjà pas mal et je les découvrirai lors de la réalisation des 4 point ci-dessus .
+
+
+Version ici :
+
+```
+
+def int loop_container_make(list,target) {
+
+    for (def dockerDir : list.split(",")  ) {
+           dir("dockers")
+           {
+                sh (script: "make -C ${dockerDir} ${target}")
+           }
+    }
+} 
+    
+pipeline {
+
+    agent { node { label 'docker' } }
+    
+    environment {
+        CONTINUE_STATUS = true
+    }
+
+     stages {
+         stage('GitExtraction') {
+             steps {
+                dir('dockers') {
+                    checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/dockers.git']]])
+                }
+                dir('scripts') {
+                    git credentialsId: 'GitLab-BobLeRobot-access', url: 'http://gitlabsrv/Devops/scripts.git'
+                }
+            } // End Steps
+         } // End Stage GitExtraction
+
+         stage('BuildDockers') {
+             when {
+                expression {
+                    dir('dockers') {
+                        // Version avec le output
+                        // LST_DIR = sh( returnStdout: true,
+                        //        script: 'python3 ../scripts/jenkins/gitBuildValidation.py --include-dir $DOCKER_NAME --exclude-user BobLeRobot' )
+                            
+                        // Version avec le code de retour
+                        LST_DCKs = sh( returnStdout: true,
+                                        script: 'python3 ../scripts/jenkins/gitBuildValidation.py --jenkins --include-dir $DOCKER_NAME --exclude-user BobLeRobot' 
+                                       )
+                            
+                        // Debug mod pour comprendre 
+                        println "return list dockers " 
+                        println "aa"+LST_DCKs+"aa"
+                        // Corrige le comportement du bash pour qui : 
+                        // 0 ==  True 
+                        // autre == False :P
+                        
+                        // ATTENTION : 
+                        // dans le retour la variable contient un espace a la fin ...
+                        if ( LST_DCKs.trim() == "No_Docker_img_to_build") {
+                            CONTINUE_STATUS = false
+                            return false
+                        } else {
+                            return true
+                        }
+                    }
+                    
+                }
+             } // END When
+
+            steps {
+                    loop_container_make(DOCKER_NAME, 'build-4-test')
+            }
+
+         } // END Stage 'BuildDockers'
+        stage('ValidationConteneur') {
+             when {
+                expression {
+                    return CONTINUE_STATUS
+                }
+              }
+            steps {
+                loop_container_make(DOCKER_NAME, 'test-build')
+            }
+        } // END Validationconteneur
+        stage('PushImgRegistry') {
+              when {
+                expression {
+                    return CONTINUE_STATUS
+                }
+              }
+            steps {
+                // Setup Docker Authentication with user BobLeRobot
+                // fonctionne PAS car ecriture en dehors du Workspace
+                // writeFile file: '~/.docker/config.json',
+                //                 text: '''
+                //                {                                      
+                //                "auths": {                     
+                //                    "harbor.x3rus.com": {  
+                //                        "auth": "Qm9iTGVSb2JvdDpUYXNvZXVyMTIz"                 
+                //                    }                      
+                //                }                              
+                //              }'''
+                
+                loop_container_make(DOCKER_NAME, 'buildLatestPush')
+            }
+        } // END stage PushImgRegistry
+     } // End StageS
+    
+} // END pipeline
+
+
+```
+
+Ajouter la question de l'approbation du script voir image 22 et 23
+
+* Info submodule + spare checkout :
+
+```
+29289  git submodule add http://tboutry@git.training.x3rus.com/Devops/scripts.git                                                                             
+29290  ls                              
+29291  cd scripts/                     
+29292  ls                              
+29293  git remote -v                   
+29294  cd ..                           
+29295  ls                              
+29296  vim .git/config                 
+29297  git -C scripts config core.sparseCheckout true                          
+29298  vim -R .git/config              
+29299  vim -R scripts/.git             
+29300  vim .git/modules/scripts/config                                         
+29301  echo 'harbor/*' >>.git/modules/scripts/info/sparse-checkout             
+29302  git submodule update --force --checkout scripts/                        
+29303  ls scripts/                     
+```

@@ -38,7 +38,7 @@ class gitBuildTriggerValidation():
     TIMEOUT_WAIT_GIT_OPS = 20
 
     def __init__(self, userExclude=None, dirInclude=None, msgExclude=None, printInfo=False, dirExclude=None,
-                 buildTimeout=60, configFileName="jenkins-build.cfg"):
+                 buildTimeout=60, configPerDir="jenkins.cfg"):
         """ Init class , get user exclusion and directory include / exclude , set parameters """
 
         # ######################
@@ -74,11 +74,11 @@ class gitBuildTriggerValidation():
         # Define time allowed for ONE build
         self.buildTimeout = buildTimeout
 
-        # Setup configue file name will be in earch Directory
-        self.confFilePerDirectory = configFileName
-
         # Initialize Build Status Variable
         self.statusBuild = []
+
+        # Config file per directory
+        self.confFilePerDirectory = configPerDir
 
     # END init
 
@@ -173,36 +173,6 @@ class gitBuildTriggerValidation():
 
     # END validateCriteriaOnCommit
 
-    def commitAfterDirBuildSuccess(self, DirectoryName, commitMsg, jenkinsInfo):
-        """ Commit Files added , it's suppose to be only the jenkins-configuration files Ex:
-                x3-webdav/jenkins-build.cfg to the git repository .
-
-            If the build is a success Jenkins with the git publisher ( post-build) will push it to the srv
-
-            Arguments:
-                DirectoryName   : Name of the directory actually processed
-                commitMsg       : Generic message for the commit
-                jenkinsInfo     : Must contein jenkins info like build number, url , node name , ...
-
-            Return:
-                True  : If the commit work properly
-                False : If any problem append
-        """
-
-        Msg2Commit = commitMsg + " ; " + jenkinsInfo
-        # Commit config file TODO : Ajouter un critère de commit pour que ce soit pas obligatoire
-        cmdOs_commitConfFile = Popen(['git', 'commit', '-m', Msg2Commit], stdout=PIPE, stderr=STDOUT)
-
-        cmdOs_commitConfFile.wait(self.TIMEOUT_WAIT_GIT_OPS)
-
-        if cmdOs_commitConfFile.returncode != 0:
-            print("WARNING: Unable to commit config file for Directory : " + DirectoryName)
-            return False
-
-        return True
-
-    # END commitAfterDirBuildSuccess
-
     def directoryToIncludeInCommit(self, gitLoglstFiles, commitTimeStamp=None):
         """ Check in the git log if the directory in the criteria self.lstDirInclude is present
 
@@ -244,8 +214,6 @@ class gitBuildTriggerValidation():
                         #    print("Build already perform for  " + dirToInclude)
 
                     else:
-                        # TODO supprimer le print
-                        print("WARNING: Conf file not found : ", dirToInclude + "/" + self.confFilePerDirectory)
                         # Not config file so I don't know if it's done so I include it
                         FoundDir = True
                         DirToInclude.append(dirToInclude)
@@ -331,7 +299,8 @@ class gitBuildTriggerValidation():
             # Check if the make success and feed dictionary with status
             if cmdOs_performMake.returncode == 0:
                 # Upadte config file in directory if the build is a success
-                self.updateDirConfFile(dirToBuild, self.lastCommitTimeStamp)
+                # I disable it now but maybe it's gonna be useful in the future
+                # self.updateDirConfFile(dirToBuild, self.lastCommitTimeStamp)
                 dirStatus['status_msg'] = "SUCCESS: build " + dirToBuild + "Build time used : " + str(build_time)
                 dirStatus['output'] = cmdOs_performMake.stdout
                 dirStatus['status'] = True
@@ -351,7 +320,6 @@ class gitBuildTriggerValidation():
 
     # END buildDirectory
 
-    # def updateDirConfFile(self, CommitTimeStampToSave=self.lastCommitTimeStamp):
     def updateDirConfFile(self, confDirectory, commitTimestampToSave):
         """ Update Commit timeStamp with the timeStamp of the last build success
 
@@ -384,7 +352,7 @@ class gitBuildTriggerValidation():
         # TODO : Voir pour changer cette option
         cmdOs_addConfFile.wait(20)
 
-        if cmdOs_addConfFile.returncode != 0:
+        if cmdOs_addConfFile.returncode != 0 and self.verbose:
             print("WARNING: Unable to add config file " + configFullPath)
             print(cmdOs_addConfFile.stdout.readlines())
             print("Return code : " + cmdOs_addConfFile.returncode)
