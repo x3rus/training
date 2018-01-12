@@ -84,7 +84,7 @@ if __name__ == '__main__':
                     # Fix output for manipulation
                     # lstDirectory == {'x3-webdav','x3-harbor'}
                     # after regex sub == x3-webdac,x3-harbor
-                    bad_chars = '{}\''
+                    bad_chars = '{}\' '
                     rgxRmChars = re.compile('[%s]' % bad_chars)
                     print(rgxRmChars.sub('', str(lstDirectory)))
                 else:

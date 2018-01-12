@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #
 # Description : The goal is to validate with a directory name and a git commit hash
 #               if the conteneur is already in the registry
@@ -78,12 +78,11 @@ class dockerRegistryValidation():
                                  '--repo', self.dckRegistryProjectName + '/' + ImgName],
                                 stdout=PIPE, stderr=STDOUT)
 
-        print(self.dckRegistryProjectName + '/' + self.dckRegistryImgName)
-
         # Wait the process finish to get return code
         cmdOs_harborCli.wait(self.buildTimeout)
 
         rawOutputHarbor = cmdOs_harborCli.stdout.read()
+
         return json.loads(rawOutputHarbor)
 
     # END loadJsonInfo
@@ -120,10 +119,12 @@ if __name__ == '__main__':
     parser.add_argument('--list', '-l', help='List tag for the images', default=False, action='store_true')
     parser.add_argument('--user', '-u', help='Username for auth to harbor', default='marvin')
     parser.add_argument('--password', '-p', help='Password for auth to harbor', default='')
+    parser.add_argument('--script-harbor', '-s', help='Path to harbor script to request srv',
+                        default='../harbor/harbor_cli.py')
 
     args = parser.parse_args()
     #
-    dckCheck = dockerRegistryValidation(args.user, args.password, args.imageName)
+    dckCheck = dockerRegistryValidation(args.user, args.password, args.imageName, scriptHarborCli=args.script_harbor)
 
     if (args.list):
         print(dckCheck.listImgTag())
@@ -131,4 +132,4 @@ if __name__ == '__main__':
     if dckCheck.validationImgTag(args.tag):
         sys.exit(0)
     else:
-        sys.exit(1)
+        sys.exit(10)

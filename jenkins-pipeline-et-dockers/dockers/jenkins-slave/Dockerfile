@@ -7,7 +7,8 @@
 # Reference : https://docs.docker.com/engine/examples/running_ssh_service/#build-an-eg_sshd-image
 ###########################################################
 
-FROM ubuntu:16.04
+#FROM ubuntu:16.04 , use Debian to have python 3.6 
+FROM debian:buster
 MAINTAINER Thomas Boutry "thomas.boutry@x3rus.com"
 
  # Installation des applications, besoin de ssh et de java pour le service Jenkins
@@ -16,8 +17,8 @@ RUN apt-get update && \
     mkdir /var/run/sshd
 
  # ajout des package oublié :P 
-RUN apt-get update && apt-get install -y libltdl7 git make  python3 python3-pip && \
-    pip3 install docker-compose
+RUN apt-get update && apt-get install -y libltdl7 git make python  python3 python3-pip ca-certificates && \
+    pip3 install docker-compose 
 
  # SSH login fix. Otherwise user is kicked off after login
 RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
@@ -25,6 +26,9 @@ RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so
 ENV NOTVISIBLE "in users profile"
 RUN echo "export VISIBLE=now" >> /etc/profile
 
+ # Set x3 root CA
+COPY sslRootCa/* /usr/local/share/ca-certificates/
+RUN update-ca-certificates
 
  # Create default user "jenkinbot" with password toto
  # Ajout du groupe docker pour communiquer avec le docker host
