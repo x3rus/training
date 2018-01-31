@@ -116,11 +116,26 @@ Pour ceux qui se disent , "Ok mais pourquoi les Pipelines ?" Listons tous de sui
 * Il est possible d'avoir un processus de révision, par un tiers du processus de build au même titre que lors du processus de révision de code.
 * Possibilité d'avoir une interaction avec l'utilisateur , par exemple il est possible de demander un approbation pour poursuivre le déploiement de l'application.
 
+Le Pipeline est divisé en plusieurs section , je ne couvrirai pas tous de suite l'ensemble nous le verrons lors de la démonstration du fonctionnement. Voici quelque section :
+
+* **Stage** :  Ceci décrit les étapes à réaliser lors du Pipeline , nous y retrouverons l'étape de build, l'étape de validation , l'étape du déploiement ,...
+* **Steps** : Ceci décrit un opération , un **Stage** va bien souvent regrouper plusieurs **steps**.
+* **Agent** : Définie le node à utilisé et des propriété relié au node pour cette tâches.
+
 Prenons le schéma suivant :
 
 ![](./imgs/02-visualisation-du-workflow-pipeline.png)
 
-TODO : ICI ICI ICI ICI ICI
+Comme nous pouvons le voir dans le schéma ci-dessus , nous avons l'ensemble du processus du développement (développeur) à l'environnement de production .
+
+1. __Start__ : Le développeur réalise les commit dans les dépôts git par exemple.
+2. __Workflow start__ : Début du processus du Pipeline avec Jenkins .
+    1. __Stage SCM checkout__ : Nous retrouvons le __step__ d'extraction du code selon la branche.
+    2. __Stage Build/Launch__ : Nous y retrouvons les steps de construction des conteneurs ainsi que leurs exécution , si vous regardez il y a le mot parallèle sur le coté . Le système de Pipeline vous offre la possibilité d'exécuter en parallèle des steps optimisant les ressources et permet de gagner du temps.
+    3. __Stage test__ : Plusieurs steps de réalisation de validation que les conteneurs sont valide avec des testes applicatifs , vous pouvez voir que ceci est aussi en parallèle.
+    4. __Stage Deploy__ : L'étape de déploiement vers l'environnement , telle que mentionné plus tôt, il est possible de demander une intervention humain pour confirmer que le déploiement peut avoir lieux.
+
+Comme la définition peut être inclut dans le dépôt git , le développeur peut participer à l'élaboration de la solution, pour le DevOps la conservation de l'historique permet de savoir qui / quand / quoi fut réalisé dans la configuration.
 
 * Référence : 
     * https://jenkins.io/doc/book/pipeline/
@@ -188,9 +203,12 @@ Ainsi que voir le détail :
 
 ![](./imgs/05b-visualisation-logs-pipeline-simple-exemple.png)
 
+
+Nous voyons donc la séparation par __Stage__ (étape) nous permettant d'avoir une meilleur visualisation des problèmes , voici un lien vers le résultat d'un build avec le processus originalement mis  : [exemple-output-tache-original.txt](./exemple-output-tache-original.txt)
+
 ## Mise en place du pipeline pour notre cas d'utilisation
 
-Bon voilà on a vu un cas d'utilisation super simpliste pour ce faire la main , maintenant c'est le moment de votre nos cas d'utilisation concret. 
+Bon voilà on a vu un cas d'utilisation super simpliste pour ce faire la main , maintenant c'est le moment pour Notre / Votre cas d'utilisation concret. 
 Pour les besoins de la présentation je vais diviser la présentation avec les étapes (step) de notre pipeline.  
 
 Donc nous reprenons la création de la tâche en mode pipeline :
@@ -248,9 +266,9 @@ Nous l'exécutons pour se faire plaisir :
 
 ![](./imgs/15-job-dockers-build-validate-push-setup-exec-just-step-gitcheckout.png) 
 
-Ceci fonctionne bien , cependant mon script pour le traitement du build , donc la logique est aussi dans un autre dépôt GIT , plusieurs option s'offre à moi :
+Ceci fonctionne bien , cependant mon script pour le traitement du build , donc la logique est dans un autre dépôt GIT , plusieurs option s'offre à moi :
 
-* mettre en place un __submodule__ dans le projet de dockers afin qu'il puisse faire l'extraction de l'outil. C'est bien mais que ce passe t'il si j'ai pas le contrôle des 2 dépôt . T'AS JUSTE À FORKER !!! ok ok , mais si je peux pas / veux pas ... Blabla :P 
+* mettre en place un __submodule__ dans le projet de dockers afin qu'il puisse faire l'extraction de l'outil. C'est bien mais que ce passe t'il si j'ai pas le contrôle des 2 dépôt . T'AS JUSTE À FORKER !!! ok ok , mais si je peux pas / veux pas ... Blabla :P . En fait depuis j'ai joué avec les submodules et lors de l'assignation d'un submodule, il identifie le git commit id , donc pas de risque que ça bouge sans être au courant ... Mais bon  je le savais pas à ce moment :P.
 * Récupérer le scripts depuis un dépôt d'artefacts telle que Maven ou autre , donc pas depuis une source qui peut bouger, ceci est la meilleur option. Dans le cadre professionnel c'est le bon choix ... Mais moi ça bouge beaucoup je veux pas faire une release de mon script même si c automatique la nuit ... Pas pour le moment. Puis en plus c'est l'option facile :P. On y reviendra si vous le voulez bien.
 * Je vais faire l'extraction des 2 dépôt Git .
 
