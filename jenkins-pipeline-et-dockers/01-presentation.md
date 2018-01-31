@@ -1,8 +1,8 @@
 
 
-Lors de la présentation de Jenkins nous avons fait une démonstration de l'outil je dirait de manière classique , nous avons mis en place Jenkins et définie des slaves que nous avons configurer. Dans les slaves nous avions permis l'utilisation de Docker grâce au commande **docker \*** , cependant nos conteneurs avec la fonctionnalité docker avait un problème. Nous avions notre conteneur en exécution continuel , alors que l'avantage du système de conteneur est d'avoir une démarrage des services au besoin. Nous allons donc voir comment modifier notre configuration afin de permettre que ceci soit plus dynamique selon le besoin . En d'autre mot suivre les meilleurs pratique actuellement. 
+Lors de la présentation de Jenkins nous avons fait une démonstration de l'outil, je dirait de manière classique , nous avons mis en place Jenkins et définie des slaves que nous avons configurer. Dans les slaves nous avions permis l'utilisation de Docker grâce au commande **docker \*** , cependant nos conteneurs avec la fonctionnalité docker avait un problème. Nous avions notre conteneur en exécution continuel , alors que l'avantage du système de conteneur est d'avoir une démarrage des services au besoin. Nous allons donc voir comment modifier notre configuration afin de permettre que ceci soit plus dynamique selon le besoin . En d'autre mot suivre les meilleurs pratique actuellement. 
 
-Avant de voir ce coté du démarrage dynamique des conteneurs , j'aimerai que l'on voit le concept de Pipeline qui est aussi la nouvelle mode de configuration de Jenkins ... allé n'attendons plus c'est PARTIE !!!!
+Avant de voir ce coté du démarrage dynamique des conteneurs , j'aimerai que l'on voit le concept de Pipeline qui est aussi la nouvelle mode de configuration de Jenkins ... N'attendons plus c'est PARTIE !!!!
 
 Référence de documentation : 
 
@@ -21,13 +21,13 @@ Je fais la distinction entre les 2 , ceci vous permettra de vous organiser tout 
 
 ### Préparation de l'environnement (Minimal)
 
-Oui malheureusement pour pouvoir faire tous ça faut d'abord ce préparer , comme toujours nous allons utiliser Docker pour l'exercice , je vas passer très très rapidement sur ce point. Je vous invite à consulter la [première session sur Jenkins](../jenkins/01-presentation.md) pour avoir l'ensemble des instructions. 
+Oui malheureusement, pour pouvoir faire tous ça faut d'abord ce préparer , comme toujours nous allons utiliser Docker pour l'exercice , je vas passer très très rapidement sur ce point. Je vous invite à consulter la [première session sur Jenkins](../jenkins/01-presentation.md) pour avoir l'ensemble des instructions. 
 
-En fait j'aurais réutilisé le setup de la dernière fois mais j'ai détruit l'ensemble des volumes créer donc ... pas le choix de reprendre. Nous allons mettre 3 conteneurs :
+En fait j'aurais réutiliser le setup de la dernière fois mais j'ai détruit l'ensemble des volumes donc ... pas le choix de reprendre. Nous allons mettre 3 conteneurs :
 
 * Jenkins :D
-* Un slave Jenkins avec le support de dockers actif en permanence , nous utiliserons les instructions docker run , docker-compose , ... Pour initialisé les conteneur. Nous verrons par la suite l'autre méthode pour avoir quelque chose de plus dynamique
-* un serveur gitlab , vous pouvez utilisez le votre libre à vous, voir github , mon objectif est d'avoir un écosystème complet fonctionnel avec peu de dépendance externe.
+* Un slave Jenkins avec le support de dockers actif en permanence , nous utiliserons les instructions docker run , docker-compose , ... Pour initialiser les conteneur. Nous verrons par la suite l'autre méthode pour avoir quelque chose de plus dynamique
+* un serveur gitlab , vous pouvez utilisez le votre, libre à vous, voir github , mon objectif est d'avoir un écosystème complet fonctionnel avec peu de dépendance externe.
 
 Le fichier docker-compose est disponible : [dockers/docker-compose.yml](./dockers/docker-compose-v1.yml)
 
@@ -38,7 +38,7 @@ $ sudo mkdir -p /srv/docker/x3-jenkinsWithPipe-f/jenkins-data
 $ sudo chown 1000:1000 /srv/docker/x3-jenkinsWithPipe-f/jenkins-data
 ```
 
-Démarrons le conteneur jenkins nous devrons refaire la configuration initialisé en mettant en place les plugins de base , ... Tous ça fut couvert dans le première session , je vais aussi faire la configuration du gitlab couvert lors de la [présentation de gitlab](../gitlab/01-presentation.md)
+Démarrons le conteneur jenkins nous devrons refaire la configuration initial en mettant en place les plugins de base , ... Tous ça fut couvert dans le première session , je vais aussi faire la configuration du gitlab couvert lors de la [présentation de gitlab](../gitlab/01-presentation.md)
 
 Étapes réalisées :
 
@@ -55,11 +55,10 @@ Démarrons le conteneur jenkins nous devrons refaire la configuration initialis�
 Je vais reprendre le cas utilisé lors de la présentation de Jenkins , en d'autre mot le cas de :
 
 1. la compilation d'un conteneur **docker** 
-2. La validation si un conteneur doit être compiler 
+2. La validation si un conteneur doit être compiler. 
 3. La compilation de ce dernier
-4. La validation du conteneur 
+4. La validation du conteneur , test unitaire fonctionnel .
 5. Pousser le conteneur dans le __docker registry__ \[Ajout comparativement à la session passé\]
-6. Possibilité de démarrer le conteneur sur un __docker host__ \[Ajout comparativement à la session passé\]
 
 Pour rappel mon dépôt git contenant la définition de mes conteneurs n'est pas idéal , j'ai un dépôt pour l'ensemble des mes dockers , il serait plus adéquat d'avoir un projet par conteneur. Pour le moment je garde cette organisation et tricote autour. 
 
@@ -67,7 +66,6 @@ Comme toujours nous avancerons par phase :
 
 1. Extraction du dépôt , compilation du conteneur identifié en paramètre (nom du répertoire) , processus de validation de ce dernier.
 2. Reprise des opérations de la **phase 1**  plus , validation du requis de compilation , pousser l'imagine du conteneur dans le __docker registry__ 
-3. Démarrage du service sur le docker host.
 
 ### Suite de la préparation avec le cas d'utilisation
 
@@ -88,8 +86,6 @@ En plus de mes accès je vais aussi définir un utilisateur "robot" qui pourra e
 Encore une fois l'ensemble des ces opérations furent couvert dans la formation initial de Jenkins lors de l'intégration avec GitLab
 
 
-
-
 ## Les Pipelines avec Jenkins
 
 Nous avons vue lors des sessions passées l'utilisation de Jenkins avec le système de conteneurs , ceci fonctionnait très bien cependant comme nous avons pu le voir la segmentation des actions n'est pas obligatoirement claire en lisant le logs de résultat. Si nous avions une équipe de développement , de QA ou des personnes en charge de l'infrastructure quand il y a une erreur une personne doit être en mesure d'analyser le log pour le transmettre à la bonne équipe. Vous me répondrez probablement, mais ce n'est pas la tâches du DevOps de faire ça , heu ... oui et non . Nous pourrions le dire ainsi c'est le DevOps à le faire puis de transmettre l'information. Mais un bon DevOps c'est quoi , c'est une personne super paresseuse , excusez on dit habituellement une personne qui optimise sont temps :P.
@@ -104,19 +100,32 @@ Aujourd'hui ça va on fait le build et la validation , mais que ce passerez t'il
 * Le déploiement sur un environnement de test d'intégration
 * La deuxième passe de test
 
-Comment si ceci est dans 1 build informer les bonnes personnes. Jenkins offre traditionnellement le mécanisme qui nous permet d'appeler d'autre tâches à la fin d'un tâches et de définir des conditions . Cependant si vous l'avez déjà utilisé dans le passez vous savez comme moi que ce n'est pas simple de visualiser le statu de l'ensemble des tâches de d'identifier l'imbrication des ces dernières pour le commun des mortelles.
+Comment si ceci est dans 1 build informer les bonnes personnes. Jenkins offre traditionnellement le mécanisme qui nous permet d'appeler d'autre tâches à la fin d'un tâches et de définir des conditions . Cependant si vous l'avez déjà utilisé dans le passez vous savez comme moi que ce n'est pas simple de visualiser le statu de l'ensemble des tâches d'identifier l'imbrication des ces dernières pour le commun des mortelles.
 
-Le concept de pipe fut mis en place afin de facilité le mécanisme. Nous allons donc convertir notre mécanisme avec les pipes.
-
+Le concept de pipeline fut mis en place afin de facilité le mécanisme. Nous allons donc convertir notre mécanisme avec les pipes.
 
 
 ### Présentation du concept de Pipeline
 
-TODO : à compléter
+Le Pipeline s'inscrit dans le principe d'intégration continue , l'ensemble des tâches réalisées avec une tâches Jenkins peuvent être réalisé avec le système de Pipeline. Je ne suis pas convaincu que l'inverse soit vraie , il faudrait valider .  
 
-* https://jenkins.io/doc/book/pipeline/
-* https://jenkins.io/doc/book/pipeline/syntax
-* https://jenkins.io/doc/pipeline/steps/
+Pour ceux qui se disent , "Ok mais pourquoi les Pipelines ?" Listons tous de suite des avantages  : 
+
+* Nous avons la définition du processus de "build" dans un fichier plat , __Pipeline-as-code__. Il est possible de d'inclure l'instruction de build Jenkins directement dans le dépôt de code du projet. 
+* Comme l'instruction de build est contenu avec le code source , il est beaucoup plus facile d'avoir des particularités par branche du code. 
+* Il est possible d'avoir un processus de révision, par un tiers du processus de build au même titre que lors du processus de révision de code.
+* Possibilité d'avoir une interaction avec l'utilisateur , par exemple il est possible de demander un approbation pour poursuivre le déploiement de l'application.
+
+Prenons le schéma suivant :
+
+![](./imgs/02-visualisation-du-workflow-pipeline.png)
+
+TODO : ICI ICI ICI ICI ICI
+
+* Référence : 
+    * https://jenkins.io/doc/book/pipeline/
+    * https://jenkins.io/doc/book/pipeline/syntax
+    * https://jenkins.io/doc/pipeline/steps/
 
 ### Un exemple simple avant la démonstration complexe
 
