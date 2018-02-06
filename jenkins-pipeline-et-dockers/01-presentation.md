@@ -562,7 +562,9 @@ pipeline {
 
 ```
 
-Pour cette étape , bien entendu si je n'ai PAS compilé l'image du conteneur je n'ai PAS de validation à réaliser . Je me suis confronté à un problème tout bête qui est le passage d'une variable d'un stage à l'autre. Lors de la définition du stage **BuildDockers**, étape conditionnelle (**when**) je sais si je dois poursuivre ou non . Lors de l'assignation de variable une fois dans l'étape **Validationconteneur** , la valeur n'était plus définie. 
+Pour cette étape , bien entendu si je n'ai PAS compilé l'image du conteneur je n'ai PAS de validation à réaliser . Je me suis confronté à un problème tout bête qui est le passage d'une variable d'un stage à l'autre. Lors de la définition du stage **BuildDockers**, étape conditionnelle (**when**) je sais si je dois poursuivre ou non . 
+
+Lors de l'assignation de variable une fois dans l'étape **Validationconteneur** , la valeur n'était plus définie. 
 Pour palier ce problème j'ai définie la variable dans la section **environnement** ce qui m'a permit d'avoir une variable globale réutilisable dans l'ensemble du processus. Ici le nom de ma variable est **CONTINUE_STATUS** . Résultat si le processus de build ne doit pas être réalisé l'étape de validation ne sera pas réalisé non plus . 
 
 Prendre note que j'ai aussi modifié ma méthode **loop\_container\_make** afin de prendre en argument la target pour le make.
