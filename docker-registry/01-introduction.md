@@ -35,13 +35,22 @@ Le docker registry est comme une bibliothèque qui contient l'ensemble des **doc
 
 ### Pourquoi utiliser un docker registry 
 
-Si vous n'utilisez qu'une machine avec docker sur laquelle vous réalisez vos générations d'images et que l'exécution des conteneurs est réalisé sur la même machine , vous prenez pas la tête vous n'en n'avez pas réellement besoin. En effet , vous avez un docker registry localement intégrer pour preuve que vous tapez la commande :
+
+
+####  UN Docker host
+
+Si vous n'utilisez qu'une machine avec docker sur laquelle vous réalisez vos générations d'images et que l'exécution des conteneurs est réalisé sur la même machine , vous prenez pas la tête, vous n'en n'avez pas réellement besoin. En effet , vous avez un docker registry localement intégrer pour preuve que vous tapez la commande :
 
 ```bash
 $ docker images 
 ```
 
-Le système vous liste les images disponible localement , avec les tag .  ICI ICI ICI 
+Le système vous liste les images disponible localement , avec les tag , lors de la compilation d'un fichier Dockerfile l'image ce retrouve et vous avez aussi un copie des conteneurs que vous avez télécharger avec la commande : __docker pull__.
+
+
+####  DEUX Docker host
+
+
 
 ### Pourquoi ne pas utiliser hub.docker.com
 
