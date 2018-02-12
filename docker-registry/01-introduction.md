@@ -35,7 +35,7 @@ Le docker registry est comme une bibliothèque qui contient l'ensemble des **doc
 
 ### Pourquoi utiliser un docker registry 
 
-
+La question est toujours est-ce que l'effort de mettre en place ce système aura un retour sur l'effort .
 
 ####  UN Docker host
 
@@ -48,8 +48,30 @@ $ docker images
 Le système vous liste les images disponible localement , avec les tag , lors de la compilation d'un fichier Dockerfile l'image ce retrouve et vous avez aussi un copie des conteneurs que vous avez télécharger avec la commande : __docker pull__.
 
 
-####  DEUX Docker host
+####  DEUX Docker host et plus
 
+Si nous prenons le cas avec plusieurs docker host , si vous désirez avoir le même image docker sur 2 machines vous avez 2 possibilité :
+
+1. Recompiler l'image sur la deuxième machine à partir du Dockerfile et autre dépendance ...
+2. Utiliser la commande __docker save__ et __docker load__ pour exporté dans un tar votre conteneur , faire le transfert sur l'autre machine et le recharger.
+
+L'option 1 est la plus souvent utilisé , car on se dit que j'ai ma définition dans mon dépôt que je suis en mesure de refaire exactement la même image, car je vais me placer sur le commit id approprié du moment. Ceci est FAUX !! Vous avez probablement des  installations de logiciel présent dans le Dockerfile, que vous utilisez **pip** , **apt-get** , **npm** , ... Comme vous ne spécifiez pas plus que moi la version exacte du logiciel vous risquez d'avoir un delta. Est-ce grave ? Certainement PAS jusqu'à ce qu'il y ai un problème est le doute arrive , autre point le principe docker qui nous permet de déployer une version de l'application avec l'ensemble des requis et de garantir que ceci est la même partout est un peu cassé. ( désolé pour la phrase a reécrire )
+
+L'option 2 vous permettra de conserver l'intégrité des applications, en effet l'instruction __docker save__ exportera l'image exact en __tar__. Vous n'aurez qu'à la transférer vers l'autre serveur et faire un __docker load__ ainsi vous aurez exactement la même image du conteneur. Maintenant le problème avec cette méthode , si vous n'avez que 2 docker hosts c'est pas trop mal , malheureusement si votre image fait 300 Megs, il y aura 300 Megs de transféré sur le réseau. Le système de __docker save__ et __docker load__ n'utilise pas la fonctionnalité des couches (__layers__) , explication dans quelques minutes.
+
+
+####  Avec un docker registry 
+
+Nous avons déjà présenté c'est quoi un docker registry , je ne reviendrai donc pas sur la définition , prenons ne temps de voir le coté pratique d'avoir ce système . L'ensemble de vos machines auront accès à la bibliothèque d'image que vous avez créé dans le passé, bien entendu l'ensemble des versions (__tag__). 
+
+Lors de la récupération ou l'envoie d'une image avec le docker registry vous profiterez du gain des couches (__layers__) en d'autre mots si nous reprenons l'exemple de l'image suivante, qui est une image de 280 Megs au total  : 
+
+![](./imgs/docker-filesystems-multilayer-size.png)
+
+Prenons l'hypothèse que nous n'avons modifier QUE la couche Apache , changement de configuration ou nouvelle version d'Apache . Lors de la récupération de cette nouvelle image au lieu de faire le transfert des 280 Megs le système ne fera la récupération que de 50 Megs. Nous avons une optimisation significatif du temps de transfert , donc le conteneur sera disponible beaucoup plus rapidement ! 
+Ceci est donc bien différent que lors de l'utilisation des instructions __docker save__ et __docker load__. 
+
+Grâce à l'utilisation d'un docker registry vous serez aussi en mesure de simplement faire l'instruction : __docker-compose up__ peu importe où est votre conteneur de référence que ce soit sur hub.docker.com ou sur votre registry personnel. Vous n'aurez plus à vous soucier de connaître l'origine. De plus si vous utilisez le __tag__ latest pour identifier la version courante vous aurez la dernière version depuis le registry vous n'aurez plus à regardé les ID des couches (__layers__) pour savoir si cette version latest est vraiment la dernière sur ce système . :D 
 
 
 ### Pourquoi ne pas utiliser hub.docker.com
