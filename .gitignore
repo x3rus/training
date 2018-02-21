@@ -8,3 +8,10 @@
 ./serveur_de_courriels/dockers/srvMailWithImapWithBD/data/postfixadmin-2.3.8/*
 # toc (generation de Table Of Content
 toc
+
+*tmp*
+toto
+.bash_history
+.rnd
+.viminfo
+
