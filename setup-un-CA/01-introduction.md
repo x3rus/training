@@ -23,6 +23,60 @@ Pourquoi avoir son CA ?
 
 Bon on commence , avant de perdre votre motivation :P ??? 
 
+# Clarification cryptographie asynchrone
+
+Avant de débuter la configuration de l'autorité de certification , prenons 2 minutes pour parler de chiffrement asynchrone. Oui encore et je m'en excuse mais c'est important pour comprendre l'autorité de certificat. Nous nous concerterons sur la partie signature et non chiffrement. 
+
+Donc reprenons l'image suivante : 
+
+![](./imgs/250px-Public-key-crypto_svg.png)
+
+Nous avons 2 clé :
+
+* Clé publique / certificat avec des attributs en plus : cette clé peut être distribué à tous
+* Clé privé : qui comme son nom l'indique doit être conservé de TOUS
+
+## Chiffrement 
+
+![](./imgs/asynmetric-chiffre.png)
+
+Si **Bob** désire transmettre un message chiffré à **Anne** , Bob doit avoir la clé **publique** d'Anne et il va chiffré son document avec cette clé (publique).
+UNIQUEMENT Anne sera en mesure de déchiffrer le message grâce à ça clé **privé** ! 
+
+Donc nous utilisons la clé publique de la personne à qui nous désirons transmettre un message, pas NOS clé.
+
+Dans le cas d'un client web (navigateur) il utilise la clé publique du serveur web (certificat) pour transmettre les messages de manière chiffré au serveur.
+
+## Signature 
+
+Bon dans le cadre d'une autorité de certificat nous utilisons principalement la signature. Donc prenons quelques secondes sur ce sujet.
+
+Je vais prendre comme exemple la signature de courriel. Comme vous le savez probablement ou pas , l'adresse de provenance dans un courriel peut être n'importe quoi je peux très bien définir que mon courriel proviens de Richard Stallmann sans trop de problème. 
+Dans le pire des cas mon courriel peut être jugé comme SPAM selon le lieu d'où je l'envoie. Il y a des mécanismes de contrôle par l'anti-spam , mais si le courriel provient de l'interne généralement ça passe :D.
+
+Il est possible d'utiliser la pair de clé que nous avons pour signer nos courriels, le système de certificat utilise le même mécanisme.
+
+Lors de la signature d'un courriel, votre application (thunderbird,...) va lire le contenu du message et utiliser la clé privé avec un algorithme que je ne comprend pas :D et générer un Hash avec la combinaison message et clé privé.
+
+Le récepteur du courriel grâce à la clé publique de l'émetteur sera en mesure de prendre le Hash et de confirmer que :
+
+1. L'émetteur est bien la personne , car le hash ne pu être généré que par la clé privé associé.
+2. Le contenu du message ne fut pas modifier.
+
+La signature ne CHIFFRE pas !
+
+Donc ceci est vraiment comme un signature en bas du document , mais celle-ci ne peut pas être imité par votre ados à la maison. 
+Normalement quand nous avons ce genre de mécanisme, nous associons un mot de passe à la clé privé pour nous assurer que même si l'ordinateur est allumé sans notre présence personne ne peut utiliser cette clé privé.
+
+![](./imgs/asynmetric-signe.png)
+
+TODO : Ajout exemple email signé
+
+* Cas de signature électronique 
+    * [Notaires.fr](https://www.notaires.fr/fr/newsletters/lettre-notaires-France/signer-un-acte-authentique-%C3%A9lectronique)
+    * [Architectes du Quebec](https://www.oaq.com/esquisses/archives_en_html/artisans/tout_le_reste/signature_electronique_securisee.html)
+
+
 # Mise en place du l'autorité  de certification
 
 L'opération sera réalisé en 3 étapes :
