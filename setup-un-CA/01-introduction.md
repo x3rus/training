@@ -850,3 +850,26 @@ total 16
 ```
 
 Nous réaliserons un fichier zip contenant les 2 fichiers intermediate.cert.pem ET toto.x3rus.com.cert.pem. L'utilisateur devrais avoir la clé privé en ça possession.
+
+# Configuration du serveur web 
+
+Nous réaliserons l'exercice avec apache, car je suis plus confortable avec le serveur web que Nginx mais le concept est la même. L'instruction est différente mais le principe est identique.
+
+Je ne reprendrai pas la partie de la configuration de apache avec le module SSL mais uniquement la configuration du site web. 
+
+## Les bonnes option de configuration httpS (cipher , protocol SSL )
+
+## Mise en place du certificat du site web
+
+* erreur
+
+## Installation du ROOT ca dans le navigateur
+
+* erreur
+
+## Mise en place de la chaine de certificat
+
+* GOOD 
+
+
+
