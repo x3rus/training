@@ -859,9 +859,35 @@ Je ne reprendrai pas la partie de la configuration de apache avec le module SSL 
 
 ## Les bonnes option de configuration httpS (cipher , protocol SSL )
 
+TODO : ajout des informations SSLv3 , TLS + les ciphers
+
+
+## Préparation du conteneur 
+
+Nous allons démarrer un conteneur avec Apache sous Ubuntu , telle que mentionné dans le __Dockerfile__ n'utilisez pas ce conteneur pour une vraie utilisation apache. Je vous invite à privilégier le conteneur [httpd](https://hub.docker.com/_/httpd/) conteneur officiel pour apache, cependant mon objectif est de simuler une machine Ubuntu qui aurait apache de présent.
+
+Démarrons le conteneur et ajoutons l'adresse IP dans notre fichier __hosts__ , je le répète ici nous réalisons des étapes pour simuler une machine normalement disponible sur le réseau et déjà configurer adéquatement.
+
+```bash
+$ cd setup-un-CA/dockers/apache-https
+$ docker-compose up                              
+Starting demo-web-ssl-with-ca ...      
+Starting demo-web-ssl-with-ca ... done 
+Attaching to demo-web-ssl-with-ca      
+demo-web-ssl-with-ca | AH00558: apache2: Could not reliably determine the server s fully qualified domain name, using 192.168.176.2. Set the 'ServerName' directive globally to suppress this message   
+
+$ sudo bash -c "echo "192.168.176.2" >> /etc/hosts
+```
+
+Validons que ceci fonctionne avec un navigateur en **http** , PAS de chiffrement , donc [http://toto.x3rus.com](http://toto.x3rus.com)
+
+![](./imgs/site-toto-http.png)
+
+Ceci doit fonctionner avant de poursuivre ! Nous avons donc le site web disponible SANS le chiffrement, prochaine étape mise en place du certificat.
+
 ## Mise en place du certificat du site web
 
-* erreur
+Nous allons voir le comportement avec des erreurs, car si je vous montre quand tous fonctionne bien, lorsque vous aurez des erreurs, car vous en aurez c'est toujours pareille quand je le montre ça marche :P. Quand on met la main à la patte les problèmes commence, donc l'objectif est de voir aussi le processus de d'analyse des problèmes. 
 
 ## Installation du ROOT ca dans le navigateur
 
