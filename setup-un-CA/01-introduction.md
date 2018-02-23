@@ -45,6 +45,10 @@ UNIQUEMENT Anne sera en mesure de déchiffrer le message grâce à ça clé **pr
 
 Donc nous utilisons la clé publique de la personne à qui nous désirons transmettre un message, pas NOS clé.
 
+Voici une autre représentation du processus , si nous oublions un peu l'aspect informatique ... Vous pouvez voir la clé publique comme un cadenas , si je veux transmettre quelque chose à quelqu'un j'utilise son cadenas et uniquement la personne qui à la clé peut ouvrir le contenu. Bon dans l'air numérique faire des copies de cadenas est probablement un peu compliqué , mais faut voir l'idée / concept.
+
+![](./imgs/asynmetric-chiffre-representation.png)
+
 Dans le cas d'un client web (navigateur) il utilise la clé publique du serveur web (certificat) pour transmettre les messages de manière chiffré au serveur.
 
 ## Signature 
@@ -69,6 +73,11 @@ Donc ceci est vraiment comme un signature en bas du document , mais celle-ci ne 
 Normalement quand nous avons ce genre de mécanisme, nous associons un mot de passe à la clé privé pour nous assurer que même si l'ordinateur est allumé sans notre présence personne ne peut utiliser cette clé privé.
 
 ![](./imgs/asynmetric-signe.png)
+
+
+Voici une autre représentation d'un message signé , la partie en rouge est donc ce qui fut généré par la clé privé de l'utilisateur , avec l'algorithme complexe ... La partie en bleu est ce que l'utilisateur ferait , soit prendre la clé publique et utilise l'algorithme par la suite il valide que ça concorde . C'est une représentation simpliste mais plus claire :
+
+![](./imgs/signature-message.png)
 
 TODO : Ajout exemple email signé
 
@@ -888,6 +897,14 @@ Ceci doit fonctionner avant de poursuivre ! Nous avons donc le site web disponib
 ## Mise en place du certificat du site web
 
 Nous allons voir le comportement avec des erreurs, car si je vous montre quand tous fonctionne bien, lorsque vous aurez des erreurs, car vous en aurez c'est toujours pareille quand je le montre ça marche :P. Quand on met la main à la patte les problèmes commence, donc l'objectif est de voir aussi le processus de d'analyse des problèmes. 
+
+Pour rappel nous avons 3 fichiers que nous avons 3 fichiers :
+
+* La clé que nous avons généré sur une machine sûr et qui ne fut pas déplacé ou uniquement sur des médias sécurisé , car la sécurité est super importante.
+* Le certificat que nous avons reçu de notre CA , contenant notre clé publique associé à la clé privé du site  ET signé par le CA.
+* La chaine de certificat du ROOT ca jusqu'au CA qui à signé notre certificat il peut en avoir plusieurs peut importe le nombre.
+
+
 
 ## Installation du ROOT ca dans le navigateur
 
