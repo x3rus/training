@@ -90,6 +90,10 @@ On dit souvent une image vos mille mot donc commençons par la représentation g
 * Un Conteneur
     * contient uniquement les librairies et l'application 
 
+![Vm as house](./imgs/houses.jpg)
+
+![docker as hlm](./imgs/hlm.jpg)
+
 Vous êtes tous familiarisé avec le système de machine virtuel, nous nous concentrerons donc sur la partie conteneur.
 
 Dans le cas d'un conteneur il n'y a pas __d'hyperviseur__, le système d'exploitation dans le cas présent GNU/Linux peut gérer nativement les systèmes docker via l'applicatif installé. Il n'y a donc pas d'émulation de matériels réalisé comme pour une machine virtuel, il n'y a pas de système d'exploitation d'installer qui réalisera le même travail que le système hôte. 
