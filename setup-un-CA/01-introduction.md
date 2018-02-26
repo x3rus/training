@@ -1063,7 +1063,50 @@ Nous allons donc configurer notre site web pour qu'il transmette la certificat d
 
 ## Mise en place de la chaine de certificat
 
-* GOOD 
+Donc je vais faire la copie de la chaine de certificat dans le conteneur apache 
+
+```bash
+$ docker cp ca-chain.cert.pem demo-web-ssl-with-ca:/etc/apache2/ssl/ca-chain.cert.pem
+```
+
+Je fais l'ajout de la configuration de la chaine de certificat dans le fichier de configuration de apache :
+
+```bash
+root@8adbba749dda:/etc/apache2/sites-enabled# vim toto.x3rus.com-SSL.conf  
+
+ # résultat
+root@8adbba749dda:/etc/apache2/sites-enabled# cat toto.x3rus.com-SSL.conf | grep -v "^$"
+<VirtualHost *:443>
+    # Nom des site FQDN 
+    ServerName toto.x3rus.com
+    ServerAlias titi.x3rus.com
+    DocumentRoot /var/www/html/toto.x3rus.com/
+    # Pas de définition de <Directory> car sous html :D
+    ## SSL section            
+    SSLEngine on              
+    SSLCertificateFile "/etc/apache2/ssl/toto.x3rus.com.crt"
+    SSLCertificateKeyFile "/etc/apache2/ssl/toto.x3rus.com.key"
+    # apache 2.4.8 > 
+    SSLCACertificateFile "/etc/apache2/ssl/ca-chain.cert.pem"
+    # apache 2.4.8 <
+    # SSLCACertificateFile "/etc/apache2/ssl/ca-chain.cert.pem"
+</VirtualHost>
+
+```
+
+Nous validons la configuration et on redémarre le conteneur .
+
+```bash
+root@8adbba749dda:/etc/apache2/sites-enabled# apachectl configtest
+AH00558: apache2: Could not reliably determine the server s fully qualified domain name, using 192.168.176.2. Set the 'ServerName' directive globally to suppress this message
+Syntax OK
+
+$ docker-compose up 
+```
+
+Et maintenant !! Comme par magie :D 
+
+![](./imgs/chrome-setting-https-OK.png)
 
 
 
