@@ -868,8 +868,47 @@ Je ne reprendrai pas la partie de la configuration de apache avec le module SSL 
 
 ## Les bonnes option de configuration httpS (cipher , protocol SSL )
 
-TODO : ajout des informations SSLv3 , TLS + les ciphers
 
+Voici une configuration OPTIMAL , compatible avec les clients suivant , cette liste est pour les clients les plus vieux : 
+Firefox 27, Chrome 30, IE 11 on Windows 7, Edge, Opera 17, Safari 9, Android 5.0, and Java 8 .
+
+```
+<VirtualHost *:443>
+    ...
+    SSLEngine on
+    SSLCertificateFile      /path/to/signed_certificate_followed_by_intermediate_certs
+    SSLCertificateKeyFile   /path/to/private/key
+
+    # Uncomment the following directive when using client certificate authentication
+    #SSLCACertificateFile    /path/to/ca_certs_for_client_authentication
+
+
+    ...
+</VirtualHost>
+
+# modern configuration, tweak to your needs
+SSLProtocol             all -SSLv3 -TLSv1 -TLSv1.1
+SSLCipherSuite          ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256
+SSLHonorCipherOrder     on
+SSLCompression          off
+SSLSessionTickets       off
+
+# OCSP Stapling, only in httpd 2.3.3 and later
+SSLUseStapling          on
+SSLStaplingResponderTimeout 5
+SSLStaplingReturnResponderErrors off
+SSLStaplingCache        shmcb:/var/run/ocsp(128000)
+```
+
+Ceci est conforme avec la norme PCI pour les serveurs gérant des carte de crédit sur internet.
+Le plus important est : 
+
+* **SSLProtocol** : Vous devez ABSOLUMENT désactivé SSlv3 ET TLSv1 ses protocoles sont maintenant jugé non sécuritaire
+* **SSLCipherSuite** : Telle que mentionné le client va établie un mode de communication symétrique après avoir transmis la clé via le certificat (clé public) du serveur. Il est important d'avoir un niveau de chiffrement adéquat pour assurer la sécurité.
+
+* Référence : 
+    * https://mozilla.github.io/server-side-tls/ssl-config-generator/
+    * https://github.com/ssllabs/research/wiki/SSL-and-TLS-Deployment-Best-Practices 
 
 ## Préparation du conteneur 
 
@@ -904,11 +943,123 @@ Pour rappel nous avons 3 fichiers que nous avons 3 fichiers :
 * Le certificat que nous avons reçu de notre CA , contenant notre clé publique associé à la clé privé du site  ET signé par le CA.
 * La chaine de certificat du ROOT ca jusqu'au CA qui à signé notre certificat il peut en avoir plusieurs peut importe le nombre.
 
+Avant de débuter la configuration ssl tentons d'accéder au site en **https** : [https://toto.x3rus.com/](https://toto.x3rus.com) .
 
+![](./imgs/https-erreur-pas-de-configuration-presente.png)
+
+Nous voyons le message : **SSL\_ERROR\_RX\_RECORD\_TOO\_LONG** bien que le message soit totalement non claire ceci indique qu'il n'y a pas de configuration ssl  sur la machine. 
+
+
+Donc réalisons la configuration, lors de la création du conteneur j'avais mis en place la configuration , mais en mode non actif . Entrons dans le conteneur , si votre serveur n'est pas un conteneur changer la commande par une connexion ssh.
+
+```
+$ docker exec -it demo-web-ssl-with-ca bash
+root@8adbba749dda:/# cd /etc/apache2/sites-enabled
+
+ # Activation du site web 
+root@8adbba749dda:/etc/apache2/sites-enabled# ln -s ../sites-available/toto.x3rus.com-SSL.conf .
+root@8adbba749dda:/etc/apache2/sites-enabled# ls -l                            
+total 0
+lrwxrwxrwx 1 root root 35 Feb 22 22:41 000-default.conf -> ../sites-available/000-default.conf
+lrwxrwxrwx 1 root root 42 Feb 26 12:50 toto.x3rus.com-SSL.conf -> ../sites-available/toto.x3rus.com-SSL.conf
+lrwxrwxrwx 1 root root 38 Feb 22 22:42 toto.x3rus.com.conf -> ../sites-available/toto.x3rus.com.conf
+
+```
+
+Regardons le contenu du fichier :
+
+```
+<VirtualHost *:443>
+    # Nom des site FQDN 
+    ServerName toto.x3rus.com
+    ServerAlias titi.x3rus.com
+
+    DocumentRoot /var/www/html/toto.x3rus.com/
+
+    # Pas de définition de <Directory> car sous html :D
+
+    ## SSL section            
+    SSLEngine on              
+    SSLCertificateFile "/etc/apache2/ssl/toto.x3rus.com.crt"
+    SSLCertificateKeyFile "/etc/apache2/ssl/toto.x3rus.com.key"
+
+    # apache 2.4.8 > 
+    # SSLCACertificateFile "/etc/apache2/ssl/ca-chain.cert.pem"
+
+</VirtualHost>
+```
+
+Nous avons la définition de la clé publique et la clé privé , je laisse pour le moment l'entrée **SSLCACertificateFile** en commentaire ceci sera utilisé pour la chaine de certificat jusqu'au ROOT CA. Nous y revenons après . 
+
+Création du répertoire /etc/apache2/ssl et copie des fichiers certificat et clé du site :
+
+```bash
+root@8adbba749dda:/etc/apache2/sites-enabled# sudo chmod o= /etc/apache2/ssl
+root@8adbba749dda:/etc/apache2/sites-enabled# chmod o= /etc/apache2/ssl
+
+ # si vous avez une machine dédié pour le serveur apache changez cette instruction pour un scp
+$ docker cp toto.x3rus.com.key demo-web-ssl-with-ca:/etc/apache2/ssl
+$ docker cp toto.x3rus.com.cert.pem demo-web-ssl-with-ca:/etc/apache2/ssl/toto.x3rus.com.crt
+```
+
+Validons la configuration avant de démarrer apache :
+
+```bash
+root@8adbba749dda:/etc/apache2/sites-enabled# apachectl configtest             
+AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 192.168.176.2. Set the 'ServerName' directive globally to suppress this message                       
+Syntax OK   
+```
+
+J'arrête le conteneur et le redémarre , si vous utilisez une vraie machine simplement redémarrer apache
+
+```bash
+demo-web-ssl-with-ca | AH00558: apache2: Could not reliably determine the server s fully qualified domain name, using 192.168.176.2. Set the 'ServerName' directive globally to suppress this message
+^CGracefully stopping... (press Ctrl+C again to force)
+Stopping demo-web-ssl-with-ca ... done
+
+$ docker-compose up                                  
+Starting demo-web-ssl-with-ca ...      
+Starting demo-web-ssl-with-ca ... done 
+Attaching to demo-web-ssl-with-ca      
+demo-web-ssl-with-ca | AH00558: apache2: Could not reliably determine the server s fully qualified domain name, using 192.168.176.2. Set the 'ServerName' directive globally to suppress this message    
+```
+
+Voici le résultat : 
+
+![](./imgs/https-erreur-cert-authority-invalide.png)
+
+Nous le message indique que **NET::ERR\_CERT\_AUTHORITY\_INVALID** l'autorité qui à signé le certificat est invalide !! Normale car il ne fut pas signé par un ROOT CA présent sur la machine . Même erreur si je vais sur le site avec l'adresse IP .
+
+Nous allons donc mettre le certificat du  ROOT CA , dans le navigateur ceci va peut-être corriger le problème , de toute manière si j'avais un vraie CA reconnu ceci serait déjà présent. 
 
 ## Installation du ROOT ca dans le navigateur
 
-* erreur
+Je vais faire l'exercice dans Chrome, car mon firefox est déjà tous configurer :P .
+
+* Chrome , allez dans les settings , et sélectionnez **Show advanced settings** , descendre jusque la configuration https
+
+![](./imgs/chrome-setting-https.png)
+
+Nous allons choisir l'onglet authority :
+
+![](./imgs/chrome-setting-https-authorité.png)
+
+Importez le ROOT CA :
+
+![](./imgs/chrome-setting-https-import-root-ca.png)
+
+Choisir de faire confiant au site web :
+
+![](./imgs/chrome-setting-https-import-root-ca-2.png)
+
+Fermer Chrome pour être certain et refaire une tentative , même erreur !! 
+
+Pourquoi ?
+Car nous avons mis le ROOT CA , nous avons confiance au ROOT CA , mais le certificats fut en réalité signé par le certificat intermédiaire et non le ROOT. Car le root pour rappel est super critique et ne doit pas ou peu être utilisé.
+
+![](./imgs/imgs/trust-chain-CA.png)
+
+Nous allons donc configurer notre site web pour qu'il transmette la certificat du CA intermédiaire.
 
 ## Mise en place de la chaine de certificat
 
