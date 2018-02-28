@@ -54,9 +54,9 @@ Il y a des distributions pour chaque besoin :
 
 L'objectif de la distribution est d'offrir une pré-configuration adéquat pour le besoin , mais si vous désirez avoir un Desktop avec RedHat il n'y a pas de problème vous aurez plus de logiciel à installé suite à l'installation initial.
 
-#Caractéristique de GNU/Linux
+# Caractéristique de GNU/Linux
 
-##Description de GNU/Linux
+## Description de GNU/Linux
 
 **Linux** est le noyau du système d'exploitation qui fait l’interaction entre le matériel et le logiciel. La partie **GNU** est l'ensemble des logiciels qui permet à l'utilisateur d'utiliser le système. Le couple GNU/Linux forme le système d'exploitation. Autour d'eux se regroupe de nombreux programmes.
 
@@ -123,7 +123,7 @@ certains efforts, une zone informelle de collaboration entre ces projets du nom 
 
 On peut noter également la montée en puissance d’un troisième environnement de bureau appelé [Xfce](http://fr.wikipedia.org/wiki/Xfce "Xfce"), qui vise à fournir un environnement complet fondé sur [GTK+](http://fr.wikipedia.org/wiki/GTK%2B "GTK+") comme GNOME, tout en restant plus léger que ce dernier ou KDE.
 
-### Structure du système de fichiers
+## Structure du système de fichiers
 
 Comparez le stockage des répertoires et fichiers de votre ordinateur à un arbre : en partant de la racine d’un arbre, en déplaçant votre doigt tout le long de l’arbre, en suivant le tronc puis les branches, vous pouvez toucher n’importe quelle feuille de cet arbre.
 
@@ -135,7 +135,7 @@ L'ensemble des partitions va se greffer dans arborescence (le terme consacré es
 
 ![file systeme multi partition](./imgs/File_system_multiple_partition.png)
 
-#### Incorporation des médias mobile
+## Incorporation des médias mobile
 
 Les supports amovibles se "montent" dans des répertoires sous /media .  Lorsqu'on insère un support, un répertoire au nom variable (souvent dérivé du nom du modèle) y est créé automatiquement et le contenu du support y est monté. Ce répertoire peut mettre quelques secondes à apparaitre, il faut afficher répétitivement le contenu du répertoire jusqu'à ce qu'il apparaisse.
 
