@@ -336,3 +336,43 @@ utilisateur@hotname:/home/alex$ rm Lefichier
  # ici la suppression est réalisé sur le répertoire photos_noel
 utilisateur@hostname:/home/alex$ rm -r photos_noel
 ```
+
+### Déplacement de fichier ou renommage (mv)
+
+La commande **mv** (move) permet de déplacer les fichiers d'un répertoire à l'autre ou de renommé le fichier
+
+```bash
+ # Déplace un fichier d'un répertoire à l'autre
+utilisateur@hotname:/home/alex$  mv /home/alex/Documents/billetterie.png Projets/GrosProblem/
+ 
+ # renommer un fichier
+utilisateur@hotname:/home/alex$  mv  Projets/GrosProblem/billetterie.png Projets/GrosProblem/loterie.png 
+```
+
+### Éditeur minimaliste (pico/nano)
+
+En attendant de présenter un "vrai" éditeur de texte du moins l'un des plus puissants disponible sur GNU/Linux et Unix c'est à dire **VI** vous pouvez utiliser pico ou nano les deux font appelle au même binaire lors de l'installation sous Ubuntu. nano vous offre l'équivalent de notepad , un éditeur de texte simple pour modifier des fichiers voici à quoi il ressemble :
+
+```bash
+utilisateur@hostname:~$ nano /etc/passwd
+....... [texte tronqué] .....
+sshd:x:107:65534::/var/run/sshd:/usr/sbin/nologin
+mysql:x:108:117:MySQL Server,,,:/nonexistent:/bin/false
+minidlna:x:109:119:MiniDLNA server,,,:/var/lib/minidlna:/usr/sbin/nologin
+ntp:x:110:120::/home/ntp:/bin/false
+fetchmail:x:111:65534::/var/lib/fetchmail:/bin/false
+tester:x:1001:1001:,,,:/home/tester:/bin/bash
+avahi:x:112:121:Avahi mDNS daemon,,,:/var/run/avahi-daemon:/bin/false
+statd:x:114:65534::/var/lib/nfs:/bin/false
+postfix:x:115:124::/var/spool/postfix:/bin/false
+ 
+  
+   
+    
+     
+  [ Read 36 lines (Warning: No write permission) ]
+^G Get Help   ^O WriteOut   ^R Read File  ^Y Prev Page  ^K Cut Text   ^C Cur Pos
+^X Exit       ^J Justify    ^W Where Is   ^V Next Page  ^U UnCut Text ^T To Spell
+```
+
+
