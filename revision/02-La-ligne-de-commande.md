@@ -36,7 +36,7 @@ root@Hostname_de_la_machine:Répertoire_courant#
 
 Comme disait si bien Mr. Miyagi dans Karaté Kid :
 
-    “First learn stand, then learn fly. Nature rule Daniel son, not mine” - Mr. Miyagi
+>    “First learn stand, then learn fly. Nature rule Daniel son, not mine” - Mr. Miyagi
 
 Donc avant de lancer des commandes dans tous les sens voyons la base :P
 
@@ -375,4 +375,145 @@ postfix:x:115:124::/var/spool/postfix:/bin/false
 ^X Exit       ^J Justify    ^W Where Is   ^V Next Page  ^U UnCut Text ^T To Spell
 ```
 
+
+## Exécution de commandes sous l'identité de l'administrateur (sudo / su)
+
+Vous avez peut-être voulu éditer un fichier dans le répertoire /etc/, pour y modifier un paramètre, ou désiré expérimenter des commandes trouvées sur internet. Malheureusement, tous furent des échecs, car le système indique un problème de permission.
+
+Deux méthodes existent pour exécuter des commandes sous l'utilisateur administrateur (**root**) ; il y a la bonne et la mauvaise !!! Commençons par la bonne ; si vous venez d'installer votre système **ubuntu**, votre premier utilisateur a le droit d'utiliser la commande **sudo** (**S**with**U**ser**DO**). En plus d'avoir les permissions d'exécuter cette commande, il peut tout faire avec cette dernière ; **Sudo** permet d'attribuer des droits de manière granulaire à un utilisateur. Nous verrons en détails cet aspect dans la section administration du système .
+
+Pour visualiser les permissions que nous avons :
+
+```bash
+ # affiche les permissions de l'utilisateur Alex.
+alex@hostname:~$ sudo -l
+[sudo] password for alex:
+Matching Defaults entries for alex on this host:
+    env_reset,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+User alex may run the following commands on this host:
+    (ALL : ALL) ALL
+ # Alex dans la situation peut executer n'importer quelle commande sur le système sous l'utilisateur root ou autre 
+```
+
+Donc, si nous désirons modifier un fichier dans le répertoire /etc/ avec la commande nano, nous utiliserons la commande suivante :
+
+```bash
+alex@hostname:~$ sudo nano /etc/Le_fichier
+```
+
+C'est une bonne pratique d'utiliser la commande sudo, car :
+
+* l'ensemble des commandes sont cataloguées ; il est donc possible de savoir quelle commande fut exécutée , à quelle moment et par qui
+* permet de limiter les commandes disponibles pour une personne, afin de protéger l'utilisateur et le système d'une erreur.
+
+L'autre méthode est de Switché d'utilisateur, de passer complètement en root. Le problème avec ceci est que nous perdons toute trace des opérations réalisées et qu'il n'y a plus de filé si un erreur de manipulation est réalisée. C'est l'équivalent à se connecter comme Administrateur sur une machine plutôt que d'utiliser la fonction de "RunAs" sous Microsoft Windows. Bien entendu, dans certaine situation, nous n'avons pas le choix. C'est parfois le cas lors de l'installation de logiciels en dehors des packages de la distribution.
+
+Voici comment faire le MAL :P,  de passer sous l'utilisateur root:
+
+```bash
+alex@hotname:~$ su -
+	# ou
+alex@hotname:~$ su 
+```
+
+## Localiser un fichier
+
+Bon voilà, vous êtes content, votre système fonctionne bien. Sauf que vous voulez aller plus loin ou vous avez un problème ; vous recherchez donc sur internet ou demandez à un ami comment réaliser une opération. Ce dernier, content de vous répondre, rétorque simplement quelque chose du genre : " Ha, c'est simple! Genre, change le paramêtre Xy dans le fichier smb.conf pour la valeur true" . Bon super vous notez le tout et, arrivé devant la machine, vous constatez que vous ne savez pas où se trouve le fichier smb.conf. Trop habitué, votre collègue a oublié de fournir le chemin absolue. Voici comment trouver votre fichier :
+
+### Recherche dans l'arborescence (**find**)
+
+La commande **find**, comme son nom, l'indique permet de rechercher dans le système un fichier. Bien entendu, une recherche peut être longue s'il y a beaucoup de fichiers à traiter. **find** nous permet de rechercher selon plusieurs critères : le nom du fichier, sa date de modification, son propriétaire, ses permissions, sa taille, etc.
+
+La structure de la commande est : **find** Répertoire\_de\_recherche Pattern.
+Si aucun répertoire de recherche n'est fourni, le système commence la recherche depuis le répertoire courant .
+
+Si nous reprenons mon exemple mentionné plus tôt, nous aurions la commande suivante :
+
+```bash
+	# comme le fichier est un .conf, je fais une recherche dans le répertoire /etc contenant les fichiers de configuration du système
+utilisateur@hostname:~$ find /etc/ -name "smb.conf"
+ 
+	# Si je ne trouve pas je vais faire une recherche plus général , à partir de la racine.
+utilisateur@hostname:~$ find / -name "smb.conf"
+ 
+	# Si je ne trouve toujours pas , je vais élargir ma recherche , en présument que le fichier commence par smb et fini par .conf
+utilisateur@hostname:~$ find / -name "smb*.conf"
+ 
+	# voici un exemple du résultat dans la vie Réelle 
+utilisateur@hostname:~$ find /etc -name "smb.conf"
+find: `/etc/lvm/backup': Permission denied
+find: `/etc/lvm/cache': Permission denied
+find: `/etc/rsnapshot/keys': Permission denied
+find: `/etc/xdg/menus/applications-merged': Permission denied
+find: `/etc/openvpn/ytriaV2': Permission denied
+find: `/etc/ssl/private': Permission denied
+/etc/samba/smb.conf
+```
+La dernière commande retourne des erreurs, car je ne suis pas administrateur du système. Cependant, à la fin, j'ai trouvé le fichier, qui se trouve dans /etc/samba .
+
+Voici un tableau avec les principales options
+
+| Option 	| Signification 								   |
+|:----------| ------------------------------------------------ |
+| -name 	| Recherche par nom de fichier.					   |
+| -type 	| Recherche par type de fichier.				   |
+| -user 	| Recherche par propriétaire.					   |
+| -group    | Recherche par appartenance à un groupe. 		   |
+| -size     | Recherche par taille de fichier.				   |
+| -atime    | Recherche par date de dernier accès.			   | 
+| -mtime    | Recherche par date de dernière modification.	   |
+| -ctime    | Recherche par date de création.				   |
+| -perm     | Recherche par autorisations d'accès. 			   |
+
+### Recherche avec la base de donnée updatedb (locate)
+
+!!! Attention, ceci n'est pas disponible sur toutes les distributions !!!
+Bon, **find** c'est bien, mais si j'ai un répertoire avec énormément de fichiers, la recherche peut être très longue... Heureusement, plusieurs distributions installent le système d'**updatedb** par défaut. Celui-ci exécute toutes les nuits la commande **find**  à partir du __Root__ ( / ) et stocke l'information dans une base de données, pour usage ultérieur.
+
+Donc, si nous reprenons la recherche du fichier smb.conf, ceci donne :
+
+```bash
+utilisateur@hostname:~$ locate smb.conf
+/etc/samba/smb.conf
+/usr/share/man/man5/smb.conf.5.gz
+/usr/share/samba/smb.conf
+/var/lib/ucf/cache/:etc:samba:smb.conf
+ 
+utilisateur@hostname:~$
+``` 
+
+Comme vous pouvez le constater, le résultat fournit l'information pour le répertoire __/etc__, mais aussi pour __/usr__ et __/var__. Ceci dans un temps record! Attention, **locate** a quelques limitations :
+
+* Aucun résultat ne sera affiché pour les fichiers créés depuis la dernière mise à jour de la base de données.
+* Recherche uniquement par nom de fichier.
+* La mise à jour de la BD augmente le load de la machine.
+* Le résultat peut être erroné si le système n'a pas mis à jour sa BD. Par exemple, si le système été éteint pendant la planification de synchronisation.
+
+## Changement de mot de passe
+
+a commande passwd modifie le mot de passe du compte des utilisateurs. Un utilisateur normal peut uniquement modifier le mot de passe de son compte (le plus souvent). Le Super-utilisateur a le pouvoir de changer le mot de passe de chaque compte. passwd permet aussi d'associer une période de validité aux comptes et mots de passe, et de les modifier. En plus de permettre le changement de mot de passe, passwd permet de verrouiller un compte, de définir une période d'expiration ...
+
+```bash
+  # l'utilisateur peut changer son propre password 
+utilisateur@hostname:~$ passwd  
+enter new UNIX password:
+retype new UNIX password:
+passwd: password updated successfully
+ 
+ # L'administrateur (root) peut manipuler les comptes des autres utilisateurs
+  
+    # ici changement du mot de passe de thomas
+root@hostname:~# passwd thomas
+   
+   # verrouillage du compte de joe
+root@hostname:~# passwd -l joe
+```
+
+Options intéressantes:
+
+* **-l**, **--lock** : verrouille le compte spécifié. Cette option désactive complètement le mot de passe en le préfixant d'un ´!´ (aucune valeur cryptée selon le mécanisme utilisé par **passwd** ne peut donc y correspondre).
+* **-u**, **--unlock** : déverrouille le mot de passe du compte indiqué. Cette option réactive le mot de passe en le positionnant à la valeur qui existait avant l'utilisation de l'option **-l**. **-w**,
+* **-n**, **--mindays** MIN\_JOURS : définit le nombre minimum de jours entre chaque changement de mot de passe à MIN_JOURS. Une valeur égale à zéro dans ce champ indique que l'utilisateur peut changer son mot de passe lorsqu'il le souhaite.
+* **--warndays** DUREE\_AVERTISSEMENT : fixe le nombre de jours avant que le changement de mot de passe ne soit obligatoire. DUREE\_AVERTISSEMENT est le nombre de jours précédant la fin de la validité du mot de passe et durant lesquels l'utilisateur sera averti que son mot de passe est sur le point d'arriver en fin de validité.
 

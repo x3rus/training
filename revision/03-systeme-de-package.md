@@ -189,8 +189,8 @@ utilisateur@hostname:~$ apt-cache depends le_package
 **A**dvanced **P**ackaging **T**ool est un système complet et avancé de gestion de paquets, permettant une recherche facile et efficace, une installation simple et une désinstallation propre de logiciels et utilitaires. Il permet aussi de facilement tenir à jour votre distribution Ubuntu avec les paquets en versions les plus récentes et de passer à une nouvelle version de Ubuntu, lorsque celle-ci est disponible.
 
 * **Commande**
-	* Mise à jour du cache local contenant la liste des packages
-	  Le système apt-get ne communique pas continuellement sur Internet , le système réalise un cache local de la liste des packages disponibles. Ceci a l'avantage de ne pas perdre du temps à chaque installation , le mauvais coté est qu'il faut mettre à jour cette liste manuellement, sinon lorsque vous essayerez d'installer un package le apt-get vous donnera l'erreur : "404 not found" du package désirer. Pour mettre à jour la liste tape la commande suivante :
+	* Mise à jour du cache local contenant la liste des packages : **apt-get update**
+	  Le système **apt-get** ne communique pas continuellement sur Internet , le système réalise un cache local de la liste des packages disponibles. Ceci a l'avantage de ne pas perdre du temps à chaque installation , le mauvais coté est qu'il faut mettre à jour cette liste manuellement, sinon lorsque vous essayerez d'installer un package le apt-get vous donnera l'erreur : "404 not found" du package désirer. Pour mettre à jour la liste tape la commande suivante :
 
 	```bash
 		utilisateur@hostname:~$ sudo apt-get update
@@ -206,3 +206,40 @@ utilisateur@hostname:~$ apt-cache depends le_package
 		Hit http://us.archive.ubuntu.com precise Release
 		[ .... OUTPUT COUPÉ ...]
 	```
+    * Installation de package **apt-get install**
+      Une fois le nom du package connu faire la commande, ceci installera la dernière version disponible :
+
+    ```bash
+        utilisateur@hostname:~$ sudo apt-get install package_name
+            # Si vous désirez installé une version plus ancienne :
+        utilisateur@hostname:~$ sudo apt-get install package_name=version -V 
+    ```
+    * Suppression de package **apt-get remove**
+      Suppression de package nous avions vu qu'il est possible d'utiliser dpkg avec l'option **-r** (remove) ou **-P** (purge) , il est aussi possible de réaliser l'opération via apt-get 
+
+    ```bash
+        utilisateur@hostname:~$ sudo apt-get remove package_name 
+          # Pour suppression complète incluant les configurations 
+        utilisateur@hostname:~$ sudo apt-get purge package_name
+    ```
+    * Mise à jour **apt-get upgrade** et **apt-get dist-upgrade**
+      2 arguments sont disponible pour réaliser la mise à jour , **upgrade** et **dist-upgrade** L'option **upgrade** met à jour tous les paquets installés sur le système vers les dernières versions (couramment utilisé). L'option **dist-upgrade** met à jour tous les paquets installés vers les dernières versions en installant de nouveaux paquets si nécessaire, par opposition à l'**upgrade** simple qui n'ajoute pas de nouveaux paquets. Attention **dist-upgrade** ne réalisera PAS de mise à jour de la version 12.04 à 12.10 cependant il mettra à jour la dernière version du kernel et autre nouveau package non-présent.
+
+    ```bash
+        utilisateur@hostname:~$ sudo apt-get upgrade
+            # et  
+        utilisateur@hostname:~$ sudo apt-get dist-upgrade
+    ```
+    * Obtention des sources **apt-get source**
+      Si vous désirez récupérer les sources d'un logiciel que vous avez installé :
+
+    ```bash
+      utilisateur@hostname:~$ sudo apt-get source package_name
+    ```
+
+    * Suppression des packages mis en cache **apt-get clean**
+      Le système **apt-get** utilise un répertoire de cache (/var/cache/apt/archives) pour télécharger ses packages , ceci peut prendre beaucoup d'espace au fil du temps , il est possible de faire du ménage:
+
+    ```bash
+      utilisateur@hostname:~$ sudo apt-get clean 
+    ```
