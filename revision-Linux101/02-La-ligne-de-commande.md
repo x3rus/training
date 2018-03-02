@@ -490,9 +490,67 @@ Comme vous pouvez le constater, le résultat fournit l'information pour le répe
 * La mise à jour de la BD augmente le load de la machine.
 * Le résultat peut être erroné si le système n'a pas mis à jour sa BD. Par exemple, si le système été éteint pendant la planification de synchronisation.
 
+## Archivage et extraction de données ( tar / gzip / bz2 / zip )
+
+Le système d'archivage de prédilection sous Unix est **tar** ( **T**ape **AR**chiver) pour l'archivage.
+
+Un fichier d'archive créé par **tar** n'est pas compressé. On appelle parfois le fichier d'archivage créé un __tarball__.
+**Tar** préserve les droits, le propriétaire et le groupe des fichiers et des répertoires. Il permet également de sauvegarder les liens symboliques et les fichiers spéciaux orientés bloc ou caractère.
+
+Pour l'essentiel, le format employé consiste en une concaténation du contenu des fichiers. Chaque fichier est précédé d'un en-tête de 512 octets ; cette taille correspondant à la taille d'un bloc dans la version 7 du système de fichiers Unix.
+
+Pour améliorer l'efficacité de l'écriture sur bande magnétique, les blocs de 512 octets sont groupés par 20 par défaut, produisant des blocs de 10 Ko. Le bloc final est complété par des zéros binaires.
+
+![](./imgs/500px-Targzip.svg.png)
+
+Souvent, un fichier créé par **tar** est ensuite compressé par un outil de compression de données. Les formats les plus courants sont :
+
+| Mode compression | Extention unix | extention Dos |
+|:----------------:| :------------: | ------------: |
+| [compress](http://fr.wikipedia.org/wiki/Compress) |  .tar.Z |   .taz |
+| [gzip](http://fr.wikipedia.org/wiki/Gzip) |  .tar.gz  | .tgz |
+| [bzip2](http://fr.wikipedia.org/wiki/Bzip2) | .tar.bz2 | .tbz |
+| [lzma](http://fr.wikipedia.org/wiki/Lzma) |  .tar.lz | .tlz |
+| [lzma2](http://fr.wikipedia.org/wiki/Lzma) | .tar.xz | .txz |
+| [7zip](http://fr.wikipedia.org/wiki/7zip) | .tar.7z  |      |
+
+```bash
+ # Réalisation d'une archive :
+$ tar -cvf fichier.tar MonRepertoire1 [MonRepertoire2... ]
+ 
+ # Afficher le contenu d'une archive
+$ tar -tf archive.tar
+ 
+ # Extraire les fichiers d'une archive 
+$ tar -xvf archive.tar 
+ 
+ # Il est possible d'extraire uniquement des fichiers d'une archive
+$ tar -xvf archive.tar fichier1 fichier 2
+ 
+  ########### Tar avec compression #############
+ 
+ # Réalisation d'une archive compressé avec gzip
+$ tar -zcvf fichier.tar.gz MonRepertoire1 [MonRepertoire2... ]
+ 
+ # Afficher l'archive compressé avec gzip
+$ tar -ztvf fichier.tar.gz 
+ 
+ # Extraire l'archive compressé avec gzip
+$ tar -zxvf fichier.tar.gz
+ 
+ # Réalisation d'une archive compressé avec bzip2
+$ tar -jcvf fichier.tar.gz2 MonRepertoire1 [MonRepertoire2... ]
+ 
+ # Afficher l'archive compressé avec gzip
+$ tar -jtvf fichier.tar.gz2 
+ 
+ # Extraire l'archive compressé avec gzip
+$ tar -jxvf fichier.tar.bz2
+```
+
 ## Changement de mot de passe
 
-a commande passwd modifie le mot de passe du compte des utilisateurs. Un utilisateur normal peut uniquement modifier le mot de passe de son compte (le plus souvent). Le Super-utilisateur a le pouvoir de changer le mot de passe de chaque compte. passwd permet aussi d'associer une période de validité aux comptes et mots de passe, et de les modifier. En plus de permettre le changement de mot de passe, passwd permet de verrouiller un compte, de définir une période d'expiration ...
+La commande passwd modifie le mot de passe du compte des utilisateurs. Un utilisateur normal peut uniquement modifier le mot de passe de son compte (le plus souvent). Le Super-utilisateur a le pouvoir de changer le mot de passe de chaque compte. passwd permet aussi d'associer une période de validité aux comptes et mots de passe, et de les modifier. En plus de permettre le changement de mot de passe, passwd permet de verrouiller un compte, de définir une période d'expiration ...
 
 ```bash
   # l'utilisateur peut changer son propre password 
