@@ -86,4 +86,108 @@ Il se traduit de la manière suivante :
 * r-x pour le 2nd groupe de 3 symboles : le groupe peut uniquement lire et exécuter le fichier, sans pouvoir le modifier.
 * r-x pour le 3ème groupe de 3 symboles : le reste du monde peut uniquement lire et exécuter le fichier, sans pouvoir le modifier.
 
+### Changement de propriétaire (chown)
 
+La commande **chown** (**ch**ange **own**er, changer le propriétaire) permet de changer le propriétaire du fichier. Seuls le super-utilisateur ou le propriétaire actuel d'un fichier peut utiliser **chown**. La commande s'utilise de la façon suivante :
+
+```bash
+ # exemple chown
+$ sudo chown Mon_utilisateur fichier1
+```
+
+**chown** permet aussi de changer en une seule commande le propriétaire et le groupe du fichier :
+
+```bash
+    # exemple chown utilisateur + group 
+$ sudo chown Mon_Utilisateur:le_nom_du_group fichier1
+```
+
+Le fichier __fichier1__ appartient alors à l'utilisateur Mon_Utilisateur et au groupe le\_nom\_du\_group.
+Il est aussi possible d'utiliser **chown** pour ne modifier uniquement le groupe
+
+```bash
+ # exemple chown group
+$ sudo chown :le_nom_du_group fichier1
+```
+
+### Changement des permissions (chmod)
+
+L'outil **chmod** (**ch**ange **mod**e, changer les permissions) permet de modifier les permissions sur un fichier. Il peut s'employer de deux façons : soit en précisant les permissions de manière octale, à l'aide de chiffres) ; soit en ajoutant ou en retirant des permissions à une ou plusieurs catégories d'utilisateurs à l'aide des symboles **r w et x**, que nous avons présenté plus haut. Nous préférerons présenter cette seconde façon ("ajout ou retrait de permissions à l'aide des symboles"), car elle est probablement plus intuitive pour les néophytes. Sachez seulement que les deux méthodes sont équivalentes, c'est-à-dire qu'elles affectent toutes deux les permissions de la même manière.
+
+De cette façon, on va choisir :
+
+1. À qui s'applique le changement
+    * **u** (user, utilisateur) représente la catégorie "propriétaire" ;
+    * **g** (group, groupe) représente la catégorie "groupe propriétaire" ;
+    * **o** (others, autres) représente la catégorie "reste du monde" ;
+    * **a** (all, tous) représente l'ensemble des trois catégories.
+2. La modification que l'on veut faire
+    * **+** : ajouter
+    * **-** : supprimer
+    * **=** : ne rien changer
+3. Le droit que l'on veut modifier
+    * **r** : read ⇒ lecture
+    * **w** : write ⇒ écriture
+    * **x** : execute ⇒ exécution
+    * **X** : eXecute ⇒ exécution, concerne uniquement les répertoires et les fichiers qui ont déjà une autorisation d'exécution pour l'une des catégories d'utilisateurs. Nous allons voir plus bas dans la partie des traitements récursifs l'intérêt du X.
+
+Par exemple : 
+
+```bash
+ # supprimer les permissions a tout le monde d'écrire dans le fichier3
+$ chmod o-w fichier3
+```
+
+Enlèvera le droit d'écriture pour les autres.
+
+```bash
+ # ajout permission d'exécution pour tout le monde
+$ chmod a+x fichier3
+```
+ajoutera le droit d'exécution à tout le monde.
+
+On peut aussi combiner plusieurs actions en même temps :
+
+* On ajoute la permission de lecture, d'écriture et d'exécution sur le fichier fichier3 pour le **propriétaire** ;
+* On ajoute la permission de lecture et d'exécution au **groupe propriétaire**, on retire la permission d'écriture ;
+* On ajoute la permission de lecture aux **autres**, on retire la permission d'écriture et d'exécution.
+
+```bash
+ # modification de plusieurs droit avec chmod
+$ chmod u+rwx,g+rx-w,o+r-wx fichier3
+```
+
+#### Changement des permissions en mode Octal
+
+En octal, chaque « groupement » de droits (pour user, group et other) sera représenté par un chiffre et à chaque droit correspond une valeur :
+
+* r = 4
+* w = 2
+* x = 1
+* - = 0
+
+Par exemple,
+
+* Pour rwx, on aura : 4+2+1 = 7
+* Pour rw-, on aura : 4+2+0 = 6
+* Pour r--, on aura : 4+0+0 = 4
+
+Reprenons le répertoire Documents. Ses permissions sont :
+
+```
+ # permission
+drwxr-x---
+```
+En octal, on aura 750 :
+
+```
+    rwx        r-x        ---
+ 7(4+2+1)   5(4+0+1)   0(0+0+0)
+```
+
+Pour mettre ces permissions sur le répertoire on taperait donc la commande :
+
+```bash
+ # permission en octal avec chmod
+$ chmod 750 Documents
+```
