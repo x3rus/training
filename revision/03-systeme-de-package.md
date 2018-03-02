@@ -12,6 +12,10 @@ Dans le cas où le logiciel est privatif, il faut utiliser l'installeur fourni p
 
 J'aimerai refaire mention que 95% des logiciels sont installables avec les packages fournis par la distribution. Alors, avant de vous casser la tête, regardez s'il est disponible!
 
+voici le nombre d'application disponible pour : 
+* Debian /stable : 57 069
+* Arch Linux : 15 051 + 36 628 (AUR)
+
 ### Définition d'un package
 
 Un package est une archive contenant des données et/ou des programmes ainsi que les informations nécessaires à une installation correcte de ceux-ci sur le système. Un package est constitué d'un seul fichier, qui n'est pas un exécutable. Il est pris en charge par un programme dédié : le gestionnaire de package.
