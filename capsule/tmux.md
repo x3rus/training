@@ -9,3 +9,5 @@
 * Notification fin de cmd : sleep 4 ; echo -e '\a' 
 * Détache session et reprise de l'envirronement
 
+
+* Montrer aussi Tmate
