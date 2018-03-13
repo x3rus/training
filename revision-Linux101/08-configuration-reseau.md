@@ -348,7 +348,7 @@ iface eth0 inet static
 	broadcast 192.168.10.255
 	gateway 192.168.10.254
  
-# ip virtuel
+ # ip virtuel
 auto eth0:0
 iface eth0:0 inet static
 	address 192.168.10.200
