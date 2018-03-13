@@ -1,33 +1,4 @@
-<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
-<style>
-pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
-</style>
-
-# Index
-
-
-* [ Mise en contexte ](#context) 
-* [ Création des images et conteneurs ](#conteneurPropre) 
-       * [ Un conteneur pour une taches ](#ConteneurUnetache) 
-       * [ Création du conteneur de BD centraliser.](#ConteneurCentraliser) 
-       * [ Docker n'ajoute pas d'overheard, oui MAIS ...](#noOverHead) 
-       * [ Utilisation du registry](#UseRegistry) 
-* [ Orchestration des conteneurs](#orchestration) 
-       * [ Organisation d'un changement de variable ou volume](#ChangeVarVol) 
-       * [ Organisation des fichiers et volumes](#FileStructure) 
-* [ Mise en place de réseau dédié à docker](#NetworkStructure) 
-       * [ Redirection des ports](#Redirect_port) 
-           * [ Détection des ip d'origine](#Redirect_port_srcip) 
-           * [ Conteneur http utilisation des port 80/443](#Redictect_port_Http) 
-           * [ Le défis des adresse IP dynamique](#ChallangeDynIP) 
-       * [ Utilisation de conteneur exclusif au VPN](#ConteneurVPNonly) 
-* [ Problème lors d'un disque dur remplie](#ProbHDFull) 
-       * [ Limitation d'espace par conteneur](#SpaceLimitConteneur) 
-
-
-![docker-fail.jpg](./imgs/docker-fail.jpg)
-
-# <a name="context" /> Mise en contexte 
+#  Mise en contexte 
 
 Nous avons vu précédemment les grandes lignes de l'utilisation de docker, c'est les grands principes de l'utilisation du système après libre à vous de réaliser votre propre recette. L'informatique et plus particulièrement l'opensource c'est un peu comme les recettes de cuisine, il y a une recette qui est une base mais si vous aimez plus ingrédient rien vous empêches d'en mettre plus :P !
 
@@ -35,7 +6,7 @@ Par contre le gros problèmes de l'ensemble des documentations est qu'ils donnen
 L'expérience couvre 1 an d'utilisation plus une mise en production pour un serveur personnel !
 
 
-# <a name="conteneurPropre" /> Création des images et conteneurs 
+#  Création des images et conteneurs 
 
 Bien entendu en premier lieu il y a la création d'image, personnellement l'ensemble de mes images furent réalisé à 85 % dans le train sur un petit portable 64bits (__Lenovo T430__) on est loin d'un ultra portable. Les 15 % restant est sur mon poste de travail à la maison , le gros avantage est que ce fut un travail itératif, continue, le tous conservé avec **git** !
 
@@ -67,7 +38,7 @@ Je n'ai pas d'autre exemple en tête mais l'important du propos est de bien vali
 
 Je vous invite **FORTEMENT** à utilisé un contrôleur de révision afin d'avoir une trace de l'évolution de vos images afin de pouvoir revenir en arrière ou vous inspirér des configurations réalisé.
 
-## <a name="ConteneurUnetache" /> Un conteneur pour une taches 
+##  Un conteneur pour une taches 
 
 Bon voilà , nous avons vue la théorie les principes le mode de fonctionnement et les principes. Maintenant on va voir la pratique, qui malheureusement diverge de la théorie. 
 
@@ -105,7 +76,7 @@ Voici ce que contient mon images de courriel :
 
 Comme vous pouvez le constater, c'est pas l'image la plus belle mais c'est un tous complet !!
 
-## <a name="ConteneurCentraliser" /> Création du conteneur de BD centraliser.
+##  Création du conteneur de BD centraliser.
 
 Il y a par contre un élément manquant dans mon image de gestion de mes courriels, la base de données contenant l'ensemble des informations des utilisateurs ( nom, courriel, alias, mot de passe , calendrier , contacts, ...). 
 J'ai opté pour un service de base de données dans un conteneur pour l'ensemble de mes services , car en plus du service de courriels qui utilise une base de données __MySQL__ il y a le service **moodle**, mon **CMS** , mon système de facturation, ... Ils se reposent tous sur une base de donnée , comme je n'avais pas envie d'avoir **un** conteneurs de base de donnée pour chaque service il utilise tous le même pour la production.
@@ -143,7 +114,7 @@ Bien entendu ceci est MON choix libre à vous de trouvez cette solution idéal o
 
 * Lors de maintenant l'ensemble des applications sont impacté !
 
-## <a name="noOverHead" /> Docker n'ajoute pas d'overheard, oui MAIS ...
+##  Docker n'ajoute pas d'overheard, oui MAIS ...
 
 Mon dernier point pour le choix de la mutualisation des bases de données en production indique que je cherche à réduire l'emprunte CPU et mémoire !
 C'est étrange, car lors de la présentation général de Docker j'avais spécifier que Docker ne rajoute pas de charge sur le système (__overhead__).
@@ -168,7 +139,7 @@ Personnellement je trouve que ça vaut le coup, car si nous prenons l'économie 
 Je pense que c'est important de le signaler , car il faut le prendre en considération !! 
 Vous comprenez pourquoi j'ai mutualisé mon service de base de donnée, maintenant je ne voyais pas de plus values à avoir un processus __MySQL__ par application. L'avenir me donnera peut-être tord , il sera toujours temps de changer ma configuration à ce moment là car c'est la même image :D.
 
-## <a name="UseRegistry" /> Utilisation du registry
+##  Utilisation du registry
 
 
 Je vous suggère FORTEMENT d'utiliser un __registry__ pour vos images, je ne l'ai pas encore fait j'ai repousser cette opération par manque de temps , cependant sans __registry__ vous êtes obligé de compiler tous le temps vos images. Si vous utilisez un __registry__ ceci veut dire que si vous avez __buildé__ votre image sur une machine elle sera disponible sur les autres via le téléchargement depuis le __registry__ . 
@@ -176,7 +147,7 @@ C'est vraiment pénible de devoir recréer l'image sur une nouvelle machine quan
 
 
 
-# <a name="orchestration" /> Orchestration des conteneurs
+#  Orchestration des conteneurs
 
 ![monitor_docker.jpg](./imgs/monitor_docker.jpg)
 
@@ -185,6 +156,7 @@ Quand vous avez un grand nombre de conteneur avec beaucoup de variable vous pré
 
 Voici un exemple d'un fichier docker-compose :
 
+```
         version: '2'
         services:
             x3-cmsms:
@@ -212,6 +184,7 @@ Voici un exemple d'un fichier docker-compose :
                     - MYSQL_ROOT_PASSWORD=superPatate
                     - TIMEZONE=America/Montreal
                     - TERM=xterm
+```
 
 Prenons une petite minute pour analyser ce fichier :
 
@@ -230,13 +203,14 @@ Comme vous pouvez le voir ceci est mon environnement de développement, car mon 
 
 En production j'ai aussi un paramètre indiquant que je veux que le service démarrer toujours après un redémarrage : **restart: always**
 
-## <a name="ChangeVarVol" /> Organisation d'un changement de variable ou volume
+##  Organisation d'un changement de variable ou volume
 
 Rappelons nous un point important que j'ai mentionné lors de la présentation précédente , lors du démarrage d'un conteneur nous lui assignons des variables lors de l'utilisation de l'instruction **docker run** par la suit nous utilisons **docker start** car nous ne pouvons plus changer les variables d'environnement ou les volumes  !!! 
 
 Résultat regardons ma configuration pour **gitlab**  :
 
 
+```
         cm-gitlab:
             image: 'gitlab/gitlab-ce:latest'
             restart: always
@@ -273,6 +247,7 @@ Résultat regardons ma configuration pour **gitlab**  :
                 - '/srv/source/vols/cm-gitlab/gitlab/etc:/etc/gitlab'
                 - '/srv/source/vols/cm-gitlab/gitlab/logs:/var/log/gitlab'
                 - '/srv/source/vols/cm-gitlab/gitlab/data/:/var/opt/gitlab'
+```
 
 Un des premiers service que j'ai mis en place est le service de **GIT**, évidement lors du démarrage initial j'ai pas mis toutes les configurations possible par manque de connaissance. Si nous regardons les variables ci-dessus nous voyons une liste significative disponible. 
 
@@ -291,19 +266,19 @@ Mais l'avertissement reste valide surtout pour VOS images !!
 
 Vous devez être en mesure de configurer vos conteneurs afin qu'il soit possible de les supprimer et repartir avec d'autre variables, les données doivent donc être à l'extérieur du conteneur (volumes ou base de donnée EXTERNE). 
 
-## <a name="FileStructure" /> Organisation des fichiers et volumes
+##  Organisation des fichiers et volumes
 
 Voici une suggestion d'organisation de structure que je vous offre, pour le moment ça fait le boulot pour moi, quand il y aura un problème j'ajusterai ...
 
 J'ai structuré comme suit mes fichiers :
 
 * /srv/dockers/
-    * Dockerfiles/[Nom_images]/__Dockerfiles__ , __docker-compose__, ... : Ce répertoire contient pour une images donnée mes __dockerfiles__ ainsi que mes __docker-compose__. J'utilise le nom de l'image car une images peut démarrer plusieurs conteneur de même type. Cependant je veux un point de référence sur leur construction et surtout un lieu centralisé pour le démarrage incluant paramètres ...
-    * Volumes/[Nom_conteneurs]/répertoires  : Ce répertoire contient les fichiers définie en volume par nom de conteneur me permettant d'avoir une structure intelligible quand je cherche quelque chose.
+    * **Dockerfiles**/[Nom\_images]/__Dockerfiles__ , __docker-compose__, ... : Ce répertoire contient pour une images donnée mes __dockerfiles__ ainsi que mes __docker-compose__. J'utilise le nom de l'image car une images peut démarrer plusieurs conteneur de même type. Cependant je veux un point de référence sur leur construction et surtout un lieu centralisé pour le démarrage incluant paramètres ...
+    * **Volumes**/[Nom\_conteneurs]/répertoires  : Ce répertoire contient les fichiers définie en volume par nom de conteneur me permettant d'avoir une structure intelligible quand je cherche quelque chose.
 
 Avec la commande **docker ps** qui me retourne le nom de l'image et du conteneur en exécution je suis en mesure de __scripter__ des opérations autant sur l'image que sur le conteneur. 
 
-# <a name="NetworkStructure" /> Mise en place de réseau dédié à docker
+#  Mise en place de réseau dédié à docker
 
 La structure de réseau présenté lors de la session dernière faisait mention de l'utilisation du réseau __Bridge__ par défaut qui vient avec le service docker.
 C'est super bien d'avoir le réseau 172.17.0.0/16, mais voilà j'aime bien le réseau et la segmentation !! De plus je ne suis pas tous seul sur la machine je la partage avec un collègue , bien qu'il est possibilité d'avoir accès au conteneur en fonction, je voulais que les applications soit segmenté !!
@@ -319,14 +294,14 @@ Ceci à générer un problème : **il n'est pas possible de linké des conteneur
 C'est une limitation du système :-/, donc certain conteneur commun purent être utilisé avec l'option **links** du conteneur. Le gros problème est qu'il n'y a PAS d'erreur au démarrage, ça ne fonctionne simplement pas ... Ennuyant !! 
 La solution à ce problème est d'utiliser l'adresse IP du conteneur, car au niveau réseau pas de problème par défaut , il est possible à une machine d'un réseau 172.18.0.5/24 de communiquer avec le réseau 172.19.0.10/24 !
 
-## <a name="Redirect_port" /> Redirection des ports
+##  Redirection des ports
 
 En dehors de la mise en place de réseau dédier vous allez vouloir que vos conteneur soit disponible depuis l'extérieur, que ce soit du docker __host__ ou d'Internet directement. Je fut confronté à une réalité que je n'avais pas pensé lors de mes débuts avec __docker__ rien de dramatique, mais je vais le partager avec vous !
 
 Petite précision sur le contexte mon serveur à des règles de __Firewall__ en entré ET en sortie ! C'est règle de __firewall__ sont définie et géré par __puppet__ afin de m'assurer qu'elles sont toujours intègre !!! En d'autre mot si une règle est ajouter manuellement au maximum 30 minutes après elle sera supprimé, car non définie dans __puppet__. 
 On est jamais trop prudent :P !!
 
-### <a name="Redirect_port_srcip" /> Détection des ip d'origine
+###  Détection des ip d'origine
 
 Lors de la mise en place de docker, j'étais partie du principe que j'utiliserai le système de __docker-proxy__ pour faire la redirection des ports vers le conteneur. N'ayant pas un gros trafic l'utilisation d'un processus pour faire le travaille me semblait une bonne idée. De plus telle que mentionné plus tôt comme mes règles sont géré par __puppet__ c'était plus simple. 
 Je n'ouvre que la communication pour l'IP externe puis le travail en arrière ce fait tous seul.
@@ -334,7 +309,7 @@ Je n'ouvre que la communication pour l'IP externe puis le travail en arrière ce
 Ça fonctionne très bien, MAIS lors de l'analyse de mes logs du serveur web, j'ai constater une chose étrange , l'adresse IP de provenance été TOUJOURS l'IP de la passerelle de docker soit 172.17.0.1. Pour mes statistiques d'utilisation ou pour mettre en place des restrictions par adresse IP c'est une catastrophe !! 
 J'ai donc du me rendre à l'évidence que je devrais mettre en place l'autre solution l'utilisation de la redirection de port (**dnat**) avec __iptables__ afin d'être en mesure d'avoir l'adresse IP source. Pour le protocole __http__ il est probable d'utiliser l'en-tête **X-Forwarded-For** , bien que je ne l'ai pas essayer je voulais avoir la connexion direct au moins pour les autres applications qui n'utilise pas le protocole __http__ par exemple __SMTP__ !
 
-### <a name="Redictect_port_Http" /> Conteneur http utilisation des port 80/443
+###  Conteneur http utilisation des port 80/443
 
 Autre problématique, mais ça je l'avais anticipé, l'utilisation des ports , si j'ai 3 conteneurs pour le service web , donc par exemple :
 
@@ -363,7 +338,7 @@ L'image indique que c'est du __offload__ soit du déchargement __SSL__ en fait p
 
 Bien entendu pour le service __httpS__ c'est facile dans le cas de protocole __TCP__ brute vous devrez voir pour un service approprié , telle que mentionné apache étant un couteau suisse je n'ai pas le problème ... Après libre à vous de sélectionné le bon système pour faire la redirection des flux selon vos critères.
 
-### <a name="ChallangeDynIP" /> Le défis des adresse IP dynamique
+###  Le défis des adresse IP dynamique
 
 Le défis des adresses IP fournit en __DHCP__ par docker , en fait j'ai un problème actuellement en cours de résolution , telle que mentionné plus tôt les règles de __firewall__ étant  définie dans __puppet__ je dois inscrire la règle de redirection. Voici un exemple de règles :
 
@@ -377,6 +352,7 @@ Voici quelque piste de solution.
 
 **Docker-compose** nous offre la possibilité de définir des adresses IP qui seront assigné au conteneur, [voir documentation](https://docs.docker.com/compose/compose-file/#/ipv4address-ipv6address) . Voici un exemple de __docker-compose__ incluant l'assignation d'une adresse IP :
 
+```
         version: '2'
         services:
           app:
@@ -398,7 +374,7 @@ Voici quelque piste de solution.
                 gateway: 172.16.238.1
               - subnet: 2001:3984:3989::/64
                 gateway: 2001:3984:3989::1
-
+```
 
 Ceci fut testé et fonctionne parfaitement , MAIS je ne privilégie pas cette option , principalement parce que pour être en mesure d'assigner l'adresse IP d'un réseau , vous devez définir le réseau DANS le conteneur . Pour le moment j'ai opté d'avoir 1 __docker-compose__ par service et non avoir l'ensemble dans un GROS fichier __docker-compose__ . En toute honnêteté je ne sais pas si ceci est le bon choix , je me questionne beaucoup sur ce choix , voici mes motivations pour ce choix:
 
@@ -422,13 +398,15 @@ Ceci règle en plus la problématique pour les règles de __firewall__ mais auss
 Bon mais ça règle pas ton problème de __firewall__ géré par __puppet__ en fait OUI, car dans la définition de ma règle je vais la définir comme suit :
 
 
+```
         IP externe 192.99.13.211:80 --> ip conteneur proxy-http.dck.x3rus.com:80 (nom conteneur  proxy-http ,IP 172.17.0.45 )
+```
 
 Quand puppet va démarrer ce dernier va faire la résolution du nom de domaine et entrer l'IP dans la règle de __firewall__ lors de la prochaine exécution si l'IP à changé __puppet__ dans ça grande intelligence refera le changement .... **MAGIE**
 
 Ceci me permet donc d'avoir nom toujours valide peut importe l'outil qui l'utilisera !! Ceci est bien mieux que la configuration manuelle via le docker compose.
 
-## <a name="ConteneurVPNonly" /> Utilisation de conteneur exclusif au VPN
+##  Utilisation de conteneur exclusif au VPN
 
 Voici un point intéressant ne couvrant pas un problème mais plutôt un mode d'utilisation très COOL ! 
 J'ai quelques conteneur en fonction sur mon serveur, la majorité son des services "publique" donc directement disponible sur internet telle que le site de formation [http://moodle.x3rus.com](http://moodle.x3rus.com) ou "semi-publique" toujours disponible sur internet mais qui oblige une authentification telle que mon service de courriel / agenda / contact.
@@ -449,7 +427,7 @@ Je me retrouve avec un accès à un service privé avec un 2 facteurs authentifi
 Bon maintenant reparlons du __DNS__ dynamique mentionné avant , encore une fois on voit l'utilité :D :D.
 
 
-# <a name="ProbHDFull" /> Problème lors d'un disque dur remplie
+#  Problème lors d'un disque dur remplie
 
 Parlons maintenant d'un problème MAJEUR !! Lors de la phase de teste avec __docker__ nous avions réaliser nos preuve de concept sur des petites machines avec peu de disque dur. Résultat et vous aurez le même problème que nous vous allez remplir le disque dur , si vous avez assez d'espace vous ne rencontrerez peut-être pas tous de suite le problème . Mais je vous le dis ce ne sera que PIRE !! 
 
@@ -474,19 +452,21 @@ Bon maintenant qu'arrive t'il si vous ne faites rien et attendez que le l'espace
 En fait il est fort probable que vos conteneur qui sont en exécution deviennent complètement inutilisable et que vous soyez obligé de les redéployez depuis l'image d'origine , résultat toutes les données contenu dans le système de fichier du conteneur sera perdu !!
 Vous aurez des erreurs du style :
 
+```
         [ 3089.664084] XFS (dm-4): metadata I/O error: block 0x2c230 ("xfs_buf_iodone_callbacks") error 5 numblks 16
         [ 3089.684777] XFS (dm-5): metadata I/O error: block 0x2c230 ("xfs_buf_iodone_callbacks") error 5 numblks 16
         [ 3089.695953] XFS (dm-4): Unmounting Filesystem
         [ 3089.703478] XFS (dm-4): metadata I/O error: block 0x2c230 ("xfs_buf_iodone_callbacks") error 5 numblks 16
         [ 3089.710627] XFS (dm-5): metadata I/O error: block 0x2c230 ("xfs_buf_iodone_callbacks") error 5 numblks 16
         ...
+```
 
 Personnellement nous n'avons pas réussie à récupérer le conteneur , mais dans notre cas ce n'était pas grave nous sommes repartie de l'image original on s'est juste amusé pour apprendre . Bien entendu on a pas pu s'amuser longtemps !!
 Avec la version de docker 1.10 nous sommes même arrivé à une situation où nous avons du désinstaller docker pour être en mesure de remettre le serveur réutilisable :-(. Avec la version 1.12 nous n'avons pas rencontré le même problème , bien que l'on a pas appris de nos erreurs et que le problème est revenu :P !!
 
 Je vous dirais donc faire attention ça peut être la catastrophe , surtout à 2:00 du matin d'analyser ce genre de problème ! Monitoring oblige.
 
-## <a name="SpaceLimitConteneur" /> Limitation d'espace par conteneur
+##  Limitation d'espace par conteneur
 
 Point important chaque conteneur à une limitation d'espace disponible DANS le conteneur , par défaut cette valeur est de 10G , bien entendu ceci ne comprend pas les données mis dans un volume donc à l'extérieur du conteneur. Il est possible d'augmenter cette valeur, par contre ceci est globale , donc s'appliquera pour TOUS les conteneurs sur le systèmes
 
@@ -495,3 +475,14 @@ Vous retrouverez le paramètre à la page :  [https://docs.docker.com/engine/ref
 Ça vous protège un peu  pour le problème de remplir l'espace mais ne vous fiez pas la dessus :P !
 
 
+# Problème lors d'un nombre trop grand d'image / conteneur 
+
+temps démarrage
+
+# Problème conteneur démarre mais s'arrête plus 
+
+freeze l'arrêt
+
+# La gestion des règle de firewall
+
+# La mise à jour conteneur avec son backup ( exemple :gitlab)
