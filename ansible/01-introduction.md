@@ -25,13 +25,46 @@ TODO: Ajout de plus d'introduction avec le pull / push des agents
 
 TODO : plus de référence SVP
 
-# Mise en place d'un environnement
+# Mise en place d'un environnement d'apprentissage
 
-Afin d'être en mesure de réaliser les testes démontré dans cette documentation nous allons mettre en place un conteneur qui nous permettra de refaire l'ensemble du matériel ci-dessous. 
-J'ai choisie de la mettre dans un conteneur, mais libre à vous de choisir le mode de déploiement désiré. La recette est dans le [Dockerfile](./dockers/ansible )
+Afin d'être en mesure de réaliser les exemples , démontrés dans cette documentation nous allons mettre en place un conteneur qui nous permettra de refaire l'ensemble du matériel ci-dessous. 
+J'ai choisie de le faire dans un conteneur , afin d'avoir quelques choses de portables, mais aussi ceci offre la possibilité de voir l'ensemble des requis pour que ça fonctionne . Que nous parlions de packages installé ou de fichiers de configuration mis en place.
 
 
-TODO : mettre en forme :
+Vous avez le conteneur disponible x3-ansible-srv : [Dockerfile](./dockers/x3-ansible-srv/Dockerfile)
+
+```
+ # pull base image
+FROM ubuntu:16.04
+MAINTAINER Thomas Boutry <thomas.boutry@x3rus.com>
+
+ENV DEBIAN_FRONTEND=noninteractive 
+
+ # Installation of ansible 
+ # J'ai volontairement PAS bloquer l'installation des packages en plus car je veux avoir une conteneur
+ # meme s'il est gros ca me derange pas :D
+RUN apt-get update -y && \
+    apt-get install -y software-properties-common && \
+    apt-add-repository -y ppa:ansible/ansible && \
+    apt-get update -y && \
+    apt-get install -y ansible
+    
+    
+ # default command: display Ansible version
+ENTRYPOINT ["/usr/bin/ansible-playbook"]
+CMD ["--version"]
+
+```
+
+
+Création de l'image 
+
+```bash
+$ cd dockers/x3-ansible-srv
+$ docker-compose build
+```
+
+Validation que l'ensemble fonctionne avec des testes simple
 
 ```bash
 $ docker-compose  run --rm ansible 
@@ -42,8 +75,16 @@ ansible-playbook 2.5.2
   executable location = /usr/bin/ansible-playbook
   python version = 2.7.12 (default, Dec  4 2017, 14:50:18) [GCC 5.4.0 20160609]
 
+
 $ docker-compose  run --rm --entrypoint=/bin/bash ansible
 root@1f26260af83d:/# 
 root@1f26260af83d:/# 
 
+root@e306f2e83359:/# ansible localhost -m ping
+ [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+
+localhost | SUCCESS => {
+    "changed": false, 
+    "ping": "pong"
+}
 ```
