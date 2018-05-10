@@ -25,11 +25,13 @@ TODO: Ajout de plus d'introduction avec le pull / push des agents
 
 TODO : plus de référence SVP
 
-# Mise en place d'un environnement d'apprentissage
+# Mise en place d'un environnement d'apprentissage avec docker
 
 Afin d'être en mesure de réaliser les exemples , démontrés dans cette documentation nous allons mettre en place un conteneur qui nous permettra de refaire l'ensemble du matériel ci-dessous. 
 J'ai choisie de le faire dans un conteneur , afin d'avoir quelques choses de portables, mais aussi ceci offre la possibilité de voir l'ensemble des requis pour que ça fonctionne . Que nous parlions de packages installé ou de fichiers de configuration mis en place.
 
+
+## Création du conteneur et validation
 
 Vous avez le conteneur disponible x3-ansible-srv : [Dockerfile](./dockers/x3-ansible-srv/Dockerfile)
 
@@ -56,6 +58,30 @@ CMD ["--version"]
 
 ```
 
+Définition du docker-compose [docker-compose.yml](./dockers/x3-ansible-srv/docker-compose.yml): 
+
+```
+version: '2'
+services:
+    ansible:
+        image: x3rus/x3-ansible
+        build: .
+        container_name : 'x3-ansible-p'
+        environment:
+            - TERM=xterm
+        networks:
+            - bridge
+ #        volumes:
+ 
+networks:
+    bridge:
+        external: true
+
+ # Exemple d'utilisation avec docker-compose et run :
+ # docker-compose run --volume=/tmp/ansible-tmp/:/etc/ansible/  ansible   /etc/ansible/playbooks/setup-dck.yml
+ #
+
+```
 
 Création de l'image 
 
@@ -64,7 +90,7 @@ $ cd dockers/x3-ansible-srv
 $ docker-compose build
 ```
 
-Validation que l'ensemble fonctionne avec des testes simple
+Validation que l'ensemble fonctionne avec des testes simple qui seront expliqué plus tard ...
 
 ```bash
 $ docker-compose  run --rm ansible 
@@ -88,3 +114,18 @@ localhost | SUCCESS => {
     "ping": "pong"
 }
 ```
+
+## Infrastructure pour l'apprentissage 
+
+Afin d'être en mesure de faire de vraie teste nous allons mettre " l'infrastructure ", disons plus la configuration suivante : 
+
+![](./imgs/infrastructure_for_learning-v1.png)
+
+* **Ansible** : Un conteneur ansible avec l'application et un **volume** pour stocker la configuration.
+* **AppServer** : Un conteneur qui nous servira de serveur applicatif , je ne sais pas encore quelle application mais détail.
+* **WebServer** : Un conteneur avec un serveur web qui servira de frontal pour le serveur applicatif.
+* **DatabaseServer** : Un conteneur pour la Base de donnés .
+
+Les conteneurs AppServer + WebServer + DatabaseServer seront basés sur la même images docker.
+
+Nous utiliserons le mode "original" ou "classique" de Ansible pour la communication avec les nœuds soit le protocole ssh ( port 22 / TCP ) , nous verrons éventuellement d'autre mode telle que l'orchestration des dockers, AWS , voir powershell :P
