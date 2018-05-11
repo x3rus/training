@@ -13,6 +13,25 @@ RUN apt-get update -y && \
     apt-get update -y && \
     apt-get install -y ansible
     
+ # Create user "c3po" with no password
+ # Ajout du groupe docker pour communiquer avec le docker host
+RUN useradd -s /bin/bash -m  c3po && \
+    groupadd automate && \
+    usermod -G automate c3po
+
+ # Creation du répertoire ssh pour l'utilisateur
+RUN mkdir /home/c3po/.ssh/ && \
+    chown c3po:c3po /home/c3po/.ssh && \
+    chmod 700 /home/c3po/.ssh/
+
+ # Copie la clef publique pour jenkins 
+COPY conf/id_rsa* /home/c3po/.ssh/
+
+ # Fix perms for ssh key
+RUN chown c3po:c3po /home/c3po/.ssh/id_rsa* && \
+    chmod 700 /home/c3po/.ssh/id_rsa*
+
+
     
 # default command: display Ansible version
 ENTRYPOINT ["/usr/bin/ansible-playbook"]

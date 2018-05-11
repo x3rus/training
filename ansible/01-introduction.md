@@ -33,6 +33,35 @@ J'ai choisie de le faire dans un conteneur , afin d'avoir quelques choses de por
 
 ## Création du conteneur Ansible et validation
 
+* Création de clé ssh ( explication plus loin) 
+
+```bash
+$ mkdir dockers/x3-ansible-srv/conf
+$ ssh-keygen -b 2048 -f ./id_rsa
+Generating public/private rsa key pair.
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /home/xerus/.ssh/id_rsa.
+Your public key has been saved in /home/xerus/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:znrVBd7Hdzg6/2Jzi5X2AI1xIhCV4oxCL2t5QrWspqU xerus@goishi
+The key s randomart image is:
++---[RSA 2048]----+
+|        oo..     |
+|    . . ... .    |
+|   . + = ...oo.o |
+|    + = o  ..*= =|
+|   . *  S  .oo.oo|
+|    O .o  . +.  .|
+|   * o  o.   o.+ |
+|  E    ..     O.o|
+|      ..     o *+|
++----[SHA256]-----+
+
+$ ls         
+id_rsa  id_rsa.pub         
+```
+
 Vous avez le conteneur disponible x3-ansible-srv : [Dockerfile](./dockers/x3-ansible-srv/Dockerfile)
 
 ```
@@ -51,7 +80,24 @@ RUN apt-get update -y && \
     apt-get update -y && \
     apt-get install -y ansible
     
-    
+ # Create user "c3po" with no password
+ # Ajout du groupe docker pour communiquer avec le docker host
+RUN useradd -s /bin/bash -m  c3po && \
+    groupadd automate && \
+    usermod -G automate c3po
+
+ # Creation du répertoire ssh pour l'utilisateur
+RUN mkdir /home/c3po/.ssh/ && \
+    chown c3po:c3po /home/c3po/.ssh && \
+    chmod 700 /home/c3po/.ssh/
+
+ # Copie la clef publique pour jenkins 
+COPY conf/id_rsa* /home/c3po/.ssh/
+
+ # Fix perms for ssh key
+RUN chown c3po:c3po /home/c3po/.ssh/id_rsa* && \
+    chmod 700 /home/c3po/.ssh/id_rsa*
+   
  # default command: display Ansible version
 ENTRYPOINT ["/usr/bin/ansible-playbook"]
 CMD ["--version"]
@@ -129,6 +175,10 @@ Afin d'être en mesure de faire de vraie teste nous allons mettre " l'infrastruc
 Les conteneurs AppServer + WebServer + DatabaseServer seront basés sur la même images docker.
 
 Nous utiliserons le mode "original" ou "classique" de Ansible pour la communication avec les nœuds soit le protocole ssh ( port 22 / TCP ) , nous verrons éventuellement d'autre mode telle que l'orchestration des dockers, AWS , voir powershell :P 
+
+Donc la machine **ansible** étalira la connexion via **ssh** , bien entendu nous ne voulons pas avoir à saisir un mot de passe nous utiliserons donc le système de clé publique / privé afin de permettre à la machine de ce connecté sur les noeuds.
+
+TODO : explication pour l'utilisateur c3po et r2d2
 
 ## Création de l'image pour la simulation des machines 
 

@@ -1,0 +1,19 @@
+version: '2'
+services:
+    ansible:
+        image: x3rus/x3-ansible-base
+        build: .
+        container_name : 'x3-ansible-base-t'
+        environment:
+            - TERM=xterm
+        networks:
+            - bridge
+#        volumes:
+ 
+networks:
+    bridge:
+        external: true
+
+# Exemple d'utilisation avec docker-compose et run :
+# docker-compose run --volume=/tmp/ansible-tmp/:/etc/ansible/  ansible   /etc/ansible/playbooks/setup-dck.yml
+#
