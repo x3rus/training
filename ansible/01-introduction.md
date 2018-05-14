@@ -115,14 +115,8 @@ services:
         container_name : 'x3-ansible-p'
         environment:
             - TERM=xterm
-        networks:
-            - bridge
  #        volumes:
  
-networks:
-    bridge:
-        external: true
-
  # Exemple d'utilisation avec docker-compose et run :
  # docker-compose run --volume=/tmp/ansible-tmp/:/etc/ansible/  ansible   /etc/ansible/playbooks/setup-dck.yml
  #
@@ -178,10 +172,115 @@ Nous utiliserons le mode "original" ou "classique" de Ansible pour la communicat
 
 Donc la machine **ansible** étalira la connexion via **ssh** , bien entendu nous ne voulons pas avoir à saisir un mot de passe nous utiliserons donc le système de clé publique / privé afin de permettre à la machine de ce connecté sur les noeuds.
 
+
 TODO : explication pour l'utilisateur c3po et r2d2
 
 ## Création de l'image pour la simulation des machines 
 
 Telle que mentionné dans la section précédente nous allons simulé une machine de type VM ou physique, nous allons donc faire une entorse au principe du conteneur et avoir une service OpenSSH en plus du service qui sera déployé . Ansible a un module spécifique pour docker que nous aurons l'occasion de voir assurément cependant je veux le faire en mode "VM" service ssh pour débuter nous passerons à l'autre étape par la suite. 
 
+J'ai créé une définition de l'image sous : [dockers/x3-ansible-client/Dockerfile](dockers/x3-ansible-client/Dockerfile) 
 
+```bash
+ #
+ # Description : Ansible Slave / machine pour formation
+ #
+ # Author : Thomas.boutry@x3rus.com
+ # Licence : GPLv3 ou plus
+ #
+ # Reference : https://docs.docker.com/engine/examples/running_ssh_service/#build-an-eg_sshd-image
+ ###########################################################
+
+FROM ubuntu:16.04
+MAINTAINER Thomas Boutry "thomas.boutry@x3rus.com"
+
+ # Installation des applications, besoin de ssh et de java pour le service Jenkins
+RUN apt-get update && \
+    apt-get install -y openssh-server sudo git  && \
+    mkdir /var/run/sshd
+
+ # TODO besoin client ansible / python ??
+
+ # ajout des package oublié :P 
+ # Valider si requis ou juste Jenkins RUN apt-get install -y libltdl7 git 
+
+ # SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile && \
+    echo "%automate ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+
+ # Create user "r2d2" with no password
+ # Ajout du groupe docker pour communiquer avec le docker host
+RUN useradd -s /bin/bash -m  r2d2 && \
+    groupadd automate && \
+    usermod -G sudo,automate r2d2
+
+ # Creation du répertoire ssh pour l'utilisateur
+RUN mkdir /home/r2d2/.ssh/ && \
+    chown r2d2:r2d2 /home/r2d2/.ssh && \
+    chmod 700 /home/r2d2/.ssh/
+
+ # Copie la clef publique pour jenkins 
+COPY conf/authorized_keys /home/r2d2/.ssh/authorized_keys
+
+ # Fix perms for ssh key
+RUN chown r2d2:r2d2 /home/r2d2/.ssh/authorized_keys && \
+    chmod 700 /home/r2d2/.ssh/authorized_keys
+
+ # Port et service
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]
+```
+
+Le fichier de **/home/r2d2/.ssh/authorized_keys** est la définition de la clé publique **dockers/x3-ansible-srv/conf/id_rsa.pub** de **c3po**.
+
+J'ai fait la création d'un [docker-compose.yml](./dockers/x3-ansible-client/docker-compose.yml) pour cette image , cependant je ne l'utiliserai pas .
+
+Compilation et démarrage du service de conteneur client et teste de fonctionnement depuis le serveur ansible.
+
+```bash
+$ cd ansible/dockers
+$ docker-compose build
+$ docker-compose up ansible-app                          
+Recreating x3-ansible-appsrv-t ...     
+Recreating x3-ansible-appsrv-t ... done
+Attaching to x3-ansible-appsrv-t 
+
+[ en attente ; prendre un autre terminal ]
+
+$ docker-compose  run --rm --entrypoint=/bin/bash ansible-srv                                                                           
+root@b26d21a22d39:/# 
+
+[ Dans un autre terminal encore :P ]
+
+$ docker ps | grep x3rus/x3-ansible-client  && docker inspect x3-ansible-appsrv-t | grep IPAddress
+c98eee481fed        x3rus/x3-ansible-client   "/usr/sbin/sshd -D"   14 minutes ago      Up 3 minutes        22/tcp              x3-ansible-appsrv-t
+            "SecondaryIPAddresses": null,
+                        "IPAddress": "",
+                         "IPAddress": "172.31.0.2",
+
+[ Retour dans la fenêtre de ansible server ]
+
+root@29e628a39e7b:/# su - c3po
+
+c3po@29e628a39e7b:~$ ssh r2d2@172.31.0.2
+Welcome to Ubuntu 16.04.1 LTS (GNU/Linux 4.12.4-1-ARCH x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+Last login: Mon May 14 21:05:41 2018 from 172.31.0.3
+
+r2d2@c98eee481fed:~$ sudo -l
+Matching Defaults entries for r2d2 on c98eee481fed:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User r2d2 may run the following commands on c98eee481fed:
+    (ALL : ALL) ALL
+    (ALL) NOPASSWD: ALL
+```
+
+Nous voyons que ceci est un succès , aucun mot de passe demandé et la configuration sudo est bonne : ALL pas de mot de passe.
