@@ -172,8 +172,15 @@ Nous utiliserons le mode "original" ou "classique" de Ansible pour la communicat
 
 Donc la machine **ansible** étalira la connexion via **ssh** , bien entendu nous ne voulons pas avoir à saisir un mot de passe nous utiliserons donc le système de clé publique / privé afin de permettre à la machine de ce connecté sur les noeuds.
 
+Nous utiliserons 2 utilisateur :
 
-TODO : explication pour l'utilisateur c3po et r2d2
+* **c3po** : Cette utilisateur sera celui qui est en exécution sur le serveur Ansible, il est l'utilisateur qui initie l'orchestration
+* **r2d2** : Cette utilisateur est celui qui est configurer sur les serveurs , il a les permissions root , sans mot de passe sur le système via la commande **sudo**.
+
+J'ai opté pour 2 utilisateurs distinct afin de démontrer la différence , éventuellement nous pourrions avoir d'autre utilisateur en plus de **r2d2** selon les serveurs.
+
+
+
 
 ## Création de l'image pour la simulation des machines 
 
