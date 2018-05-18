@@ -7,7 +7,8 @@ services:
         environment:
             - TERM=xterm
         links:
-            - ansible-app:AppServer
+            - ansible-app:appserver
+        entrypoint: 'tail -f /dev/null'
 #        volumes:
     ansible-app:
         image: x3rus/x3-ansible-client

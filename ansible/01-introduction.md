@@ -246,34 +246,50 @@ Le fichier de **/home/r2d2/.ssh/authorized_keys** est la définition de la clé 
 
 J'ai fait la création d'un [docker-compose.yml](./dockers/x3-ansible-client/docker-compose.yml) pour cette image , cependant je ne l'utiliserai pas .
 
+[docker-compose.yml](./dockers/docker-compose.yml) pour l'exercice :
+
+```
+version: '2'
+services:
+    ansible-srv:
+        image: x3rus/x3-ansible
+        build: ./x3-ansible-srv/
+        container_name : 'x3-ansible-p'
+        environment:
+            - TERM=xterm
+        links:
+            - ansible-app:appserver
+        entrypoint: 'tail -f /dev/null'
+#        volumes:
+    ansible-app:
+        image: x3rus/x3-ansible-client
+        build: ./x3-ansible-client/
+        container_name : 'x3-ansible-appsrv-t'
+        environment:
+            - TERM=xterm
+```
+
 Compilation et démarrage du service de conteneur client et teste de fonctionnement depuis le serveur ansible.
 
 ```bash
 $ cd ansible/dockers
 $ docker-compose build
-$ docker-compose up ansible-app                          
-Recreating x3-ansible-appsrv-t ...     
-Recreating x3-ansible-appsrv-t ... done
-Attaching to x3-ansible-appsrv-t 
+Starting x3-ansible-appsrv-t ...       
+Starting x3-ansible-appsrv-t ... done  
+Starting x3-ansible-p ...              
+Starting x3-ansible-p ... done         
+Attaching to x3-ansible-appsrv-t, x3-ansible-p 
 
 [ en attente ; prendre un autre terminal ]
 
-$ docker-compose  run --rm --entrypoint=/bin/bash ansible-srv                                                                           
-root@b26d21a22d39:/# 
-
-[ Dans un autre terminal encore :P ]
-
-$ docker ps | grep x3rus/x3-ansible-client  && docker inspect x3-ansible-appsrv-t | grep IPAddress
-c98eee481fed        x3rus/x3-ansible-client   "/usr/sbin/sshd -D"   14 minutes ago      Up 3 minutes        22/tcp              x3-ansible-appsrv-t
-            "SecondaryIPAddresses": null,
-                        "IPAddress": "",
-                         "IPAddress": "172.31.0.2",
+$ docker exec -it x3-ansible-p bash
+root@0cc27e4e8fda:/# 
 
 [ Retour dans la fenêtre de ansible server ]
 
-root@29e628a39e7b:/# su - c3po
+root@0cc27e4e8fda:/# su - c3po
 
-c3po@29e628a39e7b:~$ ssh r2d2@172.31.0.2
+c3po@0cc27e4e8fda:~$ ssh r2d2@appserver
 Welcome to Ubuntu 16.04.1 LTS (GNU/Linux 4.12.4-1-ARCH x86_64)
 
  * Documentation:  https://help.ubuntu.com
