@@ -488,7 +488,9 @@ L'autre méthode définir qu'il n'y a pas de validation de clé ssh pour l'ensem
 Comme je ne désire pas désactivé la validation au niveau globale , je vais désactiver la validation pour la communication courante .
 
 ```bash
-c3po@6b5d3b68e23c:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m ping                                                                                     
+c3po@6b5d3b68e23c:/etc/ansible$ export ANSIBLE_HOST_KEY_CHECKING=False
+
+c3po@6b5d3b68e23c:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m ping
 appserver1 | UNREACHABLE! => {         
     "changed": false,                  
     "msg": "Failed to connect to the host via ssh: Permission denied (publickey,password).\r\n",                                                              
@@ -522,7 +524,7 @@ Bon c'est pas mal , on avance plus de demande de clé ssh .. Mais heu , comment 
 Nous allons éditer le fichier **hosts** afin d'identifier que l'utilisateur de connexion doit être **r2d2** .
 
 ```
-# Aapp servers  for training env
+ # App servers  for training env
 [AppSrvTraining]
 appserver1 ansible_user=r2d2
 appserver2
@@ -575,6 +577,7 @@ badserver
 
 [DbSrvTraining]                        
 databaseserver                         
+
 c3po@6b5d3b68e23c:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m ping   
 appserver1 | SUCCESS => {
     "changed": false, 
@@ -585,3 +588,5 @@ appserver2 | SUCCESS => {
     "ping": "pong"
 }
 ```
+
+Nous avons donc un succès . 
