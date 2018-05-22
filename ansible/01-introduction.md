@@ -162,7 +162,8 @@ Afin d'être en mesure de faire de vraie teste nous allons mettre " l'infrastruc
 ![](./imgs/infrastructure_for_learning-v1.png)
 
 * **Ansible** : Un conteneur ansible avec l'application et un **volume** pour stocker la configuration.
-* **AppServer** : Un conteneur qui nous servira de serveur applicatif , je ne sais pas encore quelle application mais détail.
+* **AppServer1** : Un conteneur qui nous servira de serveur applicatif , je ne sais pas encore quelle application mais détail.
+* **AppServer2** : Un conteneur qui nous servira de serveur applicatif , je ne sais pas encore quelle application mais détail.
 * **WebServer** : Un conteneur avec un serveur web qui servira de frontal pour le serveur applicatif.
 * **DatabaseServer** : Un conteneur pour la Base de donnés .
 
@@ -171,7 +172,7 @@ Les conteneurs AppServer + WebServer + DatabaseServer seront basés sur la même
 Nous utiliserons le mode "original" ou "classique" de Ansible pour la communication avec les nœuds soit le protocole ssh ( port 22 / TCP ) , nous verrons éventuellement d'autre mode telle que l'orchestration des dockers, AWS , voir powershell :P 
 
 Donc la machine **ansible** étalira la connexion via **ssh** , bien entendu nous ne voulons pas avoir à saisir un mot de passe nous utiliserons donc le système de clé publique / privé afin de permettre à la machine de ce connecté sur les noeuds.
-
+G
 Nous utiliserons 2 utilisateur :
 
 * **c3po** : Cette utilisateur sera celui qui est en exécution sur le serveur Ansible, il est l'utilisateur qui initie l'orchestration
@@ -182,7 +183,7 @@ J'ai opté pour 2 utilisateurs distinct afin de démontrer la différence , éve
 
 
 
-## Création de l'image pour la simulation des machines 
+### Création de l'image pour la simulation des machines 
 
 Telle que mentionné dans la section précédente nous allons simulé une machine de type VM ou physique, nous allons donc faire une entorse au principe du conteneur et avoir une service OpenSSH en plus du service qui sera déployé . Ansible a un module spécifique pour docker que nous aurons l'occasion de voir assurément cependant je veux le faire en mode "VM" service ssh pour débuter nous passerons à l'autre étape par la suite. 
 
@@ -246,6 +247,12 @@ Le fichier de **/home/r2d2/.ssh/authorized_keys** est la définition de la clé 
 
 J'ai fait la création d'un [docker-compose.yml](./dockers/x3-ansible-client/docker-compose.yml) pour cette image , cependant je ne l'utiliserai pas .
 
+### Orchestrion des 3 machines
+
+Création d'un docker-compose pour valider que ceci fonctionne bien , nous allons avoir le serveur ansible ainsi que les 3 serveurs qui seront démarrer en même temps avec un lien entre eux. Pour débuter, je n'en démarre que 1 , pour faire la validation par la suite nous réaliserons , l'ajout des autres instances. 
+
+Comme vous allez pouvoir le voir dans la définition du docker-compose , je vais surdéfinir le point d'entré du conteneur pour le serveur Ansible pour **tail -f /dev/null** . L'image **x3rus/x3-ansible** a comme entry point d'exécuter un playbook ansible , malheureusement dans mon cas je veux faire de l'exploitation et apprendre. En sûr définissant le point d'entré ceci nous permettra de démarrer le service et de s'y connecter avec **docker exec** sans cassé la définition de l'image qui reste propre.
+
 [docker-compose.yml](./dockers/docker-compose.yml) pour l'exercice :
 
 ```
@@ -260,7 +267,7 @@ services:
         links:
             - ansible-app:appserver
         entrypoint: 'tail -f /dev/null'
-#        volumes:
+ #        volumes:
     ansible-app:
         image: x3rus/x3-ansible-client
         build: ./x3-ansible-client/
@@ -307,3 +314,58 @@ User r2d2 may run the following commands on c98eee481fed:
 ```
 
 Nous voyons que ceci est un succès , aucun mot de passe demandé et la configuration sudo est bonne : ALL pas de mot de passe.
+
+Ajustement pour avoir tous les slaves ainsi que le volume pour le serveur Ansible afin d'avoir une persistance des données.
+
+* pour le volume
+
+```bash
+$ mkdir -p dockers/volumes/ansibleSrv/
+```
+
+* Édition du fichier docker-compose :
+
+```
+version: '2'
+services:
+    ansible-srv:
+        image: x3rus/x3-ansible
+        build: ./x3-ansible-srv/
+        container_name : 'x3-ansible-p'
+        environment:
+            - TERM=xterm
+        links:
+            - ansible-app:appserver
+            - ansible-web:webserver
+            - ansible-db:databaseserver
+        entrypoint: 'tail -f /dev/null'
+        volumes:
+            - './volumes/ansibleSrv/:/etc/ansible/' 
+    ansible-app:
+        image: x3rus/x3-ansible-client
+        build: ./x3-ansible-client/
+        container_name : 'x3-ansible-appsrv-t'
+        environment:
+            - TERM=xterm
+    ansible-web:
+        image: x3rus/x3-ansible-client
+        build: ./x3-ansible-client/
+        container_name : 'x3-ansible-websrv-t'
+        environment:
+            - TERM=xterm
+    ansible-db:
+        image: x3rus/x3-ansible-client
+        build: ./x3-ansible-client/
+        container_name : 'x3-ansible-dbsrv-t'
+        environment:
+            - TERM=xterm
+```
+
+## Tutorial Ansible
+
+Le fichier de configuration par défaut d'Ansible est **/etc/ansible/ansible.cfg** , vous avez une copie de ce fichier disponible : [ansible-ORI.cfg](./data/ansible-ORI.cfg). Je vous invite à le consulter voir les paramètres utilisés par défaut par le système. Pour débuter nous ne ferons pas de modification dans le fichier. 
+
+### Gestion de l'inventaire .
+
+Nous allons regrouper nos machines / serveurs dans l'inventaire d'Ansible , ceci nous permettra d'avoir des regroupements de machines pour réaliser des opérations . Dans notre cas nous allons avoir un groupe représentant l'ensemble des machines , ainsi que des groupes par type : web , applicatif, base de données. 
+

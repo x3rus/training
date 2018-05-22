@@ -7,15 +7,39 @@ services:
         environment:
             - TERM=xterm
         links:
-            - ansible-app:appserver
+            - ansible-app1:appserver1
+            - ansible-app2:appserver2
+            - ansible-web:webserver
+            - ansible-db:databaseserver
         entrypoint: 'tail -f /dev/null'
-#        volumes:
-    ansible-app:
+        volumes:
+            - './volumes/ansibleSrv/:/etc/ansible/' 
+    ansible-app1:
         image: x3rus/x3-ansible-client
         build: ./x3-ansible-client/
-        container_name : 'x3-ansible-appsrv-t'
+        container_name : 'x3-ansible-appsrv1-t'
         environment:
             - TERM=xterm
+    ansible-app2:
+        image: x3rus/x3-ansible-client
+        build: ./x3-ansible-client/
+        container_name : 'x3-ansible-appsrv2-t'
+        environment:
+            - TERM=xterm
+    ansible-web:
+        image: x3rus/x3-ansible-client
+        build: ./x3-ansible-client/
+        container_name : 'x3-ansible-websrv-t'
+        environment:
+            - TERM=xterm
+    ansible-db:
+        image: x3rus/x3-ansible-client
+        build: ./x3-ansible-client/
+        container_name : 'x3-ansible-dbsrv-t'
+        environment:
+            - TERM=xterm
+
+
 
 
 # Exemple d'utilisation avec docker-compose et run :
