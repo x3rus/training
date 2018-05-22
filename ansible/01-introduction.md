@@ -204,7 +204,7 @@ MAINTAINER Thomas Boutry "thomas.boutry@x3rus.com"
 
  # Installation des applications, besoin de ssh et de java pour le service Jenkins
 RUN apt-get update && \
-    apt-get install -y openssh-server sudo git  && \
+    apt-get install -y openssh-server sudo git python && \
     mkdir /var/run/sshd
 
  # TODO besoin client ansible / python ??
@@ -280,7 +280,7 @@ Compilation et démarrage du service de conteneur client et teste de fonctionnem
 
 ```bash
 $ cd ansible/dockers
-$ docker-compose build
+$ docker-compose build && docker-compose up 
 Starting x3-ansible-appsrv-t ...       
 Starting x3-ansible-appsrv-t ... done  
 Starting x3-ansible-p ...              
@@ -317,6 +317,10 @@ Nous voyons que ceci est un succès , aucun mot de passe demandé et la configur
 
 Ajustement pour avoir tous les slaves ainsi que le volume pour le serveur Ansible afin d'avoir une persistance des données.
 
+```bash
+$ docker-compose stop 
+```
+
 * pour le volume
 
 ```bash
@@ -335,16 +339,23 @@ services:
         environment:
             - TERM=xterm
         links:
-            - ansible-app:appserver
+            - ansible-app1:appserver1
+            - ansible-app2:appserver2
             - ansible-web:webserver
             - ansible-db:databaseserver
         entrypoint: 'tail -f /dev/null'
         volumes:
             - './volumes/ansibleSrv/:/etc/ansible/' 
-    ansible-app:
+    ansible-app1:
         image: x3rus/x3-ansible-client
         build: ./x3-ansible-client/
-        container_name : 'x3-ansible-appsrv-t'
+        container_name : 'x3-ansible-appsrv1-t'
+        environment:
+            - TERM=xterm
+    ansible-app2:
+        image: x3rus/x3-ansible-client
+        build: ./x3-ansible-client/
+        container_name : 'x3-ansible-appsrv2-t'
         environment:
             - TERM=xterm
     ansible-web:
@@ -365,7 +376,212 @@ services:
 
 Le fichier de configuration par défaut d'Ansible est **/etc/ansible/ansible.cfg** , vous avez une copie de ce fichier disponible : [ansible-ORI.cfg](./data/ansible-ORI.cfg). Je vous invite à le consulter voir les paramètres utilisés par défaut par le système. Pour débuter nous ne ferons pas de modification dans le fichier. 
 
+
+Démarrage du service et accès au serveur Ansible:
+
+```bash
+$ docker-compose up -d 
+$ docker exec -it  x3-ansible-p bash
+root@6b5d3b68e23c:/etc/ansible# ls     
+ansible.cfg  hosts  roles        
+```
+
 ### Gestion de l'inventaire .
 
 Nous allons regrouper nos machines / serveurs dans l'inventaire d'Ansible , ceci nous permettra d'avoir des regroupements de machines pour réaliser des opérations . Dans notre cas nous allons avoir un groupe représentant l'ensemble des machines , ainsi que des groupes par type : web , applicatif, base de données. 
 
+La configuration est réalisé dans le fichier **/etc/ansible/hosts** , nous allons donc avoir le fichier suivant :
+
+```bash
+root@6b5d3b68e23c:/etc/ansible# cat hosts 
+ # Configuration de l'inventaire
+ #
+
+ # All servers 
+[SrvTraining]
+appserver1
+appserver2
+webserver
+databaseserver
+ 
+ # Aapp servers  for training env
+[AppSrvTraining]
+appserver1
+appserver2
+
+[WebSrvTraining]
+webserver
+badserver
+
+[DbSrvTraining]
+databaseserver
+```
+
+TODO: Explication syntaxe et groupe
+
+### Test de connexion 
+
+Premièrement nous allons basculer avec l'utilisateur **c3po**, la configuration des clé de communication SSH fut réalisé avec cette utilisateur pour établir une connexion avec l'utilisateur **r2d2**. Nous allons donc devoir faire la configuration des ses utilisateurs . 
+
+* Bascule sous **c3po**
+
+```bash
+root@6b5d3b68e23c:/etc/ansible# su - c3po
+c3po@6b5d3b68e23c:~$ cd /etc/ansible/  
+```
+
+Exécution d'une validation avec le module **ping** sur le groupe de machine AppSrvTraining, attention ce n'est pas un PING ICMP , mais un ping/pong pour valider la communication Ansible.
+
+Exécutons la commande : 
+
+```bash
+c3po@6b5d3b68e23c:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m ping                                                                                     
+The authenticity of host 'appserver1 (172.31.0.2)' can t be established.       
+ECDSA key fingerprint is SHA256:uxG1tb2fVObTRyGqjEhzROTrpxTMvT7PLYqTShKiT7E.   
+Are you sure you want to continue connecting (yes/no)? The authenticity of host 'appserver2 (172.31.0.4)' can t be established.
+ECDSA key fingerprint is SHA256:uxG1tb2fVObTRyGqjEhzROTrpxTMvT7PLYqTShKiT7E.   
+Are you sure you want to continue connecting (yes/no)? 
+
+[ J ai fait CRTL+C ]
+Process WorkerProcess-2:                                                                             
+Traceback (most recent call last):     
+  File "/usr/lib/python2.7/multiprocessing/process.py", line 258, in _bootstrap
+ [ERROR]: User interrupted execution   
+
+```
+
+Nous n'avons jamais établie de connexion vers ces machines, donc effectivement devons accepter les clés , 2 méthodes s'offre à vous .
+
+* Établir une connexion avec l'utilisateur initialement . 
+
+Exemple :
+
+```bash
+c3po@6b5d3b68e23c:/etc/ansible$ ssh appserver1 
+The authenticity of host 'appserver1 (172.31.0.2)' can t be established.
+ECDSA key fingerprint is SHA256:uxG1tb2fVObTRyGqjEhzROTrpxTMvT7PLYqTShKiT7E.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'appserver1,172.31.0.2' (ECDSA) to the list of known hosts.
+c3po@appserver1 s password: 
+
+[ J ai fait CRTL+C ]
+```
+
+Je refait la commande du ping pour Ansible:
+
+```bash
+c3po@6b5d3b68e23c:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m ping      
+The authenticity of host 'appserver2 (172.31.0.4)' can t be established.       
+ECDSA key fingerprint is SHA256:uxG1tb2fVObTRyGqjEhzROTrpxTMvT7PLYqTShKiT7E.   
+Are you sure you want to continue connecting (yes/no)? appserver1 | UNREACHABLE! => {                                                                         
+    "changed": false,                  
+    "msg": "Failed to connect to the host via ssh: Permission denied (publickey,password).\r\n",                                                              
+    "unreachable": true                
+}                                      
+[ J ai fait CRTL+C ]
+```
+
+Bon bonne nouvelle le système ne demande que pour 1 serveur la clé, car nous avons approuvé la clé du serveur **appserver1**
+
+L'autre méthode définir qu'il n'y a pas de validation de clé ssh pour l'ensemble des communications , voir documentation d'Ansible [host-key-checking](http://docs.ansible.com/ansible/latest/user_guide/intro_getting_started.html#host-key-checking).
+
+Comme je ne désire pas désactivé la validation au niveau globale , je vais désactiver la validation pour la communication courante .
+
+```bash
+c3po@6b5d3b68e23c:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m ping                                                                                     
+appserver1 | UNREACHABLE! => {         
+    "changed": false,                  
+    "msg": "Failed to connect to the host via ssh: Permission denied (publickey,password).\r\n",                                                              
+    "unreachable": true                
+}                                      
+appserver2 | UNREACHABLE! => {         
+    "changed": false,                  
+    "msg": "Failed to connect to the host via ssh: Warning: Permanently added 'appserver2,172.31.0.4' (ECDSA) to the list of known hosts.\r\nPermission denied (publickey,password).\r\n",           
+    "unreachable": true                
+} 
+```
+
+Si je reéxécute la commande :
+
+```bash
+c3po@6b5d3b68e23c:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m ping      
+appserver2 | UNREACHABLE! => {         
+    "changed": false,                  
+    "msg": "Failed to connect to the host via ssh: Permission denied (publickey,password).\r\n",                                                              
+    "unreachable": true                
+}                                      
+appserver1 | UNREACHABLE! => {         
+    "changed": false,                  
+    "msg": "Failed to connect to the host via ssh: Permission denied (publickey,password).\r\n",                                                              
+    "unreachable": true                
+} 
+```
+
+Bon c'est pas mal , on avance plus de demande de clé ssh .. Mais heu , comment dire ça marche pas. Le problème est que nous devons établir la connexion sous l'utilisateur **r2d2** et non **c3po**.
+
+Nous allons éditer le fichier **hosts** afin d'identifier que l'utilisateur de connexion doit être **r2d2** .
+
+```
+# Aapp servers  for training env
+[AppSrvTraining]
+appserver1 ansible_user=r2d2
+appserver2
+```
+
+Si je ré exécute la commande :
+
+```bash
+c3po@6b5d3b68e23c:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m ping      
+appserver2 | UNREACHABLE! => {         
+    "changed": false,                  
+    "msg": "Failed to connect to the host via ssh: Permission denied (publickey,password).\r\n",                                                              
+    "unreachable": true                
+}                                      
+appserver1 | SUCCESS => {              
+    "changed": false,                  
+    "ping": "pong"                     
+}  
+```
+
+Bien entendu je peux mettre cette configuration pour chaque machine mais je vais le définir par défaut, par le fait même l'ensemble des machines identifier aurons automatiquement l'utilisateur r2d2 d'associer. 
+
+```bash
+c3po@6b5d3b68e23c:/etc/ansible$ grep -n "r2d2" /etc/ansible/ansible.cfg 
+98:remote_user = r2d2
+``` 
+
+Dans le fichier __/etc/ansible/ansible.cfg__ à la ligne 98 , dans la section **default** .
+
+```bash
+c3po@6b5d3b68e23c:/etc/ansible$ cat /etc/ansible/hosts                         
+ # Configuration de l'inventaire        
+ #                                      
+
+ # All servers                          
+[SrvTraining]                          
+appserver1                             
+appserver2                             
+webserver                              
+databaseserver                         
+                                       
+ # Aapp servers  for training env       
+[AppSrvTraining]                       
+appserver1                             
+appserver2                             
+
+[WebSrvTraining]                       
+webserver                              
+badserver                              
+
+[DbSrvTraining]                        
+databaseserver                         
+c3po@6b5d3b68e23c:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m ping   
+appserver1 | SUCCESS => {
+    "changed": false, 
+    "ping": "pong"
+}
+appserver2 | SUCCESS => {
+    "changed": false, 
+    "ping": "pong"
+}
+```

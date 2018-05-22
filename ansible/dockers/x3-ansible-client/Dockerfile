@@ -12,7 +12,7 @@ MAINTAINER Thomas Boutry "thomas.boutry@x3rus.com"
 
  # Installation des applications, besoin de ssh et de java pour le service Jenkins
 RUN apt-get update && \
-    apt-get install -y openssh-server sudo git  && \
+    apt-get install -y openssh-server sudo git python && \
     mkdir /var/run/sshd
 
  # TODO besoin client ansible / python ??
