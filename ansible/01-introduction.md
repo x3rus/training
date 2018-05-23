@@ -590,3 +590,157 @@ appserver2 | SUCCESS => {
 ```
 
 Nous avons donc un succès . 
+
+### Exécution de commande shell
+
+Je vais faire une présentation des modules disponible sous peu , par contre afin de faire une petite démonstration un peu plus sexy que le ping/ping réalisé préalablement. Nous allons voir le module **shell** qui permet d'exécuter des commandes arbitraire. 
+
+Si vous aviez éteint votre machine, remise en fonction des conteneurs 
+
+```bash
+$ docker-compose up -d                               
+Starting x3-ansible-appsrv2-t ...      
+Starting x3-ansible-appsrv2-t          
+Starting x3-ansible-dbsrv-t ...        
+Starting x3-ansible-dbsrv-t            
+Starting x3-ansible-websrv-t ...       
+Starting x3-ansible-appsrv1-t ...      
+Starting x3-ansible-appsrv1-t          
+Starting x3-ansible-appsrv1-t ... done 
+Starting x3-ansible-p ...              
+Starting x3-ansible-p ... done 
+```
+
+Accès au serveur ansible et bascule sous l'utilisateur **c3po** :
+
+```bash
+$ docker exec -it x3-ansible-p bash         
+root@93c85717dd06:/# su - c3po
+c3po@93c85717dd06:~$ cd /etc/ansible/
+c3po@93c85717dd06:/etc/ansible$ 
+```
+
+Affichage du contenu du fichier __hosts__ pour les machines du groupe AppSrvTraining 
+
+```bash
+c3po@93c85717dd06:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m shell -a 'cat /etc/hosts'
+appserver1 | SUCCESS | rc=0 >>
+127.0.0.1       localhost
+::1     localhost ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+172.31.0.5      27671fcbed7b
+
+appserver2 | SUCCESS | rc=0 >>
+127.0.0.1       localhost
+::1     localhost ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+172.31.0.2      f79ea034b345
+```
+
+Une autre commande : 
+
+```bash
+$ ansible -i ./hosts AppSrvTraining -m shell -a 'hostname && echo "bonjour" > /tmp/ansible-test && ls -l /tmp/ansible-test && echo "Ze Fin"  '
+appserver1 | SUCCESS | rc=0 >>
+27671fcbed7b
+-rw-rw-r-- 1 r2d2 r2d2 8 May 23 21:10 /tmp/ansible-test
+Ze Fin
+
+appserver2 | SUCCESS | rc=0 >>
+f79ea034b345
+-rw-rw-r-- 1 r2d2 r2d2 8 May 23 21:10 /tmp/ansible-test
+Ze Fin
+```
+
+* Visualisation d'un problème de communication 
+
+Si nous prenons le groupe WebSrvTraining, j'ai introduit une erreur dans la configuration , le serveur badserver n'est pas disponible . Voici un exemple du résultat :
+
+```bash
+c3po@93c85717dd06:/etc/ansible$ cat hosts  | grep -A 3 WebSrv
+[WebSrvTraining]
+webserver
+badserver
+
+
+$ ansible -i ./hosts WebSrvTraining -m shell -a 'cat /etc/hosts'
+badserver | UNREACHABLE! => {          
+    "changed": false,                  
+    "msg": "Failed to connect to the host via ssh: ssh: Could not resolve hostname badserver: Name or service not known\r\n",                                 
+    "unreachable": true                
+}                                      
+webserver | SUCCESS | rc=0 >>          
+127.0.0.1       localhost              
+::1     localhost ip6-localhost ip6-loopback                                   
+fe00::0 ip6-localnet                   
+ff00::0 ip6-mcastprefix                
+ff02::1 ip6-allnodes                   
+ff02::2 ip6-allrouters                 
+172.31.0.4      ed0155551cc4  
+```
+
+Bien entendu l'ensemble de l'exécution est réalisé sous l'utilisateur définie pour la connexion soit : 
+
+```bash
+c3po@93c85717dd06:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m shell -a 'id '
+appserver2 | SUCCESS | rc=0 >>
+uid=1000(r2d2) gid=1000(r2d2) groups=1000(r2d2),27(sudo),1001(automate)
+
+appserver1 | SUCCESS | rc=0 >>
+uid=1000(r2d2) gid=1000(r2d2) groups=1000(r2d2),27(sudo),1001(automate)
+```
+
+Donc si vous essayez de réalisé une commande qui demande l'accès administrateur :
+
+```bash
+c3po@93c85717dd06:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m shell -a 'apt-get install toto'
+ [WARNING]: Consider using the apt module rather than running apt-get.  If you need to use command because apt is insufficient you can add warn=False to this
+command task or set command_warnings=False in ansible.cfg to get rid of this message.
+
+appserver1 | FAILED | rc=100 >>
+E: Could not open lock file /var/lib/dpkg/lock - open (13: Permission denied)
+E: Unable to lock the administration directory (/var/lib/dpkg/), are you root?non-zero return code
+
+appserver2 | FAILED | rc=100 >>
+E: Could not open lock file /var/lib/dpkg/lock - open (13: Permission denied)
+E: Unable to lock the administration directory (/var/lib/dpkg/), are you root?non-zero return code
+```
+
+J'aimerai mettre en lumière 2 choses :
+
+* **WARNING** : Qui vous indique de ne pas utiliser la commande apt-get mais d'utiliser le module apt disponible avec __ansible__ mais que si vraiment vous désirez faire la commande il est possible de désactiver la notification.
+* **Permission denied** : Bien entendu la commande apt demande la permission root résultat l'utilisateur n'a pas les droits.
+
+Si nous listons les permissions voici le résultat :
+
+```bash
+c3po@93c85717dd06:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m shell -a 'sudo -l'
+ [WARNING]: Consider using 'become', 'become_method', and 'become_user' rather than running sudo
+
+appserver1 | SUCCESS | rc=0 >>
+Matching Defaults entries for r2d2 on 27671fcbed7b:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User r2d2 may run the following commands on 27671fcbed7b:
+    (ALL : ALL) ALL
+    (ALL) NOPASSWD: ALL
+
+appserver2 | SUCCESS | rc=0 >>
+Matching Defaults entries for r2d2 on f79ea034b345:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User r2d2 may run the following commands on f79ea034b345:
+    (ALL : ALL) ALL
+    (ALL) NOPASSWD: ALL
+```
+
+
+### Les modules
+
+http://docs.ansible.com/ansible/latest/modules/shell_module.html#shell-module
