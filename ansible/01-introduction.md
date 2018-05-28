@@ -372,7 +372,7 @@ services:
             - TERM=xterm
 ```
 
-## Tutorial Ansible
+# Tutorial Ansible
 
 Le fichier de configuration par défaut d'Ansible est **/etc/ansible/ansible.cfg** , vous avez une copie de ce fichier disponible : [ansible-ORI.cfg](./data/ansible-ORI.cfg). Je vous invite à le consulter voir les paramètres utilisés par défaut par le système. Pour débuter nous ne ferons pas de modification dans le fichier. 
 
@@ -386,7 +386,7 @@ root@6b5d3b68e23c:/etc/ansible# ls
 ansible.cfg  hosts  roles        
 ```
 
-### Gestion de l'inventaire .
+## Gestion de l'inventaire .
 
 Nous allons regrouper nos machines / serveurs dans l'inventaire d'Ansible , ceci nous permettra d'avoir des regroupements de machines pour réaliser des opérations . Dans notre cas nous allons avoir un groupe représentant l'ensemble des machines , ainsi que des groupes par type : web , applicatif, base de données. 
 
@@ -419,7 +419,7 @@ databaseserver
 
 TODO: Explication syntaxe et groupe
 
-### Test de connexion 
+## Test de connexion 
 
 Premièrement nous allons basculer avec l'utilisateur **c3po**, la configuration des clé de communication SSH fut réalisé avec cette utilisateur pour établir une connexion avec l'utilisateur **r2d2**. Nous allons donc devoir faire la configuration des ses utilisateurs . 
 
@@ -741,6 +741,85 @@ User r2d2 may run the following commands on f79ea034b345:
 ```
 
 
-### Les modules
+## Les modules
 
-http://docs.ansible.com/ansible/latest/modules/shell_module.html#shell-module
+Lors de la validation de communication entre les hôtes, nous avons utilisé l'option **-m** qui nous à permis d'utiliser des modules Ansible.
+Par le fait même nous avons 2 modules :
+
+* **PING** : qui nous permet d'établir une connexion ssh , exécuter **ping** et s'attendre à recevoir **PONG** , ceci est principalement utilisé pour valider la communication entre le serveur Jenkins et les nœuds.
+* **SHELL** : Ceci nous permet d'exécuter des commandes arbitraire sur les nœuds.
+
+Je ne prendrai pas de temps pour le module **ping**, car en dehors du processus de validation il n'a pas d'intérêt. Prenons quelque minutes pour regarder le module [Shell](http://docs.ansible.com/ansible/latest/modules/shell_module.html#shell-module). 
+
+### Shell module
+
+Comme vous pouvez le voir si vous cliquez sur le lien [Shell](http://docs.ansible.com/ansible/latest/modules/shell_module.html#shell-module). 
+
+Si nous regardons la section paramètre, le module est en mesure de prendre des arguments :
+
+![](./imgs/01-shell-module-parameter-doc.png)
+
+Voyons la commande : __pwd & ls__
+
+```bash
+c3po@93c85717dd06:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m shell -a 'pwd && ls'
+appserver1 | SUCCESS | rc=0 >>
+/home/r2d2
+
+appserver2 | SUCCESS | rc=0 >>
+/home/r2d2
+
+
+```
+
+Si je passe l'argument : **chdir** , pour changer de répertoire pour **/tmp** :
+
+```bash
+c3po@93c85717dd06:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m shell -a 'pwd && ls chdir=/tmp'
+appserver1 | SUCCESS | rc=0 >>
+/tmp
+ansible-test
+ansible_1OU5Hs
+
+appserver2 | SUCCESS | rc=0 >>
+/tmp
+ansible-test
+ansible_3tqlcr
+
+```
+
+Vous pouvez aussi définir le paramètre au debut de la ligne de commande :
+
+```bash
+c3po@93c85717dd06:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m shell -a 'chdir=/tmp pwd && ls'
+appserver2 | SUCCESS | rc=0 >>
+/tmp
+ansible-test
+ansible_2Ft9ZC
+
+appserver1 | SUCCESS | rc=0 >>
+/tmp
+ansible-test
+ansible_Kn_Pu7
+
+```
+
+
+Si je passe l'argument : **creates** , pour définir une condition d'exécution sur ma commande : 
+
+```bash
+c3po@93c85717dd06:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m shell -a 'chdir=/tmp creates=/tmp/ze-data  date > /tmp/ze-data && cat /tmp/ze-data'      
+appserver2 | SUCCESS | rc=0 >>         
+Mon May 28 11:56:26 UTC 2018           
+
+appserver1 | SUCCESS | rc=0 >>         
+Mon May 28 11:56:26 UTC 2018           
+
+c3po@93c85717dd06:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m shell -a 'chdir=/tmp creates=/tmp/ze-data  date > /tmp/ze-data && cat /tmp/ze-data'      
+appserver2 | SUCCESS | rc=0 >>         
+skipped, since /tmp/ze-data exists     
+
+appserver1 | SUCCESS | rc=0 >>         
+skipped, since /tmp/ze-data exists     
+
+```
