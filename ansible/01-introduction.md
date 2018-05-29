@@ -823,3 +823,10 @@ appserver1 | SUCCESS | rc=0 >>
 skipped, since /tmp/ze-data exists     
 
 ```
+
+Comme nous pouvons le voir dans l'exemple ci-dessus , lors de la première execution le fichier __/tmp/ze-data__ est créée , ce dernier contient la date. Lors de la deuxième exécution, il n'y a pas d'exécution car le fichier de référence est déjà présent.
+
+
+### Les modules disponible
+
+Ansible vient avec une boite à outils complète composé d'un grand nombre de module : [module par catégorie](http://docs.ansible.com/ansible/latest/modules/modules_by_category.html). 
