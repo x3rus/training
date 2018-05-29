@@ -826,7 +826,169 @@ skipped, since /tmp/ze-data exists
 
 Comme nous pouvons le voir dans l'exemple ci-dessus , lors de la première execution le fichier __/tmp/ze-data__ est créée , ce dernier contient la date. Lors de la deuxième exécution, il n'y a pas d'exécution car le fichier de référence est déjà présent.
 
+### Apt module
+
+Nous allons voir le module Apt , mais profitons de connaître déjà le module **shell** pour réaliser l'opération avec ce dernier et nous verrons par la suite la réalisation avec le modules approprié.
+
+* Commande sans les permissions ROOT
+
+```bash
+c3po@93c85717dd06:/etc/ansible$ ansible -v -i ./hosts AppSrvTraining -m shell -a 'apt-get install whois'
+Using /etc/ansible/ansible.cfg as config file
+ [WARNING]: Consider using the apt module rather than running apt-get.  If you need to use command because apt is insufficient you can add warn=False to this 
+command task or set command_warnings=False in ansible.cfg to get rid of this message.
+
+appserver2 | FAILED | rc=100 >> 
+E: Could not open lock file /var/lib/dpkg/lock - open (13: Permission denied)  
+E: Unable to lock the administration directory (/var/lib/dpkg/), are you root?non-zero return code
+
+appserver1 | FAILED | rc=100 >>        
+E: Could not open lock file /var/lib/dpkg/lock - open (13: Permission denied)  
+E: Unable to lock the administration directory (/var/lib/dpkg/), are you root?non-zero return code
+
+```
+
+* Commande avec les permissions sudo :
+
+```bash
+c3po@93c85717dd06:/etc/ansible$ ansible -v -i ./hosts AppSrvTraining -m shell --become-user=root -b  -a 'apt-get install whois'
+Using /etc/ansible/ansible.cfg as config file
+ [WARNING]: Consider using the apt module rather than running apt-get.  If you need to use command because apt is insufficient you can add warn=False to this
+command task or set command_warnings=False in ansible.cfg to get rid of this message.
+
+appserver1 | SUCCESS | rc=0 >>
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following NEW packages will be installed:
+  whois
+0 upgraded, 1 newly installed, 0 to remove and 47 not upgraded.
+Need to get 34.0 kB of archives.
+After this operation, 184 kB of additional disk space will be used.
+Get:1 http://archive.ubuntu.com/ubuntu xenial/main amd64 whois amd64 5.2.11 [34.0 kB]
+Fetched 34.0 kB in 8s (3996 B/s)
+Selecting previously unselected package whois.
+(Reading database ... 15798 files and directories currently installed.)
+Preparing to unpack .../whois_5.2.11_amd64.deb ...
+Unpacking whois (5.2.11) ...
+Setting up whois (5.2.11) ...debconf: delaying package configuration, since apt-utils is not installed
+
+appserver2 | SUCCESS | rc=0 >>
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following NEW packages will be installed:
+  whois
+0 upgraded, 1 newly installed, 0 to remove and 47 not upgraded.
+Need to get 34.0 kB of archives.
+After this operation, 184 kB of additional disk space will be used.
+Get:1 http://archive.ubuntu.com/ubuntu xenial/main amd64 whois amd64 5.2.11 [34.0 kB]
+Fetched 34.0 kB in 10s (3179 B/s)
+Selecting previously unselected package whois.
+(Reading database ... 15798 files and directories currently installed.)
+Preparing to unpack .../whois_5.2.11_amd64.deb ...
+Unpacking whois (5.2.11) ...
+Setting up whois (5.2.11) ...debconf: delaying package configuration, since apt-utils is not installed
+```
+
+* Exécution de l'installation une deuxième fois 
+
+```bash
+c3po@93c85717dd06:/etc/ansible$ ansible -v -i ./hosts AppSrvTraining -m shell --become-user=root -b  -a 'apt-get install whois'
+Using /etc/ansible/ansible.cfg as config file
+ [WARNING]: Consider using the apt module rather than running apt-get.  If you need to use command because apt is insufficient you can add warn=False to this
+command task or set command_warnings=False in ansible.cfg to get rid of this message.
+
+appserver2 | SUCCESS | rc=0 >>
+Reading package lists...
+Building dependency tree...
+Reading state information...
+whois is already the newest version (5.2.11).
+0 upgraded, 0 newly installed, 0 to remove and 47 not upgraded.
+
+appserver1 | SUCCESS | rc=0 >>
+Reading package lists...
+Building dependency tree...
+Reading state information...
+whois is already the newest version (5.2.11).
+0 upgraded, 0 newly installed, 0 to remove and 47 not upgraded.
+```
+
+* Destruction des conteneurs 
+
+```bash
+c3po@93c85717dd06:/etc/ansible$ logout
+root@93c85717dd06:/# exit
+
+$ docker-compose stop  && docker-compose rm ansible-app1 ansible-app2 && docker-compose up -d                                   
+Stopping x3-ansible-p         ... done 
+Stopping x3-ansible-websrv-t  ... done 
+Stopping x3-ansible-dbsrv-t   ... done 
+Stopping x3-ansible-appsrv1-t ... done 
+Stopping x3-ansible-appsrv2-t ... done 
+Going to remove x3-ansible-appsrv1-t, x3-ansible-appsrv2-t                     
+Are you sure? [yN] y                   
+Removing x3-ansible-appsrv1-t ... done
+Removing x3-ansible-appsrv2-t ... done
+Starting x3-ansible-websrv-t ... 
+Starting x3-ansible-dbsrv-t ... 
+Creating x3-ansible-appsrv2-t ... 
+Creating x3-ansible-appsrv1-t ... 
+Starting x3-ansible-websrv-t
+Starting x3-ansible-dbsrv-t
+Creating x3-ansible-appsrv2-t
+Creating x3-ansible-appsrv2-t ... done
+Recreating x3-ansible-p ... 
+Recreating x3-ansible-p ... done
+```
+
+* Validation que ça passe toujours 
+
+
+```bash
+$ docker exec -it x3-ansible-p bash
+root@9609b00a9c3c:/# su - c3po 
+c3po@9609b00a9c3c:~$ cd /etc/ansible/ 
+c3po@9609b00a9c3c:/etc/ansible$ export ANSIBLE_HOST_KEY_CHECKING=False
+c3po@9609b00a9c3c:/etc/ansible$ ansible -v -i ./hosts AppSrvTraining -m shell -a 'ls'
+Using /etc/ansible/ansible.cfg as config file
+appserver1 | SUCCESS | rc=0 >>
+
+
+appserver2 | SUCCESS | rc=0 >>
+
+
+
 
 ### Les modules disponible
 
-Ansible vient avec une boite à outils complète composé d'un grand nombre de module : [module par catégorie](http://docs.ansible.com/ansible/latest/modules/modules_by_category.html). 
+
+Ansible vient avec une boite à outils complète composé d'un grand nombre de module : [module par catégorie](http://docs.ansible.com/ansible/latest/modules/modules_by_category.html).  
+
+Comme vous pouvez le voir il y a un grand nombre de module disponible pour plusieurs type d'activités :
+
+* Cloud modules
+* Clustering modules
+* Commands modules
+* Crypto modules
+* Database modules
+* Files modules
+* Identity modules
+* Inventory modules
+* Messaging modules
+* Monitoring modules
+* Net Tools modules
+* Network modules
+* Notification modules
+* Packaging modules
+* Remote Management modules
+* Source Control modules
+* Storage modules
+* System modules
+* Utilities modules
+* Web Infrastructure modules
+* Windows modules
+
+Je vous laisse explorer quelques modules afin de vous mettre l'eau à la bouche , :).
+
+Nous allons en voir quelques un , mais l'objectif n'est assurément pas d'exécuter des commandes Ansible 
