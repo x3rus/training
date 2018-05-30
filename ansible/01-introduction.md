@@ -957,7 +957,184 @@ appserver1 | SUCCESS | rc=0 >>
 
 appserver2 | SUCCESS | rc=0 >>
 
+```
 
+* Utilisation de apt SANS les permissions root 
+
+```bash
+c3po@9609b00a9c3c:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m apt -a 'name=whois state=present update_cache=true'
+appserver2 | FAILED! => {
+    "changed": false, 
+    "cmd": "apt-get update", 
+    "msg": "W: chmod 0700 of directory /var/lib/apt/lists/partial failed - SetupAPTPartialDirectory (1: Operation not permitted)\nE: Could not open lock file /var/lib/apt/lists/lock - open (13: Permission denied)\nE: Unable to lock directory /var/lib/apt/lists/\nE: Could not open lock file /var/lib/dpkg/lock - open (13: Permission denied)\nE: Unable to lock the administration directory (/var/lib/dpkg/), are you root?", 
+    "rc": 100, 
+    "stderr": "W: chmod 0700 of directory /var/lib/apt/lists/partial failed - SetupAPTPartialDirectory (1: Operation not permitted)\nE: Could not open lock file /var/lib/apt/lists/lock - open (13: Permission denied)\nE: Unable to lock directory /var/lib/apt/lists/\nE: Could not open lock file /var/lib/dpkg/lock - open (13: Permission denied)\nE: Unable to lock the administration directory (/var/lib/dpkg/), are you root?\n", 
+    "stderr_lines": [
+        "W: chmod 0700 of directory /var/lib/apt/lists/partial failed - SetupAPTPartialDirectory (1: Operation not permitted)", 
+        "E: Could not open lock file /var/lib/apt/lists/lock - open (13: Permission denied)", 
+        "E: Unable to lock directory /var/lib/apt/lists/", 
+        "E: Could not open lock file /var/lib/dpkg/lock - open (13: Permission denied)", 
+        "E: Unable to lock the administration directory (/var/lib/dpkg/), are you root?"
+    ], 
+    "stdout": "", 
+    "stdout_lines": []
+}
+
+```
+
+```bash
+c3po@9609b00a9c3c:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m apt -b --become-user=root -a 'name=whois state=present update_cache=true'
+appserver2 | SUCCESS =>{                                                                                                                                     
+    "cache_update_time": 1527715929, 
+    "cache_updated": true, 
+    "changed": true,
+    "stderr": "debconf: delaying package configuration, since apt-utils is not installed\n",
+    "stderr_lines": [
+        "debconf: delaying package configuration, since apt-utils is not installed"
+    ],
+    "stdout": "Reading package lists...\nBuilding dependency tree...\nReading state information...\nThe following NEW packages will be installed:\n  whois\n0
+upgraded, 1 newly installed, 0 to remove and 48 not upgraded.\nNeed to get 34.0 kB of archives.\nAfter this operation, 184 kB of additional disk space will be
+used.\nGet:1 http://archive.ubuntu.com/ubuntu xenial/main amd64 whois amd64 5.2.11 [34.0 kB]\nFetched 34.0 kB in 0s (68.7 kB/s)\nSelecting previously unselec
+ted package whois.\r\n(Reading database ... \r(Reading database ... 5%\r(Reading database ... 10%\r(Reading database ... 15%\r(Reading database ... 20%\r(Read
+ingdatabase ... 25%\r(Reading database ... 30%\r(Reading database ... 35%\r(Reading database ... 40%\r(Reading database ... 45%\r(Reading database ... 50%\r(
+Reading database ... 55%\r(Reading database ... 60%\r(Reading database ... 65%\r(Reading database ... 70%\r(Reading database ... 75%\r(Reading database ... 80
+%\r(Readingdatabase ... 85%\r(Reading database ... 90%\r(Reading database ... 95%\r(Reading database ... 100%\r(Reading database ... 16492 files and director
+ies currently installed.)\r\nPreparing to unpack .../whois_5.2.11_amd64.deb ...\r\nUnpacking whois (5.2.11) ...\r\nSetting up whois (5.2.11) ...\r\n",
+    "stdout_lines": [
+        "Reading package lists...",
+        "Building dependency tree...",
+        "Reading state information...",
+        "The following NEW packages will be installed:",
+        "  whois",
+        "0 upgraded, 1 newly installed, 0 to remove and 48 not upgraded.",
+        "Need to get 34.0 kB of archives.",
+        "After this operation, 184 kB of additional disk space will be used.",
+        "Get:1 http://archive.ubuntu.com/ubuntu xenial/main amd64 whois amd64 5.2.11 [34.0 kB]",
+        "Fetched 34.0 kB in 0s (68.7 kB/s)",
+        "Selecting previously unselected package whois.",                                                                                                             "(Reading database ... ",                                                                                                                                     "(Reading database ... 5%",
+        "(Reading database ... 10%",
+        "(Reading database ... 15%",
+        "(Reading database ... 20%",
+        "(Reading database ... 25%",
+        "(Reading database ... 30%",
+        "(Reading database ... 35%",
+        "(Reading database ... 40%",
+        "(Reading database ... 45%",
+        "(Reading database ... 50%",
+        "(Reading database ... 55%",
+        "(Reading database ... 60%",
+        "(Reading database ... 65%", 
+        "(Reading database ... 70%", 
+        "(Reading database ... 75%", 
+        "(Reading database ... 80%", 
+        "(Reading database ... 85%", 
+        "(Reading database ... 90%", 
+        "(Reading database ... 95%", 
+        "(Reading database ... 100%", 
+        "(Reading database ... 16492 files and directories currently installed.)", 
+        "Preparing to unpack .../whois_5.2.11_amd64.deb ...", 
+        "Unpacking whois (5.2.11) ...", 
+        "Setting up whois (5.2.11) ..."
+    ]
+}
+appserver1 | SUCCESS => {
+    "cache_update_time": 1527715929, 
+ [... OUTPUT COUPÉ ... ]
+```
+
+* Execution un deuxième fois de la commande :
+
+```bash
+c3po@9609b00a9c3c:/etc/ansible$ ansible -i ./hosts AppSrvTraining -m apt -b --become-user=root -a 'name=whois state=present update_cache=true'
+appserver1 | SUCCESS => {
+    "cache_update_time": 1527715929, 
+    "cache_updated": true, 
+    "changed": false
+}
+appserver2 | SUCCESS => {
+    "cache_update_time": 1527715929, 
+    "cache_updated": true, 
+    "changed": false
+}
+```
+
+
+* autre exemple avec suppression 
+
+```bash
+c3po@9609b00a9c3c:/etc/ansible$ ansible -v -i ./hosts appserver1 -m shell -a 'ls'
+Using /etc/ansible/ansible.cfg as config file
+appserver1 | SUCCESS | rc=0 >>
+
+c3po@9609b00a9c3c:/etc/ansible$ ansible -v -i ./hosts appserver1 -m shell -b --become-user=root -a 'apt-get remove whois'                                    
+Using /etc/ansible/ansible.cfg as config file
+ [WARNING]: Consider using the apt module rather than running apt-get.  If you need to use command because apt is insufficient you can add warn=False to this
+command task or set command_warnings=False in ansible.cfg to get rid of this message.
+
+appserver1 | FAILED | rc=1 >>
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following packages will be REMOVED:
+  whois
+0 upgraded, 0 newly installed, 1 to remove and 48 not upgraded.
+After this operation, 184 kB disk space will be freed.
+Do you want to continue? [Y/n] Abort.non-zero return code
+
+``` 
+
+* Avec apt
+
+```bash
+c3po@9609b00a9c3c:/etc/ansible$ ansible -i ./hosts appserver1 -m apt -b --become-user=root -a 'name=whois state=absent '                                      
+appserver1 | SUCCESS => {              
+    "changed": true,
+    "stderr": "", 
+    "stderr_lines": [], 
+    "stdout": "Reading package lists...\nBuilding dependency tree...\nReading state information...\nThe following packages will be REMOVED:\n  whois\n0 upgraded, 0 newly installed, 1 to remove and 48 not upgraded.\nAfter this operation, 184 kB disk space will be freed.\n(Reading database ... \r(Reading database ... 5%\r(Reading database ... 10%\r(Reading database ... 15%\r(Reading database ... 20%\r(Reading database ... 25%\r(Reading database ... 30%\r(Reading database ... 35%\r(Reading database ... 40%\r(Reading database ... 45%\r(Reading database ... 50%\r(Reading database ... 55%\r(Reading database ... 60%\r(Reading database ... 65%\r(Reading database ... 70%\r(Reading database ... 75%\r(Reading database ... 80%\r(Reading database ... 85%\r(Reading database ... 90%\r(Reading database ... 95%\r(Reading database ... 100%\r(Reading database ... 16501 files and directories currently installed.)\r\nRemoving whois (5.2.11) ...\r\n", 
+    "stdout_lines": [
+        "Reading package lists...", 
+        "Building dependency tree...", 
+        "Reading state information...", 
+        "The following packages will be REMOVED:", 
+        "  whois", 
+        "0 upgraded, 0 newly installed, 1 to remove and 48 not upgraded.", 
+        "After this operation, 184 kB disk space will be freed.", 
+        "(Reading database ... ", 
+        "(Reading database ... 5%", 
+        "(Reading database ... 10%", 
+        "(Reading database ... 15%", 
+        "(Reading database ... 20%", 
+        "(Reading database ... 25%", 
+        "(Reading database ... 30%", 
+        "(Reading database ... 35%", 
+        "(Reading database ... 40%", 
+        "(Reading database ... 45%", 
+        "(Reading database ... 50%", 
+        "(Reading database ... 55%", 
+        "(Reading database ... 60%", 
+        "(Reading database ... 65%", 
+        "(Reading database ... 70%", 
+        "(Reading database ... 75%", 
+        "(Reading database ... 80%", 
+        "(Reading database ... 85%", 
+        "(Reading database ... 90%", 
+        "(Reading database ... 95%", 
+        "(Reading database ... 100%", 
+        "(Reading database ... 16501 files and directories currently installed.)", 
+        "Removing whois (5.2.11) ..."
+    ]
+}
+```
+
+* Si on le refait 
+
+```bash
+c3po@9609b00a9c3c:/etc/ansible$ ansible -i ./hosts appserver1 -m apt -b --become-user=root -a 'name=whois state=absent '                                      
+appserver1 | SUCCESS => {
+    "changed": false
+}
+```
 
 
 ### Les modules disponible
