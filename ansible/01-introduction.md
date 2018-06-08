@@ -181,7 +181,7 @@ Nous utiliserons 2 utilisateur :
 J'ai opté pour 2 utilisateurs distinct afin de démontrer la différence , éventuellement nous pourrions avoir d'autre utilisateur en plus de **r2d2** selon les serveurs.
 
 
-
+Pour les serveurs applicatif nous allons installer l'application  [getpelican CMS](http://getpelican.com), car je veux le tester :P tout simplement , malheureusement cette application n'utilise pas de base de données. Je vais donc en faire la création uniquement à titre informatif.
 
 ### Création de l'image pour la simulation des machines 
 
@@ -386,7 +386,7 @@ root@6b5d3b68e23c:/etc/ansible# ls
 ansible.cfg  hosts  roles        
 ```
 
-## Gestion de l'inventaire .
+## Gestion de l'inventaire
 
 Nous allons regrouper nos machines / serveurs dans l'inventaire d'Ansible , ceci nous permettra d'avoir des regroupements de machines pour réaliser des opérations . Dans notre cas nous allons avoir un groupe représentant l'ensemble des machines , ainsi que des groupes par type : web , applicatif, base de données. 
 
@@ -1168,4 +1168,62 @@ Comme vous pouvez le voir il y a un grand nombre de module disponible pour plusi
 
 Je vous laisse explorer quelques modules afin de vous mettre l'eau à la bouche , :).
 
-Nous allons en voir quelques un , mais l'objectif n'est assurément pas d'exécuter des commandes Ansible 
+Nous allons en voir quelques un , mais l'objectif n'est assurément pas d'exécuter des commandes Ansible via la ligne de commande une à la fois.
+Nous allons donc passez au mode d'orchestration de plusieurs tâches avec ces modules.
+
+
+## PlayBooks
+
+L'exécution de taches sur la ligne de commande, nous offre de la flexibilité de réaliser des opérations rapidement pour une tâches. Cependant si nous avez des instructions un peu complexe ceci n'est pas très pratique. La documentation original en anglais [playbook introduction](http://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html).
+
+Donc le **Playbook** nous permettra de réalisé des tâches de manière séquentiel ou conditionnel. Nous retrouvons donc à ce niveau l'ensemble du principe d'orchestration !
+
+Les fichiers de **PlayBook** sont structuré sous le [format YAML](http://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html#yaml-syntax).
+
+Nous allons voir le processus d'installation de l'application [pilican cms](http://docs.getpelican.com/en/3.7.1/install.html).
+
+opération manuel :
+
+```
+r2d2@e7483189fa57:~$ sudo apt-get install python-pip
+r2d2@e7483189fa57:~$ sudo pip install pelican
+r2d2@e7483189fa57:~$ sudo pip install Markdown
+r2d2@e7483189fa57:~$ sudo pip install typogrify
+r2d2@e7483189fa57:~$ sudo pip install pygments unidecode docutils python-dateutil
+
+r2d2@e7483189fa57:~$ pwd
+/home/r2d2
+r2d2@e7483189fa57:~$ pelican-quickstart
+Welcome to pelican-quickstart v3.7.1.
+
+This script will help you create a new Pelican-based website.
+
+Please answer the following questions so this script can generate the files
+needed by Pelican.
+
+    
+> Where do you want to create your new web site? [.] /home/r2d2/website
+> What will be the title of this web site? Training site
+> Who will be the author of this web site? xerus
+> What will be the default language of this web site? [English] French
+You must enter a 2 letters long string
+> What will be the default language of this web site? [English] fr
+> Do you want to specify a URL prefix? e.g., http://example.com   (Y/n) n
+> Do you want to enable article pagination? (Y/n) y
+> How many articles per page do you want? [10] 
+> What is your time zone? [Europe/Paris] America/New-York
+Please enter a valid time zone:
+ (check [http://en.wikipedia.org/wiki/List_of_tz_database_time_zones])
+> What is your time zone? [Europe/Paris]        America/New_York                        
+> Do you want to generate a Fabfile/Makefile to automate generation and publishing? (Y/n) 
+> Do you want an auto-reload & simpleHTTP script to assist with theme and site development? (Y/n) 
+> Do you want to upload your website using FTP? (y/N) 
+> Do you want to upload your website using SSH? (y/N) 
+> Do you want to upload your website using Dropbox? (y/N) 
+> Do you want to upload your website using S3? (y/N) 
+> Do you want to upload your website using Rackspace Cloud Files? (y/N) 
+> Do you want to upload your website using GitHub Pages? (y/N) 
+Done. Your new project is available at /home/r2d2/website
+
+
+``` 
