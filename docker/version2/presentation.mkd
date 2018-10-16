@@ -1,4 +1,4 @@
-<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+﻿<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
 <style>
 pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 </style>
@@ -8,16 +8,16 @@ pre{background:#F8F8FF; border:black dashed 1px; padding:6px}
 # Index
 
 * [ Introduction](#Intro)
-       * [ Qu'est ce que Docker ?](#whatIsDocker)
+       * [ Qu'est-ce que Docker ?](#whatIsDocker)
            * [ Objectif de Docker](#Objectif)
-           * [ La différence entre une Machine Virtuel (VM) et docker](#docker_vs_vm)
+           * [ La différence entre une Machine virtuelle (VM) et docker](#docker_vs_vm)
        * [ Architecture de Docker ](#Architecture)
            * [ Conteneur est au commencement une images](#ContainerAndImage)
            * [ Composante de l'architecture ](#Composante)
 * [ Philosophie lors de l'utilisation du conteneur](#PrincipeDuConteneur)
        * [ UN processus par conteneur ](#OneProcessByconteneur)
            * [ Application de type service tomcat](#exampletomcat)
-       * [ Ne PAS installé d'application inutile](#NosoftUseless)
+       * [ Ne PAS installer d'application inutile](#NosoftUseless)
        * [ Le cycle de vie d'une application dockerisé](#conteneurLife)
        * [ Communication entre les conteneurs](#ComBetweenContener)
 * [ Analysons un peu le fonctionnement ](#DevilIsInDetail)
@@ -47,46 +47,46 @@ Ceci est une description très générale nous allons voir les détails sous peu
 
 ![what_is_docker.png](./imgs/what_is_docker.png)
 
-## <a name="whatIsDocker" /> Qu'est ce que Docker ?
+## <a name="whatIsDocker" /> Qu'est-ce que Docker ?
 
-Docker vous offre la possibilité d'isoler votre application du reste du système, cette isolation est réalisé grâce au fonctionnalité du noyaux (kernel) du système d'exploitation (pour GNU/Linux : __cgroup__ et __namespace__). Nous parlons d'isolation au niveau :
+Docker vous offre la possibilité d'isoler votre application du reste du système, cette isolation est réalisée grâce aux fonctionnalités du noyau (kernel) du système d'exploitation (pour GNU/Linux : __cgroup__ et __namespace__). Nous parlons d'isolation au niveau :
 
 * **Couche réseau** : Chaque conteneur à son propre __stack IP__, chaque conteneur à sa propre adresse IP.
-* **Couche applicative** : Les applications dans un conteneur ne voient que ce qui est contenu dans ce dernier, tous ce qui est à l'extérieure est inexistant.
+* **Couche applicative** : Les applications dans un conteneur ne voient que ce qui est contenu dans ce dernier, tout ce qui est à l'extérieure est inexistant.
 
 
 ![docker-crab.jpg](./imgs/docker-crab.jpg)
 
-Vous avez la possibilité de limité l'utilisation des ressources (CPU, I/O, réseaux , ...) grâce aux fonctionnalités du noyau. 
+Vous avez la possibilité de limiter l'utilisation des ressources (CPU, I/O, réseaux ...) grâce aux fonctionnalités du noyau. 
 
-Pourquoi l'arrivée de Docker ? À la lecture de l'énoncé ci-dessus ceci ressemble à une Machine Virtuel, les solutions de virtualisation ne manque pas !
-Ceci est souvent l'analogie réalisée, mais un conteneur n'est PAS une machine virtuel, voyons les problématiques 
+Pourquoi l'arrivée de Docker ? À la lecture de l'énoncé ci-dessus ceci ressemble à une Machine virtuelle, les solutions de virtualisation ne manquent pas !
+Ceci est souvent l'analogie réalisée, mais un conteneur n'est PAS une machine virtuelle, voyons les problématiques 
 
 ### <a name="Objectif" /> Objectif de Docker
 
 
-L'objectif de Docker est d'offrir des conteneurs applicatif facile à déployer afin d'encapsulé l'application , incluant l'ensemble de ces dépendances et les versions de ces dernières.
+L'objectif de Docker est d'offrir des conteneurs applicatifs faciles à déployer afin d'encapsuler l'application , incluant l'ensemble de ces dépendances et les versions de ces dernières.
 
-* **Avec Docker vous pouvez séparer votre application de l'infrastructure et traiter cette dernier comme une application**
+* **Avec Docker vous pouvez séparer votre application de l'infrastructure et traiter cette dernière comme une application**
 * Docker vous permet d'exécuter n'importe quelle application de manière sécuritaire dans un conteneur.
-* L'isolation et la sécurité vous offre la possibilité d'exécuter plusieurs conteneur sur la même machine.
-* L'absence __d'Hypervisor__ vous permet de tiré une plus grande partie du matériel, car il n'y a pas de charge additionnel pour la virtualisation.
-* La distribution et les options de transfert de conteneurs vous permet d'avoir le même environnement pour l'ensemble des équipes (__Dev__, __QA__, ...)
+* L'isolation et la sécurité vous offrent la possibilité d'exécuter plusieurs conteneurs sur la même machine.
+* L'absence __d'Hypervisor__ vous permet de tirer une plus grande partie du matériel, car il n'y a pas de charge additionnelle pour la virtualisation.
+* La distribution et les options de transfert de conteneurs vous permettent d'avoir le même environnement pour l'ensemble des équipes (__Dev__, __QA__, ...)
 
 
-### <a name="docker_vs_vm" /> La différence entre une Machine Virtuel (VM) et docker
+### <a name="docker_vs_vm" /> La différence entre une Machine virtuelle (VM) et docker
 
-On dit souvent une image vos mille mot donc commençons par la représentation graphique des 2 configurations. 
+On dit souvent une image vos mille mots donc commençons par la représentation graphique des 2 configurations. 
 
 ![ContainerVsVM.png](./imgs/ContainerVsVM.png)
 
-* Les partie commune 
-    * Composante matériel , en d'autre mot la machine physique
+* Les parties communes 
+    * Composante matérielle , en d'autres mots la machine physique
     * Un système d'exploitation (Linux, Windows , ...)
-* Une Machine Virtuel
-    * Un système __d'hypervisor__ , __ESX__, __KVM__, __Xen__ , ... Cette couche permettra l'émulation de :__CPU__, mémoire, carte réseau , ...
+* Une Machine virtuelle
+    * Un système __d'hypervisor__ , __ESX__, __KVM__, __Xen__ , ... Cette couche permettra l'émulation de :__CPU__, mémoire, carte réseau ...
     * Un système d'exploitation potentiellement différent du système d'exploitation native sur la machine
-    * Installation des librairies et de l'application contenu dans la machine virtuel
+    * Installation des librairies et de l'application contenue dans la machine virtuelle
 * Un Conteneur
     * contient uniquement les librairies et l'application 
 
@@ -94,49 +94,49 @@ On dit souvent une image vos mille mot donc commençons par la représentation g
 
 ![docker as hlm](./imgs/hlm.jpg)
 
-Vous êtes tous familiarisé avec le système de machine virtuel, nous nous concentrerons donc sur la partie conteneur.
+Vous êtes tous familiarisé avec le système de machine virtuelle, nous nous concentrerons donc sur la partie conteneur.
 
-Dans le cas d'un conteneur il n'y a pas __d'hyperviseur__, le système d'exploitation dans le cas présent GNU/Linux peut gérer nativement les systèmes docker via l'applicatif installé. Il n'y a donc pas d'émulation de matériels réalisé comme pour une machine virtuel, il n'y a pas de système d'exploitation d'installer qui réalisera le même travail que le système hôte. 
-Un conteneur utilisera le même **noyaux** que le système hôte pour fonctionner, à l'avantage de réduire considérablement le temps d'initialisation d'un conteneur , car le conteneur n'a pas de **noyaux** à charger , de matériel à détecter ou d'initialisation du système , il ne démarre que l'application spécifié. L'inconvénient avec cette solution est que le conteneur initialisé doit être de même type de le docker __host__. En d'autre mot il n'est pas possible d'avoir un conteneur de type __Windows__ sur une machine GNU/Linux, conceptuellement ceci n'est pas possible.
+Dans le cas d'un conteneur il n'y a pas __d'hyperviseur__, le système d'exploitation dans le cas présent GNU/Linux peut gérer nativement les systèmes docker via l'applicatif installé. Il n'y a donc pas d'émulation de matériels réalisés comme pour une machine virtuelle, il n'y a pas de système d'exploitation d'installer qui réalisera le même travail que le système hôte. 
+Un conteneur utilisera le même **noyau** que le système hôte pour fonctionner, à l'avantage de réduire considérablement le temps d'initialisation d'un conteneur , car le conteneur n'a pas de **noyaux** à charger , de matériel à détecter ou d'initialisation du système , il ne démarre que l'application spécifiée. L'inconvénient avec cette solution est que le conteneur initialisé doit être de même type du docker __host__. En d'autres mots, il n'est pas possible d'avoir un conteneur de type __Windows__ sur une machine GNU/Linux, conceptuellement ceci n'est pas possible.
 
 * Il est plus approprié de voir un conteneur comme environnement [chrooté](https://fr.wikipedia.org/wiki/Chroot) en anglais [Chroot](https://en.wikipedia.org/wiki/Chroot). (Limité dans un espace disque dur du système **Ch**ange **root** , changement de racine / )
-* Un des avantages est que chaque conteneur à sa couche réseau (__stack ip__) , donc en plus d'une isolation des fichiers nous avons aussi une isolation des communication réseau. 
+* Un des avantages est que chaque conteneur à sa couche réseau (__stack ip__) , donc en plus d'une isolation des fichiers nous avons aussi une isolation des communications réseau. 
 * Chaque conteneur à son administrateur **root** ainsi que les utilisateurs dans le conteneur, assurant encore une fois une isolation complète.
 
-Pour les plus vieux d'entre vous, vous vous direz peut-être : Quelle sont les avantages de **docker** comparativement au __jail__ sous __BSD__ qui existe depuis 15 ans ou encore les zones de __solaris__ ?
+Pour les plus vieux d'entre vous, vous vous direz peut-être : quels sont les avantages de **docker** comparativement au __jail__ sous __BSD__ qui existe depuis 15 ans ou encore les zones de __solaris__ ?
 
-* L'administration des conteneurs simplifier avec l'utilisation de __DockerFiles__ pour construire l'image des conteneurs.
-* L'administration de l'orchestration des conteneurs à l'aide de __docker-compose__ ou de système de __cluster__ telle que __Kibernet__ ou __swarm__.
-* La possibilité de gérer les version des containers
+* L'administration des conteneurs simplifiés avec l'utilisation de __DockerFiles__ pour construire l'image des conteneurs.
+* L'administration de l'orchestration des conteneurs à l'aide de __docker-compose__ ou de système de __cluster__ tel que __Kibernet__ ou __swarm__.
+* La possibilité de gérer les versions des containers
 * La possibilité de stocker , manipuler , récupérer des conteneurs depuis un __registry__, ceci nous donne la possibilité d'avoir des images de conteneur comme artefact.
 * L'API __Rest__ pour manipuler nos docker __host__.
-* L'utilisation __d'unionFS__ pour réutiliser l'espace disque pour les bloques disques équivalent.
+* L'utilisation __d'unionFS__ pour réutiliser l'espace disque pour les blocs disques équivalents.
 
 ## <a name="Architecture" /> Architecture de Docker 
 
-Nous parlons de __docker__ et de conteneur , nous avons vue que le docker __host__ est l'applicatif installer sur le système d'exploitation qui permet d'exécuter / isoler un conteneur. Avant d'aller plus loin sur l'applicatif __docker__ nous allons nous arrêter sur le conteneur. 
+Nous parlons de __docker__ et de conteneur , nous avons vu que le docker __host__ est l'applicatif installer sur le système d'exploitation qui permet d'exécuter / isoler un conteneur. Avant d'aller plus loin sur l'applicatif __docker__ nous allons nous arrêter sur le conteneur. 
 
-### <a name="ContainerAndImage" /> Conteneur est au commencement une images
+### <a name="ContainerAndImage" /> Conteneur est au commencement une image
 
 Nous allons clarifier l'utilisation des termes ceci simplifiera le dialogue pour le reste de la présentation.
 
-* Une **image** est l'artefact d'un conteneur , l'image est un __conteneur__ à l'état non initialisé, c'est la coquille contenant l'ensemble requis. Nous allons déplacé cette image sur le docker __host__ afin de l'exécuter. Une autre manière de le voir une image est un conteneur vierge, pas encore exécuté.
-* Un **conteneur** est une image qui fut exécuter au moins une fois, donc initialiser sur un docker __host__, avec des configurations (Variable d'environnement, assignation réseau , partage d'espace disque , ...) .
+* Une **image** est l'artefact d'un conteneur , l'image est un __conteneur__ à l'état non initialisé, c'est la coquille contenant l'ensemble requis. Nous allons déplacer cette image sur le docker __host__ afin de l'exécuter. Une autre manière de le voir une image est un conteneur vierge, pas encore exécuté.
+* Un **conteneur** est une image qui fut exécutée au moins une fois, donc initialiser sur un docker __host__, avec des configurations (Variable d'environnement, assignation réseau , partage d'espace disque ...) .
 
-Vous pouvez trouver un **GRAND nombre** d'image sur le site [hub.docker.com](https://hub.docker.com/). 
+Vous pouvez trouver un **GRAND nombre** d'images sur le site [hub.docker.com](https://hub.docker.com/). 
 
-Prenons quelques minutes pour regarder le contenu, [hub.docker.com/explore](https://hub.docker.com/explore/), juste pour vous donner une idée du contenu.
-Il y a 2 type d'image disponible :
+Prenons quelques minutes pour regarder le contenu [hub.docker.com/explore](https://hub.docker.com/explore/), juste pour vous donner une idée du contenu.
+Il y a 2 types d'images disponible :
 
-* **OFFICIEL** : C'est images sont valider par le fournisseur est considérer comme officiel par le "manufacturé" , comme vous pouvez le voir vous retrouvez :
+* **OFFICIEL** : C'est images sont valider par le fournisseur est considéré comme officiel par le "manufacturé" , comme vous pouvez le voir vous retrouvez :
     * [Ubuntu](https://hub.docker.com/_/ubuntu/)
     * [Mysql](https://hub.docker.com/_/mysql/)
     * [Apache](https://hub.docker.com/_/httpd/)
     * [Wordpress](https://hub.docker.com/_/wordpress/)
-* **PUBLIQUE** : C'est images sont créer par des internautes, ils sont donc non valider par un tierce, par le fait même il important de les utiliser avec parcimonie, lors de teste ou de valider le contenu !
-    * [le miens :D](https://hub.docker.com/u/x3rus/)
+* **PUBLIQUE** : C'est images sont créer par des internautes, ils sont donc non validés par une tierce, par le fait même il important de les utiliser avec parcimonie, lors de teste ou de valider le contenu !
+    * [le mien :D](https://hub.docker.com/u/x3rus/)
     * [nexus](https://hub.docker.com/r/sonatype/nexus/)
-    * [Mysql mais non officiel](https://hub.docker.com/r/tozd/mysql/)
+    * [Mysql, mais non officiel](https://hub.docker.com/r/tozd/mysql/)
 
 ### <a name="Composante" /> Composante de l'architecture 
 
@@ -145,13 +145,13 @@ Voici une représentation graphique de l'architecture dans son état la plus sim
 ![architecture.svg](./imgs/architecture.svg)
 
 
-Docker utilise une architecture **client-server** :
+Docker utilise une architecture **client-serveur** :
 
 * Le **client docker** communique avec le **Docker daemon (serveur)**.
-* Le **Docker daemon (serveur)** réalise l'ensemble des opérations sur les images, les conteneurs , l'assignation des ressources , ...
-* Le **client** et le **serveur** peuvent être sur la même machine ou sur 2 systèmes distinct.
+* Le **Docker daemon (serveur)** réalise l'ensemble des opérations sur les images, les conteneurs , l'assignation des ressources ...
+* Le **client** et le **serveur** peuvent être sur la même machine ou sur 2 systèmes distincts.
 * 2 mode de communication sont possible **API REST** et **socket**.
-* Le **registry** est un lieu de stockage des images , ce **registry** peut être publique ([hub.docker.com](http://hub.docker.com)) ou privé à l'aide d'application libre ou privative (ex: [Nexus](https://www.sonatype.com/docker), [Docker registry](https://docs.docker.com/registry/) ).
+* Le **registry** est un lieu de stockage des images , ce **registry** peut être public ([hub.docker.com](http://hub.docker.com)) ou privé à l'aide d'application libre ou privative (ex: [Nexus](https://www.sonatype.com/docker), [Docker registry](https://docs.docker.com/registry/) ).
 
 
 Regardons rapidement le __workflow__ de l'utilisation de docker afin de voir l'interaction des composantes !
@@ -164,7 +164,7 @@ Regardons rapidement le __workflow__ de l'utilisation de docker afin de voir l'i
 
         $ docker pull ubuntu:16.04
 
-    * L'image est récupérer depuis le __registry__ est copié localement sur le serveur __Docker\_Host__
+    * L'image est récupérée depuis le __registry__ est copié localement sur le serveur __Docker\_Host__
 
     Bien entendu j'aurais pu utiliser d'autre distribution telle que :
 
@@ -172,7 +172,7 @@ Regardons rapidement le __workflow__ de l'utilisation de docker afin de voir l'i
     * [debian](https://hub.docker.com/_/debian/)
     * [opensuse](https://hub.docker.com/_/opensuse/)
 
-2. Le client crée un conteneur avec comme source l'images , préalablement récupéré.
+2. Le client crée un conteneur avec comme source l'image , préalablement récupéré.
 
         $ docker run --interactive --tty ubuntu:16.04 bash
         root@866d8d61534a:/# 
@@ -188,7 +188,7 @@ Regardons rapidement le __workflow__ de l'utilisation de docker afin de voir l'i
         CONTAINER ID    IMAGE           COMMAND      CREATED             STATUS              PORTS    NAMES
         866d8d61534a    ubuntu:16.04    "bash"       2 minutes ago       Up 2 minutes                 tender_borg
 
-Les images sont conceptuellement minimal , si nous essayons quelques commandes considérées comme de base , nous serons surpris , voici quelques exemple :
+Les images sont conceptuellement minimales , si nous essayons quelques commandes considérées comme de base , nous serons surpris , voici quelques exemple :
 
         root@866d8d61534a:/# wget
         bash: wget: command not found
@@ -211,7 +211,7 @@ Les images sont conceptuellement minimal , si nous essayons quelques commandes c
         root        11  0.0  0.0  34424  2664 ?        R+   22:03   0:00 ps aux
 
 
-Bien entendu dans le cas présent j'ai démarrer un système Ubuntu de version 16:04, mais ceci est une image vide sans application spécifique , nous verrons lors de la création d'image que nous utiliserons l'image Ubuntu:16.04 pour créer nos propres images. Prenons un autre exemple par exemple nous désirons avoir un serveur __MySQL__ de version 5.5 ou un serveur web __Apache (httpd)__ de version 2.4.
+Bien entendu dans le cas présent j'ai démarré un système Ubuntu de version 16:04, mais ceci est une image vide sans application spécifique , nous verrons lors de la création d'images que nous utiliserons l'image Ubuntu:16.04 pour créer nos propres images. Prenons un autre exemple par exemple nous désirons avoir un serveur __MySQL__ de version 5.5 ou un serveur web __Apache (httpd)__ de version 2.4.
 
 1. Récupération des images depuis le [hub de docker](https://hub.docker.com).
     * httpd : [https://hub.docker.com/\_/httpd/](https://hub.docker.com/_/httpd/)
@@ -228,7 +228,7 @@ Bien entendu dans le cas présent j'ai démarrer un système Ubuntu de version 1
             bd14a67deca2: Downloading [====================================>              ] 5.504 MB/7.557 MB
             92b34ad02810: Waiting
 
-2. Exécution du conteneur __Mysql__ version 5.5 , à l'aide de la variable **MYSQL\_ROOT\_PASSWORD** je donne en paramètre le mot de passe administrateur **root** à utiliser lors de l'initialisation de la base de donnée dans le conteneur.
+2. Exécution du conteneur __Mysql__ version 5.5 , à l'aide de la variable **MYSQL\_ROOT\_PASSWORD** je donne en paramètre le mot de passe administrateur **root** à utiliser lors de l'initialisation de la base de données dans le conteneur.
 
             $ docker run -e MYSQL_ROOT_PASSWORD=super   mysql:5.5
             Initializing database
@@ -240,9 +240,9 @@ Bien entendu dans le cas présent j'ai démarrer un système Ubuntu de version 1
             161115 21:55:45 [Note] mysqld: ready for connections.
             Version: '5.5.52'  socket: '/tmp/mysql.sock'  port: 3306  MySQL Community Server (GPL)
 
-3. Nous avons donc une serveur __Mysql__ disponible initialiser avec le mot de passe fournit en paramètre. Nous voyons donc clairement la relation image , environnement dormant et le conteneur qui réalise l'initialisation de l'environnement au démarrage !
+3. Nous avons donc un serveur __Mysql__ disponible initialiser avec le mot de passe fournit en paramètre. Nous voyons donc clairement la relation image , environnement dormant et le conteneur qui réalise l'initialisation de l'environnement au démarrage !
 
-4. Comme les conteneurs sont isolés les un des autres il est possible d'en démarrer plusieurs, que ce soit avec la même version ou de version différente. Ici j'ai démarrer 3 conteneurs utilisant la même images mysql:5.5 
+4. Comme les conteneurs sont isolés les uns des autres il est possible d'en démarrer plusieurs, que ce soit avec la même version ou de version différente. Ici j'ai démarré 3 conteneurs utilisant la même images mysql:5.5 
 
             $ docker ps
             CONTAINER ID    IMAGE          COMMAND                  CREATED          STATUS          PORTS        NAMES
@@ -266,8 +266,8 @@ Ceci est vraiment intéressant pour valider des applications, vous voyez une app
 * Avantage 
     * **Simplicité de réalisation  de teste d'application sans polluer l'environnement de travail**
     * **Conteneur pré configurer et fonctionnel peut importe le lieu**
-    * **Possibilité d'avoir plusieurs application identique avec plusieurs version** (exemple __Mysql__ 5.5, 5.7 , ...)
-    * **L'exécution est possible même sur une petite machine, telle qu'un portable** (contrairement à une machine virtuel qui est très couteux en terme de ressource)
+    * **Possibilité d'avoir plusieurs applications identiques avec plusieurs version** (exemple __Mysql__ 5.5, 5.7 , ...)
+    * **L'exécution est possible même sur une petite machine, telle qu'un portable** (contrairement à une machine virtuelle qui est très couteuse en terme de ressource)
 
 # <a name="PrincipeDuConteneur" /> Philosophie lors de l'utilisation du conteneur
 
@@ -279,41 +279,41 @@ L'objectif n'est pas de recréer une machine Virtuel , nous reprenons le même c
 
 * 1 conteneur fait **une opération** et il le fait BIEN !
 
-Donc lors de la création d'une images si vous avez une application à 3 partie (web, application, base de données) nous aurons au minimum 3 conteneurs.
+Donc lors de la création d'une image si vous avez une application à 3 partie (web, application, base de données) nous aurons au minimum 3 conteneurs.
 Dans la partie [Orchestration des conteneurs](#orchestration) nous verrons comment les lier ensemble.
 
 Pourquoi ?!?!
 
 * Pour être en mesure de déployer RAPIDEMENT un conteneur .
-* Assurer un démarrage rapide du conteneur, afin de supporter une monté en charge.
+* Assurer un démarrage rapide du conteneur, afin de supporter une montée en charge.
 * Permettre à l'utilisateur de n'utiliser qu'une partie du tous .
-* Permettre de changé un conteneur par un autre , exemple nouvelle base de données tous en conservant les même conteneurs applicatif.
+* Permettre de changé un conteneur par un autre , exemple nouvelle base de données tous en conservant les mêmes conteneurs applicatifs.
 * Ceci vous permet de réutiliser des images pour d'autre conteneur.
 
 ### <a name="exampletomcat" /> Application de type service tomcat
 
-Si vous avez une application contenu dans __Jboss__ ou __Tomcat__ votre application est probablement déjà segmenté selon le service, par exemple :
+Si vous avez une application contenue dans __Jboss__ ou __Tomcat__ votre application est probablement déjà segmentée selon le service, par exemple :
 
 * /admin : Section de gestion du service applicatif.
 * /api : Pour les appels d'applicatif automatisé.
 * /websocket : Pour les services web service.
 * /urlManagement : Si votre service fait de la gestion d'URL dynamique.
 
-Dans le modèle traditionnel bien souvent nous retrouverons l'ensemble sur la même machine Virtuel sous le même __Tomcat__ regroupant l'ensemble des applications. Dans le modèle **docker** nous essayerons d'avoir 4 conteneurs pour réaliser cette opération , ceci peut être sur la même machine l'un empêche pas l'autre cependant l'ensemble sera isolé l'un de l'autre. 
-Ceci permettra par exemple de réutiliser pour une autre application la section /urlManagement , car elle est autonome . De plus si nous avons une monté en charge d'application satellite réalisant un grand nombre de requête nous pourrons augmenter le nombre de conteneur avec un coût minimal afin d'assurer la monté en charge.
+Dans le modèle traditionnel bien souvent nous retrouverons l'ensemble sur la même machine virtuelle sous le même __Tomcat__ regroupant l'ensemble des applications. Dans le modèle **docker** nous essayerons d'avoir 4 conteneurs pour réaliser cette opération , ceci peut être sur la même machine l'un empêche pas l'autre cependant l'ensemble sera isolé l'un de l'autre. 
+Ceci permettra par exemple de réutiliser pour une autre application la section /urlManagement , car elle est autonome . De plus si nous avons une montée en charge d'application satellite réalisant un grand nombre de requêtes nous pourrons augmenter le nombre de conteneurs avec un coût minimal afin d'assurer la montée en charge.
 
-Telle que mentionné précédemment __docker__ peut être exécuter sur un simple ordinateur portable, résultat si la personne ne travail que sur le module d'administration il n'aura que le conteneur d'administration à démarrer . Bon OK  ! Probablement l'API aussi cependant nous limitons le requis à uniquement ce qui doit être en exécution.
+Tel que mentionné précédemment __docker__ peut être exécuté sur un simple ordinateur portable, résultat si la personne ne travaille que sur le module d'administration il n'aura que le conteneur d'administration à démarrer . Bon OK  ! Probablement l'API aussi cependant nous limitons le requis à uniquement ce qui doit être en exécution.
 
-Si nous poussons un peu plus la logique et regardons le service de cloud , telle que __AWS__ le coût des petites machines sont très abordable , le prix change significativement lors de l'allocation de ressource. Plusieurs petites machines offre donc une plus grande souplesse pour répondre au demande selon la charge.
+Si nous poussons un peu plus la logique et regardons le service de cloud , tel que __AWS__ le coût des petites machines sont très abordables , le prix change significativement lors de l'allocation de ressource. Plusieurs petites machines offrent donc une plus grande souplesse pour répondre aux demandes selon la charge.
 
-## <a name="NosoftUseless" /> Ne PAS installé d'application inutile
+## <a name="NosoftUseless" /> Ne PAS installer d'application inutile
 
-Ne pas inclure dans le conteneur des applications inutile l'objectif est d'avoir un image minimal au maximum afin d'avoir une taille le plus petit possible afin de faire un déploiement rapidement de l'image. En d'autre mot le strict minimum !
+Ne pas inclure dans le conteneur des applications inutile l'objectif est d'avoir une image minimale au maximum afin d'avoir une taille le plus petite possible afin de faire un déploiement rapidement de l'image. En d'autres mots le strict minimum !
 
 Un exemple d'application inutile :
 
-* VIM ou __VI__ : Vous n'avez pas à modifier des fichiers dans le conteneur, l'image doit être réalisé de manière approprié . Si vous avez besoin de modifier des fichiers dans le conteneur, vous pouvez éditer sur le docker __host__ puis les copier dans le conteneur désirer.
-* SSH : S'il vous plait n'activez pas le service SSH dans un conteneur à moins que ce soit le rôles du conteneur, vous utiliserez ssh sur le docker __host__ puis établirez la connexion dans le conteneur.
+* VIM ou __VI__ : Vous n'avez pas à modifier des fichiers dans le conteneur, l'image doit être réalisée de manière appropriée . Si vous avez besoin de modifier des fichiers dans le conteneur, vous pouvez éditer sur le docker __host__ puis les copier dans le conteneur désirer.
+* SSH : S'il vous plait n'activez pas le service SSH dans un conteneur à moins que ce soit le rôle du conteneur, vous utiliserez ssh sur le docker __host__ puis établirez la connexion dans le conteneur.
 * ...
 
 Vous comprenez le principe, si vous avez besoin d'une application supplémentaire il est toujours possible de créer une autre image avec comme source l'image original. 
@@ -326,15 +326,15 @@ Les requis !!!
 
 * **UNE source** de l'application , dans le modèle traditionnel nous utiliserons un système de type __Nexus__ pour conserver nos artefacts applicatif , ce dernier reste en place !! Mais nous ajoutons un nouvelle artefact qui est **l'image docker**, donc en plus d'avoir la __release__ applicative contenant l'ensemble de l'application nous aurons un autre __release__ de l'image docker contenant l'application complète .
     * L'objectif est de fournir un artefact fiable de l'applicatif avec l'ensemble des dépendances requis.
-* L'image utiliser doit être la même sur l'ensemble de la chaîne de développement, Le développeur est le premier à l'utiliser. L'image peut être générer avec l'aide de l'équipe **DevOps**. Le développement , la correction de __bug__ est réalisé avec ce conteneur. Bien entendu ce conteneur est un peu particulier car son but premier est d'assurer l'ensemble des dépendances requis , le contenu applicatif peut être plus dynamique. L'image résultant généré à toutes les nuits ou du moins régulièrement est déployé sur les serveurs d'intégration / QA , ...
-    * L'objectif : Comme l'ensemble des intervenants utilise la même image de l'application , la détection de problématique sera propagé sur l'ensemble des intervenant. Nous nous assurons aussi que l'ensemble est identique peut importe l'environnement déployé.
-* Configuration de l'application , bien entendu tous les environnements ne sont pas identique, si nous nous limitons uniquement au adresses courriel, URL d'accès, etc . Ceci change d'un environnement à l'autre. L'idée est que l'ensemble des ces paramètres sont dynamiquement modifier lors de l'initialisation du conteneur. Donc même image , même installation , même librairie, même __war__ , même code source , uniquement des variables qui sont modifier.
+* L'image utiliser doit être la même sur l'ensemble de la chaîne de développement, Le développeur est le premier à l'utiliser. L'image peut être générée avec l'aide de l'équipe **DevOps**. Le développement , la correction de __bug__ est réalisé avec ce conteneur. Bien entendu ce conteneur est un peu particulier, car son but premier est d'assurer l'ensemble des dépendances requis , le contenu applicatif peut être plus dynamique. L'image résultante générée toutes les nuits ou du moins régulièrement est déployé sur les serveurs d'intégration / QA , ...
+    * L'objectif : Comme l'ensemble des intervenants utilise la même image de l'application , la détection de problématique sera propagée sur l'ensemble des intervenants. Nous nous assurons aussi que l'ensemble est identique, peu importe l'environnement déployé.
+* Configuration de l'application , bien entendu tous les environnements ne sont pas identiques, si nous nous limitons uniquement aux adresses courriel, URL d'accès, etc . Ceci change d'un environnement à l'autre. L'idée est que l'ensemble de ces paramètres sont dynamiquement modifiés lors de l'initialisation du conteneur. Donc même image , même installation , même librairie, même __war__ , même code source , uniquement des variables qui sont modifier.
 
 Voyons une représentation graphique de mon propos :
 
 ![docker-workflow.png](./imgs/docker-workflow.png)
 
-Éclaircissement sur la question de la configuration lors de l'exécution , nous l'avons vu précédemment lors de l'initialisation du conteneur __mysql__ , nous avions définie lors de l'initialisation le mot de passe de l'administrateur grâce à la variable **MYSQL\_ROOT\_PASSWORD**, exemple de la commande :
+Éclaircissement sur la question de la configuration lors de l'exécution , nous l'avons vu précédemment lors de l'initialisation du conteneur __mysql__ , nous avions défini lors de l'initialisation le mot de passe de l'administrateur grâce à la variable **MYSQL\_ROOT\_PASSWORD**, exemple de la commande :
 
             $ docker run -e MYSQL_ROOT_PASSWORD=super   mysql:5.5
 
@@ -344,11 +344,11 @@ Voyons une représentation graphique de mon propos :
 
 Les conteneurs peuvent communiquer entre eux via : 
 
-* Le protocole réseaux : mode privilégier, via des API ceci est donc indépendant du système docker et utilise des protocoles connu.
-* Unix socket : Si une communication réseau extérieur n'est pas requis un unix socket peut très bien faire le travail.
-* Fichier ou répertoire partagé : Il est possible de partager des répertoires entre plusieurs conteneur pour l'échange de fichiers.
+* Le protocole réseau : mode privilégier, via des API ceci est donc indépendant du système docker et utilise des protocoles connus.
+* Unix socket : Si une communication réseau extérieure n'est pas requise un Unix socket peut très bien faire le travail.
+* Fichier ou répertoire partagé : Il est possible de partager des répertoires entre plusieurs conteneurs pour l'échange de fichiers.
 
-# <a name="DevilIsInDetail" /> Analysons un peu le fonctionnement 
+# <a name="DevilIsInDetail" /> analysons un peu le fonctionnement 
 
 Allons voir un peu le fonctionnement afin de saisir les possibilités, les limitations, les points à prendre en considération. En comprenant le fonctionnement le système vous comprendrez pourquoi il faut manipuler les images ou les conteneurs. L'objectif de cette section n'est pas de vous dire comment utiliser Docker, mais vous expliquer comment il fonctionne. À vous par la suite de trouver votre manière :D !
 
@@ -356,25 +356,25 @@ Voici ma démarche qui sera préconisé :
 
 * Clarification des commandes de base de docker afin de démystifier les commandes que j'utilise.
 * Utilisation d'un conteneur apache, afin de présenter les couches (__layers__) d'un conteneur.
-* Personnalisation d'une images pour nos besoins.
+* Personnalisation d'une image pour nos besoins.
 * Utilisation des données avec un conteneur.
 
 ## <a name="cmdDeBaseDeDocker" /> Commande de base d'utilisation de docker.
 
-Je vais rapidement couvrir les commandes que j'ai et vais utiliser par la suite, afin que tous le monde soit confortable avec le processus.
+Je vais rapidement couvrir les commandes que j'ai et vais utiliser par la suite, afin que tout le monde soit confortable avec le processus.
 
-* [docker pull](https://docs.docker.com/engine/reference/commandline/pull/) : Permet de récupérer une images depuis un **registry** privé ou publique.
-* [docker images](https://docs.docker.com/engine/reference/commandline/images/) : Permet de lister les images présente sur le docker host.
+* [docker pull](https://docs.docker.com/engine/reference/commandline/pull/) : Permet de récupérer une image depuis un **registry** privé ou publique.
+* [docker images](https://docs.docker.com/engine/reference/commandline/images/) : Permet de lister les images présentes sur le docker host.
 * [docker run](https://docs.docker.com/engine/reference/commandline/run/) : Permet de démarrer un nouveau conteneur avec une image comme point de départ.
 * [docker start](https://docs.docker.com/engine/reference/commandline/start/) : Permet de démarrer un conteneur qui fut initialiser avec l'instruction __docker run__ préalablement. Ceci peut être vue comme un conteneur dormant :D, contrairement à une image ce dernier fut déjà initialisé une fois.
 * [docker ps](https://docs.docker.com/engine/reference/commandline/ps/) : Liste les conteneurs en utilisation ou qui fut exécutés récemment.
 * [docker exec](https://docs.docker.com/engine/reference/commandline/exec/) : Permet d'exécuter une commande dans le conteneur , comme vous pourrez le constater, il est possible d'utiliser la commande **bash** pour être en mode interactif.
 * [docker stop](https://docs.docker.com/engine/reference/commandline/stop/) : Permet d'arrêter un conteneur en exécution.
 * [docker rm](https://docs.docker.com/engine/reference/commandline/rm/) : Permet de supprimer un conteneur.
-* [docker rmi](https://docs.docker.com/engine/reference/commandline/rmi/) : Permet de supprimer une image qui fut copier sur le serveur local , ceci ne supprime pas l'image du **registry**.
-* [docker build](https://docs.docker.com/engine/reference/commandline/build/) : Permet de créer une images en utilisant un fichier __Dockerfile__ comme référence contenant l'ensemble des instructions.
+* [docker rmi](https://docs.docker.com/engine/reference/commandline/rmi/) : Permet de supprimer une image qui fut copiée sur le serveur local , ceci ne supprime pas l'image du **registry**.
+* [docker build](https://docs.docker.com/engine/reference/commandline/build/) : Permet de créer une image en utilisant un fichier __Dockerfile__ comme référence contenant l'ensemble des instructions.
 
-Commençons avec ces instructions, nous verrons par la suite qu'il y a plusieurs autres commande disponible , pour les personnes trop curieuse :P, voici le lien vers les autres possibilité [docker commandline](https://docs.docker.com/engine/reference/commandline/).
+Commençons avec ces instructions, nous verrons par la suite qu'il y a plusieurs autres commandes disponibles , pour les personnes trop curieuses :P, voici le lien vers les autres possibilités [docker commandline](https://docs.docker.com/engine/reference/commandline/).
 
 ## <a name="TheConteneur" /> Le Conteneur
 
@@ -399,11 +399,11 @@ En allant sur l'URL [http://172.17.0.2/](http://172.17.0.2/), nous avons la page
 
 Lors de la description j'ai mentionné que :
 
-* " Une **image** est l'artefact d'un conteneur " : L'image est en lecture seul , cette dernière ne peux PAS être modifier.
+* " Une **image** est l'artefact d'un conteneur " : L'image est en lecture seule , cette dernière ne peut PAS être modifiée.
 
 ### <a name="TheConteneurLayer" /> Couche de système de fichier d'un conteneur
 
-Si vous avez déjà eu un système GNU/Linux en lecture seul, vous pouvez tous simplement RIEN faire avec, il n'est pas utilisable. Donc lors de l'initialisation du conteneur le **docker** crée une couche  (**layer**) par dessus l'image qui elle peut être écrite.
+Si vous avez déjà eu un système GNU/Linux en lecture seul, vous pouvez tous simplement NE RIEN faire avec, il n'est pas utilisable. Donc lors de l'initialisation du conteneur le **docker** crée une couche  (**layer**) par-dessus l'image qui elle peut être écrite.
 
 (désolé pour la qualité de l'image, je ne suis pas __infographe__ :P )
 
@@ -413,7 +413,7 @@ Comme vous pouvez le voir l'image de base __x3rus/apache__ est présent au débu
 
 Bien entendu si vous désirez avoir un site web, il est peu probable que vous ne  désirez pas avoir uniquement la page par défaut d'Ubuntu :P. Afin de bien démontré cette couche (__layer__) nous allons modifier la page web, contenu dans __/var/www/html/__
 
-Pour ce faire je vais aller dans le conteneur directement et éditer la page d'index tous simplement.
+Pour ce faire je vais aller dans le conteneur directement et éditer la page d'index tout simplement.
 
         $ docker exec -it awesome_feynman bash
         root@f9e12b41da05:/# cd /var/www/html/
@@ -423,7 +423,7 @@ Pour ce faire je vais aller dans le conteneur directement et éditer la page d'i
         root@f9e12b41da05:/var/www/html# cat index.html
         Une super page
 
-Si nous regardons maintenant la page : [http://172.17.0.2/](http://172.17.0.2/) , nous n'avons plus la page par défaut mais le petit texte définir.
+Si nous regardons maintenant la page : [http://172.17.0.2/](http://172.17.0.2/) , nous n'avons plus la page par défaut, mais le petit texte définir.
 
 ![super_page_index.png](./imgs/super_page_index.png)
 
@@ -435,41 +435,41 @@ Si j'arrête le conteneur et le redémarre .
         AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
         * 
 
-Même adresse IP , retournons à l'URL : [http://172.17.0.2/](http://172.17.0.2/) ... **OUPSS** retour de la page par défaut d'apache, POURQUOI ? 
+Même, adresse IP , retournons à l'URL : [http://172.17.0.2/](http://172.17.0.2/) ... **OUPSS** retour de la page par défaut d'apache, POURQUOI ? 
 
 * Si nous reprenons la représentation du conteneur préalablement affiché:
-    Lors de l'initialisation du conteneur la couche (__RW__) supérieur est ajoutée, lors de l'arrêt du conteneur la couche supérieur est par défaut supprimé.
+    Lors de l'initialisation du conteneur la couche (__RW__) supérieure est ajoutée, lors de l'arrêt du conteneur la couche supérieure est par défaut supprimé.
 
     ![conteneur-x3rus-apache.png](./imgs/conteneur-x3rus-apache.png)
 
 * **Avantage** :
     * À chaque démarrage vous repartez du point de référence qui est l'image , donc de l'artefact valider en amont
-    * S'il y a un problème avec le conteneur l'arrêt et redémarrage de ce dernier nous ramène à l'état original très pratique lors des testes.
+    * S'il y a un problème avec le conteneur l'arrêt et redémarrage de ce dernier nous ramène à l'état original très pratique lors des tests.
 * **Desavantage**: 
     * perte des logs sur le système lors d'un redémarrage du serveur voir crash.
-    * Si vous avez mis un conteneur __MySQL__ par exemple perte des données de la base de donnée :P
+    * Si vous avez mis un conteneur __MySQL__ par exemple perte des données de la base de données :P
 
 Bon là vous vous dites , finalement c'est **NUL** docker !!
 
 ![chevre-langue.png](./imgs/chevre-langue.png)
 
 Mise en contexte historique de la création de docker, ceci vous aidera probablement à comprendre la logique en arrière de cette configuration.
-Le système docker fut développé pour la mise en place de **micro-services** , l'objectif original était de pouvoir __scaler__  rapidement un système , lors d'une monté en charge. 
+Le système docker fut développé pour la mise en place de **microservices** , l'objectif original était de pouvoir __scaler__  rapidement un système , lors d'une montée en charge. 
 
-Exemple un service de ventes de tickets pour des spectacles, en temps normale 10 serveurs sont suffisant , mais voilà 2 fois par année des gros spectacle arrives. Que faire acheter 10 autres serveurs pour une utilisation de 2 semaines par années ?!?!? 
-L'idée fut d'avoir un mécanisme simple pour déployé de web service qui ne conserve pas de donnée localement mais se réfère à une base de donnée pour faire le traitement. Avec ce mécanisme, grâce aux images l'ensemble des déploiement sont toujours identique, car tous est inclut dans le conteneur , lors de la suppression tous est effacé par de résidus.
+Exemple un service de ventes de tickets pour des spectacles, en temps normal 10 serveurs sont suffisant , mais voilà 2 fois par année des gros spectacles arrives. Que faire acheter 10 autres serveurs pour une utilisation de 2 semaines par années ?!?!? 
+L'idée fut d'avoir un mécanisme simple pour déployé de web service qui ne conserve pas de donnée localement, mais se réfère à une base de données pour faire le traitement. Avec ce mécanisme, grâce aux images l'ensemble des déploiements sont toujours identique, car tous est inclus dans le conteneur , lors de la suppression tous est effacé par de résidus.
 
-Ça c'était au début :D, bien entendu avec la monté en popularité de __Docker__ de nouveau besoin sont arrivés, donc la communauté a demandée ces nouvelles fonctionnalités. Nous allons voir maintenant ces mécanisme qui nous permettra de conserver les données.
+Ça c'était au début :D, bien entendu avec la monté en popularité de __Docker__ de nouveaux besoins sont arrivés, donc la communauté a demandé ces nouvelles fonctionnalités. Nous allons voir maintenant ces mécanismes qui nous permettront de conserver les données.
 
-### <a name="NameWritableLayer" /> Nommé le conteneur donc la couche d'écriture
+### <a name="NameWritableLayer" /> nommé le conteneur donc la couche d'écriture
 
-Une des possibilités est de conserver la couche supérieur, avec cette configuration la couche supérieur est attaché au conteneur s'il y a arrêt de se dernier la couche supérieur sera réassignée au conteneur. 
+Une des possibilités est de conserver la couche supérieure, avec cette configuration la couche supérieure est attachée au conteneur s'il y a arrêt de se dernier la couche supérieure sera réassignée au conteneur. 
 
 Voyons cette méthode :
 
         $ docker run --name "mon_site"  x3rus/apache:ubuntu
 
-Comme vous pouvez le constater j'ai ajouter l'instruction **--name** afin de nommé le conteneur, avec la commande **docker ps** maintenant je n'ai plus un nom aléatoire mais le nom de mon conteneur.
+Comme vous pouvez le constater j'ai ajouté l'instruction **--name** afin de nommé le conteneur, avec la commande **docker ps** maintenant je n'ai plus un nom aléatoire, mais le nom de mon conteneur.
 
         $ docker ps
         CONTAINER ID    IMAGE                 COMMAND        CREATED          STATUS          PORTS       NAMES
@@ -495,7 +495,7 @@ J'arrête et redémarrage le conteneur .
         docker: Error response from daemon: Conflict. The name "/mon_site" is already in use by container d92896b3aa3f5145f2f9a4643b6ff50ebc6a8a6d362e714c359733017a86a269. You have to remove (or rename) that container to be able to reuse that name..
         See 'docker run --help'.
 
-Si j'utilise la même commande pour démarrer le conteneur j'ai un message d'erreur, car la couche supérieur ne peux être assigné qu'a **UN** conteneur, comme le conteneur fut déjà initialisé nous devons utiliser l'instruction **docker start**.
+Si j'utilise la même commande pour démarrer le conteneur j'ai un message d'erreur, car la couche supérieure ne peut être assigné qu'a **UN** conteneur, comme le conteneur fut déjà initialisé nous devons utiliser l'instruction **docker start**.
 
         $ docker start mon_site
         mon_site
@@ -504,11 +504,11 @@ Je communique  sur l'URL [http://172.17.0.2](http://172.17.0.2) , **magie** ma p
 
 * Avantage :
     * Dans le cadre de teste et d'exploration d'une configuration ceci peut être intéressant vous évitent de transpirer ou maudire __Docker__ si votre machine crash ou __reboot__ !!
-    * Dans le cadre d'un conteneur applicatif de production, il est possible que vous préférez avec la stabilité et surtout l'historique des opérations sur la machine.
+    * Dans le cadre d'un conteneur applicatif de production, il est possible que vous préfériez avec la stabilité et surtout l'historique des opérations sur la machine.
 * **Problème** :
-    * En utilisant cette technique vous serez constamment déphasé avec vos images, dans cette situation vous utiliserez les conteneurs comme des machines virtuel. Résultat à chaque démarrage d'un nouveau conteneur, vous devrez réalisé l'ensemble des configurations et transfère des fichiers afin de l'avoir fonctionnel. Vos images auront peu de valeur et la possibilité de mettre en place un conteneur avec l'ensemble des configurations équivalent est perdu ! Vous avez simplement une installation automatique du système.
-    * Vos conteneur ne peuvent être démarrer automatiquement, sur demande pour répondre à une augmentation de charge.
-    * L'espace disque dur va augmenter de manière significatif car la couche supérieur prendra de l'espace dans le temps.
+    * En utilisant cette technique vous serez constamment déphasé avec vos images, dans cette situation vous utiliserez les conteneurs comme des machines virtuelles. Résultat à chaque démarrage d'un nouveau conteneur, vous devrez réaliser l'ensemble des configurations et transfère des fichiers afin de l'avoir fonctionnel. Vos images auront peu de valeur et la possibilité de mettre en place un conteneur avec l'ensemble des configurations équivalent est perdue ! Vous avez simplement une installation automatique du système.
+    * Vos conteneurs ne peuvent être démarrés automatiquement, sur demande pour répondre à une augmentation de charge.
+    * L'espace disque dur va augmenter de manière significative, car la couche supérieure prendra de l'espace dans le temps.
 
 
 Petit truc :D , il est possible que ce soit un conteneur nominatif ou avec un nom aléatoire de connaitre la différence entre l'image et le conteneur en exécution grâce à l'instruction **docker diff**.
@@ -530,7 +530,7 @@ Petit truc :D , il est possible que ce soit un conteneur nominatif ou avec un no
         C /root
         A /root/.bash_history
 
-Comme je n'aime pas cette solution je vais détruire le conteneur **mon_site** :
+Comme je n'aime pas cette solution, je vais détruire le conteneur **mon_site** :
 
         $ docker stop mon_site
         mon_site
@@ -544,7 +544,7 @@ Une autre méthode disponible est la possibilité d'assigner un répertoire du *
 
 Pour ce faire je vais démarrer un conteneur avec l'image __x3rus/apache:ubuntu__  en réassignant le répertoire __/var/www/html__ du conteneur par le répertoire __/srv/docker/x3Apache/www/__.
 
-Comme j'initialise une nouveau conteneur j'utilise la commande **docker run** et j'ajoute l'option **--volume**.
+Comme j'initialise un nouveau conteneur, j'utilise la commande **docker run** et j'ajoute l'option **--volume**.
 
         $ docker run --volume /srv/docker/x3Apache/www/:/var/www/html   x3rus/apache:ubuntu
 
@@ -587,20 +587,20 @@ Si vous accédez à l'URL [http://172.17.0.3/](http://172.17.0.3/).
 ![index_point_de_montage.png](./imgs/index_point_de_montage.png)
 
 * Avantage : 
-    * Ceci vous permet de conserver les données du conteneur en dehors du conteneur, que ce soit pour une utilisation entre 2 conteneur applicatif, ou entre le conteneur et votre système.
-    * Si vous être en mode développement il est possible que ce répertoire suit utiliser pour être traité par le conteneur, mais que vous préfériez avoir vos éditeur graphique pour faire l'ensemble des modifications sur les fichiers.
+    * Ceci vous permet de conserver les données du conteneur en dehors du conteneur, que ce soit pour une utilisation entre 2 conteneurs applicatifs, ou entre le conteneur et votre système.
+    * Si vous être en mode développement il est possible que ce répertoire suit utiliser pour être traité par le conteneur, mais que vous préfériez avoir vos éditeurs graphiques pour faire l'ensemble des modifications sur les fichiers.
     * Ceci vous permet si un conteneur fournissant une application __web__ et que les utilisateurs __upload__ des fichiers de les stocké en dehors du conteneur.
     * Permet d'avoir le contenu de la base de données en dehors du conteneur.
 * **Problème** :
-    * Si vous réalisez la même opération que moi votre site web n'est PAS dans le conteneur, il n'est donc pas transférable avec le conteneur d'un docker __host__ à l'autre. 
-    * Vous cassez le principe du conteneur qui doit être self content, vous n'aurez pas le même application (web, ici) sur l'ensemble des environnements.
-    * Vous êtes à risque car vous réaliserez des modifications, alors que le principe est que votre images est le point de références.
+    * Si vous réalisez la même opération que moi, votre site web n'est PAS dans le conteneur, il n'est donc pas transférable avec le conteneur d'un docker __host__ à l'autre. 
+    * Vous cassez le principe du conteneur qui doit être self contente, vous n'aurez pas le même application (web, ici) sur l'ensemble des environnements.
+    * Vous êtes à risque, car vous réaliserez des modifications, alors que le principe est que votre image est le point de références.
 
 Donc avant de voir la partie réseau nous allons voir comment personnaliser votre image afin d'inclure vos informations et ainsi suivre le principe de __docker__.
 
 ## <a name="TheImage" /> L'image
 
-Telle que mentionné précédemment l'image est le point de référence du conteneur , **LA SOURCE** ! La création d'une image est réalisé à l'aide du fichier __Dockerfile__, ceci est un fichier texte qui d'écrit les étapes pour la réalisation de l'image.
+Tel que mentionné précédemment l'image est le point de référence du conteneur , **LA SOURCE** ! La création d'une image est réalisée à l'aide du fichier __Dockerfile__, ceci est un fichier texte qui d'écrit les étapes pour la réalisation de l'image.
 
 Analysons le **Dockerfile** de l'image **x3rus/apache:ubuntu** utilisé jusqu'ici : 
 
@@ -625,20 +625,20 @@ Comme vous pouvez le lire je suis partie d'une image **officiel** de Ubuntu LTS 
 * Je copie le fichier **start.sh** dans le conteneur à la racine
 * J'indique que lors du démarrage du conteneur il doit exécuter le script __start.sh__
 
-Et Voilà :D , pas plus compliqué , bien entendu il y énormément plus d'option disponible , pour ne pas charger la formation je vous laisse les consulter :
+Et voilà :D , pas plus compliqué , bien entendu il y énormément plus d'options disponibles , pour ne pas charger la formation je vous laisse les consulter :
 
 * [https://docs.docker.com/engine/reference/builder/](https://docs.docker.com/engine/reference/builder/)
 
-Ce qui est super bien, **VIVE LE LIBRE** est que si vous cherchez des conteneurs sur [http://hub.docker.com](http://hub.docker.com), vous avez plein d'exemple de __Dockerfile__ disponible. Voici par exemple celui pour l'application de sondage : [https://hub.docker.com/r/crramirez/limesurvey/~/dockerfile/](https://hub.docker.com/r/crramirez/limesurvey/~/dockerfile/)
+Ce qui est super bien, **VIVE LE LIBRE** est que si vous cherchez des conteneurs sur [http://hub.docker.com](http://hub.docker.com), vous avez plein d'exemples de __Dockerfile__ disponibles. Voici par exemple celui pour l'application de sondage : [https://hub.docker.com/r/crramirez/limesurvey/~/dockerfile/](https://hub.docker.com/r/crramirez/limesurvey/~/dockerfile/)
 
 
 ### <a name="TheImageLayer" /> Couche de système de fichier d'une image
 
-Nous avons vu que lors de l'exécution d'un conteneur une couche en Lecture/Écriture était superposé sur l'image de référence , en fait l'image ELLE même est constitué de couche. Si nous reprenons l'image **x3rus/apache:ubuntu** , voici la représentation graphique des couches (je suis toujours pas __infographe__) :
+Nous avons vu que lors de l'exécution d'un conteneur une couche en Lecture/Écriture était superposée sur l'image de référence , en fait l'image elle-même est constituée de couche. Si nous reprenons l'image **x3rus/apache:ubuntu** , voici la représentation graphique des couches (je ne suis toujours pas __infographe__) :
 
 ![docker-filesystems-multilayer-x3rus-ubuntu.png](./imgs/docker-filesystems-multilayer-x3rus-ubuntu.png)
 
-Chaque instruction constitue une couche, l'avantage est que si nous modifions une des couches (ajout ou suppression) toutes les couches antérieurs sont conservé et ne doivent pas être recréer .
+Chaque instruction constitue une couche, l'avantage est que si nous modifions une des couches (ajout ou suppression) toutes les couches antérieures sont conservées et ne doivent pas être recréer .
 
 Voici une démonstration en ajoutant une page web par défaut dans le répertoire __/var/www/html/__. 
 
@@ -656,7 +656,7 @@ Avant tous regardons le temps que prend la création de l'image initialement.
         user    0m0.053s
         sys     0m0.020s
 
-Donc 1 minutes et 58 secondes.
+Donc 1 minute et 58 secondes.
 
 Je vais ajouter un fichier grâce à l'instruction **COPY** .
 
@@ -665,7 +665,7 @@ Je vais ajouter un fichier grâce à l'instruction **COPY** .
         $ cat index.html
         un page fait par moi !
 
-Une fois la page créé je modifie le __Dockerfile__ :
+Une fois la page créée je modifie le __Dockerfile__ :
 
         FROM ubuntu:16.04
         MAINTAINER Boutry Thomas "thomas.boutry@x3rus.com"
@@ -682,7 +682,7 @@ Une fois la page créé je modifie le __Dockerfile__ :
 
 J'ai ajouter la ligne : **COPY index.html /var/www/html/**
 
-Je refait l'image avec un autre nom :
+Je refais l'image avec un autre nom :
 
         $ time docker build -t x3rus/apache:ubuntu-cust .
         Sending build context to Docker daemon 4.096 kB
@@ -714,15 +714,15 @@ Je refait l'image avec un autre nom :
         user    0m0.017s
         sys     0m0.007s
 
-Dans ce cas nous n'avons pris que 0 minutes 6 secondes , car l'ensemble des opérations d'installation des pacquages ne fut pas réalisé mais la couche (__layer__) déjà généré fut utilisée.
+Dans ce cas nous n'avons pris que 0 minute 6 secondes , car l'ensemble des opérations d'installation des pacquages ne fut pas réalisé, mais la couche (__layer__) déjà générée fut utilisée.
 
-En d'autre mot le système a réutilisé les couches précédente augmentant la rapidité de déploiement, vous pouvez ainsi facilement modifier votre image pour des testes de déploiement intégré.
+En d'autres mots, le système a réutilisé les couches précédentes augmentant la rapidité de déploiement, vous pouvez ainsi facilement modifier votre image pour des tests de déploiement intégré.
 
 Ce système d'utilisation de couche (__layer__) sera aussi utilisé lors du transfert de votre image vers un **registry** !
 
-Dans le même ordre d'idée, si vous avez une images **jboss** sur votre docker __host__ et que vous avez 20 conteneurs de démarrés, vous n'aurez qu'une image et 20 couches (__layers__) minimal en Lecture/Écriture.
+Dans le même ordre d'idée, si vous avez une image **jboss** sur votre docker __host__ et que vous avez 20 conteneurs de démarrés, vous n'aurez qu'une image et 20 couches (__layers__) minimales en Lecture/Écriture.
 
-Suite à ce changement voyons le résultat en démarrant le conteneur :
+Suite à ce changement, voyons le résultat en démarrant le conteneur :
 
         $ docker run x3rus/apache:ubuntu-cust
          * Starting Apache httpd web server apache2
@@ -747,13 +747,13 @@ Comme vous pouvez le voir à la fin de la définition de l'image il y a l'instru
         tail -f /var/log/apache2/access.log
 
 Comme vous pouvez voir je démarre le service **apache2** par la suite j'utilise la commande **tail -f**. 
-Afin que le conteneur reste disponible il faut que service ne s'arrête PAS et qu'il soit en premier plan. Si je n'avais mis uniquement l'instruction de démarrage **apache2** le service aurez démarré, mais comme il aurait été mis en arrière plan (__daemon__ , __background__) le conteneur se serait arrêté.
+Afin que le conteneur reste disponible il faut que service ne s'arrête PAS et qu'il soit en premier plan. Si je n'avais mis uniquement l'instruction de démarrage **apache2** le service aurez démarré, mais comme il aurait été mis en arrière-plan (__daemon__ , __background__) le conteneur se serait arrêté.
 
 Autre avantage, lors de l'utilisation de la commande **docker logs NOM_CONTENEUR** il m'affichera le résultat du fichier __access.log__
 
-## <a name="reduceLayer" /> Évitez la duplication des couches 
+## <a name="reduceLayer" /> évitez la duplication des couches 
 
-Lors de la création d'une images essayez de limiter le nombre de couche (__layer__), voici un exemple à éviter :
+Lors de la création d'une image, essayez de limiter le nombre de couches (__layer__), voici un exemple à éviter :
 
         RUN apt-get update
         RUN apt-get install apache2
@@ -761,16 +761,16 @@ Lors de la création d'une images essayez de limiter le nombre de couche (__laye
         RUN apt-get install php5-gd
         RUN apt-get install php5-mysql
 
-Comme nous avons pu le voir précédemment ceci va générer 5 couches (__layer__) , sachez que docker à un limite de 140 couches (__layers__) possible ... Voici une meilleur façons de l'écrire.
+Comme nous avons pu le voir précédemment ceci va générer 5 couches (__layer__) , sachez que docker à une limite de 140 couches (__layers__) possible ... Voici une meilleur façons de l'écrire.
 
         RUN   apt-get update \
             && apt-get install apache2 php5 php5-gd php5-mysql 
 
-Dans la version ci-dessus nous n'avons qu'une couche (__layer__) de définie réduisant la gestion requis par docker.
+Dans la version ci-dessus nous n'avons qu'une couche (__layer__) de définie réduisant la gestion requise par docker.
 
 ## <a name="DockerizeApache" /> Dockerisation d'Apache
 
-Si vous désirez avoir plus d'information et de démonstration pour la dockerisation d'apache je vous invite à consulter 
+Si vous désirez avoir plus d'information et de démonstration pour la dockerisation d'apache, je vous invite à consulter 
 
 * Formation Linux 202  cours 25 à 28 
     * Matériel : [http://moodle.x3rus.com/mod/page/view.php?id=126](http://moodle.x3rus.com/mod/page/view.php?id=126)
@@ -778,7 +778,7 @@ Si vous désirez avoir plus d'information et de démonstration pour la dockerisa
 
 # <a name="structureConteneurRéseau" /> Réseautique d'un conteneur
 
-J'avais mis volontairement de coté l'aspect réseau des conteneurs encore une fois pour charger trop la formation avec un grand nombre de concept, cependant un conteneur tous comme un système sans le réseau c'est moins intéressant ! 
+J'avais mis volontairement de coté l'aspect réseau des conteneurs encore une fois pour charger trop la formation avec un grand nombre de concepts, cependant un conteneur tous comme un système sans le réseau c'est moins intéressant ! 
 
 J'avais mentionné un peu plus tôt un point important :
 
@@ -797,8 +797,8 @@ Partons du bas et remontons !
 * 192.168.42.45 (**eth0**) : Ceci est l'adresse IP du docker __host__ dans le réseau interne, ceci est donc l'adresse IP du serveur. 
 * 172.17.0.1 (**docker0**) : Ceci est l'adresse IP de la passerelle (__gateway__) pour passer dans le réseau interne de docker
 * 172.17.0.0/16 : Ceci est le réseau dédié pour les conteneurs, docker vient avec un service de __dhcp__ afin d'attribuer des adresses IP au conteneur.
-* **veth\*** : Représente les interfaces pour les conteneurs vue depuis le docker __host__ , ces derniers sont assigné par la suite au conteneur sous forme d'__eth0__.
-* 172.17.0.4/32 et 172.17.0.6/32 : Ceci est 2 adresses de conteneur , dans le conteneur ceci est attribué à une interface réseau (__eth0__) connu UNIQUEMENT du conteneur qui est en exécution. Dans le cas présent ceci est 2 conteneur __apache__.
+* **veth\*** : Représente les interfaces pour les conteneurs vus depuis le docker __host__ , ces derniers sont assignés par la suite au conteneur sous forme d'__eth0__.
+* 172.17.0.4/32 et 172.17.0.6/32 : Ceci est 2 adresses de conteneur , dans le conteneur ceci est attribué à une interface réseau (__eth0__) connue UNIQUEMENT du conteneur qui est en exécution. Dans le cas présent ceci est 2 conteneurs __apache__.
 
 Regardons la table de routage sur le système docker __host__ :
 
@@ -816,9 +816,9 @@ Quand j'ai communiqué avec le conteneur apache pour visualiser la page par déf
 Comme vous pouvez le voir mon adresse IP de ma machine est 192.168.42.45, mais les des requêtes au conteneur nous voyons l'adresse IP de la passerelle du docker __host__.
 
 
-Le routage affiché plus haut n'est connu QUE de la machine docker __host__ en d'autre mot l'ensemble du réseau 192.168.42.0/24 ne sais pas comment communiquer avec le segment 172.17.0.0/16 ! Cette information n'est pas transmise sur l'ensemble des routeurs du réseaux. 
+Le routage affiché plus haut n'est connu QUE de la machine docker __host__ en d'autres mots l'ensemble du réseau 192.168.42.0/24 ne sait pas comment communiquer avec le segment 172.17.0.0/16 ! Cette information n'est pas transmise sur l'ensemble des routeurs du réseau. 
 
-Voici une schéma représentant le propos : 
+Voici un schéma représentant le propos : 
 
 ![network-docker-in-lan.png](./imgs/network-docker-in-lan.png)
 
@@ -826,12 +826,12 @@ Voici une schéma représentant le propos :
 
 Voyons maintenant le processus de communication avec l'externe quand ceci provient du conteneur, car il est fort probable que votre conteneur doive communiquer avec le monde extérieur !!
 
-Vous allez voir ils n'ont pas réinventé la roue mais il est important de le comprendre, surtout si vous mettez votre conteneur en production dans une __DMZ__ (réseau à accès limité).
-Une petit image pour simplifier le dialogue :
+Vous allez voir ils n'ont pas réinventé la roue, mais il est important de le comprendre, surtout si vous mettez votre conteneur en production dans une __DMZ__ (réseau à accès limité).
+Une petite image pour simplifier le dialogue :
 
 ![docker-network-NAT-diagramme.png](./imgs/docker-network-NAT-diagramme.png)
 
-Pour les administrateurs réseaux ou les personnes qui ont suivit ma formation réseau ( ;-) ) pas de problème le mot **NAT** est présent, ils ont tous compris ... :P. Pour les autres mortel prenons quelques minutes pour parler de __NAT__. 
+Pour les administrateurs réseau ou les personnes qui ont suivi ma formation réseau ( ;-) ) pas de problème le mot **NAT** est présent, ils ont tous compris ... :P. Pour les autres mortels, prenons quelques minutes pour parler de __NAT__. 
 
 Lors de l'initialisation du service __docker.engine__ le système à configurer le service de réseau de la machine sous GNU/Linux **iptables** , afin de réaliser de la manipulation sur les paquets  réseaux. 
 
@@ -839,18 +839,18 @@ Dans l'exemple ci-dessus:
 
 * la machine **apache** (172.17.0.6) , désire communiquer avec une IP de ubuntu , probablement pour l'installation d'un logiciel
 * ceci est transmis à la passerelle par défaut du conteneur (172.17.0.1) **docker0**.
-* Ce dernier regarde où la communication doit être transmis , si la communication est à l'extérieur , donc PAS inter-conteneur il modifie l'adresse IP source de provenance afin que soit transmis l'adresse IP de la machine du conteneur.
-* Lors du retour des paquets depuis le serveur ubuntu (91.189.89.115) le système de **NAT** a conservé une table de correspondance et refait le changement d'adresse IP mais cette fois sur la destination afin que ce soit transmis au conteneur qui a initialisé la communication :D
+* Ce dernier regarde où la communication doit être transmis , si la communication est à l'extérieur , donc PAS interconteneur il modifie l'adresse IP source de provenance afin que soit transmis l'adresse IP de la machine du conteneur.
+* Lors du retour des paquets depuis le serveur ubuntu (91.189.89.115) le système de **NAT** a conservé une table de correspondance et refait le changement d'adresse IP, mais cette fois sur la destination afin que ce soit transmis au conteneur qui a initialisé la communication :D
 
 **MAGIE** !!
 
 ## <a name="NetworkCommToConteneur" /> Processus de communication vers les conteneurs
 
-Maintenant que l'on sait comment les communications sortent du conteneur et surtout sont en mesure de revenir une fois la communication initié. Nous allons pouvoir nous attaquer aux communications vers un conteneur.
+Maintenant que l'on sait comment les communications sortent du conteneur et surtout sont en mesure de revenir une fois la communication initiée. Nous allons pouvoir nous attaquer aux communications vers un conteneur.
 
-Telle que mentionné précédemment les adresses IP des conteneurs ne sont pas directement disponible depuis le reste du réseau, donc si le client sur la machine 192.168.42.10 essaye de communiquer avec 172.17.0.6 il recevra le message **No route to host**, impossible d'accéder à la machine.
+Tel que mentionné précédemment les adresses IP des conteneurs ne sont pas directement disponibles depuis le reste du réseau, donc si le client sur la machine 192.168.42.10 essaye de communiquer avec 172.17.0.6 il recevra le message **No route to host**, impossible d'accéder à la machine.
 
-Il y a deux possibilité de configuration , la mise en place d'un processus __docker-proxy__ ou la configuration **port forward** au niveau de la couche réseau.
+Il y a deux possibilités de configuration , la mise en place d'un processus __docker-proxy__ ou la configuration **port forward** au niveau de la couche réseau.
 
 Voyons les 2 options :), dans les 2 cas l'activation est la même :D , donc voyons l'activation du port 8080 sur le docker __host__ qui sera redirigé vers le port 80 dans le conteneur . 
 
@@ -870,7 +870,7 @@ Voici l'instruction docker __host__ pour démarrer le conteneur avec cette confi
 
 ### <a name="dockerProxyConteneur" /> Utilisation du processus docker proxy
 
-L'utilisation du système de docker __proxy__, je crois que ceci fut le premier mode disponible avec docker. Le principe est simple , il y a un processus __docker__ qui écoute sur le port définie dans notre cas le port 8080 et retransmet le flux vers la destination spécifié.
+L'utilisation du système de docker __proxy__, je crois que ceci fut le premier mode disponible avec docker. Le principe est simple , il y a un processus __docker__ qui écoute sur le port défini dans notre cas le port 8080 et retransmet le flux vers la destination spécifié.
 Nous pouvons voir le processus avec l'instruction **netstat** ou **ss** .
 
         $ sudo ss -lntp
@@ -886,7 +886,7 @@ Comme vous pouvez le constater le processus dans la situation présenter écoute
 
 L'autre méthode est d'utiliser le mode de redirection de port nativement disponible dans le noyau Linux, avec le service **iptables**.
 
-Toujours suite avec la commande __docker run --publish=8080:80  x3rus/apache:ubuntu-cust__ docker a automatiquement configurer le 2 mode.
+Toujours suite avec la commande __docker run --publish=8080:80  x3rus/apache:ubuntu-cust__ docker a automatiquement configurer les 2 modes.
 Regardons la configuration de __iptables__ actuellement active :
 
         $ sudo iptables -L -n -t nat -v
@@ -903,7 +903,7 @@ Regardons la configuration de __iptables__ actuellement active :
            0     0 DNAT       tcp  --  !docker0         *       0.0.0.0/0      0.0.0.0/0     tcp dpt:8080 to:172.17.0.2:80
 
 
-Bon l'important c'est la dernière ligne, j'ai mis l'ensemble mais la ligne **DNAT** fait l'ensemble du travail.
+Bon l'important c'est la dernière ligne, j'ai mis l'ensemble, mais la ligne **DNAT** fait l'ensemble du travail.
 À ce niveau uniquement le __kernel__ travaille aucun processus ne prend la tâche de redirection.
 
 
@@ -911,40 +911,52 @@ Bon l'important c'est la dernière ligne, j'ai mis l'ensemble mais la ligne **DN
 
 ![welcom_on_board-docker.png](./imgs/welcom_on_board-docker.png)
 
-En conclusion de cette présentation **pourquoi utiliser Docker** ? Bien entendu Docker règle pas tous les problèmes, mais vous offrira de nombreuse possibilité. Voici quelque type d'utilisation qui vous facilitera la vie avec ce système :
+En conclusion de cette présentation **pourquoi utiliser Docker** ? Bien entendu Docker ne règle pas tous les problèmes, mais vous offrira de nombreuses possibilités. Voici quelque type d'utilisation qui vous facilitera la vie avec ce système :
 
 * **Utilisateur lambda** :
-    * Docker vous offre la possibilité de démarrer un **environnement isolé, pour réaliser vos testes** , combien de fois vous avez cassé votre système à cause d'une erreur de manipulation. Ou pire pas faire un teste, car vous aviez peur de cassé votre environnement. Avec Docker pas grave , il est cassé on en démarre un nouveau et c'est repartie :D. (Ça marche aussi, si t'as pris un verre de trop puis que tu veux jouer sur ton système :P )
+    * Docker vous offre la possibilité de démarrer un **environnement isolé, pour réaliser vos testes** , combien de fois vous avez cassé votre système à cause d'une erreur de manipulation. Ou pire ne pas faire un teste, car vous aviez peur de casser votre environnement. Avec Docker pas grave , il est cassé on en démarre un nouveau et c'est repartie :D. (Ça marche aussi, si t'as pris un verre de trop puis que tu veux jouer sur ton système :P )
     * Possibilité de tester des applications rapidement , fonctionnel sans ce cassé la tête à réaliser l'ensemble de la configuration requise, ceci grâce à la liste énorme d'application disponible sur [http://hub.docker.com](http://hub.docker.com).
 * **Développeur** :
-    * Le système Docker vous offre la possibilité d'avoir un environnement IDENTIQUE peu importe le lieu ou vous êtes. Combien de fois avez vous développez sur votre poste, vous changez de machine d'un portable à un __desktop__ ou la machine d'un collègue , et voilà il manque une librairie voir plusieurs :-(. Perte de temps à identifier le problème et chercher quelle librairie est problématique... 
+    * Le système Docker vous offre la possibilité d'avoir un environnement IDENTIQUE, peu importe le lieu où vous êtes. Combien de fois avez vous développez sur votre poste, vous changez de machine d'un portable à un __desktop__ ou la machine d'un collègue , et voilà il manque une librairie voir plusieurs :-(. Perte de temps à identifier le problème et chercher quelle librairie est problématique... 
     * Si le conteneur est utilisé sur l'ensemble de la chaîne de production plus de problème du type, ça marche sur mon poste ... 
-    * Vous pouvez avoir plusieurs version de la même application (ex: mysql 5.5 ou 5.7 , apache 2.2 ou 2.4  ) afin de faire des testes d'intégrations , tous en conservant l'isolation :D
+    * Vous pouvez avoir plusieurs versions de la même application (ex: mysql 5.5 ou 5.7 , apache 2.2 ou 2.4  ) afin de faire des tests d'intégrations , tous en conservant l'isolation :D
     * Contrairement à un système de virtualisation, vous n'avez pas un coût énorme sur votre système, vous pouvez utiliser docker sans avoir un ULTRA utimate portable à 4000$.
     * Plus besoin d'établir une connexion VPN au bureau , vous avez votre environnement directement sur votre portable (s'applique uniquement si l'ensemble de l'application est en docker , pas de BD physique)
-    * Vous pouvez valider votre application avec différente savoir de GNU/Linux ( Centos , Debian , Ubuntu, OpenSuse, ...)
-    * En cas de problème en production , il est possible de récupérer le conteneur et l'extraire de l'environnement problématique sur votre poste , résultat vous pouvez faire vos testes sur l'environnement Identique à celui problématique !
+    * Vous pouvez valider votre application avec différent savoir de GNU/Linux ( Centos , Debian , Ubuntu, OpenSuse, ...)
+    * En cas de problème en production , il est possible de récupérer le conteneur et l'extraire de l'environnement problématique sur votre poste , résultat vous pouvez faire vos testes sur l'environnement identique à celui problématique !
     * Et plus , mais je suis pas un développeur PURE :P 
 * **Assurance Qualité (QA)** : 
-    * Si vos environnements utilise Docker et que les environnements des développeurs et de l'intégration sont aussi dockerisé, pas de surprise vous valider Réellement l'application. Pas de problème de configuration de syslog par exemple , cette configuration fut validé en amont . Vous avez exactement l'environnement "fonctionnel" incluant les BUG humain :D.
-    * Si votre environnement de production est aussi Dockerisé , ce que vous validez sera exactement la même chose en production , il ne reste que les configurations applicative qui peuvent varié un peu.
+    * Si vos environnements utilise Docker et que les environnements des développeurs et de l'intégration sont aussi dockerisé, pas de surprise vous valider réellement l'application. Pas de problème de configuration de syslog par exemple , cette configuration fut validée en amont . Vous avez exactement l'environnement "fonctionnel" incluant les BUG humain :D.
+    * Si votre environnement de production est aussi Dockerisé , ce que vous validez sera exactement la même chose en production , il ne reste que les configurations applicatives qui peuvent varier un peu.
     * Vous êtes en mesure d'avoir l'environnement à tester sur vos postes plus besoin d'attendre un environnement disponible !
-    * La mise en plus de testes unitaire plus simple car ceci peut ce faire lors de la livraison de __Release Candidate__ automatiquement , vous évitant de perdre du temps.
+    * La mise en plus de testes unitaire plus simple, car ceci peut ce faire lors de la livraison de __Release Candidate__ automatiquement , vous évitant de perdre du temps.
     * Et plus , mais je ne suis pas un on testeur :D. 
 * **Opérateur / Sysadmin** :
-    * En utilisant docker pour le déploiement applicatif sur l'ensemble de la chaine de production, l'application est valider tous au long de son utilisation. Il ne vous reste plus qu'a ajuste les paramètres de l'application. S'il y a un problème ce ne peut être QUE dans la configuration donc votre partie.
-    * Vous êtes en mesure de conservé la version en place et de démarrer la nouvelle version avec un autre nom de conteneur , vous avez un SUPER filet présent.
-    * Le fait qu'il n'y a pas d'émulation de l'ensemble de la machine virtuel vous utilisez l'ensemble des ressources du serveur pas de perte . Résultat une meilleur utilisation des ressources en place.
+    * En utilisant docker pour le déploiement applicatif sur l'ensemble de la chaine de production, l'application est valider tous au long de son utilisation. Il ne vous reste plus qu'a ajuste les paramètres de l'application. S'il y a un problème, ce ne peut être QUE dans la configuration donc votre partie.
+    * Vous êtes en mesure de conserver la version en place et de démarrer la nouvelle version avec un autre nom de conteneur , vous avez un SUPER filet présent.
+    * Le fait qu'il n'y a pas d'émulation de l'ensemble de la machine virtuel vous utilisez l'ensemble des ressources du serveur pas de perte . Résultat une meilleure utilisation des ressources en place.
     * Vous êtes en mesure de récupérer le conteneur en fonction et de le récupérer sur une autre machine pour analyser le problème.
-    * En cas de monté en charge il est possible d'augmenter le nombre de conteneur avec la même application RAPIDEMENT . 
-    * Vous êtes en mesure de réaliser des testes sur 1 conteneur en créant du bruit afin d'essayer de générer des problèmes non pris en charge traditionnellement.
-    * Il est possible d'automatiser le déploiement , pas uniquement de l'hôte mais l'ensemble de l'applicatif.
+    * En cas de montée en charge il est possible d'augmenter le nombre de conteneurs avec la même application RAPIDEMENT . 
+    * Vous êtes en mesure de réaliser des tests sur 1 conteneur en créant du bruit afin d'essayer de générer des problèmes non pris en charge traditionnellement.
+    * Il est possible d'automatiser le déploiement , pas uniquement de l'hôte, mais l'ensemble de l'applicatif.
 
-Docker juste une truc de barbu ... Heu non  [https://www.docker.com/microsoft](https://www.docker.com/microsoft) , même **Micro$oft** voit le potentiel :D.
+Docker juste un truc de barbu ... Heu non  [https://www.docker.com/microsoft](https://www.docker.com/microsoft) , même **Micro$oft** voit le potentiel :D.
 Docker est aussi disponible sur Mac OS! 
 
-# <a name="Référence" /> Référence 
+# <a name="Référence" /> Référence 	
 
 * [http://fr.slideshare.net/jpetazzo/docker-quels-enjeux-pour-le-stockage-et-reseau-paris-open-source-summit-2015](http://fr.slideshare.net/jpetazzo/docker-quels-enjeux-pour-le-stockage-et-reseau-paris-open-source-summit-2015)
 * [https://www.docker.com/microsoft](https://www.docker.com/microsoft)
 * [https://docs.docker.com/engine/getstarted/](https://docs.docker.com/engine/getstarted/)
+
+
+
+
+
+
+
+
+
+
+
+
