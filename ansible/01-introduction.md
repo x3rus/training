@@ -1224,6 +1224,4 @@ Please enter a valid time zone:
 > Do you want to upload your website using Rackspace Cloud Files? (y/N) 
 > Do you want to upload your website using GitHub Pages? (y/N) 
 Done. Your new project is available at /home/r2d2/website
-
-
 ``` 
