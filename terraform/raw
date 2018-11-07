@@ -1,0 +1,38 @@
+real    6m8.649s
+user    0m42.545s
+sys     0m12.562s
+
+
+2 clé SSH dans AWS
+  - aws_key_pair.admin
+  - aws_key_pair.ansible
+
+1 Réseau privé 
+  - aws_default_vpc.default
+
+2 Subnet réseaux
+  - aws_subnet.bd-private-2a
+  - aws_subnet.web-public-2a
+
+4 règle de firewall
+  - aws_security_group.allow_external_communication
+  - aws_security_group.allow_mysql_internal
+  - aws_security_group.allow_remote_admin
+  - aws_security_group.allow_web
+
+3 machines virtuel EC2
+  - aws_instance.db-terra[0]
+  - aws_instance.db-terra[1]
+  - aws_instance.web-terra
+
++ 
+	ansible qui configure install mysql , créer 2 users + 2 BD , popule les 2 bd avec un fichier SQL
+			      install apache + config, deploie le site web PHP , configurer le site web pour avec les ip privé des VM BD dynamiquement
+			      change le fichier /etc/hosts
+
+
+Destroy complete! Resources: 12 destroyed.
+
+real    3m35.107s
+user    0m2.192s
+sys     0m0.637s
