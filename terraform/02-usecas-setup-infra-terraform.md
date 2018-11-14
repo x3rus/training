@@ -139,7 +139,7 @@ Nous allons créer un répertoire pour chacun de nos test :
 $ mkdir -p  terraManifest/01-validation
 ```
 
-Voici la première version de notre manifeste **terraform**  : terraManifest/01-validation/01-test-terraform.tf
+Voici la première version de notre configuration **terraform**  : terraManifest/01-validation/01-test-terraform.tf
 
 ```
 ########
@@ -172,9 +172,51 @@ data "aws_ami" "ubuntu" {
 }
 ```
 
-TODO : Explication manifest
+Détaillons un peu le contenu de cette configuration **terraform** 
 
-Vous devez initialiser terraform :
+* Création d'une variable qui contiendra le nom de la région que nous désirons manipuler , dans mon cas j'utilise la région de l'oregon. Je pourrais utiliser celui du canada , mais le prix est moins chère au États-Unis :P. Comme ceci est pour la formation je réduit mes coûts au maximum . Vous avez la liste des régions et le code associé disponible sur la documentation de aws : [Région et zone disponible](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RegionsAndAvailabilityZones.html).
+    * Le nom de la variables est **aws\_region**
+
+    ```
+        variable "aws_region" { default = "us-west-2" } # US-oregon
+    ```
+
+* Nous définissons le type de **provider** à utiliser , pour les curieux la documentation du provider aws est disponible sur le site de **terraform** : [provider aws](https://www.terraform.io/docs/providers/aws/index.html) . Nous indiquons où nous désirons établir notre connexion , dans notre cas nous reprenons la variable de la région préalablement définie. Nous indiquons aussi les critères d'authentification pour avoir accès l'équivalent de user / password , pour aws ceci est l'__access key__ et __secret key__
+
+    ```
+    provider "aws" {
+        region = "${var.aws_region}"
+      	access_key = "ABIASDLASDIHV6QNZASQ"
+	    secret_key = "06mcwWI7MhP59cKss5PQjPyPGzvF7k/gNCdZGKYc"
+    }
+    ```
+
+* Dernier bloque , nous allons faire une recherche pour extraire l'information depuis AWS pour la version la plus récente de l'image AMI disponible pour Ubuntu 16.04 ( __aka xenial__ ) de type __hvm__ disponible dans la région où nous nous sommes connecté. Nous utiliserons cette entré par la suite lors de la création d'une instance EC2 j'y reviendrai.
+
+    ```
+    data "aws_ami" "ubuntu" {
+        most_recent = true
+
+        filter {
+            name   = "name"
+            values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
+        }
+
+        filter {
+            name   = "virtualization-type"
+            values = ["hvm"]
+        }
+
+    }
+    ```
+
+    * En d'autre mot cette commande est l'équivalant d'aller sur la page [Liste des AMI pour l'oregon](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Images:visibility=public-images;name=ubuntu;search=16.04;sort=name) , faire la recherche pour ubuntu 16.04 dans les AMI public et extraire la plus récente .
+
+    ![](./imgs/06-search-ami-last-ubuntu.png)
+
+Pour rappel ici nous ne validons que la connectivité, nous réaliserons de grande chose par la suite :P .
+
+Afin d'être en mesure d'utiliser **terraform** , vous allez avoir besoin d'initialiser votre espace de travail. L'initialisation va télécharger les plugins requis, ce dernier va lire le fichier de configuration et voir les __providers__ définie. Il téléchargera les binaires en conséquence. Lors de l'opération voici ce que vous devriez avoir : 
 
 ```
  $ terraform init                 
@@ -205,8 +247,7 @@ commands will detect it and remind you to do so if necessary.
 
 ```
 
-
-Ce dernier va lire le fichier **.tf** et faire le téléchargement des modules requis , voici le résultat dans notre cas: 
+Si vous regardez dans votre répertoire de travail , vous constaterez que la commande a généré un répertoire __.terraform__ contenant un répertoire plugins , avec un fichier binaire. Assez volumineux soit dit en passant 90 Megs.
 
 ```
 $ ls -ltr .terraform/plugins/linux_amd64/
@@ -216,7 +257,7 @@ total 92772
 
 ```
 
-TODO : Plan 
+Un des gros points positif avec Terraform est qu'il est possible d'avoir l'information de ce qui sera réalisé avant de poser une action. Avec l'option **plan**, ceci est important afin d'être en mesure de prédire l'action et de la valider en amont au lieu de la corriger par la suite :P.
 
 ```
 $ terraform plan                                                                                                                
@@ -225,14 +266,16 @@ The refreshed state will be used to calculate this plan, but will not be
 persisted to local or remote state storage.
                                           
 data.aws_ami.ubuntu: Refreshing state... 
-------------------------------------------------------------------------                                                                                      
+ ------------------------------------------------------------------------                                                                                      
 No changes. Infrastructure is up-to-date. 
 This means that Terraform did not detect any differences between your 
 configuration and real physical resources that exist. As a result, no  
 actions need to be performed.
 ```
 
-TODO : Si vous avez  :
+Comme nous pouvons le voir ci-dessus le message : **No changes. Infrastructure is up-to-date.** , ce qui était prévisible, car nous n'avons pas réaliser d'actions de création ou destructions.
+
+Si vous avez le message suivant : 
 
 ```
 $ terraform plan 
@@ -245,11 +288,17 @@ Error: Error refreshing state: 1 error(s) occurred:
 
 * provider.aws: error validating provider credentials: error calling sts:GetCallerIdentity: InvalidClientTokenId: The security token included in the request is invalid.
         status code: 403, request id: c4f63d75-e811-11e8-9152-dbfe67261934
-
-
 ```
 
-TODO : apply
+Raisons :
+
+1. Vous avez copier collé le fichier de configuration sans changé l'access et secret key :P , malheureusement il faut mettre vos identifiants 
+2. Les permissions attribué dans IAM , ne sont pas adéquat :-/ 
+
+
+Je vous laisse malheureusement chercher , je vous conseille fortement de détruire et refaire l'utilisateur si requis !!
+
+Maintenant il est temps de faire l'application de la configuration avec l'option **apply**, ci-dessous le résultat :
 
 ```
 terraform apply 
@@ -258,7 +307,18 @@ data.aws_ami.ubuntu: Refreshing state...
 Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 ```
 
-TODO Fichier état : explication fichier état [terraform.tfstate_run01](./terraManifest/01-validation/terraform.tfstate_run01)
+Comme attendu , l'opération est complété et aucun ressources fut : ajouté , changé ou détruite.
+Bien que rien ne fut changer dans l'environnement AWS, il y a eu un changement dans le répertoire de travail , un fichier a fait son apparition **terraform.tfstate**. Ce dernier sera réécrit à chaque utilisation j'ai donc fait une copie  :  [terraform.tfstate_run01](./terraManifest/01-validation/terraform.tfstate_run01)
+Ce fichier conserve l'état de la configuration qui fut exécuté . Si vous ouvrez le fichier vous constaterez que le fichier contient l'ensemble de l'information de l'AMI , nous y retrouvons :
+
+* "id": "ami-0afae182eed9d2b46",
+* "architecture": "x86_64",
+* "creation_date": "2018-11-07T16:54:57.000Z"
+* "block_device_mappings.2547816212.ebs.volume_size": "8",
+
+Je vous laisse regarder la suite ... cependant si je prend le id et que je le recherche dans la même page des AMI mentionné plus tôt , je retrouve l'information : 
+
+![](./imgs/06-search-ami-last-ubuntu-with-id.png)
 
 
 
