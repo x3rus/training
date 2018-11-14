@@ -41,14 +41,18 @@ Dans la démonstration , je n'utilise QUE les images GNU/Linux vanille de Amazon
 
 Je vais utiliser la même séquence que lors de mon apprentissage personnel, voici donc les étapes haut niveau que nous allons couvrir : 
 
-1. Création des clés OpenSSH et déploiement dans AWS
-2. Création du réseau
+1. Configuration de l'environnement 
+    1. Installation de terraform
+    2. Création d'un utilisateur dans AWS pour terraform
+    3. Test de communication 
+2. Création des clés OpenSSH et déploiement dans AWS
+3. Création du réseau
     1. Identification du VPC par défault
     2. Création de 2 subnet 
         * serveur web 
         * serveur de base de données
     3. Configuration des règles de firewall (security groups)
-3. Création des instances EC2
+4. Création des instances EC2
     1. Configuration de ces dernières avec Ansible
     2. Partage de variables entre Terraform et Ansible
 
@@ -59,6 +63,203 @@ Prendre note que l'ensemble sera dans le répertoire : **terraform/terraManifest
 OK LET'S GO !!
 
 TODO : add picture here 
+
+## Configuration de l'environnement
+
+Pour ce faire j'ai simplement utilisé la page [Get Started de terraform](https://www.terraform.io/intro/getting-started/install.html) . 
+Rapidement je vais le couvrir, cependant s'il y a un problème vous référer à la page de terraform :
+
+### Installation de Terraform 
+
+Vous pouvez le télécharger pour votre plateforme  : https://www.terraform.io/downloads.html
+Pour Ubuntu :
+
+```
+$ sudo apt-get install unzip
+$ wget https://releases.hashicorp.com/terraform/0.11.10/terraform_0.11.10_linux_amd64.zip
+$ unzip terraform_0.11.10_linux_amd64.zip
+$ sudo mv terraform /usr/local/bin/
+$ terraform --version 
+```
+
+Pour Arch Linux ( allez un peu de pub pour cette distro aussi :P , même si ça change RIEN. T'es pas meilleur sur arch que sur Ubuntu ou une autre distro !!)
+
+```
+$ aurman terraform
+```
+
+Dans les 2 cas, on va pas me dire que c'est compliqué !!
+
+### Création d'un utilisateur dans AWS
+
+Vous avez 2 Options , mais choisissez pas la première :P , c'est pas propre . Bon explication sans farce :
+
+* **Option 1** : Utilisation de la clé __ROOT__ super admin du compte ,  la problématique avec cette méthode est qu'il n'y a pas de possibilité de limité les permissions. De plus ceci offre l'accès à l'ensemble du compte. Vous n'aurez qu'une clé , alors que lors de l'utilisation en entreprise de terraform vous désirez offrir un compte par équipe ou utilisateur.
+* **Option 2** : Création d'un utilisateur associé qui sera utilisé par **Terraform** , ceci vous offre la possibilité de limité les permissions au ressources. De plus vous pouvez révoquez l'accès sans impacter les autres équipes qui utilise AWS avec terraform , car ceci est une clé unique par utilisateur. 
+
+Nous allons prendre l'option 2 , car elle est plus propre , pour se faire allé sur le [gestionnaire d'utilisateur IAM](https://console.aws.amazon.com/iam/home?region=us-west-2#/users). 
+
+Voici le résultat pour moi j'ai déjà 1 utilisateur :
+
+![](./imgs/04-iam-user-view.png)
+
+Je clique donc sur le bouton **Add user** en haut. Je définie le nom de l'utilisateur et le type d'utilisateur , dans notre cas ce ne sera pas un utilisateur interactif, mais un utilisateur qui utilise l'API de AWS.
+
+![](./imgs/05-create-iam-user-api.png) 
+
+Pour les besoins de la présentation je vais définir l'utilisateur comme administrateur afin de me simplifier la vie en terme de permission. Nous allons explorer les possibilités de **terraform** , nous voulons donc gérer les problèmes de ce système pas avoir en plus des problèmes de permission. Bien entendu une fois la recette trouvé je vous invite à explorer aussi le système IAM de AWS. 
+Honnêtement je pense que j'ai créer ce groupe , si c'est le cas j'ajoute aussi une copie d'écran des permission du groupe. 
+
+![](./imgs/05-create-iam-user-set-group.png)
+
+![](./imgs/05-create-iam-user-view-group-admin.png)
+
+Vous pouvez valider le résultat :
+
+![](./imgs/05-create-iam-user-review.png)
+
+Et Voilà le résultat :
+
+![](./imgs/05-create-iam-user-resultat.png)
+
+Vous pouvez téléchargé le csv , très pratique quand vous créez plusieurs utilisateur . **ATTENTION** : la clé secret ne sera plus jamais disponible vous devez absolument en faire une copie maintenant !!
+
+Résultat vous avez les identifiants requis pour Terraform :
+
+* Access key ID :  ABIASDLASDIHV6QNZASQ
+* Secret access key : 06mcwWI7MhP59cKss5PQjPyPGzvF7k/gNCdZGKYc
+
+__Note__ : N'utilisez pas la clé ci-dessus elle n'est pas bonne :P , vous aurez des problèmes d'accès j'ai changé les valeurs pour pas que l'on puisse l'utiliser.
+
+### Test de communication 
+
+Nous allons créer un répertoire pour chacun de nos test :
+
+```
+$ mkdir -p  terraManifest/01-validation
+```
+
+Voici la première version de notre manifeste **terraform**  : terraManifest/01-validation/01-test-terraform.tf
+
+```
+########
+# Vars #
+
+variable "aws_region" { default = "us-west-2" } # US-oregon
+
+# AWS SDK auth
+provider "aws" {
+    region = "${var.aws_region}"
+  	access_key = "ABIASDLASDIHV6QNZASQ"
+	secret_key = "06mcwWI7MhP59cKss5PQjPyPGzvF7k/gNCdZGKYc"
+}
+
+# Extract last AWS ubuntu AMazon Image (AMI)
+# Ref :https://www.andreagrandi.it/2017/08/25/getting-latest-ubuntu-ami-with-terraform/
+data "aws_ami" "ubuntu" {
+    most_recent = true
+
+    filter {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
+    }
+
+    filter {
+        name   = "virtualization-type"
+        values = ["hvm"]
+    }
+
+}
+```
+
+TODO : Explication manifest
+
+Vous devez initialiser terraform :
+
+```
+ $ terraform init                 
+ 
+Initializing provider plugins...
+- Checking for available provider plugins on https://releases.hashicorp.com...
+- Downloading plugin for provider "aws" (1.43.2)...                                                                                                          
+                         
+The following providers do not have any version constraints in configuration,
+so the latest version was installed.
+            
+To prevent automatic upgrades to new major versions that may contain breaking
+changes, it is recommended to add version = "..." constraints to the         
+corresponding provider blocks in configuration, with the constraint strings
+suggested below.
+            
+* provider.aws: version = "~> 1.43"   
+                        
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+                                                                              
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+
+```
+
+
+Ce dernier va lire le fichier **.tf** et faire le téléchargement des modules requis , voici le résultat dans notre cas: 
+
+```
+$ ls -ltr .terraform/plugins/linux_amd64/
+total 92772
+-rwxr-xr-x 1 xerus xerus 94989024 Nov 14 08:21 terraform-provider-aws_v1.43.2_x4
+-rwxr-xr-x 1 xerus xerus       79 Nov 14 08:21 lock.json
+
+```
+
+TODO : Plan 
+
+```
+$ terraform plan                                                                                                                
+Refreshing Terraform state in-memory prior to plan...
+The refreshed state will be used to calculate this plan, but will not be
+persisted to local or remote state storage.
+                                          
+data.aws_ami.ubuntu: Refreshing state... 
+------------------------------------------------------------------------                                                                                      
+No changes. Infrastructure is up-to-date. 
+This means that Terraform did not detect any differences between your 
+configuration and real physical resources that exist. As a result, no  
+actions need to be performed.
+```
+
+TODO : Si vous avez  :
+
+```
+$ terraform plan 
+Refreshing Terraform state in-memory prior to plan...
+The refreshed state will be used to calculate this plan, but will not be
+persisted to local or remote state storage.
+
+
+Error: Error refreshing state: 1 error(s) occurred:
+
+* provider.aws: error validating provider credentials: error calling sts:GetCallerIdentity: InvalidClientTokenId: The security token included in the request is invalid.
+        status code: 403, request id: c4f63d75-e811-11e8-9152-dbfe67261934
+
+
+```
+
+TODO : apply
+
+```
+terraform apply 
+data.aws_ami.ubuntu: Refreshing state...
+
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+```
+
+TODO Fichier état : explication fichier état [terraform.tfstate_run01](./terraManifest/01-validation/terraform.tfstate_run01)
+
 
 
 ## Création des clés OpenSSH et déploiement dans AWS
