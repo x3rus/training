@@ -142,20 +142,20 @@ $ mkdir -p  terraManifest/01-validation
 Voici la première version de notre configuration **terraform**  : terraManifest/01-validation/01-test-terraform.tf
 
 ```
-########
-# Vars #
+ ########
+ # Vars #
 
 variable "aws_region" { default = "us-west-2" } # US-oregon
 
-# AWS SDK auth
+ # AWS SDK auth
 provider "aws" {
     region = "${var.aws_region}"
   	access_key = "ABIASDLASDIHV6QNZASQ"
 	secret_key = "06mcwWI7MhP59cKss5PQjPyPGzvF7k/gNCdZGKYc"
 }
 
-# Extract last AWS ubuntu AMazon Image (AMI)
-# Ref :https://www.andreagrandi.it/2017/08/25/getting-latest-ubuntu-ami-with-terraform/
+ # Extract last AWS ubuntu AMazon Image (AMI)
+ # Ref :https://www.andreagrandi.it/2017/08/25/getting-latest-ubuntu-ami-with-terraform/
 data "aws_ami" "ubuntu" {
     most_recent = true
 
@@ -320,7 +320,7 @@ Je vous laisse regarder la suite ... cependant si je prend le id et que je le re
 
 ![](./imgs/06-search-ami-last-ubuntu-with-id.png)
 
-
+Ce fichier est donc le fichier de l'état !! Il sera rafraichie et bonifié au fur et à mesure de l'utilisation
 
 ## Création des clés OpenSSH et déploiement dans AWS
 
