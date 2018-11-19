@@ -45,16 +45,17 @@ Je vais utiliser la même séquence que lors de mon apprentissage personnel, voi
     1. Installation de terraform
     2. Création d'un utilisateur dans AWS pour terraform
     3. Test de communication 
-2. Création des clés OpenSSH et déploiement dans AWS
-3. Création du réseau
-    1. Identification du VPC par défault
-    2. Création de 2 subnet 
-        * serveur web 
-        * serveur de base de données
-    3. Configuration des règles de firewall (security groups)
-4. Création des instances EC2
-    1. Configuration de ces dernières avec Ansible
-    2. Partage de variables entre Terraform et Ansible
+2. Réalisation du cas d'exemple
+    1. Création des clés OpenSSH et déploiement dans AWS
+    2. Création du réseau
+        1. Identification du VPC par défault
+        2. Création de 2 subnet 
+            * serveur web 
+            * serveur de base de données
+        3. Configuration des règles de firewall (security groups)
+    3. Création des instances EC2
+        1. Configuration de ces dernières avec Ansible
+        2. Partage de variables entre Terraform et Ansible
 
 Je couvrirai aussi à la fin, si le temps me le permet dans la vidéo, mais au moins par écrit de problème que j'ai rencontré.
 
@@ -171,6 +172,8 @@ data "aws_ami" "ubuntu" {
 
 }
 ```
+
+Fichier d'origin : [01-test-terraform.tf](https://github.com/x3rus/training/blob/a0e33ab3753426d010972f57ea2f02119fa916e8/terraform/terraManifest/01-validation/01-test-terraform.tf)
 
 Détaillons un peu le contenu de cette configuration **terraform** 
 
@@ -322,7 +325,38 @@ Je vous laisse regarder la suite ... cependant si je prend le id et que je le re
 
 Ce fichier est donc le fichier de l'état !! Il sera rafraichie et bonifié au fur et à mesure de l'utilisation
 
-## Création des clés OpenSSH et déploiement dans AWS
+## Réalisation du cas d'exemple
+
+Bon nous allons débuter le cas d'exemple , je vais faire un répertoire pour ce cas d'utilisation et utiliser les commits afin de vous fournir les fichiers finaux à chaque étape. Pourquoi ce mode de fonctionnement , simplement parce que je veux capitalisé sur le fichier d'état des exécutions passé.
+
+```
+$ mkdir terraManifest/02-use-case
+$ cd terraManifest/02-use-case
+```
+
+Pour rappel voici les étapes qui seront réalisées :
+
+    1. Création des clés OpenSSH et déploiement dans AWS
+    2. Création du réseau
+        1. Identification du VPC par défault
+        2. Création de 2 subnet 
+            * serveur web 
+            * serveur de base de données
+        3. Configuration des règles de firewall (security groups)
+    3. Création des instances EC2
+        1. Configuration de ces dernières avec Ansible
+        2. Partage de variables entre Terraform et Ansible
+
+
+### Création des clés OpenSSH et déploiement dans AWS
+
+Je débute avec les clés ssh , car ceci est simple , ne génère PAS de coût et nous serons en mesure de visualisé le succès de l'opération facilement.
+
+Premièrement visualisons les clés actuellement disponible , à l'URL [Key pair](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#KeyPairs:sort=keyName) ( encore une fois je suis sur la région de l'Oregon ) 
+
+![](./imgs/07-aws-view-key-pair-initial.png)
+
+Pour le moment aucune clé n'est présente ! 
 
 Bien entendu la clé privé ssh ne se trouvant pas dans AWS , nous allons faire la création de la clé sur notre station et pousser la clé public . Débutons donc par la création des clés :
 
@@ -336,6 +370,252 @@ admin-user  admin-user.pub  ansible-user  ansible-user.pub
 ```
 
 Donc les clés des 2 utilisateurs admin et ansible , les clés privé sans extension et les clés publique avec l'extension .pub.
+
+Nous allons reprendre sensiblement la configuration initiale :
+
+```
+ ########
+ # Vars #
+
+variable "aws_region" { default = "us-west-2" } # US-oregon
+
+ # AWS SDK auth
+provider "aws" {
+    region = "${var.aws_region}"
+    access_key = "ABIASDLASDIHV6QNZASQ"
+    secret_key = "06mcwWI7MhP59cKss5PQjPyPGzvF7k/gNCdZGKYc"
+}
+
+```
+
+Nous allons ajouter par la suite la section pour les clés : 
+
+```
+ ############
+ # SSH keys #
+
+resource "aws_key_pair" "admin" {
+  key_name   = "admin-key"
+
+  # contenu du fichier : ssh-keys/admin-user.pub
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDReMyXDOfuGipgcQViDTr3kqfbLVbIegJI+j3Br2wgX5CQXkWoFqKKZv3JIS4RnZdyQ3HCf8hbwUA1SoW4ngOAARToLYbMA80bHilZK5AzpYoTVH9GgfruLeq/ljJJAyh33vQgk26VX63mBIlp7cgxMx96T2iSqUuNbylXHgEOhPXMytv7FT4JcxMhNIRCq9YnsS8nD7+6GrJ7tSnochTauXs3OrM8bTA0AgZfj0PrC8aDZRCEShPU9QEjGTrtIX5AVcRoP01UInk1JWfQIBk1x5WPKYUDXQIrZPyLkWJ0Y6H7qcLKyBmDqTrEuMZ6fi9zcpEFkkg3wyC9ERr/UmVx xerus@goishi"
+}
+
+
+resource "aws_key_pair" "ansible" {
+  key_name   = "ansible-key"
+
+  # contenu du fichier : ssh-keys/ansible-user.pub
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDr1Av8Kj8LqsI6cK31n4IElsxsGemzDXAI8NSCSRtTlNh8dJIIXpWnrGFSM9NU8++4qQmlYv+5uRhKS1SMZcPgRlcNGIBGLQxolFVw437zvt5O5mgLePRjgXpQWF/0fwx4iKark9Djyt8eHjSbTHCqpflT2xgFPMq0sJFJWmIMcGMkIh436AbjubvlgB8K1CGJzbTM4xHhlEywrggDekUcvXD2IKQFHAbO1pU/47krLdaOEhY0KeHnxfrBLU4RLxn1lyQkWLqLvuM+7o4j5lcMS/v3CC5t8I80uMByK76TC7qFOmZdU0jdo0tJBDzCBw1EmjIkD9urO1ZfL+r7FSbH xerus@goishi"
+}
+```
+
+Validons que ceci fonctionne, comme ceci est un nouveau répertoire je dois initialiser le répertoire afin d'avoir les modules requis , dans notre cas AWS.
+
+```
+$ terraform  init 
+  Initializing provider plugins...
+- Checking for available provider plugins on https://releases.hashicorp.com...
+- Downloading plugin for provider "aws" (1.45.0)...
+The following providers do not have any version constraints in configuration,
+so the latest version was installed.
+corresponding provider blocks in configuration, with the constraint strings
+suggested below.                     
+                                                     
+* provider.aws: version = "~> 1.45"      
+                                                                        
+Terraform has been successfully initialized!
+                                                                            
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+                                                                            
+If you ever set or change modules or backend configuration for Terraform,   
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+
+```
+
+
+* Regardons ce qui devrais être exécuté :
+
+```
+$ terraform  plan                                                                                                           
+Refreshing Terraform state in-memory prior to plan... 
+The refreshed state will be used to calculate this plan, but will not be 
+persisted to local or remote state storage. 
+------------------------------------------------------------------------                                                                                      
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  + create 
+ Terraform will perform the following actions:  
+  + aws_key_pair.admin
+      id:          <computed>
+      fingerprint: <computed>
+      key_name:    "admin-key"
+      public_key:  "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDReMyXDOfuGipgcQViDTr3kqfbLVbIegJI+j3Br2wgX5CQXkWoFqKKZv3JIS4RnZdyQ3HCf8hbwUA1SoW4ngOAARToLYbMA80bH$
+lZK5AzpYoTVH9GgfruLeq/ljJJAyh33vQgk26VX63mBIlp7cgxMx96T2iSqUuNbylXHgEOhPXMytv7FT4JcxMhNIRCq9YnsS8nD7+6GrJ7tSnochTauXs3OrM8bTA0AgZfj0PrC8aDZRCEShPU9QEjGTrtIX5$VcRoP01UInk1JWfQIBk1x5WPKYUDXQIrZPyLkWJ0Y6H7qcLKyBmDqTrEuMZ6fi9zcpEFkkg3wyC9ERr/UmVx xerus@goishi"                                                                                                                                                                                                                         
+  + aws_key_pair.ansible
+      id:          <computed>
+      fingerprint: <computed>             
+      key_name:    "ansible-key"
+      public_key:  "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDr1Av8Kj8LqsI6cK31n4IElsxsGemzDXAI8NSCSRtTlNh8dJIIXpWnrGFSM9NU8++4qQmlYv+5uRhKS1SMZcPgRlcNGIBGLQxol$
+Vw437zvt5O5mgLePRjgXpQWF/0fwx4iKark9Djyt8eHjSbTHCqpflT2xgFPMq0sJFJWmIMcGMkIh436AbjubvlgB8K1CGJzbTM4xHhlEywrggDekUcvXD2IKQFHAbO1pU/47krLdaOEhY0KeHnxfrBLU4RLxn$
+lyQkWLqLvuM+7o4j5lcMS/v3CC5t8I80uMByK76TC7qFOmZdU0jdo0tJBDzCBw1EmjIkD9urO1ZfL+r7FSbH xerus@goishi"
+
+                    
+Plan: 2 to add, 0 to change, 0 to destroy.
+                               
+------------------------------------------------------------------------
+                                
+Note: You didn't specify an "-out" parameter to save this plan, so Terraform can't guarantee that exactly these actions will be performed if "terraform apply" is subsequently run. 
+```
+
+Comme vous pouvez le voir le système nous indique qu'il y a des changements qui seront appliqué , 2 Ajouts dans notre cas les 2 clés SSH. Si vous retournez à l'URL pour voir les clés rien ne fut encore réalisé.
+
+Nous allons appliquer les configurations :
+
+```
+$ terraform  apply                                                                                                          
+An execution plan has been generated and is shown below. 
+Resource actions are indicated with the following symbols: 
+  + create
+Terraform will perform the following actions: 
+  + aws_key_pair.admin                                                                                                                                        
+      id:          <computed>
+      fingerprint: <computed>
+      key_name:    "admin-key"
+      public_key:  "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDReMyXDOfuGipgcQViDTr3kqfbLVbIegJI+j3Br2wgX5CQXkWoFqKKZv3JIS4RnZdyQ3HCf8hbwUA1SoW4ngOAARToLYbMA80bH$lZK5AzpYoTVH9GgfruLeq/ljJJAyh33vQgk26VX63mBIlp7cgxMx96T2iSqUuNbylXHgEOhPXMytv7FT4JcxMhNIRCq9YnsS8nD7+6GrJ7tSnochTauXs3OrM8bTA0AgZfj0PrC8aDZRCEShPU9QEjGTrtIX5$VcRoP01UInk1JWfQIBk1x5WPKYUDXQIrZPyLkWJ0Y6H7qcLKyBmDqTrEuMZ6fi9zcpEFkkg3wyC9ERr/UmVx xerus@goishi"                                                           
+
+  + aws_key_pair.ansible
+      id:          <computed>
+      fingerprint: <computed>
+      key_name:    "ansible-key"
+      public_key:  "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDr1Av8Kj8LqsI6cK31n4IElsxsGemzDXAI8NSCSRtTlNh8dJIIXpWnrGFSM9NU8++4qQmlYv+5uRhKS1SMZcPgRlcNGIBGLQxol$Vw437zvt5O5mgLePRjgXpQWF/0fwx4iKark9Djyt8eHjSbTHCqpflT2xgFPMq0sJFJWmIMcGMkIh436AbjubvlgB8K1CGJzbTM4xHhlEywrggDekUcvXD2IKQFHAbO1pU/47krLdaOEhY0KeHnxfrBLU4RLxn$lyQkWLqLvuM+7o4j5lcMS/v3CC5t8I80uMByK76TC7qFOmZdU0jdo0tJBDzCBw1EmjIkD9urO1ZfL+r7FSbH xerus@goishi"                                                           
+
+
+Plan: 2 to add, 0 to change, 0 to destroy.
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: yes
+
+```
+
+Je dois confirmer que je désire que la création soit réalisé !!!
+
+```
+aws_key_pair.admin: Creating...
+  fingerprint: "" => "<computed>"
+  key_name:    "" => "admin-key"
+  public_key:  "" => "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDReMyXDOfuGipgcQViDTr3kqfbLVbIegJI+j3Br2wgX5CQXkWoFqKKZv3JIS4RnZdyQ3HCf8hbwUA1SoW4ngOAARToLYbMA80bHilZK5AzpYoTVH9GgfruLeq/ljJJAyh33vQgk26VX63mBIlp7cgxMx96T2iSqUuNbylXHgEOhPXMytv7FT4JcxMhNIRCq9YnsS8nD7+6GrJ7tSnochTauXs3OrM8bTA0AgZfj0PrC8aDZRCEShPU9QEjGTrtIX5AVcRoP01UInk1JWfQIBk1x5WPKYUDXQIrZPyLkWJ0Y6H7qcLKyBmDqTrEuMZ6fi9zcpEFkkg3wyC9ERr/UmVx xerus@goishi"                                                         
+aws_key_pair.ansible: Creating...
+  fingerprint: "" => "<computed>"
+  key_name:    "" => "ansible-key"
+  public_key:  "" => "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDr1Av8Kj8LqsI6cK31n4IElsxsGemzDXAI8NSCSRtTlNh8dJIIXpWnrGFSM9NU8++4qQmlYv+5uRhKS1SMZcPgRlcNGIBGLQxolFVw437zvt5O5mgLePRjgXpQWF/0fwx4iKark9Djyt8eHjSbTHCqpflT2xgFPMq0sJFJWmIMcGMkIh436AbjubvlgB8K1CGJzbTM4xHhlEywrggDekUcvXD2IKQFHAbO1pU/47krLdaOEhY0KeHnxfrBLU4RLxn1lyQkWLqLvuM+7o4j5lcMS/v3CC5t8I80uMByK76TC7qFOmZdU0jdo0tJBDzCBw1EmjIkD9urO1ZfL+r7FSbH xerus@goishi"                                                         
+aws_key_pair.ansible: Creation complete after 1s (ID: ansible-key)
+aws_key_pair.admin: Creation complete after 1s (ID: admin-key)
+
+Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+
+```
+
+Nous avons maintenant les 2 clés créés :
+
+![](./imgs/07-aws-view-key-pair-with-key.png)
+
+
+Dans le cadre de l'ajout des clés, il n'y a pas de coûts relié cependant lorsque nous allons créer des instances EC2 , vous voudrez probablement détruire vos instances par la suite . Profitons de l'occasion pour couvrir tout de suite ce point . Avec l'option **destroy** vous pouvez détruire ce qui est contenu dans le manifeste de terraform.
+
+```
+ terraform destroy
+aws_key_pair.admin: Refreshing state... (ID: admin-key)
+aws_key_pair.ansible: Refreshing state... (ID: ansible-key)
+
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  - destroy
+
+Terraform will perform the following actions:
+
+  - aws_key_pair.admin
+
+  - aws_key_pair.ansible
+
+
+Plan: 0 to add, 0 to change, 2 to destroy.
+
+Do you really want to destroy all resources?
+  Terraform will destroy all your managed infrastructure, as shown above.
+  There is no undo. Only 'yes' will be accepted to confirm.
+
+  Enter a value: yes
+
+aws_key_pair.ansible: Destroying... (ID: ansible-key)
+aws_key_pair.admin: Destroying... (ID: admin-key)
+aws_key_pair.ansible: Destruction complete after 1s
+aws_key_pair.admin: Destruction complete after 1s
+
+Destroy complete! Resources: 2 destroyed.
+```
+
+Encore une fois je dois confirmer l'opération . Si vous retournez à l'adresse : [aws key pair](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#KeyPairs:sort=keyName) , l'ensemble des clés ont disparu :D , magie .
+
+
+#### Visualisation fichier d'état 
+
+Je vais reprendre quelques minutes pour le fichiers d'état , suite à l'exécution de l'ajout des clés nous avons eu le fichier : [states/terraform-creation-key.tfstate](./terraManifest/02-use-case/states/terraform-creation-key.tfstate) 
+
+```
+            "resources": {
+                "aws_key_pair.admin": {
+                    "type": "aws_key_pair",
+                    "depends_on": [],
+                    "primary": {
+                        "id": "admin-key",
+                        "attributes": {
+                            "fingerprint": "41:df:80:06:33:34:b4:fd:cc:d5:79:8c:00:28:08:b4",
+                            "id": "admin-key",
+                            "key_name": "admin-key",
+                            "public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDReMyXDOfuGipgcQViDTr3kqfbLVbIegJI+j3Br2wgX5CQXkWoFqKKZv3JIS4RnZdyQ3HCf8hbwUA1SoW4ngOAARToLYbMA80bHilZK5AzpYoTVH9GgfruLeq/ljJJAyh33vQgk26VX63mBIlp7cgxMx96T2iSqUuNbylXHgEOhPXMytv7FT4JcxMhNIRCq9YnsS8nD7+6GrJ7tSnochTauXs3OrM8bTA0AgZfj0PrC8aDZRCEShPU9QEjGTrtIX5AVcRoP01UInk1JWfQIBk1x5WPKYUDXQIrZPyLkWJ0Y6H7qcLKyBmDqTrEuMZ6fi9zcpEFkkg3wyC9ERr/UmVx xerus@goishi"
+                        },
+                        "meta": {
+                            "schema_version": "1"
+                        },
+                        "tainted": false
+                    },
+                    "deposed": [],
+                    "provider": "provider.aws"
+                },
+```
+
+Vous pouvez vois le contenu de la ressources avec l'ensemble des informations qui sont dans **AWS**. Lors de la destruction des clés le fichier représente encore l'état de ce qui est dans **AWS** . [states/terraform-destruction-key.tfstate](./terraManifest/02-use-case/states/terraform-destruction-key.tfstate)
+
+```
+{
+    "version": 3,
+    "terraform_version": "0.11.10",
+    "serial": 2,
+    "lineage": "1f6a55a0-6cdb-e503-b400-b1086ab31a66",
+    "modules": [
+        {
+            "path": [
+                "root"
+            ],
+            "outputs": {},
+            "resources": {},
+            "depends_on": []
+        }
+    ]
+}
+
+```
+ 
+### Création du réseau
+
+Nous avons à présent les clés ssh qui nous servirons pour établir des connexions aux serveurs EC2, mais ces derniers doivent être présent dans un réseau. Nous pourrions simplement les définir dans le réseau par défaut, mais ce serait moins drôle !!
 
 
 
