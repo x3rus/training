@@ -410,6 +410,8 @@ resource "aws_key_pair" "ansible" {
 }
 ```
 
+Voici le lien vers la documentation avec l'ensemble des options possible pour cette ressource : [aws_key_pair](https://www.terraform.io/docs/providers/aws/r/key_pair.html)
+
 Validons que ceci fonctionne, comme ceci est un nouveau répertoire je dois initialiser le répertoire afin d'avoir les modules requis , dans notre cas AWS.
 
 ```
@@ -564,6 +566,8 @@ Destroy complete! Resources: 2 destroyed.
 Encore une fois je dois confirmer l'opération . Si vous retournez à l'adresse : [aws key pair](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#KeyPairs:sort=keyName) , l'ensemble des clés ont disparu :D , magie .
 
 
+**VERSION FINAL FICHIER** : [02-use-case.tf](https://github.com/x3rus/training/blob/d5c66cb650a05f4d10e5ddd942ef00bcd43aa3c0/terraform/terraManifest/02-use-case/02-use-case.tf)
+
 #### Visualisation fichier d'état 
 
 Je vais reprendre quelques minutes pour le fichiers d'état , suite à l'exécution de l'ajout des clés nous avons eu le fichier : [states/terraform-creation-key.tfstate](./terraManifest/02-use-case/states/terraform-creation-key.tfstate) 
@@ -613,10 +617,185 @@ Vous pouvez vois le contenu de la ressources avec l'ensemble des informations qu
 
 ```
  
+
+
 ### Création du réseau
 
 Nous avons à présent les clés ssh qui nous servirons pour établir des connexions aux serveurs EC2, mais ces derniers doivent être présent dans un réseau. Nous pourrions simplement les définir dans le réseau par défaut, mais ce serait moins drôle !!
 
 
+#### Creation des 2 sous réseaux et détermination du VPC
 
-# Référence
+Nous allons avoir 2 subnets :
+
+    * Serveur web : 172.31.60.0/27
+    * Serveur bd : 172.31.50.0/27
+
+Dans AWS les subnets sont obligatoirement dans un VPC , par défault AWS vous en fournit un . Je vais faire simple pour ce point je vais utiliser celui déjà disponible . Voici une représentation du réseau :
+
+![](./imgs/architecture-overview-Network-overview.png) 
+
+Éditons le fichier afin d'avoir les instructions suivante : 
+
+```
+
+resource "aws_subnet" "web-public-2a" {
+    cidr_block = "172.31.60.0/27"
+    availability_zone = "${var.aws_region}a"
+    vpc_id     = ???????
+
+    tags {
+        Name = "Web"
+    }
+}
+
+resource "aws_subnet" "bd-private-2a" {
+    cidr_block = "172.31.50.0/27"
+    availability_zone = "${var.aws_region}a"
+    vpc_id     = ????????
+    tags {
+        Name = "BD"
+    }
+}
+```
+
+La documentation pour la création d'un subnet est disponible ici : [aws_subnet](https://www.terraform.io/docs/providers/aws/d/subnet.html).
+Ici j'ai eu un problème , la ressource aws\_subnet demande le numéro **ID** du VPC , il n'est PAS possible de définir le nom du VPC. Ceci est représenté par l'entré **vpc\_id**. Malheureusement le numéro du VPC **id** change d'une région à l'autre même pour le vpc par défaut , voici quelque copie d'écran :
+
+![](./imgs/08-aws-vpc-oregon.png)
+![](./imgs/08-aws-vpc-ohio.png)
+![](./imgs/08-aws-vpc-paris.png)
+
+Donc 2 options s'offre à nous, l'objectif est de   
+
+1. **la mauvaise** : écrire le numéro du VPC manuellement qui est lié à la région donc vpc-074b136e , par example . Ceci est vraiment problématique , car ceci sous tend que votre manifeste ne peux être exécuter QUE dans une régions définie.
+2. **la bonne** : Extraire dynamiquement l'ID du vpc avec une requête :) .
+
+Bon je pense qu'il est claire l'option choisie :D . Nous allons donc faire une requête pour avoir le **VPC** par default :
+
+```
+ # Get default VPC
+resource "aws_default_vpc" "default" {
+    tags {
+        Name = "Default VPC"
+    }
+}
+
+``` 
+
+Avec cette instruction nous allons extraire l'information de ce VPC et nous pourrons utiliser cette ressource pour allimenter le paramètre **vpc\_id**, comme ceci : 
+
+```
+vpc_id     = "${aws_default_vpc.default.id}"
+```
+
+Nous avons la ressource de type **aws_default_vpc** avec le nom **default** qui à l'attribut **id** de disponible , donc pour regrouper l'ensemble : **aws_default_vpc.default.id**. J'ai insisté un peu sur le fichier d'état, mais c'est exactement le genre d'information que vous pouvez extraire de ce dernier pour savoir les attributs disponible.
+
+Donc au finale :
+
+```
+ # Get default VPC
+resource "aws_default_vpc" "default" {
+    tags {
+        Name = "Default VPC"
+    }
+}
+
+resource "aws_subnet" "web-public-2a" {
+    cidr_block = "172.31.60.0/27"
+    availability_zone = "${var.aws_region}a"
+    vpc_id     = "${aws_default_vpc.default.id}"
+
+    tags {
+        Name = "Web"
+    }
+}
+
+resource "aws_subnet" "bd-private-2a" {
+    cidr_block = "172.31.50.0/27"
+    availability_zone = "${var.aws_region}a"
+    vpc_id     = "${aws_default_vpc.default.id}"
+    tags {
+        Name = "BD"
+    }
+}
+
+```
+
+Nous allons faire la visualisation des activités avec l'option **plan**.
+
+```
+$ terraform plan 
+```
+
+Vous avez le contenu dans le fichier [plan-network.plan](./terraManifest/02-use-case/plans/plan-network.plan).
+À la lecture du fichier vous constaterez que vous avez 5 nouvelles ressources créés , nous avons :
+
+* les 2 clés SSH , nous les avions destruites lors de la dernière commande
+* les 2 sous réseaux 
+* le VPC qui sera détecté / initialisé comme ressource pour ce manifestes
+
+Nous passons donc à l'application de la configuration .
+
+```
+$ terraform apply
+[ ... ]
+Apply complete! Resources: 5 added, 0 changed, 0 destroyed.
+```
+
+En allant sur la console, vous constaterez que les subnets furent créeés : [subnet AWS](https://us-west-2.console.aws.amazon.com/vpc/home?region=us-west-2#subnets:sort=SubnetId).
+
+![](./imgs/08-aws-subnet-created.png)
+
+Ainsi que le VPC [vpc AWS](https://us-west-2.console.aws.amazon.com/vpc/home?region=us-west-2#vpcs:sort=VpcId)
+
+![](./imgs/08-aws-vpc-created.png)
+
+Voilà pas plus compliqué que cela :D.
+
+##### Visualisation fichier d'état 
+
+Je vais encore prendre le temps de parler du fichier d'état , peut-être pour la dernière fois mais je trouve très interaissant de voir les options qui s'offre à nous . J'ai fait une copie du fichier disponible [terraform-create-vpc-subnet.tfstate](./terraManifest/02-use-case/states/terraform-create-vpc-subnet.tfstate).
+
+Si nous reprenons notre VPC : 
+
+```
+                "aws_default_vpc.default": {
+                    "type": "aws_default_vpc",
+                    "depends_on": [],
+                    "primary": {
+                        "id": "vpc-ec488994",
+                        "attributes": {
+                            "arn": "arn:aws:ec2:us-west-2:964887612364:vpc/vpc-ec488994",
+                            "assign_generated_ipv6_cidr_block": "false",
+                            "cidr_block": "172.31.0.0/16",
+                            "default_network_acl_id": "acl-48075f30",
+                            "default_route_table_id": "rtb-83cf6df8",
+                            "default_security_group_id": "sg-7dbf780f",
+                            "dhcp_options_id": "dopt-087d8370",
+                            "enable_classiclink": "false",
+                            "enable_classiclink_dns_support": "false",
+                            "enable_dns_hostnames": "true",
+                            "enable_dns_support": "true",
+                            "id": "vpc-ec488994",
+                            "instance_tenancy": "default",
+                            "ipv6_association_id": "",
+                            "ipv6_cidr_block": "",
+                            "main_route_table_id": "rtb-83cf6df8",
+                            "tags.%": "1",
+                            "tags.Name": "Default VPC"
+                        },
+                        "meta": {
+                            "schema_version": "1"
+                        },
+                        "tainted": false
+                    },
+                    "deposed": [],
+                    "provider": "provider.aws"
+                },
+ 
+```
+
+Nous retrouvons notre variable : **aws_default_vpc.default.id** avec la valeur **vpc-ec488994** .
+Nous aurions pu avoir d'autre valeur telle que le segment réseaux **cidr_block**, nous allons voir cette utilisation dans quelques instants avec la configuration des règles de firewall. Il n'est pas facile d'avoir l'ensemble des informations disponible, mais avec ce fichier d'état ceci vous donne l'information exacte pour VOTRE utilisation. Voilà pourquoi j'insiste autant sur ce point , car c'est une source d'information non négligeable.
+

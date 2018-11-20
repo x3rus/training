@@ -26,4 +26,33 @@ resource "aws_key_pair" "ansible" {
   public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDr1Av8Kj8LqsI6cK31n4IElsxsGemzDXAI8NSCSRtTlNh8dJIIXpWnrGFSM9NU8++4qQmlYv+5uRhKS1SMZcPgRlcNGIBGLQxolFVw437zvt5O5mgLePRjgXpQWF/0fwx4iKark9Djyt8eHjSbTHCqpflT2xgFPMq0sJFJWmIMcGMkIh436AbjubvlgB8K1CGJzbTM4xHhlEywrggDekUcvXD2IKQFHAbO1pU/47krLdaOEhY0KeHnxfrBLU4RLxn1lyQkWLqLvuM+7o4j5lcMS/v3CC5t8I80uMByK76TC7qFOmZdU0jdo0tJBDzCBw1EmjIkD9urO1ZfL+r7FSbH xerus@goishi"
 }
 
+ ##########
+ # Subnet #
+
+ # Get default VPC
+resource "aws_default_vpc" "default" {
+    tags {
+        Name = "Default VPC"
+    }
+}
+
+resource "aws_subnet" "web-public-2a" {
+    cidr_block = "172.31.60.0/27"
+    availability_zone = "${var.aws_region}a"
+    vpc_id     = "${aws_default_vpc.default.id}"
+
+    tags {
+        Name = "Web"
+    }
+}
+
+resource "aws_subnet" "bd-private-2a" {
+    cidr_block = "172.31.50.0/27"
+    availability_zone = "${var.aws_region}a"
+    vpc_id     = "${aws_default_vpc.default.id}"
+    tags {
+        Name = "BD"
+    }
+}
+
 
