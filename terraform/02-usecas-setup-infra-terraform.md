@@ -799,3 +799,27 @@ Si nous reprenons notre VPC :
 Nous retrouvons notre variable : **aws_default_vpc.default.id** avec la valeur **vpc-ec488994** .
 Nous aurions pu avoir d'autre valeur telle que le segment réseaux **cidr_block**, nous allons voir cette utilisation dans quelques instants avec la configuration des règles de firewall. Il n'est pas facile d'avoir l'ensemble des informations disponible, mais avec ce fichier d'état ceci vous donne l'information exacte pour VOTRE utilisation. Voilà pourquoi j'insiste autant sur ce point , car c'est une source d'information non négligeable.
 
+**VERSION FINAL FICHIER** : [02-use-case.tf](https://github.com/x3rus/training/blob/c57b9d1587be7f9fc0805d754c31ba511a2e45b8/terraform/terraManifest/02-use-case/02-use-case.tf)
+
+#### Creation des règles de firewall (security group)
+
+Nous sommes à l'étape d'avoir nos segments réseaux, mais depuis déjà plusieurs années avoir des segments réseaux non sécurisé par un firewall n'est PLUS une option. Que nous soyons dans les nuages ( cloud ) ou dans un environnements interne c'est la même situation. Nous allons donc réaliser une configuration des security group , terme utilisé par AWS pour identifier les règles. Je vous invite à lire sur sujet si vous n'avez pas suivie la formation AWS 101 : [security group](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html).
+
+Reprenons notre flux réseau présenté un peu plus tot : 
+
+![](./imgs/architecture-overview-network-flow.png)
+
+Bon rien d'extraordinaire dans le schéma ci-dessus :
+
+* Disponible depuis internet 
+    * port 80 : afin de rendre disponible le site web pour l'ensemble des utilisateurs
+    * port 22 : afin de permettre à l'administrateur depuis son bureau , sous-sol , la plage :P , de gérer ses serveurs
+* Disponible à l'interne uniquement 
+    * port 3306 : UNIQUEMENT  le serveur web peut établir une connexion au service SQL sur les serveurs de Base de données. L'admnistrateur devra établir une connexion ssh sur le serveur web ou de BD pour faire des changements BD.
+* Flux vers l'exterieur :
+    * Ici c'est pas super :P , honnêtement il y a place à amélioration , J'ai ouvert l'ensemble des communications vers internet. Dans un monde idéal je limiterai les communications possibles. Mieux encore j'utiliserai un AWS VPC gateway pour que les serveurs n'est PAS d'adresse IP publique et utilise un gateway pour communiquer sur internet. L'objectif étant d'apprendre terraform , on repassera pour cette partie :P.
+
+
+Rapidement pour rafraichir la mémoire à tous le monde , les security groups dont donc les règles de firewall de AWS. Par défaut, l'ensemble des communications sont bloqué lors de la création d'un security groupe. Vous ne pouvez définir QUE des règles d'authorisation aucune règles de REJECT ou DROP est possible ! Il est possible d'assigner plusieurs sécurity group à une machine EC2, il y a une limitation mais très haute. 
+
+Dans cette logique , je vais donc créer des règles de firewall générique que j'assignerai au instance EC2 par la suite.
