@@ -55,4 +55,85 @@ resource "aws_subnet" "bd-private-2a" {
     }
 }
 
+ ##################
+ # Security Group #
+ 
+resource "aws_security_group" "allow_remote_admin" {
+  name        = "allow_remote_admin"
+  description = "Allow ssh and RDP inbound traffic"
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 3389
+    to_port     = 3389
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "allow_remote_admin"
+  }
+}
+
+resource "aws_security_group" "allow_external_communication" {
+  name        = "allow_external_communication"
+  description = "Allow system reach other servers"
+
+  egress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "allow_external_comm"
+  }
+}
+
+resource "aws_security_group" "allow_web" {
+  name        = "allow_web"
+  description = "Allow web traffic to server"
+
+  ingress {
+    from_port   = 80 
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "allow_web"
+  }
+}
+
+resource "aws_security_group" "allow_mysql_internal" {
+  name        = "allow_mysql_internal"
+  description = "Allow Mysql connexion from web server"
+
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["${aws_subnet.web-public-2a.cidr_block}"]
+  }
+
+  tags {
+    Name = "allow_mysql_internal"
+  }
+}
+
 

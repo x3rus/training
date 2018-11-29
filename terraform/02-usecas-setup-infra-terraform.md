@@ -820,6 +820,204 @@ Bon rien d'extraordinaire dans le schéma ci-dessus :
     * Ici c'est pas super :P , honnêtement il y a place à amélioration , J'ai ouvert l'ensemble des communications vers internet. Dans un monde idéal je limiterai les communications possibles. Mieux encore j'utiliserai un AWS VPC gateway pour que les serveurs n'est PAS d'adresse IP publique et utilise un gateway pour communiquer sur internet. L'objectif étant d'apprendre terraform , on repassera pour cette partie :P.
 
 
-Rapidement pour rafraichir la mémoire à tous le monde , les security groups dont donc les règles de firewall de AWS. Par défaut, l'ensemble des communications sont bloqué lors de la création d'un security groupe. Vous ne pouvez définir QUE des règles d'authorisation aucune règles de REJECT ou DROP est possible ! Il est possible d'assigner plusieurs sécurity group à une machine EC2, il y a une limitation mais très haute. 
+Rapidement pour rafraichir la mémoire à tous le monde , les security groups sont donc les règles de firewall de AWS. Par défaut, l'ensemble des communications sont bloqué lors de la création d'un security groupe. Vous ne pouvez définir QUE des règles d'authorisation aucune règles de REJECT ou DROP est possible ! Il est possible d'assigner plusieurs sécurity group à une machine EC2, il y a une limitation mais très haute. 
 
-Dans cette logique , je vais donc créer des règles de firewall générique que j'assignerai au instance EC2 par la suite.
+Dans cette logique , je vais donc créer des règles de firewall générique que j'assignerai au instance EC2 par la suite. 
+
+
+La ressource terraform pour faire cette opération est : [aws_security_group](https://www.terraform.io/docs/providers/aws/r/security_group.html)
+
+Commençons avec la règle qui nous permettre de réaliser l'administration des machines, car s'il y a un problème avec une instance EC2 , que ce soit avec une règle de Firewall ou autre la première choses que nous voudrons faire est de ce connecter sur la machine.
+
+Vous pouvez voir les security groupes disponible sur la console AWS [security group aws](https://us-west-2.console.aws.amazon.com/vpc/home?region=us-west-2#SecurityGroups:sort=groupId) .
+
+![](./imgs/09-aws-security-group-view.png)
+
+Trève de discution ... 
+
+##### Règle général ( access à distance + communication vers internet )
+
+```
+resource "aws_security_group" "allow_remote_admin" {
+  name        = "allow_remote_admin"
+  description = "Allow ssh and RDP inbound traffic"
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 3389
+    to_port     = 3389
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "allow_remote_admin"
+  }
+}
+```
+
+Analysons un peu le contenu  :
+
+* resource “aws_security_group” “allow_remote_admin” : le type de ressource **aws_security_group** et le nom de la ressource associé **allow_remote_admin**
+* name = "allow_remote_admin" : Nous assignons le nom qu'il aura dans AWS , le nom précédent est uniquement pour le manifeste de terraform.
+* description : Une description encore une fois pour le visuel dans la console AWS et pratique pour le manifest lors de la consultation. Ne pas dénigrer ce point.
+
+* Nous passons à la définition de règles , dans l'exemple ci-dessus nous ajoutons des règes pour les communications entrante.
+
+* ingress : Définition des règles de firewall en **entré (in)** qui suront **ACCEPTÉS** 
+    * from_port = 22 : Nous acceptons depuis le port 22 
+    * to_port = 22 : Jusqu'au port 22 , bon c'est pas révolutionnaire comme notation , j'en convient :P , je n'ai que 1 port que je veux ouvrir.
+    * protocol = "tcp : Le protocol ici TCP mais nous aurions pu avoir du UDP aussi
+    * cidr_blocks = ["0.0.0.0/0"] : le range d'adresse IP qui sera accepté , dans notre cas l'ensemble d'internet donc 0.0.0.0
+
+* Je fais la même opération pour le port 3389/TCP pour le port RDP windows. Ici ceci c'est discutable , j'ai préférer faire un groupe de règle de gestion des systèmes pour que ce soit plus facile à gérer. De plus ceci m'a permit de valider la mise en place de règle multiple dans un groupe .
+* TAGS : si vous avez utilisez un peu AWS , le système de tags est essentiel pour être en mesure de faire une gestion efficace. Que nous parlions d'organisation ou pour l'ensemble du processus de facturation . J'assigne donc un nom pour le moment simplement.
+
+Telle que mentionné précédement , par défaut l'ensemble des communications sont bloqués , donc si vous désirez être en mesure d'allez sur internet , vous devrez ouvrir la communication. Quand je parle d'aller sur internet , ceci couvre l'installation d'application aussi. 
+
+Mettons donc en place la règle d'ouverture vers le monde extérieur , **ATTENTION** je suis conscient que la règle ci-dessous est très large , pour rappel l'objectif est d'apprendre terraform. La restriction de l'applicatif dans un mode optimal n'est pas l'objectif primaire.
+
+```
+resource "aws_security_group" "allow_external_communication" {
+  name        = "allow_external_communication"
+  description = "Allow system reach other servers"
+
+  egress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "allow_external_comm"
+  }
+}
+```
+
+Nous retrouvons sensiblement les mêmes entrés , le changement est que nous n'avons pas l'instruction **ingress**, mais **egress** .
+
+* egress : Définition des règles de firewall en **sortie (ext)** qui seront **ACCEPTÉS**
+    * from_port = 0 : depuis le port 0 
+    * to_port : 65535 :  jusqu'au port 65535 , ceci couvre l'ensemble de la plage TCP 
+    * protocol = tcp : comme pour la communication entrente 
+    * cidr_blocks = ["0.0.0.0/0"] = la plage d'adresse IP vers où la communication est permisent, 0.0.0.0 donc l'ensemble d'internet.
+
+Avec ces 2 règles si vous démarrez une instance EC2 vous pourrez , vous y connecter et parcourir l'internet sans problème.
+
+
+##### Règle applicative
+
+Passons maintenant aux règles proche de l'application , débutons avec la règle pour l'access au service web : http et http**s**.
+
+```
+resource "aws_security_group" "allow_web" {
+  name        = "allow_web"
+  description = "Allow web traffic to server"
+
+  ingress {
+    from_port   = 80 
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "allow_web"
+  }
+}
+```
+
+Ceci est très proche de la règle pour l'accès au service ssh et RDP , je ne vais donc pas reprendre l'explication.
+
+Maintenant la règle pour l'accès à la base de donnée 
+
+```
+resource "aws_security_group" "allow_mysql_internal" {
+  name        = "allow_mysql_internal"
+  description = "Allow Mysql connexion from web server"
+
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["${aws_subnet.web-public-2a.cidr_block}"]
+  }
+
+  tags {
+    Name = "allow_mysql_internal"
+  }
+}
+```
+
+Pour cette règles il y a une particuliarité importante , l'entré **cidr_blocks** , je ne veux pas que l'accès à la base de donnée soit possible depuis l'ensemble d'internet mais uniquement depuis le réseau des serveurs webs. J'ai donc limité l'accès à la plage d'adresses ip de se segment réseau. J'aurai pu simplement écrire 172.31.60.0/27 , cependant j'essaye d'avoir quelques choses de plus dynamique. Avec cette notation si le segment change les règles de firewall suivront. 
+
+Au risque d'être insistant cette information je l'ai extraite du fichier de states **terraform.tfstate** 
+
+```
+"aws_subnet.web-public-2a": {
+                    "type": "aws_subnet",
+                    "depends_on": [
+                        "aws_default_vpc.default"
+                    ],
+                    "primary": {
+                        "id": "subnet-06a4165fea30b8b51",
+                        "attributes": {
+                            "arn": "arn:aws:ec2:us-west-2:964887612364:subnet/subnet-06a4165fea30b8b51",                                                     
+                            "assign_ipv6_address_on_creation": "false",
+                            "availability_zone": "us-west-2a",
+                            "cidr_block": "172.31.60.0/27",
+                            "id": "subnet-06a4165fea30b8b51",
+                            "map_public_ip_on_launch": "false",
+                            "tags.%": "1",
+                            "tags.Name": "Web",
+                            "vpc_id": "vpc-ec488994"
+                        },
+                        "meta": {
+                            "e2bfb730-ecaa-11e6-8f88-34363bc7c4c0": {
+                                "create": 600000000000,
+                                "delete": 600000000000
+                            },
+                            "schema_version": "1"
+                        },
+                        "tainted": false
+                    },
+                    "deposed": [],
+                    "provider": "provider.aws"
+                }
+
+```
+
+Visualisons les opérations : 
+
+```
+$ terraform plan 
+```
+
+Résultat disponible ici : [plans/plan-network-with-firewall.plan](./terraManifest/02-use-case/plans/plan-network-with-firewall.plan)
+
+et nous appliquons le changement avec **terraform apply**
+
+Résultat : [AWS security group](https://us-west-2.console.aws.amazon.com/vpc/home?region=us-west-2#SecurityGroups:sort=groupId) 
+
+![](./imgs/09-aws-security-group-created.png)
+
+Si nous regardons plus spécifiquement la règles pour mysql, nous voyons que la substitutions fut un success  :
+
+![](./imgs/09-aws-security-group-created-mysql.png)
+
+Le fichier d'état fut aussi sauvegardé : [states/terraform-create-vpc-subnet-and-firewall.tfstate](./terraManifest/02-use-case/states/terraform-create-vpc-subnet-and-firewall.tfstate)
+
