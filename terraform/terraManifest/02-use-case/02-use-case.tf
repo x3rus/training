@@ -136,4 +136,51 @@ resource "aws_security_group" "allow_mysql_internal" {
   }
 }
 
+ #######
+ # EC2 #
 
+ # Extract last AWS ubuntu AMazon Image (AMI)
+data "aws_ami" "ubuntu" {
+    most_recent = true
+
+    filter {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
+    }
+
+    filter {
+        name   = "virtualization-type"
+        values = ["hvm"]
+    }
+
+}
+
+
+ # EC2 creation 
+
+resource "aws_instance" "web-terra" {
+    ami           = "${data.aws_ami.ubuntu.id}"
+    instance_type = "t2.micro"
+    key_name = "${aws_key_pair.ansible.key_name}"  # assign ssh ansible key
+    subnet_id = "${aws_subnet.web-public-2a.id}"   
+
+    associate_public_ip_address = true
+
+    tags {
+        Name = "web-terra"
+        scope = "training"
+        role = "web"
+    }
+
+    security_groups = [
+        "${aws_security_group.allow_web.id}",
+        "${aws_security_group.allow_external_communication.id}",
+        "${aws_security_group.allow_remote_admin.id}"
+    ]
+
+    root_block_device = {
+        delete_on_termination = true
+        volume_size = 10 
+    }
+
+}

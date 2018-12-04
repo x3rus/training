@@ -1021,3 +1021,131 @@ Si nous regardons plus spécifiquement la règles pour mysql, nous voyons que la
 
 Le fichier d'état fut aussi sauvegardé : [states/terraform-create-vpc-subnet-and-firewall.tfstate](./terraManifest/02-use-case/states/terraform-create-vpc-subnet-and-firewall.tfstate)
 
+### Création des instances EC2 ( VM ) 
+
+Donc nous avons l'ensemble de la base mise en place :
+
+* Clé ssh
+* segment réseau
+* règles de firewall
+
+Mais tous ceci ne nous permet pas d'offrir un service nous avons besoin d'instances avec du CPU et de la mémoire , débutons avec la création de l'instance web , car il n'y en a qu'une.
+
+Vous allez constater qu'il y a plusieurs variable dans la définition pour nous permettre de faire l'association avec les ressources préalablement créé.
+Premièrement nous avons besoin de savoir le numéro **ID** de l'AMI que nous désirons utiliser . Nous avions déjà mis en place cette instruction lors du teste de communication. 
+
+#### Extraction de l'AMI ID
+
+D'une région à l'autre ( oregon, canada, Paris , ohio , ... ) les ID des AMI changent , en d'autre mot l'ID est couplé avec le datacenter, afin d'avoir un manifeste portable d'un datacenter à l'autre , nous récupérons l'information depuis AWS afin d'avoir la dernière version de l'AMI désiré .
+
+```
+ # Extract last AWS ubuntu AMazon Image (AMI)
+data "aws_ami" "ubuntu" {
+    most_recent = true
+
+    filter {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
+    }
+
+    filter {
+        name   = "virtualization-type"
+        values = ["hvm"]
+    }
+
+}
+```
+
+Nous utilisons la ressource [aws_ami](https://www.terraform.io/docs/providers/aws/d/ami.html) qui nous permet d'extraire de l'information sur la **AMI**.
+Avant d'allé plus loin sur l'explication, vous constaterez que le premier mot n'est pas **resource** mais **data** , prenons 2 secondes pour clarifier ce point bien qu'évident par la suite je préfère le mêtre en lumière.
+
+La définition d'une [resource](https://www.terraform.io/docs/configuration/resources.html) telle que le mot l'indique vous permet de faire la création d'un élément dans AWS.
+La définition d'un [data](https://www.terraform.io/docs/configuration/data-sources.html) vous permet de faire des requêtes à AWS pour extraire de l'informaton et les stockés dans des variables. Ceci offre la possibilité d'avoir un système plus dynamique dans la définition des entrés.
+Je vous invite a cliquer sur les liens de la documentation pour la [resource](https://www.terraform.io/docs/configuration/resources.html) ou pour le [data](https://www.terraform.io/docs/configuration/data-sources.html) afin de voir l'ensemble des options. 
+
+Donc regardons les paraètres de cette définition :
+
+* **most\_recent** : nous indiquons que nous désirons la définition la plus récente
+* **filter** basé sur le nom , ubuntu-xenial-16.04-amd64-server : Ceci nous permet de choisir le type de système que nous désirons avoir . Ok bon honnêtement cette partie je l'ai pris sur le net :P ( https://www.andreagrandi.it/2017/08/25/getting-latest-ubuntu-ami-with-terraform/ )
+
+Mais bon ceci nous permet surtout de voir et comprendre , maintenant si nous allons la [console AWS](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Images:visibility=public-images;search=ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-;sort=name) , nous sommes en mesure de retrouver l'information : 
+
+![](./imgs/10-aws-ami-review.png)
+
+J'ai hésité mais je vais insisté encore sur le fichier d'état qui vous permet de connaître les autres paramêtre disponible pour les filtres.
+
+
+#### Creation de l'instance EC2 
+
+Nous avons donc notre image de référence, nous allons poursuivre avec la création de notre première instance EC2. 
+Nous allons schématiser l'opération que nous allons réaliser , car dans la prochaine étape nous allons couplé plusieurs configuration , voici donc une représentation graphique du résultat suite à la configuration.
+
+![](./imgs/architecture-overview-Network-overview-web-ec2.png)
+
+Donc nous avons :
+
+* Le VPC globale 
+* Nos 2 subnets , pour le web et pour la BD 
+* Nous avons notre instance EC2 web nommé **web-terra** ( gros manque d'inspiration :P ) 
+* Nous avons les règles de firewall assigné à cette instance allow_web +  allow_remote_admin + allow_external_communication
+
+Nous avons fait la création de l'ensemble des dépendances préalablement, la création de l'instance sera le moment joindre l'ensemble des morceaux.
+Voici la définition de la création de l'instance :
+
+```
+resource "aws_instance" "web-terra" {
+    ami           = "${data.aws_ami.ubuntu.id}"
+    instance_type = "t2.micro"
+    key_name = "${aws_key_pair.ansible.key_name}"  # assign ssh ansible key
+    subnet_id = "${aws_subnet.web-public-2a.id}"   
+
+    associate_public_ip_address = true
+
+    tags {
+        Name = "web-terra"
+        scope = "training"
+        role = "web"
+    }
+
+    security_groups = [
+        "${aws_security_group.allow_web.id}",
+        "${aws_security_group.allow_external_communication.id}",
+        "${aws_security_group.allow_remote_admin.id}"
+    ]
+
+    root_block_device = {
+        delete_on_termination = true
+        volume_size = 10 
+    }
+
+}
+```
+
+
+1. **resource "aws\_instance" "web-terra"** :  Nous définissons une ressource [aws_instance](https://www.terraform.io/docs/providers/aws/d/instances.html) , nous assignons le nom **web-terra** à cette ressource .
+2. **ami = "\${data.aws\_ami.ubuntu.id}"** : Suite à l'extraction des informations sur l'AMI nous avons l'information de cette dernière dans la variable **data.aws\_ami.ubuntu** , comme la variable ami désire avoir un ID nous allons extraire la propriété **ID**. L'instance EC2 utilisera cette AMI comme point de départ.
+3. **instance_type = "t2.micro"** : Le type d'instance AWS que nous désirons , ceci définie le CPU , la mémoire, etc.
+4. **key_name = "\${aws\_key\_pair.ansible.key\_name}"** : Nous assignons la clé ssh de ansible préalablement créée dans AWS. Ceci nous permettra dans un second temps de faire la configuration de notre instance avec Ansible ou de simplement nous y connecter pour faire l'administration.
+5. **subnet_id = "\${aws\_subnet.web-public-2a.id}"** : Nous assignons cette instance EC2 à un subnet , encore une fois le paramètre demande un ID , mais comme nous avons déjà la ressource en mémoire grâce à la création préalable. Nous prenons donc la ressource **aws\_subnet** avec le nom **web-public-2a** et le **id**. Une fois le concept saisie ça semble évident , mais bon ça prend un peu de temps.
+6. **associate\_public\_ip\_address = true**  : J'assigne une adresse ip publique dynamiquement alloué par AWS.
+7. **tags** : L'utilisation des tags est très important dans AWS ceci nous permet de regrouper des services , permet une facturation interne plus simple suite au ressource créés , etc . Dans la présentation ci-dessus je crée des tags arbitraire , telle que scope ou role.
+8. **security\_groups** : Nous avons préalablement créer des sécurity groupe (firewall) , encore une fois nous devons utiliser les ID pour faire l'association , comme vous pouvez le constater j'assigne 3 security groups à l'instance pour couvrir l'ensemble des besoin de la machines.
+9. **root\_block\_device** : Cette section nous permet de définir la taille du disque dur associé à l'instance, comme vous pouvez le voir j'ai mis le flag **delete\_on\_termination** afin de détruire le disque dur une fois la ressource détruite.
+
+
+Vous voyez l'instance à l'ensemble de la configuration associer : Subnet , AMI , Firewall , clé ssh . Le subnet fut déjà associé au VPC préalablement.
+
+J'attends déjà les mauvaise langue dire : 
+
+> " oui c'est bien beau, mais l'ensemble des ressources sont crée dans le même manifeste facile de faire l'association, la partie réseau est géré par une autre équipe dans mon cas... bla bla bla :P ".
+
+Ça bourdonne dans ma tête :P , je rigole , bien entendu ceci est une question ou situation légitime. 
+
+Donc prenons le temps de répondre ou d'adresser cette problématique, pour ce faire j'aimerai vous rappeler que l'AMI ne fut PAS crée dans le manifeste. Pour l'ensemble des entités créer à l'exterieur du manifeste, vous aurez 2 options :
+
+* Extraire l'ID manuellement et l'entrer dans votre manifeste , pratique pour faire des testes , mais la solution n'est pas idéal. En effet, même si la ressource porte le même nom dans l'ensemble des régions, elle aura un ID distinct résultat votre manifeste ne pourra être associé qu'a une région. De plus s'il y a suppression et recréation de la ressource même si elle a le même nom l'ID sera changé. Résultat évident votre manifeste ne fonctionnera plus.
+* Utilisé le système **data** comme nous l'avons fait pour extraire l'AMI. Avec cette méthode bien entendu vous aurez besoin d'avoir un identifier afin de choisir la bonne ressource , que ce soit un nom , un tag , ... Par contre vous aurez beaucoup plus de flexibilité , car vous pourrez l'utiliser peut importe la région et s'il y a suppression et recréation de la ressource ceci fonctionnera encore.
+
+Je pense que ma position est claire sur le choix de l'option :P , et je le rappel afin de vous aider créer une ressource bidon afin d'avoir un fichier d'état et constater les paramètres disponible. 
+
+
