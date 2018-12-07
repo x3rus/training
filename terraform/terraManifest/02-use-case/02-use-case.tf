@@ -184,3 +184,34 @@ resource "aws_instance" "web-terra" {
     }
 
 }
+
+resource "aws_instance" "db-terra" {
+    ami           = "${data.aws_ami.ubuntu.id}"
+    instance_type = "t2.micro"
+    key_name = "${aws_key_pair.ansible.key_name}"  # assign ssh ansible key
+    subnet_id = "${aws_subnet.bd-private-2a.id}"   
+
+    associate_public_ip_address = true
+   
+    # Create 2 instance of the database
+    count = 2
+
+    tags {
+        Name = "db${count.index}-terra"
+        scope = "training"
+        role = "database"
+    }
+
+    security_groups = [
+        "${aws_security_group.allow_mysql_internal.id}",
+        "${aws_security_group.allow_external_communication.id}",
+        "${aws_security_group.allow_remote_admin.id}"
+    ]
+
+    root_block_device = {
+        delete_on_termination = true
+        volume_size = 20 
+    }
+
+}
+

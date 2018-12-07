@@ -1075,7 +1075,7 @@ Mais bon ceci nous permet surtout de voir et comprendre , maintenant si nous all
 J'ai hésité mais je vais insisté encore sur le fichier d'état qui vous permet de connaître les autres paramêtre disponible pour les filtres.
 
 
-#### Creation de l'instance EC2 
+#### Creation de l'instance EC2 web
 
 Nous avons donc notre image de référence, nous allons poursuivre avec la création de notre première instance EC2. 
 Nous allons schématiser l'opération que nous allons réaliser , car dans la prochaine étape nous allons couplé plusieurs configuration , voici donc une représentation graphique du résultat suite à la configuration.
@@ -1146,6 +1146,159 @@ Donc prenons le temps de répondre ou d'adresser cette problématique, pour ce f
 * Extraire l'ID manuellement et l'entrer dans votre manifeste , pratique pour faire des testes , mais la solution n'est pas idéal. En effet, même si la ressource porte le même nom dans l'ensemble des régions, elle aura un ID distinct résultat votre manifeste ne pourra être associé qu'a une région. De plus s'il y a suppression et recréation de la ressource même si elle a le même nom l'ID sera changé. Résultat évident votre manifeste ne fonctionnera plus.
 * Utilisé le système **data** comme nous l'avons fait pour extraire l'AMI. Avec cette méthode bien entendu vous aurez besoin d'avoir un identifier afin de choisir la bonne ressource , que ce soit un nom , un tag , ... Par contre vous aurez beaucoup plus de flexibilité , car vous pourrez l'utiliser peut importe la région et s'il y a suppression et recréation de la ressource ceci fonctionnera encore.
 
-Je pense que ma position est claire sur le choix de l'option :P , et je le rappel afin de vous aider créer une ressource bidon afin d'avoir un fichier d'état et constater les paramètres disponible. 
+Je pense que ma position est claire sur le choix de l'option :P , et je le rappel afin de vous aider faite la création d'une ressource bidon afin d'avoir un fichier d'état et constater les paramètres disponible. 
+
+Réalisons la création de l'instance afin de voir le résultat :
+
+```
+$ terraform plan 
+```
+
+Résultat de la commande disponible dans le fichier [plan-network-creation-web-terra.plan](./terraManifest/02-use-case/plans/plan-network-creation-web-terra.plan)
+
+Si vous regardez le fichier vous constaterez que j'avais oublié de faire la suppréssion des configurations réseaux, donc il n'y a l'ajout QUE de l'instance ec2
+
+```
+$ terraform apply 
+[ ... ]
+aws_instance.web-terra: Still creating... (10s elapsed)
+aws_instance.web-terra: Still creating... (20s elapsed)
+aws_instance.web-terra: Still creating... (30s elapsed)
+aws_instance.web-terra: Creation complete after 35s (ID: i-0b16f40246a7998df)
+
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+```
+
+Vous pouvez visualiser le résultat à dans la console AWS [list ec2 instance](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Instances:sort=instanceId)
+
+![](./imgs/10-aws-ec2-web-terra-creation-1.png)
+
+Ici nous avons aurons des coûts suite à la création je vais donc supprimer l'ensemble pour poursuivre la formation :
+
+```
+$ terraform destroy
+```
+
+Fichier contenenant la définition complète : [02-use-case.tf](https://github.com/x3rus/training/blob/7eb6ece3567dc610aec1e4d00e0ec90f20deccc5/terraform/terraManifest/02-use-case/02-use-case.tf)
+
+#### Creation des instances EC2 BD
+
+Nous avons fait la création de l'instance web , nous allons pouvoir poursuivre avec la définition des instances BD . Pour le moment lors de la création de nos instances EC2 aucune configuration OS n'est réalisé. Nous allons voir cette partie dans un second temps avec ansible, je ne le couvre pas tous de suie car pour être en mesure de faire une configuration complète nous avons besoin d'avoir de  l'information des autres instances. Un des requis pour faire la configuration du serveur web est de savoir l'adresse IP des serveurs BD pour faire la connexion :P.
+
+Ce que nous désirons avoir :
+
+* 2 serveurs Mysql
+* Ces derniers doivent être dans le sebnet bd-private-2a
+* La connexion au port Mysql ne doit être possible que depuis le segment INTERNE du serveur web
+
+Voici donc une représentation graphique de la configuration avec l'ajout des base de données, nous pouvons constater que ceci ressemble beaucoup à la définition du serveur web, mais en double.
+
+![](./imgs/architecture-overview-Network-overview-web-and-bd-ec2.png)
+
+Voici le code :
+
+```
+resource "aws_instance" "db-terra" {
+    ami           = "${data.aws_ami.ubuntu.id}"
+    instance_type = "t2.micro"
+    key_name = "${aws_key_pair.ansible.key_name}"  # assign ssh ansible key
+    subnet_id = "${aws_subnet.bd-private-2a.id}"   
+
+    associate_public_ip_address = true
+   
+    # Create 2 instance of the database
+    count = 2
+
+    tags {
+        Name = "db${count.index}-terra"
+        scope = "training"
+        role = "database"
+    }
+
+    security_groups = [
+        "${aws_security_group.allow_mysql_internal.id}",
+        "${aws_security_group.allow_external_communication.id}",
+        "${aws_security_group.allow_remote_admin.id}"
+    ]
+
+    root_block_device = {
+        delete_on_termination = true
+        volume_size = 20 
+    }
+
+}
+```
+
+Prenons le temps de lire la définition , premièrement le code ci-dessus couvre les 2 serveurs de base de donnés !! 
+Nous utilisons la classe [aws\_instance](https://www.terraform.io/docs/providers/aws/r/instance.html) , comme lors de la création du serveur web.
+
+1. **ami = "\${data.aws\_ami.ubuntu.id}"**  : Nous utilisons l'AMI extraite préalablement soir un ubuntu LTS 16.04
+2. **instance\_type = "t2.micro"**  : Nous utilisons une instance de type t2, mon objectif est vraiment de faire la démonstration pas d'avoir de la performance.
+3. **key_name = "\${aws\_key\_pair.ansible.key_name}"** : J'assigne la clé SSH qui nous servira par la suite pour ansible ou établir une connexion pour la gestion de la machine.
+4. **subnet_id = "\${aws\_subnet.bd-private-2a.id}"** : J'assigne la machine EC2 dans le bon subnet  , ceci est identique à l'opération pour le serveur web avec juste le nom qui change.
+5. **associate\_public\_ip\_address = true** : j'assigne une adresse ip publique , il y a 2 raison pour cela . Premièrement pour faire l'administration du système . Ici j'aurais pu simplement me dire que je vais passé par SSH via le serveur web. Cependant dans ma configuration minimaliste en place , si je n'assigne pas d'adresse ip publique à la machine cette dernière ne sera pas en mesure d'établie de connexion sur le web. Est-ce critique ? dans mon cas oui car je démarre avec une machine vanille , je ne serais pas en mesure de récupérer les logiciels pour faire leurs installations , particulièrement Mysql.
+6. **count = 2** : J'indique avec cette ligne le nombre d'instance que je désire avoir , c'est grâce à cette ligne que nous aurons 2 serveurs BD et non juste 1 comme ce fut le cas lors de la création du serveur web.
+7. **tags** et **Name = "db\${count.index}-terra"** : J'assigne des tags à l'instance , ici je met en évidence 1 tag , en fait c'est principalement la variable **\${count.index}** . Cette variable est incrémenté lors de la création et débute à 0 , donc le nom des instances BD seront : **db0-terra** et **db1-terra**.
+8. **security_groups** : L'assignation des règles de firewall 
+9. **root_block_device** : Définition d'un disque dur de 20 Gig , partant du principe que la Base de donnée grossira dans le temps , encore une fois ceci est plus un teste passant de la manipulation de l'espace disque d'une instance .
+
+Comme vous pouvez le voir ceci est très similaire et grâce au mécanisme de count que j'ai 1 ou 20 instances identique ceci est très simple. L'utilisation de la variable **count** , nous permet d'identifier chacune d'entre elle.
+
+C'est partie on va en premier lieu valider la configuration :
+
+```
+$ terraform plan
+[ ... ]
+  + aws_instance.db-terra[0]
+      id:                                        <computed>
+      ami:                                       "ami-076e276d85f524150"
+      arn:                                       <computed>
+      associate_public_ip_address:               "true"
+      availability_zone:                         <computed>
+      cpu_core_count:                            <computed>
+      cpu_threads_per_core:                      <computed>
+[ ... ]
+  + aws_instance.db-terra[1]
+      id:                                        <computed>
+      ami:                                       "ami-076e276d85f524150"
+      arn:                                       <computed>
+      associate_public_ip_address:               "true"
+      availability_zone:                         <computed>
+      cpu_core_count:                            <computed>
+      cpu_threads_per_core:                      <computed>
+[ ... ]
+Plan: 12 to add, 0 to change, 0 to destroy. 
+```
+
+Nous constatons que nous aurons 12 ressources de créés et nous voyons donc les 2 instances de base de donné avec l'index entre crochet .
+
+```
+$ terraform apply 
+aws_instance.web-terra: Still creating... (10s elapsed)
+aws_instance.db-terra.0: Still creating... (10s elapsed)
+aws_instance.db-terra.1: Still creating... (10s elapsed)
+aws_instance.web-terra: Still creating... (20s elapsed)
+aws_instance.db-terra.1: Still creating... (20s elapsed)
+aws_instance.db-terra.0: Still creating... (20s elapsed)
+aws_instance.web-terra: Still creating... (30s elapsed)
+aws_instance.db-terra[1]: Creation complete after 29s (ID: i-072c2f49ff9cb4f33)                                                                              
+aws_instance.db-terra.0: Still creating... (30s elapsed)
+aws_instance.web-terra: Still creating... (40s elapsed)
+aws_instance.web-terra: Creation complete after 40s (ID: i-09a9adf3606c58381)
+aws_instance.db-terra.0: Still creating... (40s elapsed)
+aws_instance.db-terra.0: Still creating... (50s elapsed)
+aws_instance.db-terra[0]: Creation complete after 51s (ID: i-0728346e3eceb4e94)
+
+Apply complete! Resources: 12 added, 0 changed, 0 destroyed.
+
+```
+
+Vous pouvez visualier le résultat , dans la [console aws](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Instances:sort=instanceId)
+
+![](./imgs/11-aws-ec2-bd-creation.png)
+
+
+Vous pouvez visualiser le fichier d'état : [terraform-creation-ec2s.tfstate](./terraManifest/02-use-case/states/terraform-creation-ec2s.tfstate)
+
 
 

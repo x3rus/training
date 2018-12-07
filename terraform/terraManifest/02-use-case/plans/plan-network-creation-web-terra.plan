@@ -1,0 +1,74 @@
+Refreshing Terraform state in-memory prior to plan...
+The refreshed state will be used to calculate this plan, but will not be
+persisted to local or remote state storage.
+
+aws_key_pair.ansible: Refreshing state... (ID: ansible-key)
+aws_security_group.allow_remote_admin: Refreshing state... (ID: sg-04d217145033f7e7a)
+aws_security_group.allow_web: Refreshing state... (ID: sg-0c759cf20983a1e3e)
+aws_key_pair.admin: Refreshing state... (ID: admin-key)
+aws_default_vpc.default: Refreshing state... (ID: vpc-ec488994)
+aws_security_group.allow_external_communication: Refreshing state... (ID: sg-0c429cfb1c2e537d2)
+data.aws_ami.ubuntu: Refreshing state...
+aws_subnet.bd-private-2a: Refreshing state... (ID: subnet-046ba01af671f4368)
+aws_subnet.web-public-2a: Refreshing state... (ID: subnet-0630c4e77b8562f36)
+aws_security_group.allow_mysql_internal: Refreshing state... (ID: sg-0bbf6bd543984f61d)
+
+------------------------------------------------------------------------
+
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
++ aws_instance.web-terra
+      id:                                        <computed>
+      ami:                                       "ami-076e276d85f524150"
+      arn:                                       <computed>
+      associate_public_ip_address:               "true"
+      availability_zone:                         <computed>
+      cpu_core_count:                            <computed>
+      cpu_threads_per_core:                      <computed>
+      ebs_block_device.#:                        <computed>
+      ephemeral_block_device.#:                  <computed>
+      get_password_data:                         "false"
+      instance_state:                            <computed>
+      instance_type:                             "t2.micro"
+      ipv6_address_count:                        <computed>
+      ipv6_addresses.#:                          <computed>
+      key_name:                                  "ansible-key"
+      network_interface.#:                       <computed>
+      network_interface_id:                      <computed>
+      password_data:                             <computed>
+      placement_group:                           <computed>
+      primary_network_interface_id:              <computed>
+      private_dns:                               <computed>
+      private_ip:                                <computed>
+      public_dns:                                <computed>
+      public_ip:                                 <computed>
+      root_block_device.#:                       "1"
+      root_block_device.0.delete_on_termination: "true"
+      root_block_device.0.volume_id:             <computed>
+      root_block_device.0.volume_size:           "10"
+      root_block_device.0.volume_type:           <computed>
+      security_groups.#:                         "3"
+      security_groups.2092270805:                "sg-0c759cf20983a1e3e"
+      security_groups.343726423:                 "sg-0c429cfb1c2e537d2"
+      security_groups.692851454:                 "sg-04d217145033f7e7a"
+      source_dest_check:                         "true"
+      subnet_id:                                 "subnet-0630c4e77b8562f36"
+      tags.%:                                    "3"
+      tags.Name:                                 "web-terra"
+      tags.role:                                 "web"
+      tags.scope:                                "training"
+      tenancy:                                   <computed>
+      volume_tags.%:                             <computed>
+      vpc_security_group_ids.#:                  <computed>
+Plan: 1 to add, 0 to change, 0 to destroy.
+
+------------------------------------------------------------------------
+
+Note: You didn't specify an "-out" parameter to save this plan, so Terraform
+can't guarantee that exactly these actions will be performed if
+"terraform apply" is subsequently run.
+
