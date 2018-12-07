@@ -1301,4 +1301,10 @@ Vous pouvez visualier le résultat , dans la [console aws](https://us-west-2.con
 Vous pouvez visualiser le fichier d'état : [terraform-creation-ec2s.tfstate](./terraManifest/02-use-case/states/terraform-creation-ec2s.tfstate)
 
 
+Nous pouvons supprimer l'ensemble : 
 
+```
+$ terraform destroy
+[ ... ]
+Destroy complete! Resources: 12 destroyed.
+```
