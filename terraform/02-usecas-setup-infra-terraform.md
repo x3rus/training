@@ -1229,6 +1229,9 @@ resource "aws_instance" "db-terra" {
 }
 ```
 
+
+Vous pouvez visualiser sur github le fichier lors de ça rédaction :  [02-use-case.tf](https://github.com/x3rus/training/blob/42f399ae903c04329453aea6eb0a117023d514f11/terraform/terraManifest/02-use-case/02-use-case.tf)
+
 Prenons le temps de lire la définition , premièrement le code ci-dessus couvre les 2 serveurs de base de donnés !! 
 Nous utilisons la classe [aws\_instance](https://www.terraform.io/docs/providers/aws/r/instance.html) , comme lors de la création du serveur web.
 
@@ -1307,4 +1310,89 @@ Nous pouvons supprimer l'ensemble :
 $ terraform destroy
 [ ... ]
 Destroy complete! Resources: 12 destroyed.
+```
+
+
+#### Création d'une ressource et connexion ssh 
+
+Bon, je m'excuse avec tous ça j'ai complètement oublié de faire la démonstration que l'instance été accessible et fonctionnel :P . Donc prenons 2 minutes pour faire cette démonstration . Comme vous avez pu le voir j'ai tout détruit préalablement si j'exécute la commande **terraform plan**
+
+```
+$ terraform plan 
+[ ... ]
+Plan: 12 to add, 0 to change, 0 to destroy.
+```
+
+Bon mais moi je veux juste une instance , avec l'ensemble de ces dépendances ... Pas de problème Terraform l'a pris en charge ce besoin :P.
+
+```
+$ terraform plan --target=aws_instance.web-terra
+<= data.aws_ami.ubuntu
++ aws_default_vpc.default
++ aws_instance.web-terra
++ aws_key_pair.ansible
++ aws_security_group.allow_external_communication
++ aws_security_group.allow_remote_admin 
++ aws_security_group.allow_web
++ aws_subnet.web-public-2a
+
+Plan: 7 to add, 0 to change, 0 to destroy.
+```
+
+Donc pour faire la création de la ressource aws_instance.web-terra , 7 ressources doivent être réalisé , 6 créer et 1 pour la recherche de l'AMI id.
+
+Je vais faire donc apply : 
+
+```
+$ terraform apply --target=aws_instance.web-terra
+```
+
+Je suis allé sur la [console amazon](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Instances:sort=instanceId) pour extraire l'adresse IP publique : 
+
+![](./imgs/11-aws-web-publique-ip.png)
+
+Établissons la connexion SSH 
+
+```
+$ ssh -i ssh-keys/ansible-user  ubuntu@34.219.211.56
+ubuntu@ip-172-31-60-19:~$ sudo -l
+Matching Defaults entries for ubuntu on ip-172-31-60-19.us-west-2.compute.internal:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User ubuntu may run the following commands on ip-172-31-60-19.us-west-2.compute.internal:
+    (ALL : ALL) ALL
+    (ALL) NOPASSWD: ALL
+
+ubuntu@ip-172-31-60-19:~$ telnet google.com 80 
+Trying 172.217.6.78...
+Connected to google.com.
+Escape character is '^]'.
+GET /
+HTTP/1.0 200 OK  
+```
+
+Donc la commande SSH fonctionne et nous avons bien internet 
+
+
+### Suppression d'une ressource 
+
+L'instruction **target** fonctionne aussi pour identifer uniquement une ressource , donc si je désire supprimer uniquement l'instance EC2 web que je viens tous juste de créer tous en conservant les configuration réseaux par example ... nous pouvons procéder ainsi : 
+
+```
+$ terraform destroy --target=aws_instance.web-terra 
+Terraform will perform the following actions:
+
+  - aws_instance.web-terra
+
+
+Plan: 0 to add, 0 to change, 1 to destroy.
+```
+
+Uniquement 1 ressource supprimer , par le fait même si nous voudrions recréer l'instance l'ensemble des dépendances seront déjà présente.
+
+```
+$ terraform plan --target=aws_instance.web-terra 
+[ ... ] 
+Plan: 1 to add, 0 to change, 0 to destroy.
+
 ```
