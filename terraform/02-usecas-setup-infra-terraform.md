@@ -1,4 +1,4 @@
-# Description
+# Description creation des ressources 
 
 J'ai cherché quelle cas d'utilisation j'allais faire et comme nous allons utiliser AWS et que j'avais fait une présentation de AWS dans le passé j'ai pensé reprendre mon cas d'utilisation que j'avais fait manuellement. Ceci vous permettra aussi d'avoir la possibilité de voir la même opération en mode manuel. 
 Ceci n'est PAS un requis mais un plus tout simplement , voici les liens :
