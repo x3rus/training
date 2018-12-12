@@ -1396,3 +1396,10 @@ $ terraform plan --target=aws_instance.web-terra
 Plan: 1 to add, 0 to change, 0 to destroy.
 
 ```
+
+## Et la suite
+
+Donc nous avons l'ensemble de nos ressource disponible dans AWS, mais ce n'est pas fini, en fait ce n'est que le début de notre travail. 
+Il faut encore configurer l'ensemble des ces ressources afin d'être en mesure de les utiliser .
+
+Je vais poursuivre cette exercice dans le fichier [03-intergration-ansible.md](03-intergration-ansible.md) , ceci sera l'integration entre Ansible et Terraform et non une formation ansible ...
