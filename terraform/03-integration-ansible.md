@@ -119,3 +119,7 @@ Afin d'être en mesure de combiner Terreform et Ansible , tous comme vous avez d
 Je vous laisse le lien vers le documentation officiel : [https://docs.ansible.com/ansible/2.5/installation_guide/intro_installation.html](https://docs.ansible.com/ansible/2.5/installation_guide/intro_installation.html)
 
 ## Provisionnement des serveurs de base de données
+
+Bon pour ceux qui me connaisse, vous savez que j'ai de la difficulté à être concis, on va dire que je vais être fidèle à moi même encore une fois :P. On va prendre le temps de décortiquer le processus de provisionnement du serveur de Base de donnée incluant la partie Ansible. 
+
+### Explication du playbook ansible
