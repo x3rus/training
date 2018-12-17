@@ -1,0 +1,3 @@
+[submodule "terraform/terraform/terraManifest/02-use-case/roles/geerlingguy.mysql"]
+	path = terraform/terraform/terraManifest/02-use-case/roles/geerlingguy.mysql
+	url = https://github.com/geerlingguy/ansible-role-mysql.git

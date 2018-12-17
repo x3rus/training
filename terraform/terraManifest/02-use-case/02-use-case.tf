@@ -194,7 +194,7 @@ resource "aws_instance" "db-terra" {
     associate_public_ip_address = true
    
     # Create 2 instance of the database
-    count = 2
+    count = 1
 
     tags {
         Name = "db${count.index}-terra"
@@ -212,6 +212,21 @@ resource "aws_instance" "db-terra" {
         delete_on_termination = true
         volume_size = 20 
     }
+
+    provisioner "remote-exec" {
+        # Install Python for Ansible
+         inline = ["sudo apt-get update && sudo apt-get -y install python "]
+
+        connection {
+            type        = "ssh"
+            user        = "ubuntu"
+            private_key = "${file("ssh-keys/ansible-user")}"
+        }
+    }
+
+    provisioner "local-exec" {
+        command = "ansible-playbook -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no' -i '${self.public_ip},' --private-key ssh-keys/ansible-user -T 300 bd.yml"
+    }                                                                                                                                                       
 
 }
 
