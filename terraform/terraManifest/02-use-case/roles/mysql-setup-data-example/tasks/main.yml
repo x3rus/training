@@ -1,0 +1,39 @@
+---
+# tasks file for web
+
+# copy and load sql files
+
+# Copy database dump file to remote host and restore it to database 'my_db'
+- name: Copy database dump file pi
+  copy:
+    src: loadpi.sql
+    dest: /tmp
+
+- name: Import pi_dump.sql 
+  mysql_db:
+    state: import
+    name: showpi
+    target: /tmp/loadpi.sql
+
+- name: Copy database dump file contact
+  copy:
+    src: contacts.sql.gz
+    dest: /tmp
+
+- name: Import contact_dump.sql 
+  mysql_db:
+    state: import
+    name: contact
+    target: /tmp/contacts.sql.gz
+
+- name: Ansible delete file 
+  find:
+    paths: /tmp/
+    patterns: "*.sql.*"
+  register: files_to_delete
+
+- name: Ansible remove sql files
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop : "{{ files_to_delete.files }}"

@@ -6,3 +6,4 @@
     - vars/mysql.yml
   roles:
     - { role: geerlingguy.mysql }
+    - { role: mysql-setup-data-example }

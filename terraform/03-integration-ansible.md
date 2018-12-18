@@ -440,11 +440,112 @@ Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
 
 ```
 
+Vous pouvez avoir le fichier [02-use-case.tf](https://github.com/x3rus/training/blob/d8d6613fb5f474913d4eb936fe77dd65dc90001b/terraform/terraManifest/02-use-case/02-use-case.tf).
+
+L'ensemble du repository est disponible aussi : [repo de formation a ce point](https://github.com/x3rus/training/tree/d8d6613fb5f474913d4eb936fe77dd65dc90001b/terraform)
+
 #### Populer la base de données 
 
 Nous avons l'instance EC2 , nous l'avons complètement configurer avec Mysql , nos utilisateur , le mot de passe ... mais il manque quelques choses !! Les donnés dans la base de donnée. Pour ce faire j'ai créé un **role** ansible nommé : **mysql-setup-data-example** , je n'aurais assurément pas le prix de l'originalité :P. 
 
+Prenons 2 minutes pour le consulter, ce n'est pas vraiment requis , mais au moins vous aurez la solution complète.
 
+Regardons les fichiers :
+
+```
+$ cd terraManifest/02-use-case/roles/mysql-setup-data-example
+$ ls -R
+.:
+defaults  files  handlers  meta  README.md  tasks  templates  tests  vars
+
+./defaults:
+
+./files:
+contacts.sql.gz  loadpi.sql
+
+./handlers:
+
+./meta:
+
+./tasks:
+main.yml
+
+./templates:
+
+./tests:
+
+./vars:
+
+```
+
+Donc beaucoup de répertoires pas beaucoup de fichier :P , en fait je pense même que GIT va les enlevés car c'est des répertoires vide, peut importe ceci est ce que j'ai sur ma machine.
+
+Sous le répertoire **files** nous avons les 2 fichiers dump avec le contenu de la base de donnés.
+Sous le répertoire **task** , nous avons les instructions à réaliser .
+
+Il n'y a pas beaucoup de ligne je les mets :P 
+
+[main.yml](TODO)
+
+```
+# Copy database dump file to remote host and restore it to database 'my_db'
+- name: Copy database dump file pi
+  copy:
+    src: loadpi.sql
+    dest: /tmp
+
+- name: Import pi_dump.sql 
+  mysql_db:
+    state: import
+    name: showpi
+    target: /tmp/loadpi.sql
+
+- name: Copy database dump file contact
+  copy:
+    src: contacts.sql.gz
+    dest: /tmp
+
+- name: Import contact_dump.sql 
+  mysql_db:
+    state: import
+    name: contact
+    target: /tmp/contacts.sql.gz
+
+- name: Ansible delete file 
+  find:
+    paths: /tmp/
+    patterns: "*.sql.*"
+  register: files_to_delete
+
+- name: Ansible remove sql files
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop : "{{ files_to_delete.files }}"
+```
+
+Nous avons la copie du fichier SQL non-compressé pour la base de donné pi ainsi que le chargement.
+La deuxième partie est similaire cependant avec un fichier compressé pour la base de donnée de contact.
+
+Par la suite je fais une recherche des fichiers présent dans le répertoire /tmp avec le pattern sql , avec cette liste je fait le ménage en supprimant les fichiers. 
+
+C'est pas plus compliqué que ça , ok on va être réaliste je suis pas encore un expert ansible ça m'a pris un peu de temps surtout la partie de cleanup , mais faut pas ce décourager :D.
+
+Maintenant l'intégration , dans l'ensemble de la chaine , mettons le après la création de la base de données : bd.yml
+
+```
+ ---
+- hosts: all
+  become: yes
+  become_user: root
+  vars_files:
+    - vars/mysql.yml
+  roles:
+    - { role: geerlingguy.mysql }
+    - { role: mysql-setup-data-example }
+```
+
+Et voilà en plus de la configuration nous aurons des données dans la base de données.
 
 ## Provisionnement du serveur web
 
