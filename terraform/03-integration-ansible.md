@@ -488,7 +488,7 @@ Il n'y a pas beaucoup de ligne je les mets :P
 [main.yml](TODO)
 
 ```
-# Copy database dump file to remote host and restore it to database 'my_db'
+ # Copy database dump file to remote host and restore it to database 'my_db'
 - name: Copy database dump file pi
   copy:
     src: loadpi.sql
@@ -547,6 +547,227 @@ Maintenant l'intégration , dans l'ensemble de la chaine , mettons le après la 
 
 Et voilà en plus de la configuration nous aurons des données dans la base de données.
 
+L'ensemble du repository est disponible aussi : [repo de formation a ce point](https://github.com/x3rus/training/tree/9a52d1698abdf9a07e8f5f83cb1c06ffc055e87b/terraform)
+
+
 ## Provisionnement du serveur web
 
+Nous avons la base de donnée, configurer , nous allons pouvoir passer au serveur web. Pour rappel le serveur web aura , 2 site web :
 
+* contacts.x3rus.com
+* showpi.x3rus.com
+
+Ce sont des sites web écrit en php , c'était le plus simple et rapide. Chacun des sites web établie une connexion mysql avec un nom d'utilisateur et mot de passe vers 1 serveur de base de donnée. En d'autre mot, le site web contact établira une connexion au serveur de base de donnée db-terra.0 et le site web showpi établira ça connexion sur le serveur mysql db-terra.1 . 
+
+### Explication du role ansible
+
+Donc le nom du rôle , attention roulement de temboure pour l'originalité :P , **apache-php-example**. Regardons le contenue : 
+
+```
+$ cd terraManifest/02-use-case/roles/apache-php-example
+$ ls -R
+.:
+defaults  files  handlers  meta  README.md  tasks  templates  tests  vars
+
+./defaults:
+main.yml
+
+./files:
+001-contact.conf  001-showpi.conf
+
+./handlers:
+main.yml
+
+./meta:
+main.yml
+
+./tasks:
+main.yml
+
+./templates:
+contact-index.php.j2  showpi-index.php.j2
+
+./tests:
+inventory  test.yml
+
+./vars:
+main.yml
+```
+
+J'ai utilisé un script pour la génération de ce module , il y a un peu plus de fichier et certains de ces fichiers ne furent pas éditer pour avoir la bonne information ... ho well :P .
+
+Nous allons nous concentrer sur quelques fichiers :
+
+* **./tasks/main.yml** : ceci contient les instructions ansible qui doivent être réaisées.
+* **./files/001-contact.conf et ./files/001-showpi.conf** : Les fichiers de la configuration apache.
+* **./templates/contact-index.php.j2 et ./templates/showpi-index.php.j2** : Les fichiers php du site web.
+
+#### Tâche du rôle
+
+Les opérations de configuration de l'instance via ansible est relativement simple , l'ensemble est définie dans le fichier [tasks/main.yml](./terraManifest/02-use-case/roles/apache-php-example/tasks/main.yml)
+
+Nous avons l'installation de l'ensemble des packages (apache2,libapache2-mod-php,...) en utilisant apt-get.
+
+```
+- name: install apache
+  apt:
+    name : "{{ item }}"
+    state: present
+    update_cache: true
+  loop:
+    - apache2
+    - libapache2-mod-php
+    - php-mysql
+    - php-mbstring
+
+```
+
+La création du répertoire où les fichiers des sites web seront installé :
+
+```
+- name : Web sites directory
+  file: 
+    path : "{{ item }}" 
+    state : directory
+    owner : root 
+    group : root 
+  loop : 
+    - /var/www/showpi
+    - /var/www/contacts
+```
+
+Copie des fichiers de sites web avec le module de tamplate , j'y reviens dans la section suivante :
+
+```
+- template:
+    src: contact-index.php.j2
+    dest: /var/www/contacts/index.php
+    owner: root
+    group: root
+    mode: "u=rw,g=r,o=r"
+
+- template:
+    src: showpi-index.php.j2
+    dest: /var/www/showpi/index.php
+    owner: root
+    group: root
+    mode: "u=rw,g=r,o=r"
+```
+
+Mise en place du fichier de configuration pour apache et redémarrage du service 
+
+```
+- name : Web site configuration file for contact
+  copy:
+    src : 001-contact.conf 
+    dest : /etc/apache2/sites-enabled/
+    mode : 0664
+  notify:
+    - restart apache
+```
+
+L'ensemble est relativement claire , cependat la partie template demande plus d'explication donc continuons avec ça.
+
+
+#### Introduction des variables avec ansible
+
+Vous pouvez déjà conster qu'il y des fichiers sous le répertoire **files** et **templates** , les fichiers sous **files** seront installés telle quelle . Dans le cas des fichiers sous **templates** , ce sont des fichiers de type [Jinja2](http://jinja.pocoo.org/docs/2.10/) donc ils seront interprétés et le contenu de variable seront substitué afin de générer le fichier final.
+
+Woww mais pourquoi des variables me direz vous ?
+Pour répondre à la question regardons le fichier :
+
+```
+<?php
+$servername = "{{ mysqlContHost }}" ;
+$username = "{{ mysqlContUser }}" ;
+$password = "{{ mysqlContPass }}" ;
+$dbname = "{{ mysqlContDB }}" ;
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+//
+$sql = "SELECT id, nom , prenom  FROM contacts";
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+    // output data of each row
+    while($row = $result->fetch_assoc()) {
+        echo "id: " . $row["id"]. " - Name: " . $row["nom"]. " " . $row["prenom"]. "<br>";
+    }
+} else {
+    echo "0 results";
+}
+$conn->close();
+?> 
+```
+
+Le site doit être en mesure d'établir une connexion mysql au serveur de base de donnée , donc il a besoin :
+
+* **\$servername = "{{ mysqlContHost }}" ;** : D'un nom de serveur ou la connexion doit être initialisé
+* **\$username = "{{ mysqlContUser }}" ;** : D'un nom d'utilisateur pour la connexion
+* **\$password = "{{ mysqlContPass }}" ;** : D'un mot de passe  associé à l'utilisateur
+* **\$dbname = "{{ mysqlContDB }}" ;**  : Du nom de la base de donnée 
+
+Nous pourrions définir facilement le nom de la base de donnée ainsi que les informations d'authentification , cependant ceci sera plus compliqué pour l'adresse IP du serveur de base de donné, car ceci est des adresses ip dynamique. 
+
+Si vous vous dites mais pourquoi nous n'avons pas fait la même choses pour la base de donnée ? Nous allons le faire, je voulais conserver avoir une explication simple pour débuter, nous avions déjà l'intégration terraforme ET ansible, je me suis dit que ce serait plus fluide dans ajouter un nombre significatif de variable :P.
+
+Si nous prenons le fichier du site web __showpi__ nous aurons d'autre variable :
+
+```
+$servername = "{{ mysqlPiHost }}" ;
+$username = "{{ mysqlPiUser }}" ;
+$password = "{{ mysqlPiPass }}" ;
+$dbname = "{{ mysqlPiDB }}" ;
+```
+
+Donc au total 8 variables :
+
+* Contact :
+    * mysqlContHost
+    * mysqlContUser
+    * mysqlContPass
+    * mysqlContDB
+* ShowPi
+    * mysqlPiHost
+    * mysqlPiUser
+    * mysqlPiPass
+    * mysqlPiDB 
+
+Afin de définir ces variables nous allons voir 2 mécanisme :
+
+* La définition de ces dernières dans une variables , simplifiant la gestion et l'évolution . Ceci permet d'avoir une traçabilité via votre contrôleur de révision (svn , git , ... )
+* La définition sur la ligne de commande , très pratique pour la phase de validation  ou des valeurs dont nous n'avons pas l'information initialisement telle que l'adresse IP du serveur de base de donnée :D.
+
+Voici l'argument que nous allons utiliser lors de notre premier test , via la ligne de commande : 
+
+```
+--extra-="mysqlContHost=172.31.50.2 mysqlContUser=contact_user mysqlContPass=le_mot_pass mysqlContDB=contact  mysqlPiHost=172.30.50.4 mysqlPiUser=pi_user mysqlPiPass=lautre_passe mysqlPiDB=showpi"
+```
+
+C'est beau l'exemple mais on veut le voir concrètement, donc continuons avec la configuration.
+
+### Configuration du playbook 
+
+Donc nous avons le rôle, des fichiers avec des variables ... nous allons lier l'ensemble.
+
+Nous allons créer le fichier : [site.yml](./terraManifest/02-use-case/site.yml)
+
+```
+ ---
+- hosts: all
+  become: yes
+  become_user: root
+  roles:
+    - apache-php-example
+```
+
+Grossomodo on retrouve exactement les mêmes chose que pour la base de donnée , le nom du rôle est différent .
+
+#### Test d'utilisation de ansible 
+
+TODO 

@@ -1,0 +1,55 @@
+---
+# tasks file for web
+
+# create a directory to store docker-compose file
+
+- name: install apache
+  apt:
+    name : "{{ item }}"
+    state: present
+    update_cache: true
+  loop:
+    - apache2
+    - libapache2-mod-php
+    - php-mysql
+    - php-mbstring
+
+- name : Web sites directory
+  file: 
+    path : "{{ item }}" 
+    state : directory
+    owner : root 
+    group : root 
+  loop : 
+    - /var/www/showpi
+    - /var/www/contacts
+
+- template:
+    src: contact-index.php.j2
+    dest: /var/www/contacts/index.php
+    owner: root
+    group: root
+    mode: "u=rw,g=r,o=r"
+
+- template:
+    src: showpi-index.php.j2
+    dest: /var/www/showpi/index.php
+    owner: root
+    group: root
+    mode: "u=rw,g=r,o=r"
+
+- name : Web site configuration file for contact
+  copy:
+    src : 001-contact.conf 
+    dest : /etc/apache2/sites-enabled/
+    mode : 0664
+  notify:
+    - restart apache
+
+- name : Web site configuration file for showpi
+  copy:
+    src : 001-showpi.conf
+    dest : /etc/apache2/sites-enabled/
+    mode : 0664
+  notify:
+    - restart apache
