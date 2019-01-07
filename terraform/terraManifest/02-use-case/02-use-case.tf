@@ -183,6 +183,18 @@ resource "aws_instance" "web-terra" {
         volume_size = 10 
     }
 
+    provisioner "remote-exec" {
+        # Install Python for Ansible
+         inline = ["sudo apt-get update && sudo apt-get -y install python "]
+
+        connection {
+            type        = "ssh"
+            user        = "ubuntu"
+            private_key = "${file("ssh-keys/ansible-user")}"
+        }
+    }
+
+
 }
 
 resource "aws_instance" "db-terra" {
