@@ -14,24 +14,24 @@ En d'autres mots, à l'aide d'un fichier texte, il est possible de définir l'en
 
 Les avantages sont nombreux : 
 
-* Possible de versionner  la configuration de l'infrastructure avec le contrôler de révision, avec une source de référence pour savoir la configuration en place . ( + tous les avantages du contrôler de révision ).
-* Normalisé la configuration de l'infrastructure d'un environnement en réutilisant la définition ( fichier text).
+* Il est possible de versionner  la configuration de l'infrastructure avec le contrôleur de révision, avec une source de référence pour savoir la configuration active.  ( + tous les avantages du contrôleur de révision ).
+* Normaliser la configuration de l'infrastructure d'un environnement en réutilisant la définition ( fichier TEXT).
     * Correction d'inconsistance entre les environnements
 * Permettre le déploiement rapide , car automatisé d'environnement.
 * Possibilité d'orchestrer les déploiements.
-* Réduction du risque d'un déploiement car tous comme du code il est possible de le tester préalablement et réduit les erreurs humaines.
+* Réduction du risque de déploiement, car il est possible de le tester préalablement et  réduit les erreurs humaines.
 
 ## Les options  disponibles
 
-À ce jour les options sont nombreuses ( [List of Configuration](https://xebialabs.com/the-ultimate-devops-tool-chest/the-ultimate-list-of-configuration/) ) , la question est laquelle choisir. 
+À ce jour, les options sont nombreuses ( [List of Configuration](https://xebialabs.com/the-ultimate-devops-tool-chest/the-ultimate-list-of-configuration/) ) , la question est : laquelle choisir ?
 
-Lors d'échange avec mon entourage, clairement un élément influent, j'ai 2 joueurs qui se démarque :
+Lors d'échange avec mon entourage, clairement un élément influent, j'ai 2 options qui se démarque :
 
-* [Terraform](https://www.terraform.io/) : il existe depuis plusieurs année personnellement je l'avais boudé, car il ne supporter QUE **AWS**, je pense qu'une solution de ce type doit être utilisable pour plusieurs fournisseurs de service. À ce jour ce problème fut corrigé , maintenant il supporte un grand nombre de [module ou provider](https://www.terraform.io/docs/providers/index.html)
+* [Terraform](https://www.terraform.io/) : il existe ,depuis plusieurs années , personnellement je l'avais boudé, car il ne prenait en charge QUE **AWS**, je pense qu'une solution de ce type doit être utilisable pour plusieurs fournisseurs de service. Maintenant, ce problème est corrigé , maintenant il prend en charge, un grand nombre de [module ou provider](https://www.terraform.io/docs/providers/index.html)
 
     * ![](./imgs/02-terraform-modules.png)
 
-* [Ansible](https://www.ansible.com/) : Ansible est une plate-forme logicielle libre pour la configuration et la gestion des ordinateurs. Elle combine le déploiement de logiciels multi-nœuds, l'exécution des tâches ad-hoc, et la gestion de configuration. Ansible a aussi de nombreux [modules](https://docs.ansible.com/ansible/2.7/modules/modules_by_category.html) 
+* [Ansible](https://www.ansible.com/) : Ansible est une plate-forme logicielle libre pour la configuration et la gestion des ordinateurs. Elle combine le déploiement de logiciels multinœuds, l'exécution des tâches ad hoc, et la gestion de configuration. Ansible a aussi de nombreux [modules.](https://docs.ansible.com/ansible/2.7/modules/modules_by_category.html) 
 
 * [Puppet](https://puppet.com/fr) : Puppet est un logiciel libre permettant la gestion de la configuration de serveurs esclaves (GNU/Linux, Mac OS X et Windows). Puppet est écrit à l'aide du langage de programmation Ruby et est diffusé sous licence Apache 2.0 pour les versions récentes de Puppet. Les versions plus anciennes (inférieures à la V2.7.0), sont sous licence GPL3. 
 
@@ -39,17 +39,17 @@ Lors d'échange avec mon entourage, clairement un élément influent, j'ai 2 jou
 
 ## Que choisir ?
 
-Comme je dis souvent trop de choix perd le client, dans le monde de l'opensource c'est d'autant plus vraie de par les choix multiples. Nous allons essayer avec le peu d'expérience que j'ai de répondre à cette question :P. Comme le nom de la formation est **Terraform** la conclusion est déjà connu :P, je vais essaye de développer la raison de ce choix qui est le fruit de recherche et non d'une expérience.
+Comme je dis souvent, trop de choix perd le client, dans le monde de l'opensource c'est d'autant plus vrai par les choix multiples. Nous allons essayer avec le peu d'expérience que j'ai de répondre à cette question :P. comme le nom de la formation est **Terraform** la conclusion est déjà connue :P. Je vais essayer de développer la raison de ce choix qui est le fruit de recherche et non d'une expérience.
 
 ### Gestion de configuration vs orchestration
 
-Si nous prenons __Puppet__ , __ansible__ , __chef__ , etc ces logiciels furent conçus dans l'idée de faire un déploiement d'une configurations sur un serveur existant :
+Si nous prenons __Puppet__ , __ansible__ , __chef__ , etc ces logiciels furent conçus dans l'idée de faire un déploiement d'une configuration sur un serveur existant :
     * Installation de packages
     * Création fichier / répertoire
     * Exécution de scripts 
     * ... 
 
-Bien entendu avec le temps afin de répondre à une demande des utilisateurs certain modules furent ajouté afin de permettre la création d'instance EC2 (AWS) par exemple. 
+Bien entendu avec le temps afin de répondre à une demande des utilisateurs certains modules furent ajoutés afin de permettre la création d'instances EC2 (AWS) par exemple. ICI ICI ICI ORTHOGRAPHE ICI ICI IC
 
 De l'autre côté **Terraform** fut conĉu dans l'idée de permettre l'orchestration ou la création de l'infrastructure , il est possible de faire un peut de configuration avec **terraform** mais ce n'est pas ça force première. Comme nous le verrons plus loin **Terraform** est en mesure de faire l'appel de gestionnaire de configuration pour provisionner les systèmes créé. 
 
@@ -60,7 +60,7 @@ Une utilisation idéal pour **Terraform** est la cohabitation avec des systèmes
 
 Moins pertinent mais on va le faire tout de même afin de faire une présentation de la différence entre les différent mode des logiciels. Donc les applications de type gestionnaire de configuration (__Ansible__, __Puppet__ , __Chef__ , ...), vont faire évolué la configuration d'un système. Résultat la modification des configurations vont s'ajouter au furent et à mesure sur le système . Ceci est donc une configuration mutable, la problématique ou le risque avec ce mode de fonctionnement est que chaque serveur auront une évolution différente au fur et à mesure que vous appliquez des règles. Bien entendu, nous essayons d'être strict sur les applications, cependant parfois ça glisse , sans parlé d'intervention manuel parfois requise lors d'urgence.
 
-Dans une infrastructure Immutable, nous allons lors du processus de modification recréer l'instance ( __docker__ , __vm__ , ...) pour faire le déploiement d'une nouvelle configuration. Sur papier j'en convient c'est bien beau, mais la réalité terrain est pas toujours aussi simple, si nous prenons des serveurs de base de donnée, l'instance maître peu être difficile a détruire et recréer sans impact sur la production. Il est donc important d'avoir aussi des logiciels et mécanisme qui sont en harmonie.
+Dans une infrastructure Immutable, nous ballons lors du processus de modification recréer l'instance ( __docker__ , __vm__ , ...) pour faire le déploiement d'une nouvelle configuration. Sur papier j'en convient c'est bien beau, mais la réalité terrain est pas toujours aussi simple, si nous prenons des serveurs de base de donnée, l'instance maître peu être difficile a détruire et recréer sans impact sur la production. Il est donc important d'avoir aussi des logiciels et mécanisme qui sont en harmonie.
 Pour que ceci soit possible il y a un requis important, si faire la création d'une nouvelle instance prends 2 jours , ceci est beaucoup trop long , les logiciel d'orchestration telle que **terraform** vous permettra d'avoir une système automatisé qui permet la création rapide d'instance.
 À titre d'exemple dans la démonstration qui sera réalisée à la suite de la présentation, en 6 minutes nous aurons :
 
@@ -98,7 +98,7 @@ Dans l'exemple ci-dessus , très simpliste j'en convient, nous voyons un exemple
 	```
 
 Donc dans l'exemple ci-dessus, même si ceci est assez claire , prenons 2 secondes pour le verbalisé. Ceci permet de faire la création de 10 instances EC2 dans AWS de type t2.micro avec l'image ami-v1.
-Comme vous pouvez le voir , la syntax est très similaire , il est même possible que vous vous dites , woww tout ce text pour la même chose :P.
+Comme vous pouvez le voir , la syntax est très similaire , il est même possible que vous vous dites , woww tout ce TEXT pour la même chose :P.
 
 Donc pour la création d'instance initiale la dynamique est similaire, maintenant imaginons que nous désirons ajouter 5 instances à l'environnement. 
 Avec le mécanisme **Déclaratif** de **Terraform** , la personne reprendra le fichier de définition de l'environnement et changera la valeur de 10 à 15 soit comme ceci :
@@ -147,7 +147,7 @@ Avec le mode **Procédural** de Ansible, vous serez obligé de savoir combien d'
 
 Vous trouverez de mode déploiement :
 
-* **pull** (client tire l'information du serveur ) : ce mode fonctionne sur le principe client / serveur , nous avons des agents sur l'ensemble des serveurs qui se connecte régulièrement au serveur pour récolter l'information. Pour ce modèle il est important donc d'avoir un serveur , idéalement redondant qui est en mesure de répondre à l'ensemble des clients. Vous constaterez que lorsque votre environnements prendra de l'expansion ce serveur sera de plus en plus sollicité. Les système telle que : __Chef__, __Puppet__ et __SaltStack__ utilisent ce mode , ceci a des avantages telle qu'avoir un serveur qui à l'ensemble de l'état des clients, cependant ce serveur est un autre maillon à gérer dans votre infrastructure.
+* **pull** (client tire l'information du serveur ) : ce mode fonctionne sur le principe client / serveur , nous avons des agents sur l'ensemble des serveurs qui se connecte régulièrement au serveur pour récolter l'information. Pour ce modèle il est important donc d'avoir un serveur , idéalement redondant qui est en mesure de répondre à l'ensemble des clients. Vous constaterez que lorsque votre environnements prendra de l'expansion ce serveur sera de plus en plus sollicité. Les système telle que : __Chef__, __Puppet__ et __SaltStack__ utilisent ce mode , ceci a des avantages telle qu'avoir un serveur qui à l'ensemble de l'état des clients, cependant ce serveur est un autre maillon à gérer dans votre infrastructure.
 * **push** (l'application pousse l'information ) : ce mode fonctionne sur le principe qu'un système pousse l'information au client , généralement ce mode est sans agent. Si nous prenons l'exemple de __Ansible__ ce dernier utilisera __ssh__ ou __remote desktop__ pour pousser les instructions. Comme ces services sont déjà disponible pour faire l'administration du système, vous n'avez la d'autre service à gérer. La configuration de __Ansible__ peut être poussé d'un serveur centrale ou des postes administrateurs. Le problème de scalabilité n'est pas présent , cependant vous n'avez pas le serveur avec l'information de l'état.
 
 Si nous reprenons notre sujet **Terraform** ce dernier utilise le mode **push** il peut donc être initialiser depuis n'importe quelle poste. Pour le travaille en équipe il est fortement suggérer d'utiliser un lieu de stockage centralisé telle que S3 pour conserver les états des ressources . [How to manage terraform state](https://blog.gruntwork.io/how-to-manage-terraform-state-28f5697e68fa) 
