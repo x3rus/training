@@ -768,6 +768,116 @@ Nous allons créer le fichier : [site.yml](./terraManifest/02-use-case/site.yml)
 
 Grossomodo on retrouve exactement les mêmes chose que pour la base de donnée , le nom du rôle est différent .
 
+#### Modification du manifeste terraform remote-exec
+
+Bien entendu, nous devrons appliquer la même recette pour que pour les instances de serveurs de base de données, si nous désirons être en mesure d'utiliser **ansible**. Vous vous rappeler quand nous avions voulu utiliser **ansible** python n'était pas présent , nous allons donc mettre la même instruction **remote-exec** afin d'avoir python de présent.
+
+```
+    provisioner "remote-exec" {
+        # Install Python for Ansible
+         inline = ["sudo apt-get update && sudo apt-get -y install python "]
+
+        connection {
+            type        = "ssh"
+            user        = "ubuntu"
+            private_key = "${file("ssh-keys/ansible-user")}"
+        }
+    }
+
+```
+
+Version du fichier avec la modification : [02-use-case.tf](https://github.com/x3rus/training/blob/2480e1241e546ca5f3545caf520caa18019a1a29/terraform/terraManifest/02-use-case/02-use-case.tf).
+
 #### Test d'utilisation de ansible 
 
-TODO 
+La phase de validation sera de démarrer une instance EC2 et d'exécuter notre rôle ansible dessus .
+Ceci va nous permettre de corriger la définition de notre rôle ansible s'il y a le moindre problème , sans avoir l'ensemble du temps requis pour démarrer et détruire l'instance EC2 ! 
+
+```
+$ terraform apply --target=aws_instance.web-terra
+[...]
+  vpc_security_group_ids.#:                  "" => "<computed>"              
+aws_instance.web-terra: Still creating... (10s elapsed)                                                                
+aws_instance.web-terra: Still creating... (20s elapsed)                                                                                                      
+aws_instance.web-terra: Still creating... (30s elapsed)                                   
+aws_instance.web-terra: Provisioning with 'remote-exec'...                                                               
+aws_instance.web-terra (remote-exec): Connecting to remote host via SSH...                                                    
+aws_instance.web-terra (remote-exec):   Host: 34.211.213.77                                                                                                  
+aws_instance.web-terra (remote-exec):   User: ubuntu                                                                         
+aws_instance.web-terra (remote-exec):   Password: false
+[...]
+aws_instance.web-terra: Creation complete after 1m14s (ID: i-0a191e4525e7736d5)
+
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+
+$ ansible-playbook -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no' -i '34.211.213.77,' --private-key ssh-keys/ansible-user -T 300  --extra-="mysqlContHost=172.31.50.2 mysqlContUser=contact_user mysqlContPass=le_mot_pass mysqlContDB=contact  mysqlPiHost=172.30.50.4 mysqlPiUser=pi_user mysqlPiPass=lautre_passe mysqlPiDB=showpi" site.yml
+$ ansible-playbook -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no' -i '34.211.213.77,' --private-key ssh-keys/ansible-user -T 300  --extra-="mysqlContHost=172.31.50.2 mysqlContUser=contact_user mysqlContPass=le_mot_pass mysqlContDB=contact  mysqlPiHost=172.30.50.4 mysqlPiUser=pi_user mysqlPiPass=lautre_passe mysqlPiDB=showpi" site.yml
+
+PLAY [all] ***************************************************************
+
+TASK [Gathering Facts] ***************************************
+ok: [34.211.213.77]
+
+TASK [apache-php-example : install apache]
+[...]
+PLAY RECAP **************************************************
+34.211.213.77              : ok=8    changed=7    unreachable=0    failed=0  
+
+```
+
+Donc nous avons appliquer notre configuration ansible avec succès nous allons pouvoir établir une connexion ssh et valider les fichiers de configurations 
+
+```
+$ ssh -l ubuntu -i ssh-keys/ansible-user 34.211.213.77
+
+ # configuration du site contact 
+ubuntu@ip-172-31-60-30:~$ head -30  /var/www/contacts/index.php 
+<?php
+$servername = "172.31.50.2" ;
+$username = "contact_user" ;
+$password = "le_mot_pass" ;
+$dbname = "contact" ;
+
+ # configuration du site showpi
+ubuntu@ip-172-31-60-30:~$ head -30  /var/www/showpi/index.php 
+<?php
+$servername = "172.30.50.4" ;
+$username = "pi_user" ;
+$password = "lautre_passe" ;
+$dbname = "showpi" ;
+
+ # meme chose pour la configuration apache
+
+ubuntu@ip-172-31-60-30:~$ cat /etc/apache2/sites-enabled/001-contact.conf  | grep -v '#'
+<VirtualHost *:80>
+        ServerName contacts.x3rus.com
+
+        ServerAdmin webmaster@localhost
+        DocumentRoot /var/www/contacts/
+
+
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+</VirtualHost>
+
+```
+
+
+## L'ensemble des pieces sont la il faut collé le tout
+
+Comme le titre l'indique nous avons tous les morceaux de disponible petit récapitulatif :
+
+1. Terraform : Création de l'ensemble du réseaux, firewall , et instance EC2 .
+2. Terraform : Configuration l'instance EC2 afin d'être en mesure d'utiliser Ansible.
+3. Ansible (BD) : Nous pouvons utiliser ansible pour faire la configuration de la base de donnée , avec une commande l'ensemble est configurer.
+    * un fichier est utiliser pour l'ensemble des variables de configuration : **vars/mysql.yml** a
+        * Nom base de donnée
+        * Nom utilisateur 
+        * Password
+4. Ansible (Apache) : Nous avons aussi l'ensemble de la configuration mais nous devons passer en argument l'ensemble des information :  
+        * Nom base de donnée
+        * Nom utilisateur 
+        * Password
+
+Notre defis ici est d'être en mesure de regrouper l'ensemble pour n'avoir qu'une commande qui faire tout , nous allons donc travailler sur la question des variables maintenant .
