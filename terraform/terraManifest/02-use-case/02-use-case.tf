@@ -5,6 +5,12 @@
 
 variable "aws_region" { default = "us-west-2" } # US-oregon
 
+ # var pour ansible
+variable "my_cont_user" {}
+variable "my_cont_pass" {}
+variable "my_pi_user" {}
+variable "my_pi_pass" {}
+
  # AWS SDK auth
 provider "aws" {
     region = "${var.aws_region}"

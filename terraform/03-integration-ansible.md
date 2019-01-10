@@ -872,12 +872,73 @@ Comme le titre l'indique nous avons tous les morceaux de disponible petit récap
 2. Terraform : Configuration l'instance EC2 afin d'être en mesure d'utiliser Ansible.
 3. Ansible (BD) : Nous pouvons utiliser ansible pour faire la configuration de la base de donnée , avec une commande l'ensemble est configurer.
     * un fichier est utiliser pour l'ensemble des variables de configuration : **vars/mysql.yml** a
-        * Nom base de donnée
-        * Nom utilisateur 
-        * Password
+        * Nom base de donnée : Contact ET showpi
+        * Nom utilisateur : Contact ET showpi
+        * Password : Contact ET showpi
 4. Ansible (Apache) : Nous avons aussi l'ensemble de la configuration mais nous devons passer en argument l'ensemble des information :  
-        * Nom base de donnée
-        * Nom utilisateur 
-        * Password
+        * Nom base de donnée : Contact ET showpi
+        * Nom utilisateur : Contact ET showpi
+        * Password: Contact ET showpi
+        * Adresse IP interne ( privé ) du serveur de base de donnée :  Contact ET showpi
 
 Notre defis ici est d'être en mesure de regrouper l'ensemble pour n'avoir qu'une commande qui faire tout , nous allons donc travailler sur la question des variables maintenant .
+
+Telle que mentionné je veux n'avoir qu'une commande et mon orchestrateur est Terragform. Ce fut mon raisonnement, quand je me suis attaqué au problème. 
+J'ai donc fait en sorte que terraform est l'information de l'ensemble des variables. J'aurais pu aussi faire mettre ansible comme point centrale, par contre je me afin d'être en mesure de transmettre l'information d'une ressource à l'autre que ce soit avec ansible ou une autre commande je n'a pas de limitation.
+
+Terraform offre plusieurs mécanisme de variable, [la documentation sur les variables](https://www.terraform.io/docs/configuration/variables.html) vous permettra d'explorer plus de chose que ce document. Vous pourrez lire qu'il y a plusieurs type de variable ( strings, Maps, list ,...) , dans la démonstration ici je ne vais utiliser que des strings.
+
+### Sortir l'information de ansible et le définir dans Terraform
+
+Telle que lister précédemment les variables que nous désirons gérer sont :
+
+* Le nom de l'utilisateur BD contact : my\_cont\_user
+* Le mot de passe de l'utilisateur BD contact : my\_cont\_pass 
+* Le nom de l'utilisateur BD pi : my\_pi\_user
+* Le mot de passe de l'utilisateur BD pi :  my\_pi\_pass 
+
+Actuellement l'information est présent dans le fichier  [var/mysql.yml](https://github.com/x3rus/training/blob/d8d6613fb5f474913d4eb936fe77dd65dc90001b/terraform/terraManifest/02-use-case/vars/mysql.yml#L9) .
+
+```
+mysql_users:
+  - name: "contact_user"
+    host: "%"
+    password: "Ze_password"
+    priv: "contact.*:ALL"
+  - name: "pi_user"
+    host: "%"
+    password: "un_autre_pass"
+    priv: "showpi.*:ALL"
+```
+
+#### Définir la / les variables dans Terraform 
+
+Nous allons définir ses variables dans le fichier, par défaut , de terraform [./terraform.tfvars]()
+
+```
+# Contact 
+my_cont_user = "contact_user"       
+my_cont_pass = "Ze_password"   
+
+# PI
+my_pi_user = "pi_user"          
+my_pi_pass = "un_autre_pass"
+```
+
+Ce fichier sera lu lors de chaque utilisation de terraform , **ATTENTION** on s'excite pas trop vite. J'ai eu la surprise de constater que pour utiliser la variable dans notre manifeste, nous devons "activer" la variable dans le manifeste . Je ne suis pas certain du terme approprié , ceci nous permettra de définir le type aussi , par défaut étant **strings**.
+
+Nous allons donc ajouter les lignes suivante à notre manifeste : 
+
+```
+ ########
+ # Vars #
+
+variable "aws_region" { default = "us-west-2" } # US-oregon
+
+ # var pour ansible
+variable "my_cont_user" {}
+variable "my_cont_pass" {}
+variable "my_pi_user" {}
+variable "my_pi_pass" {}
+
+```
