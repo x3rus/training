@@ -200,6 +200,10 @@ resource "aws_instance" "web-terra" {
         }
     }
 
+    provisioner "local-exec" {
+        command = "ansible-playbook -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no' -i '${self.public_ip},' --extra-=\"mysqlContHost=${aws_instance.db-terra.0.private_ip} mysqlContUser=${var.my_cont_user} mysqlContPass=${var.my_cont_pass} mysqlContDB=contact  mysqlPiHost=${aws_instance.db-terra.1.private_ip} mysqlPiUser=${var.my_pi_user} mysqlPiPass=${var.my_pi_pass} mysqlPiDB=showpi\" --private-key ssh-keys/ansible-user -T 300 site.yml"
+    }
+
 
 }
 
@@ -212,7 +216,7 @@ resource "aws_instance" "db-terra" {
     associate_public_ip_address = true
    
     # Create 2 instance of the database
-    count = 1
+    count = 2
 
     tags {
         Name = "db${count.index}-terra"
@@ -243,7 +247,7 @@ resource "aws_instance" "db-terra" {
     }
 
     provisioner "local-exec" {
-        command = "ansible-playbook -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no' -i '${self.public_ip},' --private-key ssh-keys/ansible-user -T 300 bd.yml"
+        command = "ansible-playbook -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no' -i '${self.public_ip},' --extra-=\"mysqlContUser=${var.my_cont_user} mysqlContPass=${var.my_cont_pass} mysqlPiUser=${var.my_pi_user} mysqlPiPass=${var.my_pi_pass}\" --private-key ssh-keys/ansible-user -T 300 bd.yml" 
     }                                                                                                                                                       
 
 }
