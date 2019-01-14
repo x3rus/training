@@ -7,11 +7,11 @@ mysql_databases:
     encoding: latin1
     collation: latin1_general_ci
 mysql_users:
-  - name: "contact_user"
+  - name: "{{ my_cont_user }}"
     host: "%"
-    password: "Ze_password"
+    password: "{{ my_cont_pass }}"
     priv: "contact.*:ALL"
-  - name: "pi_user"
+  - name: "{{ my_pi_user }}"
     host: "%"
-    password: "un_autre_pass"
+    password: "{{ my_pi_pass }}"
     priv: "showpi.*:ALL"
