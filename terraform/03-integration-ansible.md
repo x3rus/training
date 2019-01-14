@@ -911,16 +911,16 @@ mysql_users:
     priv: "showpi.*:ALL"
 ```
 
-#### Définir la / les variables dans Terraform 
+### Définir la / les variables dans Terraform 
 
-Nous allons définir ses variables dans le fichier, par défaut , de terraform [./terraform.tfvars]()
+Nous allons définir ses variables dans le fichier, par défaut , de terraform [./terraManifest/02-use-case/terraform.tfvars]()
 
 ```
-# Contact 
+ # Contact 
 my_cont_user = "contact_user"       
 my_cont_pass = "Ze_password"   
 
-# PI
+ # PI
 my_pi_user = "pi_user"          
 my_pi_pass = "un_autre_pass"
 ```
@@ -942,3 +942,58 @@ variable "my_pi_user" {}
 variable "my_pi_pass" {}
 
 ```
+
+Si vous ne les mettez pas ça ne fonctionnera pas , vous aurez une erreur mentionnant que vos variables n'existe pas.
+
+TODO mettre le lien avec le git commit : 7236f3a3aba452050eb8b603abde131d501403b3
+
+Donc petit récapitulatif  lors de l'utilisation de terraform :
+
+1. Le fichier terraform.tfvars sera lu
+2. Les variables seront disponible un fois le type associer , ceci est la section au début du manifeste
+
+
+### Modification de ansible afin d'utiliser les variables de terraform
+
+Bon ici, j'espère ne décevoir personne , mais comme il n'y avait que 6 variables au total j'ai pas réinventé la roue, j'ai capitalisé sur le mécanisme de passage de variable à ansible avec l'option **extra-** 
+
+Nous allons donc faire quelque modification dans le rôle mysql afin de variabiliser le fichier [mysql.yml](./terraManifest/02-use-case/vars/mysql.yml). 
+Voici le résultat : 
+
+```
+mysql_root_password: super_ultime_pass
+mysql_databases:
+  - name: contact
+    encoding: latin1
+    collation: latin1_general_ci
+  - name: showpi
+    encoding: latin1
+    collation: latin1_general_ci
+mysql_users:
+  - name: "{{ my_cont_user }}"
+    host: "%"
+    password: "{{ my_cont_pass }}"
+    priv: "contact.*:ALL"
+  - name: "{{ my_pi_user }}"
+    host: "%"
+    password: "{{ my_pi_pass }}"
+    priv: "showpi.*:ALL"
+```
+
+Pour rappel , le fichier du site web est déjà variabilisé, pour s'amuser le nom des variables n'est pas le même :)  :
+
+```
+<?php
+$servername = "{{ mysqlContHost }}" ;
+$username = "{{ mysqlContUser }}" ;
+$password = "{{ mysqlContPass }}" ;
+$dbname = "{{ mysqlContDB }}" ;
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+/
+```
+
+### Validation de l'ensemble 
+
+Il est temps de faire les testes et 
