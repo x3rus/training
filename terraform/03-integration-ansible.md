@@ -970,13 +970,13 @@ mysql_databases:
     encoding: latin1
     collation: latin1_general_ci
 mysql_users:
-  - name: "{{ my_cont_user }}"
+  - name: "{{ mysqlContUser }}"
     host: "%"
-    password: "{{ my_cont_pass }}"
+    password: "{{ mysqlContPass }}"
     priv: "contact.*:ALL"
-  - name: "{{ my_pi_user }}"
+  - name: "{{ mysqlPiUser }}"
     host: "%"
-    password: "{{ my_pi_pass }}"
+    password: "{{ mysqlPiPass }}"
     priv: "showpi.*:ALL"
 ```
 
@@ -994,6 +994,64 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 /
 ```
 
+Nous allons intégrer l'ensemble, pour la section de la base de donnée je vais définir la règle ansible comme suit :
+
+```
+    provisioner "local-exec" {
+        command = "ansible-playbook -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no' -i '${self.public_ip},' --extra-=\"mysqlContUser=${var.my_cont_user} mysqlContPass=${var.my_cont_pass} mysqlPiUser=${var.my_pi_user} mysqlPiPass=${var.my_pi_pass}\" --private-key ssh-keys/ansible-user -T 300 bd.yml" 
+    }                                                                                                                                                       
+```
+
+L'important est vraiment la section **extra** : 
+
+* --extra-=\" 
+    * mysqlContUser=\${var.my\_cont\_user} : passage en argument du nom de l'utilisateur pour l'accès à la base de donné contact **var.my\_cont\_user** est le nom de la variable dans terraform et **mysqlContUser** le nom de la variable pour ansible.
+    * mysqlContPass=\${var.my\_cont\_pass} : Même concept , mais pour le mot de passe de l'utilisateur contact.
+    * mysqlPiUser=\${var.my\_pi\_user}: Même concept , mais pour le nom de l'utilisateur showpi.
+    * mysqlPiPass=\${var.my\_pi\_pass}\": Même concept , mais pour le mot de passe de l'utilisateur showpi .
+
+TODO : FINALEMENT PAS BON COMMIT , prendre apres : 24c1e51e799d7704a28226f05d41c40487c4e243
+
+Maintenant un peu plus compliquer la partie pour le serveur web :
+
+```
+    provisioner "local-exec" {
+        command = "ansible-playbook -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no' -i '${self.public_ip},' --extra-=\"mysqlContHost=${aws_instance.db-terra.0.private_ip} mysqlContUser=${var.my_cont_user} mysqlContPass=${var.my_cont_pass} mysqlContDB=contact  mysqlPiHost=${aws_instance.db-terra.1.private_ip} mysqlPiUser=${var.my_pi_user} mysqlPiPass=${var.my_pi_pass} mysqlPiDB=showpi\" --private-key ssh-keys/ansible-user -T 300 site.yml"
+    }
+
+
+```
+
+L'important est vraiment la section **extra** : 
+
+* --extra-=\" 
+        * mysqlContHost=\${aws\_instance.db-terra.0.private\_ip} : L'adresse ip interne de la première instance (0) des BD , rappelez vous que les 2 bases de données sont configurer de manière totalement équivalente. Je veux utilise l'IP interne, car ce n'est QUE pour cette adresse IP que le firewall est ouvert.
+        * mysqlContUser=\${var.my\_cont\_user} : nom de l'utilisateur contact
+        * mysqlContPass=\${var.my\_cont\_pass} : mot de passe de l'utilisateur contact
+        * mysqlContDB=contact : Nom de la base de donnée contact qui est hard codé.
+        * mysqlPiHost=\${aws\_instance.db-terra.1.private\_ip} : L'adresse IP interne de la seconde instance de base de donnée (1) .
+        * mysqlPiUser=\${var.my\_pi\_user} : nom de l'utilisateur pour la base de donnée pi
+        * mysqlPiPass=\${var.my\_pi\_pass} : mot de passe pour la base de donnée pi
+        * mysqlPiDB=showpi\" : Le nom de la BD 
+
+
+
 ### Validation de l'ensemble 
 
-Il est temps de faire les testes et 
+Démarrons le vraie teste avec la validation :
+
+```
+$ terraform plan
+[ ... ]
+Plan: 4 to add, 0 to change, 0 to destroy.
+```
+
+N'ayant pas supprimer les ressources réseaux j'ai moins de choses à créer :D .
+
+C'est partie :
+
+```
+$ terraform apply
+```
+
+

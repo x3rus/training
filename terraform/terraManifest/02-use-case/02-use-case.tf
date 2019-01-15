@@ -191,7 +191,7 @@ resource "aws_instance" "web-terra" {
 
     provisioner "remote-exec" {
         # Install Python for Ansible
-         inline = ["sudo apt-get update && sudo apt-get -y install python "]
+         inline = ["sudo apt-get update && sudo apt-get -y dist-upgrade && sudo apt-get -y install python "]
 
         connection {
             type        = "ssh"
@@ -237,7 +237,7 @@ resource "aws_instance" "db-terra" {
 
     provisioner "remote-exec" {
         # Install Python for Ansible
-         inline = ["sudo apt-get update && sudo apt-get -y install python "]
+         inline = ["sudo apt-get update && sudo apt-get -y dist-upgrade && sudo apt-get -y install python "]
 
         connection {
             type        = "ssh"
