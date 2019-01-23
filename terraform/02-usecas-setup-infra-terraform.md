@@ -1,45 +1,45 @@
-# Description creation des ressources 
+# Description création des ressources 
 
-J'ai cherché quelle cas d'utilisation j'allais faire et comme nous allons utiliser AWS et que j'avais fait une présentation de AWS dans le passé j'ai pensé reprendre mon cas d'utilisation que j'avais fait manuellement. Ceci vous permettra aussi d'avoir la possibilité de voir la même opération en mode manuel. 
-Ceci n'est PAS un requis mais un plus tout simplement , voici les liens :
+J'ai cherché quel cas d'utilisation j'allais faire et comme nous allons utiliser AWS et que j'avais fait une présentation de AWS dans le passé j'ai pensé reprendre mon cas d'utilisation que j'avais fait manuellement. Ceci vous permettra aussi d'avoir la possibilité de voir la même opération en mode manuel. 
+Ceci n'est PAS un requis, mais un plus tout simplement , voici les liens :
 
 * Texte :
     * 
 * Vidéos (Playlist) :
 
-Je vais donc commencé par présenté le cas d'utilisation qui est presque pareille que la dernière fois mais avec un petit changement il n'y aura pas de docker dans la solution présenté ici. J'avais utilisé docker la dernière fois pour simplifier mon déploiement applicatif , cependant dans le cas d'utilisation ici comme je veux utiliser __Ansible__ je désire avoir plus de complexité que simplement transmettre un conteneur.
+Je vais donc commencer par présenter le cas d'utilisation qui est presque le même que la dernière fois, mais avec un petit changement il n'y aura pas de docker dans la solution présenté ici. J'avais utilisé docker, la dernière fois, pour simplifier mon déploiement applicatif. Avec ce nouveau cas d'utilisation, je veux utiliser __Ansible__. L'objectif est d'avoir plus de complexité que simplement transmettre un conteneur. Pas de panique, je vais couvrir un peu ansible :P.
 
 ## Présentation du cas d'utilisation
 
-Voici donc le cas d'utilisation qui sera mis en place , Nous allons mettre un serveur GNU/Linux avec apache qui sera configurer pour 2 site web (virtual host) :
+Voici donc le cas d'utilisation qui sera mis en place , nous allons mettre un serveur GNU/Linux avec apache qui sera configuré pour 2 sites web (virtual host) :
 
 * contacts.x3rus.com
 * showpi.x3rus.com
 
-Ces 2 sites web utilise des bases de données pour stocker leurs données. Nous allons donc créer 2 serveur GNU/Linux avec Mysql :
+Ces 2 sites web utilisent des bases de données. Nous allons donc créer 2 serveurs GNU/Linux avec Mysql :
 
 * 1 pour le site contacts.x3rus.com
 * 1 pour le site showpi.x3rus.com
 
 Donc nous aurons 3 instances EC2 GNU/Linux ! 
 
-Bien entendu, ces instances EC2 ont besoin d'une infrastructure autour , telle que les clé ssh pour être en mesure d'établir une connexion ; un réseau spécifique pour être en mesure d'isolé cette environnement des autres services et de rêgle de firewall afin de permettre la communication entre les services ainsi que l'exposition de services.
+Bien entendu, ces instances EC2 ont besoin d'une infrastructure autour , telle que les clés ssh pour être en mesure d'établir une connexion ; un réseau spécifique pour être en mesure d'isoler cet environnement des autres services et de règle de firewall afin de permettre la communication entre les services ainsi que l'exposition de services.
 
-Voici une représentation graphique de l'ensemble des pièces du puzzle qui seront mise en place  :
+Voici une représentation graphique de l'ensemble des pièces du puzzle qui seront mises en place  :
 
 ![](./imgs/architecture-overview-chaque-piece.png) 
 
-De plus voici une représentation du flux réseau :
+De plus, voici une représentation du flux réseau :
 
 ![](./imgs/architecture-overview-network-flow.png)
 
-Je vais prendre le temps de les expliquer lors de leur création , cependant je voulais mettre en évidence que nous allons faire la création de plusieurs élément dans AWS. Nous ne couvrirons pas pour cette partie la mise en place du Elastic Load Balancer ou l'auto scaling automatique . Peut-être plus tard l'avenir est pleine de surprise :P.
+Je vais prendre le temps de les expliquer lors de leur création , cependant je voulais mettre en évidence que nous allons faire la création de plusieurs éléments dans AWS.Malheureusement, nous ne couvrirons pas: la mise en place du Elastic Load Balancer ou l'auto scaling automatique . Peut-être plus tard l'avenir est plein de surprise :P.
 
-Dans la démonstration , je n'utilise QUE les images GNU/Linux vanille de Amazon , je ne fait pas une configuration spécifique pour mes services , l'ensemble de la configuration des instances EC2 seront réalisé avec Ansible. Je suis désolé, je n'ai pas encore pris le temps de faire une formation sur Ansible, je suis encore en période d'exploration :P , cependant nous dirons que ceci servira d'introduction :P . 
+Dans la démonstration , je n'utilise QUE les images GNU/Linux vanille de Amazon , je ne fais pas une configuration spécifique pour mes services , l'ensemble de la configuration des instances EC2 seront réalisés avec Ansible. Je suis désolé, je n'ai pas encore pris le temps de faire une formation sur Ansible, je suis encore en période d'exploration :P , cependant nous dirons que ceci servira d'introduction :P . 
 
 # Réalisation de la configuration 
 
-Je vais utiliser la même séquence que lors de mon apprentissage personnel, voici donc les étapes haut niveau que nous allons couvrir : 
+Je vais utiliser la même séquence que lors de mon apprentissage personnel, voici donc les étapes, haut niveau que nous allons couvrir : 
 
 1. Configuration de l'environnement 
     1. Installation de terraform
@@ -68,7 +68,7 @@ TODO : add picture here
 ## Configuration de l'environnement
 
 Pour ce faire j'ai simplement utilisé la page [Get Started de terraform](https://www.terraform.io/intro/getting-started/install.html) . 
-Rapidement je vais le couvrir, cependant s'il y a un problème vous référer à la page de terraform :
+Rapidement je vais le couvrir, cependant s'il y a un problème vous référez à la page de terraform :
 
 ### Installation de Terraform 
 
@@ -83,24 +83,24 @@ $ sudo mv terraform /usr/local/bin/
 $ terraform --version 
 ```
 
-Pour Arch Linux ( allez un peu de pub pour cette distro aussi :P , même si ça change RIEN. T'es pas meilleur sur arch que sur Ubuntu ou une autre distro !!)
+Pour Arch Linux ( allez un peu de pub pour cette distro aussi :P , même si ça ne change RIEN. Tu n’es pas meilleur sur arch que sur Ubuntu ou une autre distro !!)
 
 ```
-$ aurman terraform
+$ aurman -S terraform
 ```
 
-Dans les 2 cas, on va pas me dire que c'est compliqué !!
+Dans les 2 cas, on ne va pas me dire que c'est compliqué !!
 
-### Création d'un utilisateur dans AWS
+### Création d'un utilisateur dans AWSg
 
-Vous avez 2 Options , mais choisissez pas la première :P , c'est pas propre . Bon explication sans farce :
+Vous avez 2 Options , mais ne choisissez pas la première :P , ce n’est pas propre . Explication sans farce :
 
-* **Option 1** : Utilisation de la clé __ROOT__ super admin du compte ,  la problématique avec cette méthode est qu'il n'y a pas de possibilité de limité les permissions. De plus ceci offre l'accès à l'ensemble du compte. Vous n'aurez qu'une clé , alors que lors de l'utilisation en entreprise de terraform vous désirez offrir un compte par équipe ou utilisateur.
-* **Option 2** : Création d'un utilisateur associé qui sera utilisé par **Terraform** , ceci vous offre la possibilité de limité les permissions au ressources. De plus vous pouvez révoquez l'accès sans impacter les autres équipes qui utilise AWS avec terraform , car ceci est une clé unique par utilisateur. 
+* **Option 1** : Utilisation de la clé __ROOT__ super admin du compte ,  la problématique avec cette méthode est qu'il n'y a pas de possibilité de limiter les permissions. De plus ceci offre l'accès à l'ensemble du compte. Vous n'aurez qu'une clé , alors que lors de l'utilisation en entreprise de terraform vous désirez offrir un compte par équipe ou utilisateur.
+* **Option 2** : Création d'un utilisateur associé qui sera utilisé par **Terraform** , ceci vous offre la possibilité de limiter les permissions aux ressources. De plus vous pouvez révoquer l'accès sans impacter les autres équipes qui utilise AWS avec terraform , car ceci est une clé unique par utilisateur. 
 
-Nous allons prendre l'option 2 , car elle est plus propre , pour se faire allé sur le [gestionnaire d'utilisateur IAM](https://console.aws.amazon.com/iam/home?region=us-west-2#/users). 
+Nous allons prendre l'option 2 , car elle est plus propre , pour se faire aller sur le [gestionnaire d'utilisateur IAM](https://console.aws.amazon.com/iam/home?region=us-west-2#/users). 
 
-Voici le résultat pour moi j'ai déjà 1 utilisateur :
+Voici le résultat pour moi j'ai déjà,  1 utilisateur :
 
 ![](./imgs/04-iam-user-view.png)
 
@@ -108,8 +108,8 @@ Je clique donc sur le bouton **Add user** en haut. Je définie le nom de l'utili
 
 ![](./imgs/05-create-iam-user-api.png) 
 
-Pour les besoins de la présentation je vais définir l'utilisateur comme administrateur afin de me simplifier la vie en terme de permission. Nous allons explorer les possibilités de **terraform** , nous voulons donc gérer les problèmes de ce système pas avoir en plus des problèmes de permission. Bien entendu une fois la recette trouvé je vous invite à explorer aussi le système IAM de AWS. 
-Honnêtement je pense que j'ai créer ce groupe , si c'est le cas j'ajoute aussi une copie d'écran des permission du groupe. 
+Pour les besoins de la présentation, je vais définir l'utilisateur comme administrateur afin de me simplifier la vie en termes de permission. Nous allons explorer les possibilités de **terraform** , nous voulons donc voir les problèmes de ce système, pas avoir en plus des problèmes de permission. Bien entendu une fois la recette trouvée je vous invite à explorer aussi le système IAM de AWS. 
+Honnêtement je pense que j'ai créé ce groupe , si c'est le cas j'ajoute aussi une copie d'écran des permissions du groupe. 
 
 ![](./imgs/05-create-iam-user-set-group.png)
 
@@ -119,7 +119,7 @@ Vous pouvez valider le résultat :
 
 ![](./imgs/05-create-iam-user-review.png)
 
-Et Voilà le résultat :
+Et voilà le résultat : ICI ICI ICI ORTHOGRAPHE
 
 ![](./imgs/05-create-iam-user-resultat.png)
 
@@ -1319,7 +1319,7 @@ Bon, je m'excuse avec tous ça j'ai complètement oublié de faire la démonstra
 
 ```
 $ terraform plan 
-[ ... ]
+[ ... ]
 Plan: 12 to add, 0 to change, 0 to destroy.
 ```
 
