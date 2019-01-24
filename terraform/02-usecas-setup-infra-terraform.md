@@ -1077,22 +1077,21 @@ Je vous invite à cliquer sur les liens de la documentation pour la [ressource](
 
 Donc, regardons les paramètres de cette définition :
 
-ICI ICI ICI ORTHOGRAPHE
 
 * **most\_recent** : nous indiquons que nous désirons la définition la plus récente
-* **filter** basée sur le nom , ubuntu-xenial-16.04-amd64-server : ceci nous permet de choisir le type de système que nous désirons avoir . Ok bon honnêtement cette partie je l'ai pris sur le net :P ( https://www.andreagrandi.it/2017/08/25/getting-latest-ubuntu-ami-with-terraform/ )
+* **filter** basée sur le nom , ubuntu-xenial-16.04-amd64-server : ceci nous permet de choisir le type de système que nous désirons avoir . Ok , honnêtement cette partie, je l'ai pris sur le net :P ( https://www.andreagrandi.it/2017/08/25/getting-latest-ubuntu-ami-with-terraform/ )
 
-Mais bon ceci nous permet surtout de voir et comprendre , maintenant si nous allons la [console AWS](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Images:visibility=public-images;search=ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-;sort=name) , nous sommes en mesure de retrouver l'information : 
+Ceci nous permet surtout de voir et comprendre , maintenant si nous allons la [console AWS](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Images:visibility=public-images;search=ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-;sort=name) , nous sommes en mesure de retrouver l'information : 
 
 ![](./imgs/10-aws-ami-review.png)
 
-J'ai hésité, mais je vais insisté encore sur le fichier d'état qui vous permet de connaître les autres paramêtre disponible pour les filtres.
+J'ai hésité, mais je vais insister encore sur le fichier d'état qui vous permet de connaître les autres paramètres disponibles pour les filtres.
 
 
 #### Création de l'instance EC2 web
 
 Nous avons donc notre image de référence, nous allons poursuivre avec la création de notre première instance EC2. 
-Nous allons schématiser l'opération que nous allons réaliser , car dans la prochaine étape nous allons couplé plusieurs configuration , voici donc une représentation graphique du résultat suite à la configuration.
+Nous allons schématiser l'opération que nous allons réaliser , car dans la prochaine étape nous allons coupler plusieurs configurations , voici donc une représentation graphique du résultat suite à la configuration.
 
 ![](./imgs/architecture-overview-Network-overview-web-ec2.png)
 
@@ -1103,7 +1102,7 @@ Donc nous avons :
 * Nous avons notre instance EC2 web nommé **web-terra** ( gros manque d'inspiration :P ) 
 * Nous avons les règles de firewall assigné à cette instance allow_web +  allow_remote_admin + allow_external_communication
 
-Nous avons fait la création de l'ensemble des dépendances préalablement, la création de l'instance sera le moment joindre l'ensemble des morceaux.
+Nous avons fait la création de l'ensemble des dépendances préalablement, la création de l'instance sera le moment  de joindre l'ensemble des morceaux.
 Voici la définition de la création de l'instance :
 
 ```
@@ -1136,31 +1135,31 @@ resource "aws_instance" "web-terra" {
 ```
 
 
-1. **resource "aws\_instance" "web-terra"** :  Nous définissons une ressource [aws_instance](https://www.terraform.io/docs/providers/aws/d/instances.html) , nous assignons le nom **web-terra** à cette ressource .
-2. **ami = "\${data.aws\_ami.ubuntu.id}"** : Suite à l'extraction des informations sur l'AMI nous avons l'information de cette dernière dans la variable **data.aws\_ami.ubuntu** , comme la variable ami désire avoir un ID nous allons extraire la propriété **ID**. L'instance EC2 utilisera cette AMI comme point de départ.
+1. **resource "aws\_instance" "web-terra"** :  nous définissons une ressource [aws_instance](https://www.terraform.io/docs/providers/aws/d/instances.html) , nous assignons le nom **web-terra** à cette ressource .
+2. **ami = "\${data.aws\_ami.ubuntu.id}"** : Suite à l'extraction des informations sur l'AMI nous avons l'information de cette dernière, dans la variable **data.aws\_ami.ubuntu** , comme la variable ami doit être un ID, nous allons extraire la propriété **ID**. L'instance EC2 utilisera cette AMI comme point de départ.
 3. **instance_type = "t2.micro"** : Le type d'instance AWS que nous désirons , ceci définie le CPU , la mémoire, etc.
-4. **key_name = "\${aws\_key\_pair.ansible.key\_name}"** : Nous assignons la clé ssh de ansible préalablement créée dans AWS. Ceci nous permettra dans un second temps de faire la configuration de notre instance avec Ansible ou de simplement nous y connecter pour faire l'administration.
-5. **subnet_id = "\${aws\_subnet.web-public-2a.id}"** : Nous assignons cette instance EC2 à un subnet , encore une fois le paramètre demande un ID , mais comme nous avons déjà la ressource en mémoire grâce à la création préalable. Nous prenons donc la ressource **aws\_subnet** avec le nom **web-public-2a** et le **id**. Une fois le concept saisie ça semble évident , mais bon ça prend un peu de temps.
-6. **associate\_public\_ip\_address = true**  : J'assigne une adresse IP publique dynamiquement alloué par AWS.
-7. **tags** : L'utilisation des tags est très important dans AWS ceci nous permet de regrouper des services , permet une facturation interne plus simple suite au ressource créés , etc . Dans la présentation ci-dessus je crée des tags arbitraire , telle que scope ou role.
-8. **security\_groups** : Nous avons préalablement créer des sécurity groupe (firewall) , encore une fois nous devons utiliser les ID pour faire l'association , comme vous pouvez le constater j'assigne 3 security groups à l'instance pour couvrir l'ensemble des besoin de la machines.
+4. **key_name = "\${aws\_key\_pair.ansible.key\_name}"** : Nous assignons la clé, ssh de ansible préalablement créée dans AWS. Ceci nous permettra dans un second temps de faire la configuration de notre instance avec Ansible ou de simplement nous y connecter pour faire l'administration.
+5. **subnet_id = "\${aws\_subnet.web-public-2a.id}"** : Nous assignons cette instance EC2 à un subnet , encore une fois le paramètre demande un ID , mais comme nous avons déjà la ressource en mémoire grâce à la création préalable. Nous prenons donc la ressource **aws\_subnet** avec le nom **web-public-2a** et le **id**. Une fois le concept saisi ça semble évident , mais bon ça prend un peu de temps.
+6. **associate\_public\_ip\_address = true**  : J'assigne une adresse IP publique dynamiquement allouée par AWS.
+7. **tags** : L'utilisation des tags est très important dans AWS, ceci nous permet de regrouper des services , permet une facturation interne plus simple selon les ressources créées , etc . Dans la présentation ci-dessus je crée des tags arbitraires , telle que le scope ou le rôle.
+8. **security\_groups** : Nous avons préalablement créé des sécurity groupe (firewall) , encore une fois nous devons utiliser les ID pour faire l'association , comme vous pouvez le constater j'assigne 3 security groups à l'instance pour couvrir l'ensemble des besoins de la machine.
 9. **root\_block\_device** : Cette section nous permet de définir la taille du disque dur associé à l'instance, comme vous pouvez le voir j'ai mis le flag **delete\_on\_termination** afin de détruire le disque dur une fois la ressource détruite.
 
 
-Vous voyez l'instance à l'ensemble de la configuration associer : Subnet , AMI , Firewall , clé ssh . Le subnet fut déjà associé au VPC préalablement.
+Vous voyez l'instance et l'ensemble de la configuration associer : Subnet , AMI , Firewall , clé ssh . (Le subnet fut déjà associé au VPC préalablement.)
 
-J'attends déjà les mauvaise langue dire : 
+J'attends déjà les mauvaises langues dirent  : 
 
-> " oui c'est bien beau, mais l'ensemble des ressources sont crée dans le même manifeste facile de faire l'association, la partie réseau est géré par une autre équipe dans mon cas... bla bla bla :P ".
+> " oui c'est bien beau, mais l'ensemble des ressources sont créée dans le même manifeste facile de faire l'association. Dans notre cas  la partie réseau est gérée par une autre équipe ... bla bla bla :P ".
 
 Ça bourdonne dans ma tête :P , je rigole , bien entendu ceci est une question ou situation légitime. 
 
-Donc prenons le temps de répondre ou d'adresser cette problématique, pour ce faire j'aimerai vous rappeler que l'AMI ne fut PAS crée dans le manifeste. Pour l'ensemble des entités créer à l'exterieur du manifeste, vous aurez 2 options :
+Donc, prenons le temps de répondre ou d'adresser cette problématique, pour ce faire, j'aimerais vous rappeler que l'AMI ne fut PAS créé dans le manifeste. Pour l'ensemble des entités créées à l'extérieur du manifeste, vous aurez 2 options :
 
-* Extraire l'ID manuellement et l'entrer dans votre manifeste , pratique pour faire des testes , mais la solution n'est pas idéal. En effet, même si la ressource porte le même nom dans l'ensemble des régions, elle aura un ID distinct résultat votre manifeste ne pourra être associé qu'a une région. De plus s'il y a suppression et recréation de la ressource même si elle a le même nom l'ID sera changé. Résultat évident votre manifeste ne fonctionnera plus.
-* Utilisé le système **data** comme nous l'avons fait pour extraire l'AMI. Avec cette méthode bien entendu vous aurez besoin d'avoir un identifier afin de choisir la bonne ressource , que ce soit un nom , un tag , ... Par contre vous aurez beaucoup plus de flexibilité , car vous pourrez l'utiliser peut importe la région et s'il y a suppression et recréation de la ressource ceci fonctionnera encore.
+* Extraire l'ID manuellement et l'entrer dans votre manifeste , pratique pour faire des tests , mais la solution n'est pas idéal. En effet, même si la ressource porte le même nom dans l'ensemble des régions, elle aura un ID distinct, résultat votre manifeste ne pourra être associé qu'a une région. De plus, s'il y a une suppression et une recréation de la ressource, même si elle a le même nom l'ID sera changé. Par conséquent, votre manifeste ne fonctionnera plus.
+* Utiliser le système **data,** comme nous l'avons fait pour extraire l'AMI. Avec cette méthode bien entendu vous aurez besoin d'avoir un identifiant, afin de choisir la bonne ressource, que ce soit un nom , un tag ... Par contre vous aurez beaucoup plus de flexibilité , car vous pourrez utiliser votre manifeste peut importe la région et s'il y a suppression et recréation de la ressource ceci fonctionnera encore.
 
-Je pense que ma position est claire sur le choix de l'option :P , et je le rappel afin de vous aider faite la création d'une ressource bidon afin d'avoir un fichier d'état et constater les paramètres disponible. 
+Je pense que ma position est claire sur le choix de l'option :P , je le rappelle pour vous aider, faite la création d'une ressource bidon afin d'avoir un fichier d'état et constater les paramètres disponibles. 
 
 Réalisons la création de l'instance afin de voir le résultat :
 
@@ -1170,7 +1169,7 @@ $ terraform plan
 
 Résultat de la commande disponible dans le fichier [plan-network-creation-web-terra.plan](./terraManifest/02-use-case/plans/plan-network-creation-web-terra.plan)
 
-Si vous regardez le fichier vous constaterez que j'avais oublié de faire la suppréssion des configurations réseaux, donc il n'y a l'ajout QUE de l'instance ec2
+Si vous regardez le fichier, vous constaterez que j'avais oublié de faire la suppression des configurations réseau, donc il n'y a l'ajout QUE de l'instance ec2
 
 ```
 $ terraform apply 
@@ -1183,21 +1182,23 @@ aws_instance.web-terra: Creation complete after 35s (ID: i-0b16f40246a7998df)
 Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
 ```
 
-Vous pouvez visualiser le résultat à dans la console AWS [list ec2 instance](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Instances:sort=instanceId)
+Vous pouvez visualiser le résultat dans la console AWS [list ec2 instance](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Instances:sort=instanceId)
 
 ![](./imgs/10-aws-ec2-web-terra-creation-1.png)
 
-Ici nous avons aurons des coûts suite à la création je vais donc supprimer l'ensemble pour poursuivre la formation :
+Ici, nous aurons des coûts suite à la création, je vais donc supprimer l'ensemble pour poursuivre la formation :
 
 ```
 $ terraform destroy
 ```
 
-Fichier contenenant la définition complète : [02-use-case.tf](https://github.com/x3rus/training/blob/7eb6ece3567dc610aec1e4d00e0ec90f20deccc5/terraform/terraManifest/02-use-case/02-use-case.tf)
+TODO: Tag_terraforme
+
+Fichier contenant la définition complète : [02-use-case.tf](https://github.com/x3rus/training/blob/7eb6ece3567dc610aec1e4d00e0ec90f20deccc5/terraform/terraManifest/02-use-case/02-use-case.tf)
 
 #### Creation des instances EC2 BD
 
-Nous avons fait la création de l'instance web , nous allons pouvoir poursuivre avec la définition des instances BD . Pour le moment lors de la création de nos instances EC2 aucune configuration OS n'est réalisé. Nous allons voir cette partie dans un second temps avec ansible, je ne le couvre pas tous de suie car pour être en mesure de faire une configuration complète nous avons besoin d'avoir de  l'information des autres instances. Un des requis pour faire la configuration du serveur web est de savoir l'adresse IP des serveurs BD pour faire la connexion :P.
+Nous avons fait la création de l'instance web , nous allons pouvoir poursuivre avec la définition des instances BD . Pour le moment lors de la création de nos instances EC2 aucune configuration OS n'est réalisée. Nous allons voir cette partie dans un second temps avec ansible, je ne le couvre pas tous de suie car pour être en mesure de faire une configuration complète nous avons besoin d'avoir de  l'information des autres instances. Un des requis pour faire la configuration du serveur web est de savoir l'adresse IP des serveurs BD pour faire la connexion :P.
 
 Ce que nous désirons avoir :
 
