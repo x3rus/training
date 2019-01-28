@@ -384,9 +384,8 @@ resource "aws_instance" "db-terra" {
 } 
 ```
 
-ICI ICI ORTHOGRAPH
 
-J'ai fait l'explication de l'ensemble des parties j'espère avoir été assez claire pour l'ensemble . Je pense qu'il manque une information j'extrais l'information de l'instance EC2 afin d'avoir l'adresse IP publique de la machine avec la variable **self.public\_ip**. Avec cette méthode l'instruction ansible sera executé 2 fois , soit pour chacune des instances , si j'augmente la valeur de **count** se sera autant que cette valeur.
+J'ai fait l'explication de l'ensemble des parties, j'espère avoir été assez claire pour l'ensemble . Je pense qu'il manque une information, j'extrais l'information de l'instance EC2 afin d'avoir l'adresse IP publique de la machine avec la variable **self.public\_ip**. Avec cette méthode l'instruction ansible sera exécutée 2 fois , soit pour chacune des instances , si j'augmente la valeur de **count** se sera autant que cette valeur.
 
 Nous pouvons donc faire la création et voir le résultat : 
 
@@ -442,13 +441,15 @@ Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
 
 ```
 
+TODO : Add tag_terraform
+
 Vous pouvez avoir le fichier [02-use-case.tf](https://github.com/x3rus/training/blob/d8d6613fb5f474913d4eb936fe77dd65dc90001b/terraform/terraManifest/02-use-case/02-use-case.tf).
 
 L'ensemble du repository est disponible aussi : [repo de formation a ce point](https://github.com/x3rus/training/tree/d8d6613fb5f474913d4eb936fe77dd65dc90001b/terraform)
 
 #### Populer la base de données 
 
-Nous avons l'instance EC2 , nous l'avons complètement configurer avec Mysql , nos utilisateur , le mot de passe ... mais il manque quelques choses !! Les donnés dans la base de donnée. Pour ce faire j'ai créé un **rôle** ansible nommé : **mysql-setup-data-example** , je n'aurais assurément pas le prix de l'originalité :P. 
+Nous avons l'instance EC2 , configurée avec Mysql , nos utilisateurs , le mot de passe ... mais il manque quelque chose !! Les donnés dans la base de données. Pour ce faire, j'ai créé un **rôle** ansible nommé : **mysql-setup-data-example** , je n'aurais assurément pas le prix de l'originalité :P. 
 
 Prenons 2 minutes pour le consulter, ce n'est pas vraiment requis , mais au moins vous aurez la solution complète.
 
@@ -480,7 +481,7 @@ main.yml
 
 ```
 
-Donc beaucoup de répertoires pas beaucoup de fichier :P , en fait je pense même que GIT va les enlevés car c'est des répertoires vide, peut importe ceci est ce que j'ai sur ma machine.
+Donc beaucoup de répertoires, pas beaucoup de fichiers :P , en fait je pense même que GIT va les enlevés, car c'est des répertoires vides, peut importe ceci est-ce que j'ai sur ma machine.
 
 Sous le répertoire **files** nous avons les 2 fichiers dump avec le contenu de la base de donnés.
 Sous le répertoire **task** , nous avons les instructions à réaliser .
@@ -526,14 +527,14 @@ Il n'y a pas beaucoup de ligne je les mets :P
   loop : "{{ files_to_delete.files }}"
 ```
 
-Nous avons la copie du fichier SQL non-compressé pour la base de donné pi ainsi que le chargement.
-La deuxième partie est similaire cependant avec un fichier compressé pour la base de donnée de contact.
+Nous avons la copie du fichier SQL non compressé pour la base de données *PI*, ainsi que le chargement.
+La deuxième partie est similaire cependant avec un fichier compressé pour la base de données de *contact*.
 
-Par la suite je fais une recherche des fichiers présent dans le répertoire /tmp avec le pattern sql , avec cette liste je fait le ménage en supprimant les fichiers. 
+Par la suite, je fais une recherche des fichiers présents dans le répertoire /tmp avec le pattern sql , avec cette liste je fais le ménage en supprimant les fichiers. 
 
-C'est pas plus compliqué que ça , ok on va être réaliste je suis pas encore un expert ansible ça m'a pris un peu de temps surtout la partie de cleanup , mais faut pas ce décourager :D.
+Ce n’est pas plus compliqué que ça , OK on va être réaliste, je ne suis pas encore un expert ansible, ça m'a pris un peu de temps, surtout la partie de cleanup , mais faut pas se décourager :D.
 
-Maintenant l'intégration , dans l'ensemble de la chaine , mettons le après la création de la base de données : bd.yml
+Maintenant l'intégration , dans l'ensemble de la chaine , mettons-le après la création de la base de données : bd.yml
 
 ```
  ---
@@ -547,23 +548,25 @@ Maintenant l'intégration , dans l'ensemble de la chaine , mettons le après la 
     - { role: mysql-setup-data-example }
 ```
 
+TODO : Tag_terraform
+
 Et voilà en plus de la configuration nous aurons des données dans la base de données.
 
-L'ensemble du repository est disponible aussi : [repo de formation a ce point](https://github.com/x3rus/training/tree/9a52d1698abdf9a07e8f5f83cb1c06ffc055e87b/terraform)
+L'ensemble du repository est disponible aussi : [repo de formation à ce point](https://github.com/x3rus/training/tree/9a52d1698abdf9a07e8f5f83cb1c06ffc055e87b/terraform)
 
 
 ## Provisionnement du serveur web
 
-Nous avons la base de donnée, configurer , nous allons pouvoir passer au serveur web. Pour rappel le serveur web aura , 2 site web :
+Nous avons la base de données, configurer , nous allons pouvoir passer au serveur web. Pour rappel le serveur web aura , 2 sites web :
 
 * contacts.x3rus.com
 * showpi.x3rus.com
 
-Ce sont des sites web écrit en php , c'était le plus simple et rapide. Chacun des sites web établie une connexion mysql avec un nom d'utilisateur et mot de passe vers 1 serveur de base de donnée. En d'autre mot, le site web contact établira une connexion au serveur de base de donnée db-terra.0 et le site web showpi établira ça connexion sur le serveur mysql db-terra.1 . 
+Ce sont des sites web écrits en php , c'était le plus simple et rapide. Chacun des sites web établit une connexion mysql avec un nom d'utilisateur et mot de passe vers 1 serveur de base de données. En d'autres mots, le site web contact établira une connexion au serveur de base de donnée db-terra.0 et le site web showpi établira sa connexion sur le serveur mysql db-terra.1 . 
 
 ### Explication du rôle ansible
 
-Donc le nom du rôle , attention roulement de temboure pour l'originalité :P , **apache-php-example**. Regardons le contenue : 
+Donc le nom du rôle , attention roulement de tambour pour l'originalité :P , **apache-php-example**. Regardons le contenue : 
 
 ```
 $ cd terraManifest/02-use-case/roles/apache-php-example
@@ -596,17 +599,17 @@ inventory  test.yml
 main.yml
 ```
 
-J'ai utilisé un script pour la génération de ce module , il y a un peu plus de fichier et certains de ces fichiers ne furent pas éditer pour avoir la bonne information ... ho well :P .
+J'ai utilisé un script pour la génération de ce module , il y a un peu plus de fichiers et certains de ces fichiers ne furent pas édités pour avoir la bonne information ... ho well :P .
 
 Nous allons nous concentrer sur quelques fichiers :
 
-* **./tasks/main.yml** : ceci contient les instructions ansible qui doivent être réaisées.
+* **./tasks/main.yml** : ceci contient les instructions ansible qui doivent être réalisées.
 * **./files/001-contact.conf et ./files/001-showpi.conf** : Les fichiers de la configuration apache.
 * **./templates/contact-index.php.j2 et ./templates/showpi-index.php.j2** : Les fichiers php du site web.
 
 #### Tâche du rôle
 
-Les opérations de configuration de l'instance via ansible est relativement simple , l'ensemble est définie dans le fichier [tasks/main.yml](./terraManifest/02-use-case/roles/apache-php-example/tasks/main.yml)
+Les opérations de configuration de l'instance via ansible est relativement simples , l'ensemble est défini dans le fichier [tasks/main.yml](./terraManifest/02-use-case/roles/apache-php-example/tasks/main.yml)
 
 Nous avons l'installation de l'ensemble des packages (apache2,libapache2-mod-php,...) en utilisant apt-get.
 
@@ -624,7 +627,7 @@ Nous avons l'installation de l'ensemble des packages (apache2,libapache2-mod-php
 
 ```
 
-La création du répertoire où les fichiers des sites web seront installé :
+La création du répertoire où les fichiers des sites web seront installés :
 
 ```
 - name : Web sites directory
@@ -668,15 +671,15 @@ Mise en place du fichier de configuration pour apache et redémarrage du service
     - restart apache
 ```
 
-L'ensemble est relativement claire , cependat la partie template demande plus d'explication donc continuons avec ça.
+L'ensemble est relativement clair , cependant la partie template demande plus d'explication, donc continuons avec ça.
 
 
 #### Introduction des variables avec ansible
 
-Vous pouvez déjà conster qu'il y des fichiers sous le répertoire **files** et **templates** , les fichiers sous **files** seront installés telle quelle . Dans le cas des fichiers sous **templates** , ce sont des fichiers de type [Jinja2](http://jinja.pocoo.org/docs/2.10/) donc ils seront interprétés et le contenu de variable seront substitué afin de générer le fichier final.
+Vous pouvez déjà conster qu'il y des fichiers sous le répertoire **files** et **templates** , les fichiers sous **files** seront installés tels quels . Dans le cas des fichiers sous **templates** , ce sont des fichiers de type [Jinja2,](http://jinja.pocoo.org/docs/2.10/) donc ils seront interprétés et les  variables seront substituées afin de générer le fichier final.
 
-Woww mais pourquoi des variables me direz vous ?
-Pour répondre à la question regardons le fichier :
+Wow, mais pourquoi des variables me direz vous ?
+Pour répondre à la question, regardons le fichier :
 
 ```
 <?php
@@ -707,18 +710,18 @@ $conn->close();
 ?> 
 ```
 
-Le site doit être en mesure d'établir une connexion mysql au serveur de base de donnée , donc il a besoin :
+Le site doit être en mesure d'établir une connexion mysql au serveur de base de données , dont il a besoin :
 
 * **\$servername = "{{ mysqlContHost }}" ;** : D'un nom de serveur ou la connexion doit être initialisé
 * **\$username = "{{ mysqlContUser }}" ;** : D'un nom d'utilisateur pour la connexion
 * **\$password = "{{ mysqlContPass }}" ;** : D'un mot de passe  associé à l'utilisateur
 * **\$dbname = "{{ mysqlContDB }}" ;**  : Du nom de la base de donnée 
 
-Nous pourrions définir facilement le nom de la base de donnée ainsi que les informations d'authentification , cependant ceci sera plus compliqué pour l'adresse IP du serveur de base de donné, car ceci est des adresses ip dynamique. 
+Nous pourrions définir facilement le nom de la base de données ainsi que les informations d'authentification , cependant ceci sera plus compliqué pour l'adresse IP du serveur de base de données, car ceci est des adresses IP dynamiques. 
 
-Si vous vous dites, mais pourquoi nous n'avons pas fait la même choses pour la base de donnée ? Nous allons le faire, je voulais conserver avoir une explication simple pour débuter, nous avions déjà l'intégration terraforme ET ansible, je me suis dit que ce serait plus fluide dans ajouter un nombre significatif de variable :P.
+Si vous vous dites, mais pourquoi  n'avons nous  pas fait la même chose pour la base de données ? Nous allons le faire, je voulais avoir une explication simple pour débuter, nous avions déjà l'intégration terraforme ET ansible, je me suis dit que ce serait plus fluide sans ajouter un nombre significatif de variables :P.
 
-Si nous prenons le fichier du site web __showpi__ nous aurons d'autre variable :
+Si nous prenons le fichier du site web __showpi__ nous aurons d'autres variables :
 
 ```
 $servername = "{{ mysqlPiHost }}" ;
@@ -740,10 +743,10 @@ Donc au total 8 variables :
     * mysqlPiPass
     * mysqlPiDB 
 
-Afin de définir ces variables nous allons voir 2 mécanisme :
+Afin de définir ces variables, nous allons voir 2 mécanismes :
 
-* La définition de ces dernières dans une variables , simplifiant la gestion et l'évolution . Ceci permet d'avoir une traçabilité via votre contrôleur de révision (svn , git , ... )
-* La définition sur la ligne de commande , très pratique pour la phase de validation  ou des valeurs dont nous n'avons pas l'information initialisement telle que l'adresse IP du serveur de base de donnée :D.
+* La définition de ces dernières dans une variable , simplifiant la gestion et l'évolution . Ceci permet d'avoir une traçabilité via votre contrôleur de révision (svn , git , ... )
+* La définition sur la ligne de commande est très pratique pour la phase de validation ou pour les valeurs dont nous n'avons pas l'information au démarrage,  telle que l'adresse IP du serveur de base de données :D.
 
 Voici l'argument que nous allons utiliser lors de notre premier test , via la ligne de commande : 
 
@@ -768,9 +771,9 @@ Nous allons créer le fichier : [site.yml](./terraManifest/02-use-case/site.yml)
     - apache-php-example
 ```
 
-Grossomodo on retrouve exactement les mêmes chose que pour la base de donnée , le nom du rôle est différent .
+Grossomodo, on retrouve exactement les mêmes choses que pour la base de données , le nom du rôle est différent .
 
-#### Modification du manifeste terraform remote-exec
+#### Modification du manifest terraform remote-exec
 
 Bien entendu, nous devrons appliquer la même recette pour que pour les instances de serveurs de base de données, si nous désirons être en mesure d'utiliser **ansible**. Vous vous rappeler quand nous avions voulu utiliser **ansible** python n'était pas présent , nous allons donc mettre la même instruction **remote-exec** afin d'avoir python de présent.
 
@@ -827,7 +830,7 @@ PLAY RECAP **************************************************
 
 ```
 
-Donc nous avons appliquer notre configuration ansible avec succès nous allons pouvoir établir une connexion ssh et valider les fichiers de configurations 
+Donc nous avons appliqué notre configuration ansible avec succès, nous allons pouvoir établir une connexion ssh et valider les fichiers de configurations 
 
 ```
 $ ssh -l ubuntu -i ssh-keys/ansible-user 34.211.213.77
@@ -848,7 +851,7 @@ $username = "pi_user" ;
 $password = "lautre_passe" ;
 $dbname = "showpi" ;
 
- # meme chose pour la configuration apache
+ # même chose pour la configuration apache
 
 ubuntu@ip-172-31-60-30:~$ cat /etc/apache2/sites-enabled/001-contact.conf  | grep -v '#'
 <VirtualHost *:80>
@@ -866,20 +869,22 @@ ubuntu@ip-172-31-60-30:~$ cat /etc/apache2/sites-enabled/001-contact.conf  | gre
 ```
 
 
-## L'ensemble des pieces sont la il faut collé le tout
+## L'ensemble des pièces sont la il faut collé le tout
 
-Comme le titre l'indique nous avons tous les morceaux de disponible petit récapitulatif :
+Comme le titre l'indique, nous avons tous les morceaux de disponible petit récapitulatif :
 
 1. Terraform : Création de l'ensemble du réseaux, firewall , et instance EC2 .
 2. Terraform : Configuration l'instance EC2 afin d'être en mesure d'utiliser Ansible.
-3. Ansible (BD) : Nous pouvons utiliser ansible pour faire la configuration de la base de donnée , avec une commande l'ensemble est configurer.
-    * un fichier est utiliser pour l'ensemble des variables de configuration : **vars/mysql.yml** a
-        * Nom base de donnée
+3. Ansible (BD) : Nous pouvons utiliser ansible pour faire la configuration de la base de données , avec une commande l'ensemble est configuré.
+    * un fichier est utilisé pour l'ensemble des variables de configuration : **vars/mysql.yml** a
+        * Nom base de données
         * Nom utilisateur 
         * Password
-4. Ansible (Apache) : Nous avons aussi l'ensemble de la configuration, mais nous devons passer en argument l'ensemble des information :  
-        * Nom base de donnée
+4. Ansible (Apache) : Nous avons aussi l'ensemble de la configuration, mais nous devons passer en argument l'ensemble des informations :  
+        * Nom base de données
         * Nom utilisateur 
         * Password
 
-Notre defis ici est d'être en mesure de regrouper l'ensemble pour n'avoir qu'une commande qui faire tout , nous allons donc travailler sur la question des variables maintenant .
+Notre défi ici est d'être en mesure de regrouper l'ensemble pour n'avoir qu'une commande, qui faire tout. Nous allons donc travailler sur la question des variables maintenant .
+
+ICI Orthographe
