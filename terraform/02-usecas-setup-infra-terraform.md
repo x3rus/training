@@ -1091,7 +1091,7 @@ J'ai hésité, mais je vais insister encore sur le fichier d'état qui vous perm
 #### Création de l'instance EC2 web
 
 Nous avons donc notre image de référence, nous allons poursuivre avec la création de notre première instance EC2. 
-Nous allons schématiser l'opération que nous allons réaliser , car dans la prochaine étape nous allons coupler plusieurs configurations , voici donc une représentation graphique du résultat suite à la configuration.
+Nous allons schématiser l'opération que nous allons réaliser , car dans la prochaine étape nous allons coupler plusieurs configurations , voici donc une représentation graphique du résultat, suite à la configuration.
 
 ![](./imgs/architecture-overview-Network-overview-web-ec2.png)
 
@@ -1198,15 +1198,15 @@ Fichier contenant la définition complète : [02-use-case.tf](https://github.com
 
 #### Creation des instances EC2 BD
 
-Nous avons fait la création de l'instance web , nous allons pouvoir poursuivre avec la définition des instances BD . Pour le moment lors de la création de nos instances EC2 aucune configuration OS n'est réalisée. Nous allons voir cette partie dans un second temps avec ansible, je ne le couvre pas tous de suie car pour être en mesure de faire une configuration complète nous avons besoin d'avoir de  l'information des autres instances. Un des requis pour faire la configuration du serveur web est de savoir l'adresse IP des serveurs BD pour faire la connexion :P.
+Nous avons fait la création de l'instance web , nous allons pouvoir poursuivre avec la définition des instances BD . Pour le moment lors de la création de nos instances EC2 aucune configuration OS ne fut réalisée. Nous allons voir cette partie dans un second temps avec ansible, je ne le couvre pas tout de suie, car pour être en mesure de faire une configuration complète nous avons besoin d'avoir de  l'information des autres instances. Un des requis pour faire la configuration du serveur web est de savoir l'adresse IP des serveurs BD pour faire la connexion :P.
 
 Ce que nous désirons avoir :
 
 * 2 serveurs Mysql
-* Ces derniers doivent être dans le sebnet bd-private-2a
+* Ces derniers doivent être dans le subnet bd-private-2a
 * La connexion au port Mysql ne doit être possible que depuis le segment INTERNE du serveur web
 
-Voici donc une représentation graphique de la configuration avec l'ajout des base de données, nous pouvons constater que ceci ressemble beaucoup à la définition du serveur web, mais en double.
+Voici donc une représentation graphique de la configuration avec l'ajout des bases de données, nous pouvons constater que ceci ressemble beaucoup à la définition du serveur web, mais en double.
 
 ![](./imgs/architecture-overview-Network-overview-web-and-bd-ec2.png)
 
@@ -1244,25 +1244,26 @@ resource "aws_instance" "db-terra" {
 }
 ```
 
+TODO : Tag_instance_bd
 
-Vous pouvez visualiser sur github le fichier lors de ça rédaction :  [02-use-case.tf](https://github.com/x3rus/training/blob/42f399ae903c04329453aea6eb0a117023d514f11/terraform/terraManifest/02-use-case/02-use-case.tf)
+Vous pouvez visualiser sur github le fichier lors de sa rédaction :  [02-use-case.tf](https://github.com/x3rus/training/blob/42f399ae903c04329453aea6eb0a117023d514f11/terraform/terraManifest/02-use-case/02-use-case.tf)
 
 Prenons le temps de lire la définition , premièrement le code ci-dessus couvre les 2 serveurs de base de donnés !! 
 Nous utilisons la classe [aws\_instance](https://www.terraform.io/docs/providers/aws/r/instance.html) , comme lors de la création du serveur web.
 
 1. **ami = "\${data.aws\_ami.ubuntu.id}"**  : Nous utilisons l'AMI extraite préalablement soir un ubuntu LTS 16.04
 2. **instance\_type = "t2.micro"**  : Nous utilisons une instance de type t2, mon objectif est vraiment de faire la démonstration pas d'avoir de la performance.
-3. **key_name = "\${aws\_key\_pair.ansible.key_name}"** : J'assigne la clé SSH qui nous servira par la suite pour ansible ou établir une connexion pour la gestion de la machine.
+3. **key_name = "\${aws\_key\_pair.ansible.key_name}"** : J'assigne la clé SSH qui nous servira par la suite, pour ansible ou établir une connexion pour la gestion de la machine.
 4. **subnet_id = "\${aws\_subnet.bd-private-2a.id}"** : J'assigne la machine EC2 dans le bon subnet  , ceci est identique à l'opération pour le serveur web avec juste le nom qui change.
-5. **associate\_public\_ip\_address = true** : j'assigne une adresse IP publique , il y a 2 raison pour cela . Premièrement pour faire l'administration du système . Ici j'aurais pu simplement me dire que je vais passé par SSH via le serveur web. Cependant dans ma configuration minimaliste en place , si je n'assigne pas d'adresse IP publique à la machine cette dernière ne sera pas en mesure d'établie de connexion sur le web. Est-ce critique ? dans mon cas oui car je démarre avec une machine vanille , je ne serais pas en mesure de récupérer les logiciels pour faire leurs installations , particulièrement Mysql.
-6. **count = 2** : J'indique avec cette ligne le nombre d'instance que je désire avoir , c'est grâce à cette ligne que nous aurons 2 serveurs BD et non juste 1 comme ce fut le cas lors de la création du serveur web.
-7. **tags** et **Name = "db\${count.index}-terra"** : J'assigne des tags à l'instance , ici je met en évidence 1 tag , en fait c'est principalement la variable **\${count.index}** . Cette variable est incrémenté lors de la création et débute à 0 , donc le nom des instances BD seront : **db0-terra** et **db1-terra**.
+5. **associate\_public\_ip\_address = true** : j'assigne une adresse IP publique , il y a 2 raisons pour cela . Premièrement pour faire l'administration du système . Ici j'aurais pu simplement me dire que je vais passer par SSH via le serveur web. Cependant dans ma configuration minimaliste en place , si je n'assigne pas d'adresse IP publique à la machine cette dernière ne sera pas en mesure d'établie de connexion sur le web. Est-ce critique ? Dans mon cas oui, car je démarre avec une machine vanille , je ne serais pas en mesure de récupérer les logiciels pour faire leurs installations , particulièrement Mysql.
+6. **count = 2** : J'indique avec cette ligne le nombre d'instances que je désire avoir , c'est grâce à cette ligne que nous aurons 2 serveurs BD et non juste 1 comme ce fut le cas lors de la création du serveur web.
+7. **tags** et **Name = "db\${count.index}-terra"** : J'assigne des tags à l'instance , ici je mets en évidence 1 tag , en fait c'est principalement la variable **\${count.index}** . Cette variable est incrémentée lors de la création et débute à 0 , donc le nom des instances BD seront : **db0-terra** et **db1-terra**.
 8. **security_groups** : L'assignation des règles de firewall 
-9. **root_block_device** : Définition d'un disque dur de 20 Gig , partant du principe que la Base de donnée grossira dans le temps , encore une fois ceci est plus un test passant de la manipulation de l'espace disque d'une instance .
+9. **root_block_device** : Définition d'un disque dur de 20 Gig , partant du principe que la Base de données grossira dans le temps , encore une fois ceci est plus un test passant de la manipulation de l'espace disque d'une instance .
 
-Comme vous pouvez le voir ceci est très similaire et grâce au mécanisme de count que j'ai 1 ou 20 instances identique ceci est très simple. L'utilisation de la variable **count** , nous permet d'identifier chacune d'entre elle.
+Comme vous pouvez le voir, ceci est très similaire et grâce au mécanisme de count que j'aie 1 ou 20 instances identiques ceci est très simple. L'utilisation de la variable **count** , nous permet d'identifier chacune d'entre elle.
 
-C'est partie on va en premier lieu valider la configuration :
+C'est reparti, on va en premier lieu valider la configuration :
 
 ```
 $ terraform plan
@@ -1288,7 +1289,7 @@ $ terraform plan
 Plan: 12 to add, 0 to change, 0 to destroy. 
 ```
 
-Nous constatons que nous aurons 12 ressources de créés et nous voyons donc les 2 instances de base de donné avec l'index entre crochet .
+Nous constatons que nous aurons 12 ressources de créées et nous voyons  les 2 instances de base de données avec l'index entre crochets .
 
 ```
 $ terraform apply 
@@ -1311,7 +1312,7 @@ Apply complete! Resources: 12 added, 0 changed, 0 destroyed.
 
 ```
 
-Vous pouvez visualier le résultat , dans la [console aws](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Instances:sort=instanceId)
+Vous pouvez visualiser le résultat , dans la [console aws](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Instances:sort=instanceId)
 
 ![](./imgs/11-aws-ec2-bd-creation.png)
 
@@ -1330,7 +1331,7 @@ Destroy complete! Resources: 12 destroyed.
 
 #### Création d'une ressource et connexion ssh 
 
-Bon, je m'excuse avec tous ça j'ai complètement oublié de faire la démonstration que l'instance été accessible et fonctionnel :P . Donc prenons 2 minutes pour faire cette démonstration . Comme vous avez pu le voir j'ai tout détruit préalablement si j'exécute la commande **terraform plan**
+Bon, je m'excuse avec tout ça, j'ai complètement oublié de faire de démonter le bon fonctionnement de l'instance :P . Donc prenons 2 minutes pour faire cette démonstration . Comme vous avez pu le voir, j'ai tout détruit préalablement si j'exécute la commande **terraform plan**
 
 ```
 $ terraform plan 
@@ -1354,7 +1355,7 @@ $ terraform plan --target=aws_instance.web-terra
 Plan: 7 to add, 0 to change, 0 to destroy.
 ```
 
-Donc pour faire la création de la ressource aws_instance.web-terra , 7 ressources doivent être réalisé , 6 créer et 1 pour la recherche de l'AMI id.
+Donc pour faire la création de la ressource aws_instance.web-terra , 7 ressources doivent être réalisées , 6 créer et 1 pour la recherche de l'AMI id.
 
 Je vais faire donc apply : 
 
@@ -1391,7 +1392,7 @@ Donc la commande SSH fonctionne et nous avons bien internet
 
 ### Suppression d'une ressource 
 
-L'instruction **target** fonctionne aussi pour identifer uniquement une ressource , donc si je désire supprimer uniquement l'instance EC2 web que je viens tous juste de créer tous en conservant les configuration réseaux par example ... nous pouvons procéder ainsi : 
+L'instruction **target** fonctionne aussi pour identifier uniquement une ressource , donc si je désire supprimer uniquement l'instance EC2 web que je viens tout juste de créer tous en conservant les configurations réseaux par exemple ... nous pouvons procéder ainsi : 
 
 ```
 $ terraform destroy --target=aws_instance.web-terra 
@@ -1403,7 +1404,7 @@ Terraform will perform the following actions:
 Plan: 0 to add, 0 to change, 1 to destroy.
 ```
 
-Uniquement 1 ressource supprimer , par le fait même si nous voudrions recréer l'instance l'ensemble des dépendances seront déjà présente.
+Uniquement 1 ressource supprimer , par le fait même si nous voulions recréer l'instance l'ensemble des dépendances seront déjà présente.
 
 ```
 $ terraform plan --target=aws_instance.web-terra 
@@ -1414,7 +1415,7 @@ Plan: 1 to add, 0 to change, 0 to destroy.
 
 ## Et la suite
 
-Donc nous avons l'ensemble de nos ressource disponible dans AWS, mais ce n'est pas fini, en fait ce n'est que le début de notre travail. 
-Il faut encore configurer l'ensemble des ces ressources afin d'être en mesure de les utiliser .
+Donc nous avons l'ensemble de nos ressources disponibles dans AWS, mais ce n'est pas fini, en fait ce n'est que le début de notre travail. 
+Il faut encore configurer l'ensemble de ces ressources afin d'être en mesure de les utiliser .
 
-Je vais poursuivre cette exercice dans le fichier [03-intergration-ansible.md](03-intergration-ansible.md) , ceci sera l'integration entre Ansible et Terraform et non une formation ansible ...
+Je vais poursuivre cet exercice dans le fichier [03-intergration-ansible.md](03-intergration-ansible.md) , ceci sera l'intégration entre Ansible et Terraform et non une formation ansible ...
