@@ -875,34 +875,34 @@ Comme le titre l'indique, nous avons tous les morceaux de disponible petit réca
 
 1. Terraform : Création de l'ensemble du réseaux, firewall , et instance EC2 .
 2. Terraform : Configuration l'instance EC2 afin d'être en mesure d'utiliser Ansible.
-3. Ansible (BD) : Nous pouvons utiliser ansible pour faire la configuration de la base de donnée , avec une commande l'ensemble est configurer.
-    * un fichier est utiliser pour l'ensemble des variables de configuration : **vars/mysql.yml** a
-        * Nom base de donnée : Contact ET showpi
+3. Ansible (BD) : Nous pouvons utiliser ansible pour faire la configuration de la base de données , avec une commande l'ensemble est configuré.
+    * un fichier est utilisé pour l'ensemble des variables de configuration : **vars/mysql.yml** a
+        * Nom base de données : Contact ET showpi
         * Nom utilisateur : Contact ET showpi
         * Password : Contact ET showpi
-4. Ansible (Apache) : Nous avons aussi l'ensemble de la configuration mais nous devons passer en argument l'ensemble des information :  
+4. Ansible (Apache) : Nous avons aussi l'ensemble de la configuration, mais nous devons passer en argument l'ensemble des informations :  
         * Nom base de donnée : Contact ET showpi
         * Nom utilisateur : Contact ET showpi
         * Password: Contact ET showpi
-        * Adresse IP interne ( privé ) du serveur de base de donnée :  Contact ET showpi
+        * Adresse IP interne ( privé ) du serveur de base de données :  Contact ET showpi
 
-Notre defis ici est d'être en mesure de regrouper l'ensemble pour n'avoir qu'une commande qui faire tout , nous allons donc travailler sur la question des variables maintenant .
+Notre défi ici est d'être en mesure de regrouper l'ensemble pour n'avoir qu'une commande qui faire tout , nous allons donc travailler sur la question des variables maintenant .
 
-Telle que mentionné je veux n'avoir qu'une commande et mon orchestrateur est Terragform. Ce fut mon raisonnement, quand je me suis attaqué au problème. 
-J'ai donc fait en sorte que terraform est l'information de l'ensemble des variables. J'aurais pu aussi faire mettre ansible comme point centrale, par contre je me afin d'être en mesure de transmettre l'information d'une ressource à l'autre que ce soit avec ansible ou une autre commande je n'a pas de limitation.
+Comme mentionné, je veux n'avoir qu'une commande et mon orchestrateur est Terragform. Ce fut mon raisonnement, quand je me suis attaqué au problème. 
+J'ai donc fait en sorte que Terraform ait l'information sur l'ensemble des variables. J'aurais pu aussi mettre ansible comme point central, par contre j'aurais eu un problème pour passer des informations d'une ressource Terraform à l'autre , tel que les adresses IP.
 
-Terraform offre plusieurs mécanisme de variable, [la documentation sur les variables](https://www.terraform.io/docs/configuration/variables.html) vous permettra d'explorer plus de chose que ce document. Vous pourrez lire qu'il y a plusieurs type de variable ( strings, Maps, list ,...) , dans la démonstration ici je ne vais utiliser que des strings.
+Terraform offre plusieurs mécanismes de variable, [la documentation sur les variables](https://www.terraform.io/docs/configuration/variables.html) vous permettra d'explorer plus de choses que ce document. Vous pourrez lire qu'il y a plusieurs types de variables ( strings, Maps, list ,...) , dans la démonstration, je ne vais utiliser que des strings.
 
-### Sortir l'information de ansible et le définir dans Terraform
+### Sortir l'information d’Ansible et le définir dans Terraform
 
-Telle que lister précédemment les variables que nous désirons gérer sont :
+Comme listé précédemment les variables que nous désirons gérer sont :
 
 * Le nom de l'utilisateur BD contact : my\_cont\_user
 * Le mot de passe de l'utilisateur BD contact : my\_cont\_pass 
 * Le nom de l'utilisateur BD pi : my\_pi\_user
 * Le mot de passe de l'utilisateur BD pi :  my\_pi\_pass 
 
-Actuellement l'information est présent dans le fichier  [var/mysql.yml](https://github.com/x3rus/training/blob/d8d6613fb5f474913d4eb936fe77dd65dc90001b/terraform/terraManifest/02-use-case/vars/mysql.yml#L9) .
+Actuellement l'information est présente dans le fichier  [var/mysql.yml](https://github.com/x3rus/training/blob/d8d6613fb5f474913d4eb936fe77dd65dc90001b/terraform/terraManifest/02-use-case/vars/mysql.yml#L9) .
 
 ```
 mysql_users:
@@ -918,7 +918,7 @@ mysql_users:
 
 ### Définir la / les variables dans Terraform 
 
-Nous allons définir ses variables dans le fichier, par défaut , de terraform [./terraManifest/02-use-case/terraform.tfvars]()
+Nous allons définir ces variables dans le fichier, par défaut  de Terraform :  [./terraManifest/02-use-case/terraform.tfvars]()
 
 ```
  # Contact 
@@ -930,9 +930,9 @@ my_pi_user = "pi_user"
 my_pi_pass = "un_autre_pass"
 ```
 
-Ce fichier sera lu lors de chaque utilisation de terraform , **ATTENTION** on s'excite pas trop vite. J'ai eu la surprise de constater que pour utiliser la variable dans notre manifeste, nous devons "activer" la variable dans le manifeste . Je ne suis pas certain du terme approprié , ceci nous permettra de définir le type aussi , par défaut étant **strings**.
+Ce fichier sera lu lors de chaque utilisation de Terraform , **ATTENTION** on s'excite pas trop vite. J'ai eu la surprise de constater que pour utiliser la variable dans notre manifeste, nous devons "activer" la variable dans le manifeste . Je ne suis pas certain du terme approprié , ceci nous permettra de définir le type aussi , par défaut étant **strings**.
 
-Nous allons donc ajouter les lignes suivante à notre manifeste : 
+Nous allons donc ajouter les lignes suivantes à notre manifeste : 
 
 ```
  ########
@@ -948,21 +948,21 @@ variable "my_pi_pass" {}
 
 ```
 
-Si vous ne les mettez pas ça ne fonctionnera pas , vous aurez une erreur mentionnant que vos variables n'existe pas.
+Si vous ne les mettez pas, ça ne fonctionnera pas , vous aurez une erreur mentionnant que vos variables n'existent pas.
 
 TODO mettre le lien avec le git commit : 7236f3a3aba452050eb8b603abde131d501403b3
 
-Donc petit récapitulatif  lors de l'utilisation de terraform :
+Donc petit récapitulatif  lors de l'utilisation de Terraform :
 
-1. Le fichier terraform.tfvars sera lu
-2. Les variables seront disponible un fois le type associer , ceci est la section au début du manifeste
+1. Le fichier Terraform.tfvars sera lu
+2. Les variables seront disponibles une fois le type associer , ceci est la section au début du manifeste
 
 
-### Modification de ansible afin d'utiliser les variables de terraform
+### Modification d’Ansible afin d'utiliser les variables de Terraform
 
-Bon ici, j'espère ne décevoir personne , mais comme il n'y avait que 6 variables au total j'ai pas réinventé la roue, j'ai capitalisé sur le mécanisme de passage de variable à ansible avec l'option **extra-** 
+Bon ici, j'espère ne décevoir personne , mais comme il n'y avait que 6 variables au total je n’ai pas réinventé la roue, j'ai capitalisé sur le mécanisme de passage de variable à ansible avec l'option **extra-** 
 
-Nous allons donc faire quelque modification dans le rôle mysql afin de variabiliser le fichier [mysql.yml](./terraManifest/02-use-case/vars/mysql.yml). 
+Nous allons donc faire quelques modifications dans le rôle mysql afin de variabiliser le fichier [mysql.yml](./terraManifest/02-use-case/vars/mysql.yml). 
 Voici le résultat : 
 
 ```
@@ -1010,14 +1010,14 @@ Nous allons intégrer l'ensemble, pour la section de la base de donnée je vais 
 L'important est vraiment la section **extra** : 
 
 * --extra-=\" 
-    * mysqlContUser=\${var.my\_cont\_user} : passage en argument du nom de l'utilisateur pour l'accès à la base de donné contact **var.my\_cont\_user** est le nom de la variable dans terraform et **mysqlContUser** le nom de la variable pour ansible.
+    * mysqlContUser=\${var.my\_cont\_user} : passage en argument du nom de l'utilisateur pour l'accès à la base de donné contact **var.my\_cont\_user** est le nom de la variable dans Terraform et **mysqlContUser** le nom de la variable pour ansible.
     * mysqlContPass=\${var.my\_cont\_pass} : Même concept , mais pour le mot de passe de l'utilisateur contact.
     * mysqlPiUser=\${var.my\_pi\_user}: Même concept , mais pour le nom de l'utilisateur showpi.
     * mysqlPiPass=\${var.my\_pi\_pass}\": Même concept , mais pour le mot de passe de l'utilisateur showpi .
 
-TODO : FINALEMENT PAS BON COMMIT , prendre apres : 24c1e51e799d7704a28226f05d41c40487c4e243
+TODO : FINALEMENT PAS BON COMMIT , prendre après : 24c1e51e799d7704a28226f05d41c40487c4e243
 
-Maintenant un peu plus compliquer la partie pour le serveur web :
+Maintenant, un peu plus compliquer la partie pour le serveur web :
 
 ```
     provisioner "local-exec" {
@@ -1030,20 +1030,20 @@ Maintenant un peu plus compliquer la partie pour le serveur web :
 L'important est vraiment la section **extra** : 
 
 * --extra-=\" 
-        * mysqlContHost=\${aws\_instance.db-terra.0.private\_ip} : L'adresse ip interne de la première instance (0) des BD , rappelez vous que les 2 bases de données sont configurer de manière totalement équivalente. Je veux utilise l'IP interne, car ce n'est QUE pour cette adresse IP que le firewall est ouvert.
+        * mysqlContHost=\${aws\_instance.db-terra.0.private\_ip} : L'adresse ip interne de la première instance (0) des BD , rappelez-vous que les 2 bases de données sont configurées de manière totalement équivalente. Je veux utilise l'IP interne, car ce n'est QUE pour cette adresse IP que le firewall est ouvert.
         * mysqlContUser=\${var.my\_cont\_user} : nom de l'utilisateur contact
         * mysqlContPass=\${var.my\_cont\_pass} : mot de passe de l'utilisateur contact
-        * mysqlContDB=contact : Nom de la base de donnée contact qui est hard codé.
-        * mysqlPiHost=\${aws\_instance.db-terra.1.private\_ip} : L'adresse IP interne de la seconde instance de base de donnée (1) .
-        * mysqlPiUser=\${var.my\_pi\_user} : nom de l'utilisateur pour la base de donnée pi
-        * mysqlPiPass=\${var.my\_pi\_pass} : mot de passe pour la base de donnée pi
+        * mysqlContDB=contact : Nom de la base de données contact qui est hard codé.
+        * mysqlPiHost=\${aws\_instance.db-terra.1.private\_ip} : L'adresse IP interne de la seconde instance de base de données (1) .
+        * mysqlPiUser=\${var.my\_pi\_user} : nom de l'utilisateur pour la base de données pi
+        * mysqlPiPass=\${var.my\_pi\_pass} : mot de passe pour la base de données pi
         * mysqlPiDB=showpi\" : Le nom de la BD 
 
 
 
 ### Validation de l'ensemble 
 
-Démarrons le vraie teste avec la validation :
+Démarrons le vrai test avec la validation :
 
 ```
 $ terraform plan
@@ -1051,9 +1051,9 @@ $ terraform plan
 Plan: 4 to add, 0 to change, 0 to destroy.
 ```
 
-N'ayant pas supprimer les ressources réseaux j'ai moins de choses à créer :D .
+N'ayant pas supprimé les ressources réseau j'ai moins de choses à créer :D .
 
-C'est partie :
+C'est parti :
 
 ```
 $ terraform apply
