@@ -1,6 +1,6 @@
 # Description integration ansible
 
-Nous avons l'ensemble de nos ressources dans AWS , cependant soyons honnête pour le moment ça sert à rien , car les instances EC2 ne sont pas configurer.
+Nous avons l'ensemble de nos ressources dans AWS , cependant soyons honnête, pour le moment ça ne sert à rien , car les instances EC2 ne sont pas configurées.
 
 ![](./imgs/architecture-overview-Network-overview-web-and-bd-ec2.png)
 
@@ -10,73 +10,73 @@ Nous devons donc maintenant faire la configuration des machines :
 * bd-terra-0
 * bd-terra-1
 
-Bien entendu nous venons de réaliser l'ensemble de la création dans AWS de manière automatique , nous n'allons pas poursuivre avec la création manuel des configuration. Nous allons donc voir la combinaison Terraform avec Ansible. 
-Ceci n'est pas une formation Ansible donc je ne vais pas prendre le temps de voir l'ensemble des configurations ansible, mais mettre l'accent sur l'integration avec Terraform. J'essayerai un jour de faire une formation ansible... 
+Bien entendu, nous venons de réaliser l'ensemble de la création dans AWS de manière automatique , nous n'allons pas poursuivre avec la création manuelle des configurations. Nous allons donc voir la combinaison Terraform avec Ansible. 
+Ceci n'est pas une formation Ansible donc je ne vais pas prendre le temps de voir l'ensemble des configurations ansible, mais mettre l'accent sur l'intégration avec Terraform. J'essayerai un jour de faire une formation ansible... 
 
 # Integration Ansible avec Terraform
 
-Lors de l'utilisation de AWS avec terraform nous avons utilisé un [provider](https://www.terraform.io/docs/providers/index.html) ceci nous permet de faire la gestion des ressources , de l'infrastructure. Dans notre cas nous avons utilisé le [provider aws](https://www.terraform.io/docs/providers/aws/index.html) . 
-Terraform offre un autre type [Provisioners](https://www.terraform.io/docs/provisioners/index.html) ceci permet de provisionner , de réaliser des opérations avant ou après la création des ressources.
+Lors de l'utilisation de AWS avec terraform nous avons utilisé un [provider](https://www.terraform.io/docs/providers/index.html), ceci nous permet de faire la gestion des ressources , de l'infrastructure. Dans notre cas nous avons utilisé le [provider aws](https://www.terraform.io/docs/providers/aws/index.html) . 
+Terraform offre un autre type,  [Provisioners](https://www.terraform.io/docs/provisioners/index.html) , ces derniers nous permettent de provisionner les machines.De réaliser des opérations avant ou après la création des ressources.
 
-Dans notre cas comme nous utilisons AWS , nous aurions pu faire la création d'un AMI personnalisé avec nos logiciels déjà présent, cependant nous devrions maintenant cette image dans l'ensemble des régions , l'évolution de cette dernière est pénible si nous désirons l'avoir à l'identique partout, des changements sur les instances créé dans le passons deviennent difficile à moins de détruire et recommencer. Ce que j'aime aussi de la solution avec ansible est que je suis agnostique au choix du cloud ou même si je choisie une installation sur site.
+Dans notre cas, comme nous utilisons AWS , nous aurions pu faire la création d'un AMI personnalisé avec nos logiciels déjà présents, cependant nous devrions maintenir cette image dans l'ensemble des régions , l'évolution de cette dernière est pénible si nous désirons l'avoir à l'identique partout, des changements sur les instances créées dans le passé deviennent difficiles à moins de détruire et recommencer. Ce que j'aime aussi de la solution avec ansible est que je suis agnostique au choix du cloud, je peux même choisir une installation sur site.
 
-Terraform ne supporte pas aujourd'huis nativement Ansible, mais il existe un système de [provisioners](https://www.terraform.io/docs/provisioners/index.html) qui permet d'exécuter des commandes :
+Terraform ne supporte pas aujourd'huis nativement Ansible, mais il existe un système de [provisionner](https://www.terraform.io/docs/provisioners/index.html) qui permet d'exécuter des commandes :
 
 * [chef](https://www.terraform.io/docs/provisioners/chef.html) : Permet de configurer l'instance à l'aide du système chef.
 * [Salt-masterless](https://www.terraform.io/docs/provisioners/salt-masterless.html) : Permet de faire du provisionning à l'aide de salt, yep il manque vraiment ansible ;).
 * [Connection](https://www.terraform.io/docs/provisioners/connection.html) : Permet de faire la copie d'un fichier via ssh ou winRm ( Remote pas remove :P ) 
 * [File](https://www.terraform.io/docs/provisioners/file.html) : Permet de faire la copie d'un fichier d'une ressource créer , la différence ici avec le précédent et que cette méthode ne permet pas de faire la copie vers une instance autre que celle créer alors que Connection permet de définir un hostname.
-* [habitat](https://www.terraform.io/docs/provisioners/habitat.html) : Permet d'executer l'application [habitat](https://www.habitat.sh/) créée par Chef, ceci permet de définir des services à démarrer. Je ne connais pas .
-* [local-exec](https://www.terraform.io/docs/provisioners/local-exec.html) : Permet d'executer des instructions sur le serveur qui initie les instructions terraform. 
-* [null_ressource](https://www.terraform.io/docs/provisioners/null_resource.html) : Ce système permet lorsque vous initialisez plusieurs instance avec l'option **count**, de regrouper les informations telle que l'ip priver , regardez l'exemple sur le site. Je vais peut-être faire un exemple mais rien n'est sûr à l'écriture des ces lignes. 
-* [remote-exec](https://www.terraform.io/docs/provisioners/remote-exec.html) : Permet d'exécuter une instruction sur l'instance initializé, support aussi bien ssh que winrm .
+* [habitat](https://www.terraform.io/docs/provisioners/habitat.html) : Permet d'exécuter l'application [habitat](https://www.habitat.sh/) créé par Chef, ceci permet de définir des services à démarrer. Je ne connais pas, malheureusement.
+* [local-exec](https://www.terraform.io/docs/provisioners/local-exec.html) : Permet d'exécuter des instructions sur le serveur qui initie les instructions terraform. 
+* [null_ressource](https://www.terraform.io/docs/provisioners/null_resource.html) : Ce système permet lorsque vous initialisez plusieurs instances avec l'option **count**, de regrouper les informations telles que l'ip priver , regardez l'exemple sur le site. Je vais peut-être faire un exemple, mais rien n'est sûr à l'écriture de ces lignes. 
+* [remote-exec](https://www.terraform.io/docs/provisioners/remote-exec.html) : Permet d'exécuter une instruction sur l'instance initialisée, support aussi bien ssh que winrm .
 
-Dans ma logique je vais donc faire le déploiement d'un rôle ansible pour la configuration apache. En utilisant l'instruction [local-exec](https://www.terraform.io/docs/provisioners/local-exec.html) , donc le processus utilisera l'application ansible , préalablement installé sur mon poste et le playbook aussi présent localement. 
-
-
-Nous allons débuter par la configuration des bases de données , car elles sont requisent pour le serveur web.
+Dans ma logique je vais donc faire le déploiement d'un rôle ansible pour la configuration apache. En utilisant l'instruction [local-exec](https://www.terraform.io/docs/provisioners/local-exec.html) , donc le processus utilisera l'application ansible , préalablement installée sur mon poste et le playbook aussi présent localement. 
 
 
-## Revue général de notre objectif
+Nous allons débuter par la configuration des bases de données , car elles sont requises pour le serveur web.
 
-j'aime faire un rappel rapide de l'objectif, car il y a un grand nombre de personne qui n'ont pas lu l'ensemble du document , moi le premier je survole jusqu'a la section que je recherche :P.
+
+## Revue générale de notre objectif
+
+j'aime faire un rappel rapide de l'objectif, car il y a un grand nombre de personnes qui n'ont pas lu l'ensemble du document , moi le premier je survole jusqu'a la section que je recherche :P.
 
 Donc voici ce que nous allons faire :
 
 ![](./imgs/apps-overview-lst-configurations.png)
 
-Nous avons 1 serveur web qui aura apache d'installé et répondra à 2 nom de domaine :
+Nous avons 1 serveur web qui aura apache d'installé et répondra à 2 noms de domaine :
 
 * contacts.x3rus.com
 * pi.x3rus.com
 
-Les sites web iront chercher le contenu dans une base de donnée :
+Les sites web iront chercher le contenu dans une base de données :
 
 * contact : pour le site web contacts.x3rus.com
 * showpi : pour le site web pi.x3rus.com 
 
-Les 2 serveurs de base de données sont configuré à l'identique afin de simplifier le processus de déploiement. Ils auront la base de donnée mysql d'installé et la configuration des 2 base de données incluant l'import des données.
+Les 2 serveurs de base de données sont configurés à l'identique afin de simplifier le processus de déploiement. Ils auront la base de données mysql d'installée et la configuration des 2 bases de données incluant l'import des données.
 
 
 ## Intro ansible "rapide" 
 
 Bon je suis devant la machine et je me questionne, est-ce que je fais une intro ansible , oui / non ... j'avoue que je suis en questionnement. Je vais donc en faire une super rapide , afin que mes propos puissent être compris par tous !!
 
-Information sur [ansible depuis wikipedia](https://fr.wikipedia.org/wiki/Ansible_\(logiciel\))
+Information sur [ansible depuis Wikipedia](https://fr.wikipedia.org/wiki/Ansible_\(logiciel\))
 
-> Ansible est une plate-forme logicielle libre pour la configuration et la gestion des ordinateurs. Elle combine le déploiement de logiciels multi-nœuds, l'exécution des tâches ad-hoc, et la gestion de configuration. Elle gère les différents nœuds par-dessus SSH et ne nécessite l'installation d'aucun logiciel supplémentaire à distance sur eux. Les modules fonctionnent grâce à JSON et à la sortie standard et peuvent être écrits dans n'importe quel langage de programmation. Le système utilise YAML pour exprimer des descriptions réutilisables de systèmes.
+> Ansible est une plate-forme logicielle libre pour la configuration et la gestion des ordinateurs. Elle combine le déploiement de logiciels multinœuds, l'exécution des tâches ad hoc, et la gestion de configuration. Elle gère les différents nœuds par-dessus SSH et ne nécessite l'installation d'aucun logiciel supplémentaire à distance sur eux. Les modules fonctionnent grâce à JSON et à la sortie standard et peuvent être écrits dans n'importe quel langage de programmation. Le système utilise YAML pour exprimer des descriptions réutilisables de systèmes.
 > 
 > Ansible Inc. était la société derrière le développement commercial de l'application Ansible. Red Hat rachète Ansible Inc. en octobre 2015.
 > 
 > Le nom Ansible a été choisi en référence au terme Ansible choisi par Ursula Le Guin dans ses romans de science-fiction pour désigner un moyen de communication plus rapide que la lumière.
 
-Ansible pousse donc les instructions via SSH .
+Ansible pousse  les instructions via SSH .
 
-### Ansible, les modules disponible
+### Ansible, les modules disponibles
 
-Ansible vient avec une boite à outils complète composé d'un grand nombre de module : [module par catégorie](http://docs.ansible.com/ansible/latest/modules/modules_by_category.html).
+Ansible vient avec une boite à outils complète composée d'un grand nombre de module : [module par catégorie](http://docs.ansible.com/ansible/latest/modules/modules_by_category.html).
 
-Comme vous pouvez le voir il y a un grand nombre de module disponible pour plusieurs type d'activités :
+Comme vous pouvez le voir, il y a un grand nombre de modules disponibles pour plusieurs types d'activités :
 
 * Cloud modules
 * Clustering modules
@@ -104,23 +104,23 @@ Je vous laisse explorer quelques modules afin de vous mettre l'eau à la bouche 
 
 ### Ansible , playbook
 
-Un [playbook](https://docs.ansible.com/ansible/2.4/ansible-playbook.html) dans ansible permet de définir une liste d'instruction qui seront réalisé sur un serveur. 
+Un [playbook](https://docs.ansible.com/ansible/2.4/ansible-playbook.html) dans ansible permet de définir une liste d'instruction qui sera réalisée sur un serveur. 
 Donc pour faire le provisionnement de nos serveurs , je vais faire 2 playbook :
 
 1. serveur web : site.yml
 2. serveur de BD: db.yml
 
-Les playbooks utiliserons une liste de rôle qui eux même utiliserons les modules pour réaliser les opérations. 
+Les playbooks utiliseront une liste de rôle qui eux même utiliseront les modules pour réaliser les opérations. 
 
-### Installation de ansible
+### Installation d’Ansible
 
 Afin d'être en mesure de combiner Terreform et Ansible , tous comme vous avez du installé terraform il vous faudra Ansible :P. 
 
-Je vous laisse le lien vers le documentation officiel : [https://docs.ansible.com/ansible/2.5/installation_guide/intro_installation.html](https://docs.ansible.com/ansible/2.5/installation_guide/intro_installation.html)
+Je vous laisse le lien vers la documentation officielle : [https://docs.ansible.com/ansible/2.5/installation_guide/intro_installation.html](https://docs.ansible.com/ansible/2.5/installation_guide/intro_installation.html)
 
 ## Provisionnement des serveurs de base de données
 
-Bon pour ceux qui me connaisse, vous savez que j'ai de la difficulté à être concis, on va dire que je vais être fidèle à moi même encore une fois :P. On va prendre le temps de décortiquer le processus de provisionnement du serveur de Base de donnée incluant la partie Ansible. 
+Bon pour ceux qui me connaissent, vous savez que j'ai de la difficulté à être concis, on va dire que je vais être fidèle à moi-même encore une fois :P. On va prendre le temps de décortiquer le processus de provisionnement du serveur de Base de données incluant la partie Ansible. 
 
 ### Explication du playbook ansible
 
@@ -131,7 +131,7 @@ $ git clone https://github.com/geerlingguy/ansible-role-mysql.git
 $ mv ansible-role-mysql/ geerlingguy.mysql
 ```
 
-Le module est présent nous allons maintenant définir le __playbook__ , assurez vous d'être dans le répertoire où il y a le fichier manifeste de Terraform.
+Le module est présent nous allons maintenant définir le __playbook__ , assurez-vous d'être dans le répertoire où il y a le fichier manifeste de Terraform.
 Le fichier aussi disponible du github : [bd.yml](TODO)
 
 ```
@@ -149,13 +149,13 @@ $ cat bd.yml
 
 Prenons le temps de lire ce fichier :
 
-* **hosts : all** : ansible nous permet d'assigner des playbooks avec un inventaire , nous permettant par exemple d'avoir une liste d'IP, nom de domaine ou autre et dire applique cette configuration sur ce regroupement de machine. Dans notre cas , comme nous avons des IP dynamique dans AWS , je ne peux pas faire de filtrage , j'indique donc que ceci est applicable sur l'ensemble des hosts.
-* **become: yes** : Nous allons être obligé de changé d'utilisateur pour que ce rôle fonctionne , car l'utilisateur ansible qui réalisera la connexion n'a par défaut  pas tous les droits.
+* **hosts : all** : ansible nous permet d'assigner des playbooks avec un inventaire , nous permettant par exemple d'avoir une liste d'IP, nom de domaine ou autre et dire appliquent cette configuration sur ce regroupement de machines. Dans notre cas , comme nous avons des IP dynamiques dans AWS , je ne peux pas faire de filtrage , j'indique donc que ceci est applicable sur l'ensemble des hosts.
+* **become: yes** : Nous allons être obligés de changé d'utilisateur pour que ce rôle fonctionne , car l'utilisateur ansible qui réalisera la connexion n'a par défaut  pas tous les droits.
 * **become\_user : root** : Comme nous aurons des installations à réaliser nous devons être **root**
-* **vars\_files: - vars/mysql.yml** : Ce fichier va nous permettre de lister les base de données , utilisateur , mot de passe , etc en lien avec le serveurs de base de donnée , nous allons faire la création de ce fichier tout de suite ...
-* **roles : - { role: geerlingguy.mysql }** : Ici nous réalisons l'association du role avec le playbook .
+* **vars\_files: - vars/mysql.yml** : Ce fichier va nous permettre de lister les base de données , utilisateur , mot de passe , etc en lien avec le serveur de base de données , nous allons faire la création de ce fichier tout de suite ...
+* **roles : - { role: geerlingguy.mysql }** : Ici nous réalisons l'association du rôle avec le playbook .
 
-Vous êtes probablement allé sur la page du projet du role [geerlingguy.mysql](https://github.com/geerlingguy/ansible-role-mysql) , comme vous avez pu le constater, nous utilisons des variables afin de définir les bases de données a créer ainsi que les utilisateurs . Ces variables sont définie dans le fichier **vars/mysql.yml**.
+Vous êtes probablement allé sur la page du projet du rôle [geerlingguy.mysql](https://github.com/geerlingguy/ansible-role-mysql) , comme vous avez pu le constater, nous utilisons des variables afin de définir les bases de données a créer ainsi que les utilisateurs . Ces variables sont définies dans le fichier **vars/mysql.yml**.
 
 Voyons le contenu :
 
@@ -179,14 +179,14 @@ mysql_users:
     priv: "showpi.*:ALL"
 ```
 
-Nous définissons le mot de passe de l'administrateur mysql (**root**), la création des 2 bases de données ( **contact** et **showpi**) , la création des 2 utilisateur (**contact_user** et **pi_user**) avec les permissions adéquat. Avant d'allez plus loin essayons ceci !! Je vous préviez ça ne marche pas :P .
+Nous définissons le mot de passe de l'administrateur mysql (**root**), la création des 2 bases de données ( **contact** et **showpi**) , la création des 2 utilisateurs (**contact_user** et **pi_user**) avec les permissions adéquates. Avant d'allez plus loin essayons ceci !! Je vous priviez ça ne marche pas :P .
 
-#### Test d'utilisation de ansible 
+#### Test d'utilisation d’Ansible 
 
 Bon on teste ça ?? :D
 
 Pour réduire le temps de traitement je vais réduire le **count** pour n'avoir qu'UN serveur de créer , l'idée ici est de valider uniquement la commande.
-Avant de faire l'intégration terraform et Ansible, je vais réalisé l'opération manuellement , donc l'enchainement ne sera pas réalisé par terraform, mais par moi avec mes petites mains :P.
+Avant de faire l'intégration terraform et Ansible, je vais réaliser l'opération manuellement , donc l'enchainement ne sera pas réalisé par terraform, mais par moi avec mes petites mains :P.
 
 ```
 $ terraform plan --target=aws_instance.db-terra
@@ -254,7 +254,7 @@ PLAY RECAP *********************************************************************
 34.221.107.227             : ok=0    changed=0    unreachable=0    failed=1  
 ```
 
-La problème ici est que Python n'est pas installé !!!
+Le problème ici est que Python n'est pas installé !!!
 
 Correction du problème 
 
@@ -293,14 +293,14 @@ PLAY RECAP *********************************************************************
 34.221.107.227             : ok=42   changed=15   unreachable=0    failed=0
 ```
 
-En conclusion de notre problème pour être en mesure de faire l'enchainement Terraform -> ansible nous avons besoin d'avoir python de présent sur la machine EC2. 2 option s'offre à nous :
+En conclusion de notre problème pour être en mesure de faire l'enchainement Terraform -> ansible nous avons besoin d'avoir python de présent sur la machine EC2. 2 options s'offrent à nous :
 
 1. Créer notre propre AMI qui aurait python de présent
 2. Réussir à installé python , une fois la machine EC2 d initialisé.
 
 
 Dans mon cas je ne veux **PAS** géré d'image __AMI__ et clairement pas uniquement pour le package **python** , donc lors de mes recherches j'ai trouvé ceci [remote-exec](https://www.terraform.io/docs/provisioners/remote-exec.html) qui permet de faire l'exécution d'une commande sur l'instance EC2 . 
-J'ai donc ajouter l'instruction :
+J'ai donc ajouté l'instruction :
 
 ```
     provisioner "remote-exec" {
@@ -318,17 +318,17 @@ J'ai donc ajouter l'instruction :
 
 Ceci va donc réaliser la commande **inline** pour faire la mise à jour du système d'exploitation puis faire l'installation de python. Pour ce faire il va utiliser l'utilisateur **ubunut** et la clé ssh associé **\${file("ssh-keys/ansible-user")}**.
 
-Ceci aura aussi comme avantage de s'assurer que l'instance EC2 est disponible avant d'exécuter la commande **ansible** , en effet si vous faite d'autre commande sur l'instance EC2 lors de l'exécution de l'instruction **local-exec** parfois l'instance EC2 est encore en cours d'initialisation, résultat la commande ne fonctionne pas :-/. 
+Ceci aura aussi comme avantage de s'assurer que l'instance EC2 est disponible avant d'exécuter la commande **ansible** , en effet si vous faite d'autres commandes sur l'instance EC2 lors de l'exécution de l'instruction **local-exec** parfois l'instance EC2 est encore en cours d'initialisation, résultat la commande ne fonctionne pas :-/. 
 
-Comme ceci n'est pas complètement automatique on va supprimer ce que l'on ne veut pas et on va reprendre 
+Comme ceci n'est pas complètement automatique, on va supprimer ce que l'on ne veut pas et on va reprendre 
 
 ```
 $ terraform destroy --target=aws_instance.db-terra
 ```
 
-### Integration complète avec ansible et terraform pour la BD
+### Intégration complète avec ansible et terraform pour la BD
 
-Donc Nous avons 3 étapes pour l'intance EC2 ( je met de côté l'ensemble du réseaux ) :
+Donc nous avons 3 étapes pour l'intance EC2 ( je mets de côté l'ensemble du réseau ) :
 
 1. Création de l'instance avec Terraform 
 2. Configuration de l'instance pour être en mesure d'exécuter ansible **remote-exec**
@@ -381,10 +381,12 @@ resource "aws_instance" "db-terra" {
         command = "ansible-playbook -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no' -i '${self.public_ip},' --private-key ssh-keys/ansible-user -T 300 bd.yml"
     }                                                                                                                                                       
 
-}
+} 
 ```
 
-J'ai fait l'explication de l'ensemble des parties j'espère avoir été assez claire pour l'ensemble . Je pense qu'il manque une information j'extrais l'information de l'instance EC2 afin d'avoir l'adresse IP public de la machine avec la variable **self.public\_ip**. Avec cette méthode l'instruction ansible sera executé 2 fois , soit pour chacune des instances , si j'augmente la valeur de **count** se sera autant que cette valeur.
+ICI ICI ORTHOGRAPH
+
+J'ai fait l'explication de l'ensemble des parties j'espère avoir été assez claire pour l'ensemble . Je pense qu'il manque une information j'extrais l'information de l'instance EC2 afin d'avoir l'adresse IP publique de la machine avec la variable **self.public\_ip**. Avec cette méthode l'instruction ansible sera executé 2 fois , soit pour chacune des instances , si j'augmente la valeur de **count** se sera autant que cette valeur.
 
 Nous pouvons donc faire la création et voir le résultat : 
 
@@ -446,7 +448,7 @@ L'ensemble du repository est disponible aussi : [repo de formation a ce point](h
 
 #### Populer la base de données 
 
-Nous avons l'instance EC2 , nous l'avons complètement configurer avec Mysql , nos utilisateur , le mot de passe ... mais il manque quelques choses !! Les donnés dans la base de donnée. Pour ce faire j'ai créé un **role** ansible nommé : **mysql-setup-data-example** , je n'aurais assurément pas le prix de l'originalité :P. 
+Nous avons l'instance EC2 , nous l'avons complètement configurer avec Mysql , nos utilisateur , le mot de passe ... mais il manque quelques choses !! Les donnés dans la base de donnée. Pour ce faire j'ai créé un **rôle** ansible nommé : **mysql-setup-data-example** , je n'aurais assurément pas le prix de l'originalité :P. 
 
 Prenons 2 minutes pour le consulter, ce n'est pas vraiment requis , mais au moins vous aurez la solution complète.
 
@@ -559,7 +561,7 @@ Nous avons la base de donnée, configurer , nous allons pouvoir passer au serveu
 
 Ce sont des sites web écrit en php , c'était le plus simple et rapide. Chacun des sites web établie une connexion mysql avec un nom d'utilisateur et mot de passe vers 1 serveur de base de donnée. En d'autre mot, le site web contact établira une connexion au serveur de base de donnée db-terra.0 et le site web showpi établira ça connexion sur le serveur mysql db-terra.1 . 
 
-### Explication du role ansible
+### Explication du rôle ansible
 
 Donc le nom du rôle , attention roulement de temboure pour l'originalité :P , **apache-php-example**. Regardons le contenue : 
 
@@ -714,7 +716,7 @@ Le site doit être en mesure d'établir une connexion mysql au serveur de base d
 
 Nous pourrions définir facilement le nom de la base de donnée ainsi que les informations d'authentification , cependant ceci sera plus compliqué pour l'adresse IP du serveur de base de donné, car ceci est des adresses ip dynamique. 
 
-Si vous vous dites mais pourquoi nous n'avons pas fait la même choses pour la base de donnée ? Nous allons le faire, je voulais conserver avoir une explication simple pour débuter, nous avions déjà l'intégration terraforme ET ansible, je me suis dit que ce serait plus fluide dans ajouter un nombre significatif de variable :P.
+Si vous vous dites, mais pourquoi nous n'avons pas fait la même choses pour la base de donnée ? Nous allons le faire, je voulais conserver avoir une explication simple pour débuter, nous avions déjà l'intégration terraforme ET ansible, je me suis dit que ce serait plus fluide dans ajouter un nombre significatif de variable :P.
 
 Si nous prenons le fichier du site web __showpi__ nous aurons d'autre variable :
 
@@ -749,7 +751,7 @@ Voici l'argument que nous allons utiliser lors de notre premier test , via la li
 --extra-="mysqlContHost=172.31.50.2 mysqlContUser=contact_user mysqlContPass=le_mot_pass mysqlContDB=contact  mysqlPiHost=172.30.50.4 mysqlPiUser=pi_user mysqlPiPass=lautre_passe mysqlPiDB=showpi"
 ```
 
-C'est beau l'exemple mais on veut le voir concrètement, donc continuons avec la configuration.
+C'est beau l'exemple, mais on veut le voir concrètement, donc continuons avec la configuration.
 
 ### Configuration du playbook 
 
@@ -788,7 +790,7 @@ Bien entendu, nous devrons appliquer la même recette pour que pour les instance
 
 Version du fichier avec la modification : [02-use-case.tf](https://github.com/x3rus/training/blob/2480e1241e546ca5f3545caf520caa18019a1a29/terraform/terraManifest/02-use-case/02-use-case.tf).
 
-#### Test d'utilisation de ansible 
+#### Test d'utilisation d’Ansible 
 
 La phase de validation sera de démarrer une instance EC2 et d'exécuter notre rôle ansible dessus .
 Ceci va nous permettre de corriger la définition de notre rôle ansible s'il y a le moindre problème , sans avoir l'ensemble du temps requis pour démarrer et détruire l'instance EC2 ! 
@@ -875,7 +877,7 @@ Comme le titre l'indique nous avons tous les morceaux de disponible petit récap
         * Nom base de donnée
         * Nom utilisateur 
         * Password
-4. Ansible (Apache) : Nous avons aussi l'ensemble de la configuration mais nous devons passer en argument l'ensemble des information :  
+4. Ansible (Apache) : Nous avons aussi l'ensemble de la configuration, mais nous devons passer en argument l'ensemble des information :  
         * Nom base de donnée
         * Nom utilisateur 
         * Password
