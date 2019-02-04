@@ -441,7 +441,7 @@ Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
 
 ```
 
-TODO : Add tag_terraform
+**Git Tag** : terraform_v7_ansible_pour_bd 
 
 Vous pouvez avoir le fichier [02-use-case.tf](https://github.com/x3rus/training/blob/d8d6613fb5f474913d4eb936fe77dd65dc90001b/terraform/terraManifest/02-use-case/02-use-case.tf).
 
@@ -548,7 +548,7 @@ Maintenant l'intégration , dans l'ensemble de la chaine , mettons-le après la 
     - { role: mysql-setup-data-example }
 ```
 
-TODO : Tag_terraform
+**Git Tag** : terraform_v8_ansible_bd_populer
 
 Et voilà en plus de la configuration nous aurons des données dans la base de données.
 
@@ -791,6 +791,8 @@ Bien entendu, nous devrons appliquer la même recette pour que pour les instance
 
 ```
 
+**Git Tag** : terraform_v9_remote-exec
+
 Version du fichier avec la modification : [02-use-case.tf](https://github.com/x3rus/training/blob/2480e1241e546ca5f3545caf520caa18019a1a29/terraform/terraManifest/02-use-case/02-use-case.tf).
 
 #### Test d'utilisation d’Ansible 
@@ -950,7 +952,8 @@ variable "my_pi_pass" {}
 
 Si vous ne les mettez pas, ça ne fonctionnera pas , vous aurez une erreur mentionnant que vos variables n'existent pas.
 
-TODO mettre le lien avec le git commit : 7236f3a3aba452050eb8b603abde131d501403b3
+
+**Git Tag** : terraform_v10_integration_vars
 
 Donc petit récapitulatif  lors de l'utilisation de Terraform :
 
@@ -1016,6 +1019,8 @@ L'important est vraiment la section **extra** :
     * mysqlPiPass=\${var.my\_pi\_pass}\": Même concept , mais pour le mot de passe de l'utilisateur showpi .
 
 TODO : FINALEMENT PAS BON COMMIT , prendre après : 24c1e51e799d7704a28226f05d41c40487c4e243
+
+**Git Tag** : Version final : terraform_v11_integration_complete
 
 Maintenant, un peu plus compliquer la partie pour le serveur web :
 
