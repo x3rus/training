@@ -134,8 +134,6 @@ __Note__ : N'utilisez pas la clé ci-dessus, elle n'est pas bonne :P . Vous aure
 
 ### Test de communication 
 
-TODO ; Tag terraform_v0
-
 Nous allons créer un répertoire pour chacun de nos tests :
 
 ```
@@ -177,7 +175,7 @@ data "aws_ami" "ubuntu" {
 
 Fichier d'origine : [01-test-terraform.tf](https://github.com/x3rus/training/blob/a0e33ab3753426d010972f57ea2f02119fa916e8/terraform/terraManifest/01-validation/01-test-terraform.tf)
 
-TODO ; Tag terraform_v1_test-comm
+**Git Tag** :  terraform_v1_test-communicatio
 
 Détaillons un peu le contenu de cette configuration **terraform** 
 
@@ -331,11 +329,8 @@ Ce fichier est donc le fichier de l'état !! Il sera rafraichi et bonifié au fu
 
 ## Réalisation du cas d'exemple
 
-TODO ; Tag terraform_v2_debut-use-case
+**Git Tag** : terraform_v2_debut-use-case
 
-Nous allons débuter le cas d'exemple , je vais faire un répertoire pour ce cas d'utilisation et utiliser les commis afin de vous fournir les fichiers finaux à chaque étape. Pourquoi ce mode de fonctionnement , simplement parce que je veux capitaliser sur le fichier d'état des exécutions passé.
-
-```
 $ mkdir terraManifest/02-use-case
 $ cd terraManifest/02-use-case
 ```
@@ -571,7 +566,9 @@ Destroy complete! Resources: 2 destroyed.
 
 Encore une fois je dois confirmer l'opération . Si vous retournez à l'adresse : [aws key pair](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#KeyPairs:sort=keyName) , l'ensemble des clés ont disparu :D , magie .
 
-TODO ; Tag terraform_v3_clef_ssh
+
+**Git Tag** :  terraform_v3_creation_cles_ssh
+
 
 **VERSION FINAL FICHIER** : [02-use-case.tf](https://github.com/x3rus/training/blob/d5c66cb650a05f4d10e5ddd942ef00bcd43aa3c0/terraform/terraManifest/02-use-case/02-use-case.tf)
 
@@ -807,7 +804,7 @@ Nous retrouvons notre variable : **aws_default_vpc.default.id** avec la valeur *
 Nous aurions pu avoir d'autre valeur telle que le segment réseaux **cidr_block**, nous allons voir cette utilisation dans quelques instants avec la configuration des règles de firewall. Il n'est pas facile d'avoir l'ensemble des informations disponibles, mais avec ce fichier d'état ceci vous donne l'information exacte pour VOTRE utilisation. Voilà pourquoi j'insiste autant sur ce point , car c'est une source d'information non négligeable.
 
 
-TODO ; Tag terraform_v4_creation_subnet
+**Git Tag** :  terraform_v4_creation_subnet
 
 **VERSION FINAL FICHIER** : [02-use-case.tf](https://github.com/x3rus/training/blob/c57b9d1587be7f9fc0805d754c31ba511a2e45b8/terraform/terraManifest/02-use-case/02-use-case.tf)
 
@@ -1031,9 +1028,10 @@ Si nous regardons plus spécifiquement la règle pour mysql, nous voyons que la 
 
 Le fichier d'état fut aussi sauvegardé : [states/terraform-create-vpc-subnet-and-firewall.tfstate](./terraManifest/02-use-case/states/terraform-create-vpc-subnet-and-firewall.tfstate)
 
-TODO ; Tag terraform_v5_creation_subnet_and_fw
+**Git Tag** : terraform_v5_creation_security_group
 
-### Création des instances EC2 ( VM ) 
+**VERSION FINAL FICHIER** : [02-use-case.tf](https://github.com/x3rus/training/blob/5f7334433da2ff4434ddb518a32b656bb532559d/terraform/terraManifest/02-use-case/02-use-case.tf)
+
 
 Donc nous avons l'ensemble de la base mise en place :
 
@@ -1192,7 +1190,7 @@ Ici, nous aurons des coûts suite à la création, je vais donc supprimer l'ense
 $ terraform destroy
 ```
 
-TODO: Tag_terraforme
+**Git Tag**: terraform_v6_creation_ec2_web
 
 Fichier contenant la définition complète : [02-use-case.tf](https://github.com/x3rus/training/blob/7eb6ece3567dc610aec1e4d00e0ec90f20deccc5/terraform/terraManifest/02-use-case/02-use-case.tf)
 
@@ -1328,6 +1326,9 @@ $ terraform destroy
 Destroy complete! Resources: 12 destroyed.
 ```
 
+**Git Tag** : terraform_v6_creation_ec2_bd
+
+**Version Final** :  [02-use-case.tf](https://github.com/x3rus/training/blob/0d7d0842f806028cef9222546867d360c39f65a2/terraform/terraManifest/02-use-case/02-use-case.tf)
 
 #### Création d'une ressource et connexion ssh 
 
