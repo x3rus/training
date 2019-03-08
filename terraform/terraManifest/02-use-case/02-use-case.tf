@@ -14,8 +14,11 @@ variable "my_pi_pass" {}
  # AWS SDK auth
 provider "aws" {
     region = "${var.aws_region}"
-    access_key = "ABIASDLASDIHV6QNZASQ"
-    secret_key = "06mcwWI7MhP59cKss5PQjPyPGzvF7k/gNCdZGKYc"
+#    access_key = "ABIASDLASDIHV6QNZASQ"
+#    secret_key = "06mcwWI7MhP59cKss5PQjPyPGzvF7k/gNCdZGKYc"
+
+    access_key = "AKIAJDLFSDIHN6QEZASQ"
+    secret_key = "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"
 }
 
  ############
@@ -203,6 +206,13 @@ resource "aws_instance" "web-terra" {
     provisioner "local-exec" {
         command = "ansible-playbook -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no' -i '${self.public_ip},' --extra-=\"mysqlContHost=${aws_instance.db-terra.0.private_ip} mysqlContUser=${var.my_cont_user} mysqlContPass=${var.my_cont_pass} mysqlContDB=contact  mysqlPiHost=${aws_instance.db-terra.1.private_ip} mysqlPiUser=${var.my_pi_user} mysqlPiPass=${var.my_pi_pass} mysqlPiDB=showpi\" --private-key ssh-keys/ansible-user -T 300 site.yml"
     }
+
+    provisioner "local-exec" {
+        command = "sudo sed -i -r  's/^([0-9]{1,3}\\.){3}[0-9]{1,3}\\s+contacts.x3rus.com/${aws_instance.web-terra.public_ip} contacts.x3rus.com/g' /etc/hosts"
+     }
+    provisioner "local-exec" {
+        command = "sudo sed -i -r  's/^([0-9]{1,3}\\.){3}[0-9]{1,3}\\s+showpi.x3rus.com/${aws_instance.web-terra.public_ip} showpi.x3rus.com/g' /etc/hosts"
+     }
 
 
 }

@@ -1018,7 +1018,6 @@ L'important est vraiment la section **extra** :
     * mysqlPiUser=\${var.my\_pi\_user}: Même concept , mais pour le nom de l'utilisateur showpi.
     * mysqlPiPass=\${var.my\_pi\_pass}\": Même concept , mais pour le mot de passe de l'utilisateur showpi .
 
-TODO : FINALEMENT PAS BON COMMIT , prendre après : 24c1e51e799d7704a28226f05d41c40487c4e243
 
 **Git Tag** : Version final : terraform_v11_integration_complete
 
@@ -1048,7 +1047,7 @@ L'important est vraiment la section **extra** :
 
 ### Validation de l'ensemble 
 
-Démarrons le vrai test avec la validation :
+Démarrons le vrai test , la total avec la validation :
 
 ```
 $ terraform plan
@@ -1064,4 +1063,59 @@ C'est parti :
 $ terraform apply
 ```
 
+À ce stade rien de nouveaux , nous avons déjà vu l'ensemble de ce processus dans les étapes précédente. 
 
+Et voilà à la fin 
+
+```
+aws_instance.web-terra (local-exec): RUNNING HANDLER [apache-php-example : restart apache] **************************                                        
+aws_instance.web-terra (local-exec): changed: [34.212.81.196]
+
+aws_instance.web-terra (local-exec): PLAY RECAP *********************************************************************                                        
+aws_instance.web-terra (local-exec): 34.212.81.196              : ok=8    changed=7    unreachable=0    failed=0                                             
+
+aws_instance.web-terra: Creation complete after 2m37s (ID: i-0b7068e5bf790ea97)                                                                              
+
+Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
+```
+
+Pour faire le test je vais modifier mon fichier **/etc/hosts** afin d'avoir l'adresse IP pour les 2 nom de domaines: 
+
+```
+$ cat /etc/hosts
+
+34.212.81.196 contacts.x3rus.com
+34.212.81.196  showpi.x3rus.com
+```
+
+Et si je vais sur la page web :
+
+![](./imgs/showpi-resultat.png)
+![](./imgs/contacts-resultat.png)
+
+Donc nous pouvons dire que ça marche , mais ... comment dire .. C'est nulle de devoir  modifier le fichier /etc/hosts manuellement :-/.
+Bon , normalement ceci configurer dans le DNS , mais nous avons une adresse IP dynamique dans la situation présente. 
+
+Je veux vraiment lancer la commande terraform et ne RIEN faire alors ajoutons le petit quelque chose pour que ce ne soit pas beau mes magnifiques ;-)
+
+
+#### La petite touche qui rend le tout beau ( Mise à jour DNS ; aka /etc/hosts)
+
+Alors comment allons nous faire ? Bien entendu, je peux m'installer un DNS local avec une clé de mise à jour dynamique des entrés , mais vous en conviendrez avec moi c'est peut-être un peu trop :P. 
+
+Alors pourquoi pas un simple **sed** , tous le monde aime les regexs, pour les amoureux des regex qui ne m'ont pas encore entendu faire de la pub pour un petit jeu. Un jeu de regex en style mot croisée [https://regexcrossword.com/](https://regexcrossword.com/) fonctionne super bien sur les téléphones :P.
+
+Restons concentrez, SVP :P  
+
+Nous allons ajouter un action après la création de l'instance web. 
+
+```
+    provisioner "local-exec" {
+        command = "sudo sed -i -r  's/^([0-9]{1,3}\\.){3}[0-9]{1,3}\\s+contacts.x3rus.com/${aws_instance.web-terra.public_ip} contacts.x3rus.com/g' /etc/hosts"
+     }
+    provisioner "local-exec" {
+        command = "sudo sed -i -r  's/^([0-9]{1,3}\\.){3}[0-9]{1,3}\\s+showpi.x3rus.com/${aws_instance.web-terra.public_ip} showpi.x3rus.com/g' /etc/hosts"
+     }
+```
+
+J'ajoute deux local-exec , un pour chaque domaine afin de garder ça simple. Dans la démonstration ci-dessus je change une adresse ip déjà présente dans le fichier `([0-9]{1,3}\\.){3}[0-9]{1,3}` qui contient le nom de domaine désirer `showpi.x3rus.com`. Je remplace la ligne par l'IP publique de l'instance web `${aws_instance.web-terra.public_ip}` et le nom de domaine :D .

@@ -1186,7 +1186,21 @@ Vous pouvez visualiser le résultat dans la console AWS [list ec2 instance](http
 
 Ici, nous aurons des coûts suite à la création, je vais donc supprimer l'ensemble pour poursuivre la formation :
 
+Si vous avez l'erreur suivante : 
+
 ```
+2 error(s) occurred:
+
+* aws_instance.db-terra[1]: 1 error(s) occurred:
+
+* aws_instance.db-terra.1: Error launching source instance: OptInRequired: In order to use this AWS Marketplace product you need to accept terms and subscribe. To do so please visit https://aws.amazon.com/marketplace/pp?sku=csv6h7oyg29b7epjzg7qdr7no
+        status code: 401, request id: caf08288-23ee-4091-a0eb-7edeab0faa85
+
+```
+
+Allez à l'URL indiqué [https://aws.amazon.com/marketplace/pp?sku=csv6h7oyg29b7epjzg7qdr7no](https://aws.amazon.com/marketplace/pp?sku=csv6h7oyg29b7epjzg7qdr7no) et cliquer pour vous enregistrer afin de profiter des produits de canonical.
+```
+
 $ terraform destroy
 ```
 
