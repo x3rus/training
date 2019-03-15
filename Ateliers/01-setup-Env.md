@@ -78,4 +78,28 @@ Suggestion pour compliquer le processus:
 
 # Exemple du Résultat 
 
-TODO: Ajout screenshot
+* Résultat , installation Gandalf
+
+![](./01-imgs/T_03-resultat.png)
+
+* Communication entre les machines 
+
+* Depuis Bilbo vers Gandalf
+
+```
+$ ping 192.168.42.215
+PING 192.168.42.215 (192.168.42.215) 56(84) bytes of data.
+64 bytes from 192.168.42.215: icmp_seq=1 ttl=64 time=0.323 ms
+64 bytes from 192.168.42.215: icmp_seq=2 ttl=64 time=0.539 ms
+^C
+--- 192.168.42.215 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 24ms
+rtt min/avg/max/mdev = 0.323/0.431/0.539/0.108 ms
+
+```
+
+* Gandalf vers Bilbo
+
+![](./01-imgs/R_01-ping-vers-bilbo.png)
+
+
