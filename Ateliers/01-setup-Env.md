@@ -1,3 +1,19 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Description](#description)
+  - [Information :](#information-)
+  - [Gandalf installation](#gandalf-installation)
+  - [Bilbo installation](#bilbo-installation)
+- [Atelier version plus compliqué](#atelier-version-plus-compliqu%C3%A9)
+- [Objectif et critère de succès](#objectif-et-crit%C3%A8re-de-succ%C3%A8s)
+  - [Objectif](#objectif)
+  - [Critère de succès](#crit%C3%A8re-de-succ%C3%A8s)
+- [Exemple du Résultat](#exemple-du-r%C3%A9sultat)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 
 # Description 
 
