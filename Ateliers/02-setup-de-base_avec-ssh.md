@@ -1,3 +1,21 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Description](#description)
+  - [Information :](#information-)
+  - [Questions](#questions)
+  - [Gandalf Configuration / Opération](#gandalf-configuration--op%C3%A9ration)
+  - [Bilbo ou poste client Configuration / Opération](#bilbo-ou-poste-client-configuration--op%C3%A9ration)
+  - [Gandalf et Bilbo](#gandalf-et-bilbo)
+- [Atelier version plus compliqué](#atelier-version-plus-compliqu%C3%A9)
+- [Objectif et critère de succès](#objectif-et-crit%C3%A8re-de-succ%C3%A8s)
+  - [Objectif](#objectif)
+  - [Critère de succès](#crit%C3%A8re-de-succ%C3%A8s)
+- [Exemple du Résultat](#exemple-du-r%C3%A9sultat)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Description 
 
 Nous allons débuter la configuration de base du système, la mise en place de quelque outils qui nous servira par la suite. Nous sommes encore dans la phase de configuration initial. Nous ne parlons d'une configuration de production, car nous n'appliquerons pas l'ensemble des requis de sécurité, gardons en tête que ceci est un environnement de laboratoire / d'exploration.
