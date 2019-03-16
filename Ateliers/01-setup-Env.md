@@ -36,6 +36,12 @@ Faire l'installation des 2 machines , configuration par défaut , libre à vous 
 * Niveau : Débutant / explorateur 
 * Pré requis : Avoir au moins une machine pour faire l'installation 
 
+## Questions 
+
+* Quelle sont les particularité des distributions ? 
+* À quoi sert la partition swap ?
+
+ 
 ## Gandalf installation
 
 Suggestion de configuration pour le serveur **Gandalf** , bien entendu moi je ne vais pas mettre d'interface graphique, cependant faite comme vous voulez, je le répète. L'objectif est d'avoir la possibilité d'explorer les possibilités et de réussir à mettre quelque chose en place peu importe le chemin trouvé. Vous voulez avoir une interface graphique pour votre serveur GO. Nous verrons par la suite.
