@@ -177,7 +177,7 @@ Bien entendu dans votre réalité vous pouvez voir l'association de votre dével
 
 ## les principes ESSENTIELS 
 
-Nous avons vu le cycle de la chaine du développement en mode **DevOps** maintenant nous nous attarderons au principe pour y arrivé. Nous allons parler d'automatisation de processus dans le but de suite le rythme imposé par cette boucle infinie du développement.
+Nous avons vu le cycle de la chaine du développement en mode **DevOps** maintenant nous nous attarderons au principe pour y arriver. Nous allons parler d'automatisation de processus dans le but de suite le rythme imposé par cette boucle infinie du développement.
 
 Commençons avec but , le **Graal** :P .
 
@@ -208,46 +208,46 @@ Donc l'ensemble des personnes doivent être unies dans le but et travailler ense
 
 ![](./imgs/devOpsQA.png)
 
-Nous sommes interconnectés, quand le développeur à des questions sur l'infrastructure il questionne l'équipe TI / Opérateur. Lorsque l'équipe de l'assurance qualité rencontre une problématique applicative, il consulte le développeur et/ou l'équipe d'opération . Lorsqu'il y a un problème applicatif avec l'application que l'infrastructure ne semble pas en cause l'opérateur consulte le développeur pour avoir plus d'information. En d'autres mots, nous sommes liés ensemble autour du produit. 
+Nous sommes interconnectés, quand le développeur à des questions sur l'infrastructure il questionne l'équipe TI / Opérateur. Lorsque l'équipe de l'assurance qualité rencontre une problématique applicative, il consulte le développeur et/ou l'équipe d'opération. Lorsqu'il y a un problème applicatif avec l'application, que l'infrastructure ne semble pas en cause l'opérateur consulte le développeur pour avoir plus d'information. En d'autres mots, nous sommes liés ensemble autour du produit. 
 
-Nous ne voulons plus entendre : c'est la faute du Dev ou de l'installation , mais est-ce possible de me fournir cette information pour que je puisse analyser la situation .
+Nous ne voulons plus entendre : *c'est la faute du Dev ou de l'installation*, mais *est-ce possible de me fournir cette information pour que je puisse analyser la situation ?*.
 
 ### Automatisation 
 
-L'automatisation est au centre du travail du DevOps, car la charge de travail qu'on lui demande est grande. Avec le nouveau mode de travail, nous désirons qu'il y ait plus d'intégration de l'application , plus de tests , plus de validation , plus de déploiement , plus de surveillance .
-Bien entendu il est toujours possible de réaliser ces opérations manuellement, mais rapidement les  personnes n'auront plus d'intérêt et la productivité sera impacté. 
+L'automatisation est au centre du travail du DevOps, car la charge de travail qu'on lui demande est grande. Avec le nouveau mode de travail, nous désirons qu'il y ait plus d'intégration de l'application, plus de tests, plus de validation, plus de déploiement, plus de surveillance.
+Bien entendu il est toujours possible de réaliser ces opérations manuellement, mais rapidement les personnes n'auront plus d'intérêt et la productivité sera impacté. 
 
 Nous retrouverons donc souvent dans les équipes de **DevOps** une boite à outils qu'ils furent développés à l'interne, acheter ou l'utilisation de logiciel libre. Bien entendu, la majorité du temps c'est un mixe de l'ensemble.
 
-Je dirai même que l'objectif est d'automatiser au maximum , ceci aura l'avantage :
+Je dirai même que l'objectif est d'automatiser au maximum, ceci aura l'avantage :
 
 * De réduire les erreurs humaines
-* De permettre de réaliser  à l'identique les opérations (reproductible)
+* De permettre de réaliser à l'identique les opérations (reproductible)
 * D'augmenter le temps de réalisation des tâches (Productivité)
 * Éventuellement, permettre à n'importe qui d'exécuter l'opération librement sans votre assistance (Self-Service)
 
-Si vous avez peur de plus avoir de travail, pas de panique on arrive jamais à tous automatisé et on trouve toujours plus de choses à faire quand on a du temps :P.
+Si vous avez peur de ne plus avoir de travail, **pas de panique** on arrive jamais à tout automatiser et on trouve toujours plus de choses à faire quand on a du temps :P.
 
 ### Intégration continue 
 
-Intégration régulière / continue du travail des personnes de l'équipe. Nous partons du principe que l'équipe utilise un système de contrôle de révision telle que **Subversion** , **git** afin de mettre leur travaille ensemble. Ceci n'est techniquement peut-être pas requis cependant de mon point de vue il est essentiel pour simplifier le retour arrière , ainsi que les requêtes de fusion (merge) .
+Intégration régulière / continue du travail des personnes de l'équipe. Nous partons du principe que l'équipe utilise un système de contrôle de révision telle que **Subversion**, **git** afin de mettre leur travaille ensemble. Ceci n'est techniquement peut-être pas requis cependant de mon point de vue il est essentiel pour simplifier le retour arrière, ainsi que les requêtes de fusion (merge).
 
 L'objectif de cette étape et de voir **rapidement** s'il y a un problème d'intégration et de pouvoir l'adresser **rapidement** (au risque de me répéter :P ).
 
 #### Concrètement
 
-##### cas 1 
+##### cas 1
 
-L'équipe travaille sur une application 3 tiers ( frontale Web, Application __backend__ , Base de donnée ) .
+L'équipe travaille sur une application 3 tiers ( frontale Web, Application __backend__, Base de donnée ) .
 
-Un développeur pris par un excès de zèle décide de réalise de la documentation dans le code , __yep__ ça arrive parfois  :P . Remplie de confiance il pousse la modification du code sans compilation, car il a rien touche , selon son point de vue. Grâce à l'intégration continue du travail dès que le code sera transmis au serveur Subversion ou Git ce dernier sera compilé et intégré pour validation. L'erreur syntaxique pourra tous de suite identifier et une alerte sera transmise à l'équipe pour signaler la problématique. 
+Un développeur pris par un excès de zèle décide de réaliser de la documentation dans le code, __yep__ ça arrive parfois :P . Remplie de confiance il pousse la modification du code sans compilation, car il a rien touché, selon son point de vue. Grâce à l'intégration continue du travail dès que le code sera transmis au serveur Subversion ou Git ce dernier sera compilé et intégré pour validation. L'erreur syntaxique pourra tout de suite être identifiée et une alerte sera transmise à l'équipe pour signaler la problématique. 
 
 La personne aillant fait la modification pourra tous de suite prendre action sachant exactement ce qu'il a réalisé. S'il ne le fait pas, car il est parti en vacance l'équipe aura la connaissance que depuis le commit X qui fut réalisé à l'instant T l'application ne compile plus. 
-La personne qui aura transmis son travail au serveur n'aura pas le doute à savoir. Est-ce que c'est MES modifications qui ont causé ce problème ? 
+La personne qui aura transmis son travail au serveur n'aura pas de doute à savoir. Est-ce que c'est MES modifications qui ont causé ce problème ? 
 
-##### cas 2 
+##### cas 2
 
-Une personne réalise du développement avec une nouvelle librairie ou une nouvelle version lors de l'intégration il est possible que lors du processus de linkage des librairies il y est un problème. Le problème sera identifié rapidement et pourra être adressé est-ce la bonne librairie , devons-nous procéder autrement ... Les choix sont multiples, mais au moins la prise de décision peut être prise rapidement et pas attendre 1 mois ou plus que l'ensemble du code fut développé et que la décision soit plus difficile, car beaucoup de travail réalisé.
+Une personne réalise du développement avec une nouvelle librairie ou une nouvelle version lors de l'intégration il est possible que lors du processus de linkage des librairies il y ait un problème. Le problème sera identifié rapidement et pourra être adressé : est-ce la bonne librairie ? devons-nous procéder autrement ? ... Les choix sont multiples, mais au moins la prise de décision peut être prise rapidement et pas attendre 1 mois ou plus que l'ensemble du code fut développé et que la décision soit plus difficile, car beaucoup de travail réalisé.
 
 #### Les outils disponibles
 
@@ -260,56 +260,55 @@ Je n'ai nommé que les options libres bien entendu :P.
 
 ### Test continu ( applicatif et fonctionnel )
 
-Nous avons parlé de l'intégration du code en commun, ceci est un bon début pour valider que l'ensemble compile convenable ou du moins est un tout cohérent , mais est-ce que ça fonctionne vraiment ? :P .
+Nous avons parlé de l'intégration du code en commun, ceci est un bon début pour valider que l'ensemble compile convenable ou du moins est un tout cohérent, mais est-ce que ça fonctionne vraiment ? :P .
 
 L'intégration de validation vous aidera aussi à identifier **rapidement** les problématiques et vous offrira aussi une plus grande sécurité. L'objectif ici est de faire plusieurs types de tests :
 
 * [Test unitaire](https://fr.wikipedia.org/wiki/Test_unitaire): le test unitaire (ou « T.U. », ou « U.T. » en anglais) ou test de composants est une procédure permettant de vérifier le bon fonctionnement d'une partie précise d'un logiciel ou d'une portion d'un programme (appelée « unité » ou « module »).
-* Test de déploiement : Faire un test de déploiement de l'application sur un environnement vierge ou presque , ceci permettra de valider que l'installation fonctionne toujours.
-* Test de validation simple (smoke test) : Suite au test de déploiement , il est intéressant d'ajouter une validation fonctionnelle de l'application, bien entendu cette étape peut comprendre peu ou énormément de chose. Selon la complexité de l'application et le temps alloué pour des tests applicatifs automatisés.
+* Test de déploiement : Faire un test de déploiement de l'application sur un environnement vierge ou presque, ceci permettra de valider que l'installation fonctionne toujours.
+* Test de validation simple (smoke test) : Suite au test de déploiement, il est intéressant d'ajouter une validation fonctionnelle de l'application, bien entendu cette étape peut comprendre peu ou énormément de chose. Selon la complexité de l'application et le temps alloué pour des tests applicatifs automatisés.
 
-Pour les personnes qui se disent , wow j'aurais jamais le temps de faire tout cela. Effectivement, ce peut être une lourde tâche, mais il y a un gain non négligeable et il ne faut pas oublié ceci se construit au fur et à mesure !! Nous allons prendre les 3 points ci-dessus et essayer d'ajouter de l'explication.
+Pour les personnes qui se disent *wow j'aurais jamais le temps de faire tout cela*. Effectivement, ce peut être une lourde tâche, mais il y a un gain non négligeable et il ne faut pas oublier : **ceci se construit au fur et à mesure !!** Nous allons prendre les 3 points ci-dessus et essayer d'ajouter de l'explication.
 
 #### Test unitaire
 
-Le test unitaire, j'ai moins d'expérience avec cette partie , car la majorité du temps les développeurs me les fournissent :P, car de plus en plus ces derniers le font pour confirmer que l'ajout de fonctionnalité n'a pas cassé quelque chose précédemment. 
+Le test unitaire, j'ai moins d'expérience avec cette partie, car la majorité du temps les développeurs me les fournissent :P, car de plus en plus ces derniers le font pour confirmer que l'ajout de fonctionnalité n'a pas cassé quelque chose précédemment.
 
 L'objectif est toujours le même :
 
 1. Nous réalisons une modification du code
 2. Nous identifions tout de suite la problématique
-3. Comme nous avons sommes au courant une décision peut être prise
+3. Comme nous sommes au courant, une décision peut être prise
 
-Bien entendu le test unitaire doit être un processus automatisé, il n'est PAS pensable que chaque , mercredi une personne réalise l'ensemble des tests unitaire de l'application manuellement. Honnêtement est-ce que ce serait possible ? Je ne le crois pas de plus vous risquez d'avoir une lettre de démission rapidement de la personne, car ce doit être très ennuyeux !
+Bien entendu le test unitaire doit être un processus automatisé, il n'est PAS pensable que chaque mercredi, une personne réalise l'ensemble des tests unitaire de l'application manuellement. Honnêtement est-ce que ce serait possible ? Je ne le crois pas ! De plus vous risquez d'avoir une lettre de démission rapidement de la personne, car ce doit être très ennuyeux !
 
-La réalisation des tests unitaire devrait être réalisée régulièrement , personnellement je préconise son exécution en même temps que l'intégration du code. Bien entendu si le temps des tests est trop long, car ils sont très très complets ce pourrait être chaque nuit. Il ne faut pas être rigide , l'important est d'être au courant "rapidement" des problèmes .
+La réalisation des tests unitaire devrait être réalisée régulièrement, personnellement je préconise son exécution en même temps que l'intégration du code. Bien entendu si le temps des tests est trop long, car ils sont très très complets ce pourrait être chaque nuit. Il ne faut pas être rigide, l'important est d'être au courant "rapidement" des problèmes.
 
-Donc en termes de temps requis , ceci est un travail de collaboration donc chacun réalise ça partie, le responsable va simplement mettre la colle ou le duck tape pour lier l'ensemble. 
-Et si au début il n'y a qu'une classe , qu'un module du code qui contient des tests unitaire et bien c'est déjà ça au fil du temps les autres seront réalisés. Tous comme un gratte-ciel, il faut commencer par la première brique et monté tranquillement l'ensemble, mais il est plus facile d'ajouter une brique que de placer la première à même le sol !!
+Donc en termes de temps requis, ceci est un travail de collaboration donc chacun réalise sa partie, le responsable va simplement mettre la colle ou le duck tape pour lier l'ensemble. 
+Et si au début il n'y a qu'une classe, qu'un module du code qui contient des tests unitaire, et bien c'est déjà ça : au fil du temps les autres seront réalisés. Tous comme un gratte-ciel, il faut commencer par la première brique et monter tranquillement l'ensemble, mais il est plus facile d'ajouter une brique que de placer la première à même le sol !!
 
 
+#### Test de déploiement
 
-#### Test de déploiement 
+Validation du déploiement de l'application sur un environnement, selon le type d'application le processus d'installation est plus ou moins complexe. Si nous prenons un site en PHP, ce peut être très simple : uniquement copier les fichiers ou réaliser une mise à jour à l'aide du contrôleur de révision. Si vous avez une application 3 tierce avec un serveur jboss, tomcat, jetty l'ensemble des opérations peut être plus longue. 
 
-Validation du déploiement de l'application sur un environnement, selon le type d'application le processus d'installation est plus ou moins complexe. Si nous prenons un site en PHP, ce peut être très simple , uniquement copier les fichiers ou réaliser une mise à jour à l'aide du contrôleur de révision. Si vous avez une application 3 tierce avec un serveur jboss , tomcat, jetty l'ensemble des opérations peut être plus longue. 
+Lors de l'intégration nous avons validé que *le code compile*, lors des tests unitaires nous avons validé que *le code fonctionne pour des sections spécifiques*. Maintenant nous voulons confirmer que l'installation de l'application est toujours convenable et que l'application démarre.
 
-Lors de l'intégration nous avons validé que le code compile , lors des tests unitaires nous avons valider que le code fonctionne pour des sections spécifiques. Maintenant nous voulons confirmer que l'installation de l'application est toujours convenable et que l'application démarre.
+Donc je vous suggère de déployer l'application sur un environnement toutes les nuits afin de confirmer que l'application est toujours fonctionnelle dans son ensemble. Voici une situation possible : du développement fut réalisé, le code compile ( Yeahh ), les testes unitaires fonctionnes ( super ), malheureusement lors que l'on active l'application dans le serveur Tomcat, ce dernier démarre, mais n'arrive pas à charger le war / ear / l'application quoi :P . 
 
-Donc vous suggère de déployer l'application sur un environnement toutes les nuits afin de confirmer que l'application est toujours fonctionnelle dans son ensemble. Voici une situation possible, du développement fut réalisé , le code compile ( Yeahh ), les testes unitaires fonctionnes ( super ) , malheureusement lors que l'on active l'application dans le serveur Tomcat , ce dernier démarre, mais n'arrive pas à charger le war / ear / l'application quoi :P . 
+Et là je ne veux pas entendre : **Oui, mais ça marche sur mon poste !!**, heu , pour rester polie **I don't fucking care** :D . Sans blague si justement ça fonctionne sur le poste, il est possible qu'il manque un fichier qui ne fut pas poussé au contrôleur de révision. L'identification du problème rapidement permettra au développeur de faire le correct, il ne supprimera pas son environnement de travail local, par erreur ou pour faire de la place, risquant de perdre du travail essentiel.
 
-Et là je ne veux pas entendre : **Oui, mais ça marche sur mon poste !!** , heu , pour rester polie **I don't fucking care** :D . sans blague si justement ça fonctionne sur le poste il est possible qu'il manque un fichier qui ne fut pas poussé au contrôleur de révision. L'identification du problème rapidement permettra au développeur de faire le correct , il ne supprimera pas son environnement de travail local , par erreur ou pour faire de la place risquant de perdre du travail essentiel.
-
-Nous le aussi dans la section [Déploiement régulier des applications](#Déploiement régulier des applications) , mais l'environnement qui fut déployer peut être aussi utilisé afin de voir la dernière version de l'application. Que ce soit au gestionnaire , chef de projet ...
+Nous le verrons aussi dans la section [Déploiement régulier des applications](#Déploiement régulier des applications)  : l'environnement qui fut déployé peut être aussi utilisé afin de voir la dernière version de l'application. Que ce soit au gestionnaire, chef de projet ...
 
 #### Test de validation simple (smoke test)
 
-Comme nous avons un environnement de déployer avec la dernière version de l'application est-ce possible d'automatiser quelque teste pour valider que l'application fonctionne ? 
+Comme nous avons un environnement de déployé avec la dernière version de l'application, est-ce possible d'automatiser quelque tests pour valider que l'application fonctionne ? 
 
-Si l'application est déjà en production, vous devez déjà avoir un monitorage en place qui fait quelque testes, pourquoi ne pas les exécuter sur cet environnement . Ceci vous permettra de voir si l'application semble saine ! Si vous débuter le développement et que votre application est web base pourquoi ne pas faire une simple validation de la page web et chercher un mot dans la page web. Ceci n'est pas compliqué et comme mentionné pour les tests unitaires ceci est la première brique !
+Si l'application est déjà en production, vous devez déjà avoir un monitorage en place qui fait quelque tests, pourquoi ne pas les exécuter sur cet environnement ? Ceci vous permettra de voir si l'application semble saine ! Si vous débuter le développement et que votre application est "web base" pourquoi ne pas faire une simple validation de la page web et chercher un mot dans la page web ? Ceci n'est pas compliqué et comme mentionné pour les tests unitaires : *ceci est la première brique !*
 
-Si votre équipe de QA à déjà automatisé certaines étapes de validation, vous pourriez le réutiliser ici. L'idée n'est pas de remplacer votre équipe de QA qui réalise des cas d'utilisation spéciaux et qui décrive adéquatement des comportements non attendus. Le but est d'avoir une série de tests passant pour savoir si les fonctionnalités basiques ne furent pas impactées par les dernières modifications.
+Si votre équipe de QA à déjà automatisé certaines étapes de validation, vous pourriez les réutiliser ici. L'idée n'est pas de remplacer votre équipe de QA qui réalise des cas d'utilisation spéciaux et qui décrive adéquatement des comportements non attendus. Le but est d'avoir une série de tests passant pour savoir si les fonctionnalités basiques ne furent pas impactées par les dernières modifications.
 
-Je pense que tous comme pour le test de déploiement la réalisation au quotidien est une bonne chose, mais hebdomadaire est aussi adéquat l'important reste de savoir rapidement s'il y a un problème ! Bien entendu rien ne vous empêche dans le futur d'ajouter plus de complexité dans vos tests ainsi que la réalisation de tests de performance. Par contre, ne vous étouffez pas sous les taches inutilement, mais améliorez une solution présente tranquillement en gré du temps disponible !
+Je pense que tout comme pour le test de déploiement, la réalisation au quotidien est une bonne chose, mais hebdomadaire est aussi adéquat : l'important reste de *savoir rapidement s'il y a un problème !* Bien entendu rien ne vous empêche dans le futur d'ajouter plus de complexité dans vos tests ainsi que la réalisation de tests de performance. Par contre, ne vous étouffez pas sous les taches inutilement, mais améliorez une solution présente tranquillement en gré du temps disponible !
 
 #### Les outils disponibles
 
