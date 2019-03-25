@@ -128,7 +128,7 @@ La vérification comprend :
 * Analyse de sécurité , et idéalement teste d'intrusion.
 * Validation de la configuration. 
 
-### Préparation d'un tout cohérent (Package / stating ) 
+### Préparation d'un tout cohérent (Package / staging ) 
 
 Désolé pour le titre j'ai eu quelque difficulté à trouver un terme français pour __packaging__ , l'idée générale de cette étape et de faire l'ensemble des tâches requises en vue de la version finale de l'application , la **release** .
 
