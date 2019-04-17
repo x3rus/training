@@ -6,7 +6,7 @@ Dans un deuxième temps nous allons mettre en place un service qui vous offrira 
 
 ![image](https://user-images.githubusercontent.com/2662304/48323827-b4c17580-e636-11e8-842c-0ee72fcb4115.png)
 
-Car soyons réaliste, ça ne va pas toujours bien fonctionner ... :P Par contre avec ceci nous aurons plus de visibilité .
+Car soyons réaliste, ça ne va pas toujours bien fonctionner ... :P Par contre avec ceci nous aurons une meilleur visibilité .
 
 
 ## Questions 
