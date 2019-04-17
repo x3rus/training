@@ -16,3 +16,4 @@ toto
 .viminfo
 
 */.terraform/*
+/.gtm/
