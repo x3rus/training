@@ -13,7 +13,7 @@ Une autre version dans github :
 
 [revision-Linux101/](./revision-Linux101/)
 
-Sans oublier la liste d'autre sujet qui ne sont jamais arrivés à moodle, car trop de travail pour saisie l'information. [Ls'ensemble des formations](./)
+Sans oublier la liste d'autre sujet qui ne sont jamais arrivés à moodle, car trop de travail pour saisie l'information. [L'ensemble des formations](https://github.com/x3rus/training)
 
 
 
