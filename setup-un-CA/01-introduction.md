@@ -544,7 +544,7 @@ $ openssl genrsa -aes256 \
 Enter pass phrase for intermediate.key.pem: 
 Verifying - Enter pass phrase for intermediate.key.pem: 
 
-$ chmod 400 intermediate/private/intermediate.key.pem
+$ chmod 400 private/intermediate.key.pem
 ```
 
 Assignation du mot de passe : intermediate-pass
